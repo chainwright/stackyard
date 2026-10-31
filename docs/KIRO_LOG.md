@@ -12,3 +12,8 @@ Kept from day one for the Kiroween write-up.
 - Asked Kiro (CLI) for a spec of the first feature with EARS acceptance criteria. It wrote `.kiro/specs/stack-generator/{requirements,design,tasks}.md`: 7 requirements, a data-flow design (one LLM call → shared validator → one retry with the validator's errors → deterministic fallback stack if the model is down), and 9 tasks.
 - The spec turned the steering's seven invariants into the validator contract and into one property-based test per invariant (fast-check).
 - Cost so far: under 1 credit for steering and spec together.
+
+## 30 Oct 2026: Phase 1 implemented by Kiro (types, validator, property tests)
+- Kiro CLI implemented tasks 1–3 of the spec: `src/shared/types.ts`, `src/shared/validator.ts` (collects every failing invariant, no `any`), and `tests/validator.property.test.ts` (18 fast-check properties, one block per invariant).
+- `npm test` 18/18, `tsc --noEmit` clean.
+- We checked the tests can actually fail: removing any one of five invariant checks from the validator makes 1–2 property tests fail; restoring it brings 18/18 back.
