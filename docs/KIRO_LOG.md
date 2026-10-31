@@ -50,3 +50,9 @@ Kept from day one for the Kiroween write-up.
 - Three directions were mocked up at full fidelity (Stamp Pad, Bit Garden, Answer Tiles, plus a hybrid); the team picked the hybrid: a ring-bound pad with rubber-stamp feedback and shaped answer tiles (▲ ◆ ● ■) for kids and colour-blind readers. Reference: `docs/design/reference-stamp-pad-tiles.png`.
 - Kiro wrote `.kiro/steering/design-system.md` from the exact tokens (colours, fonts, type scale, radii, motion, accessibility, banned AI-default patterns).
 - Review round: we measured contrast with the WCAG formula instead of trusting estimates. The first stamp red (#E5402B) failed AA (3.88 on paper, 4.12 under white text), so Kiro switched it to #CE3926 (4.67 / 4.96), fixed a token typo and raised a 16px label to the 18px floor.
+
+## 31 Oct 2026: the player, and why we review in a real browser
+- Kiro built the player runtime pieces (scaler, renderer, audio, errors, entry point with a 20-step auto-advance cap) and the IIFE build: 6.4 KB gzipped against a 50 KB budget.
+- All jsdom tests were green, yet the first look in real Chrome showed five problems the tests could not see: the card pinned top-left, small question text, the CORRECT stamp never visible (the goto fired instantly), an end card showing a bare "1", doubled ruled lines. We sent screenshots and measured numbers back to Kiro over four rounds (docs/design/review/).
+- Each round was checked in a foreground Chrome tab (a background tab pauses CSS animations, which once made the stamp look faded). The stamp now lands on the tile's top edge and the answer stays readable; the end card says "Well done! Score N of M" with a stamp per correct answer; heading fallback is a grotesque, never a serif.
+- 201 tests. The Kiro free monthly quota ran out at the end of this round; the rest waits for the hackathon credits.

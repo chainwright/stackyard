@@ -70,6 +70,9 @@ Add a `build:player` script to `package.json`.
 **Done when:** `npm run build:player` completes without error and
 `dist/player/player.iife.js` exists.
 
+✅ **Done** — `vite.player.config.ts` created (IIFE, es2018, minify, output to `dist/player/player.iife.js`),
+`build:player` script added to `package.json`. `npm run build:player` succeeds; output is 5.38 kB gzipped.
+
 ---
 
 ### TASK-05: Implement `src/player/runtime.ts`
@@ -108,6 +111,10 @@ Implement `applyScaling(root: HTMLElement): () => void`:
 **Done when:** Unit tests in `tests/scaler.test.ts` assert correct `factor`
 values for at least three viewport sizes (1920×1080, 1024×768, 320×480).
 
+✅ **Done** — `src/player/scaler.ts` implemented (`applyScaling()` with ResizeObserver).
+9 unit tests in `tests/scaler.test.ts` cover 1920×1080, 1024×768, 320×480, 800×600, plus
+position/dimensions/cleanup. All pass.
+
 ---
 
 ### TASK-07: Implement `src/player/renderer.ts`
@@ -131,6 +138,12 @@ node type, position attributes, and text content for one example of each
 element type; and assert that `field` shows an empty string for an unset
 variable.
 
+✅ **Done** — `src/player/renderer.ts` implemented with full design-system compliance:
+paper/ink/rule/stamp tokens, ring holes, 3 offset card edges, shaped answer tiles (▲◆●■) with
+fixed colours, `CORRECT ✓` stamp overlay at -8deg with stamp-land animation, tile shake for
+wrong answers, prefers-reduced-motion, aria-live region. 16 unit tests in
+`tests/renderer.test.ts` cover all four element types, positioning, quiz tiles, and a11y.
+
 ---
 
 ### TASK-08: Implement `src/player/audio.ts`
@@ -147,6 +160,11 @@ Implement `playSound(sound: 'cheer' | 'buzz'): void`:
 **Done when:** The function exists, compiles, and a unit test confirms it does
 not throw when `AudioContext` is stubbed to throw on construction.
 
+✅ **Done** — `src/player/audio.ts` implemented (cheer: rising 440→880 Hz triangle wave,
+buzz: 150 Hz sawtooth, both 0.5 s, wrapped in try/catch). Tests in
+`tests/player.index.test.ts` confirm it does not throw when `AudioContext` is unavailable
+or throws on construction.
+
 ---
 
 ### TASK-09: Implement `src/player/errors.ts`
@@ -159,6 +177,10 @@ Implement `showFatalError(root: HTMLElement): void`:
 - No stack trace, no error codes — consistent with `audience.md`.
 
 **Done when:** Unit test asserts the exact message text appears in the DOM.
+
+✅ **Done** — `src/player/errors.ts` implemented (`showFatalError()` renders
+`"Something went wrong. Please ask your teacher to check the file."`).
+Tests in `tests/player.index.test.ts` verify exact message text and content clearing.
 
 ---
 
@@ -192,6 +214,13 @@ in `tests/runtime.test.ts` confirm:
 - After 20 consecutive automatic navigations the fatal error is shown and no
   further navigation occurs.
 - A user-initiated navigation after 15 automatic ones resets the counter.
+
+✅ **Done** — `src/player/index.ts` implemented. Wires all modules on `DOMContentLoaded`.
+`navigateTo(id, automatic)` increments `state.autoNavCount` on automatic navigations,
+resets to 0 on user-initiated ones, and calls `showFatalError()` when count exceeds 20.
+`npm run build:player` succeeds; gzipped IIFE is 5.38 kB (≤ 50 KB). 9 tests in
+`tests/player.index.test.ts` cover the cap (>20 stops + shows error, exact visited count)
+and counter reset after 15 auto-navs. All 180 tests green, typecheck clean.
 
 ---
 

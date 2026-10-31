@@ -14,6 +14,12 @@ export interface RuntimeState {
   variables: Record<string, string | number>;
   /** ID of the card currently being displayed. */
   currentCardId: string;
+  /**
+   * Counter of consecutive automatic navigations (card-level goto actions).
+   * Reset to 0 on any user-initiated (button-click) navigation.
+   * If this reaches 20 the player shows a fatal error and stops navigating.
+   */
+  autoNavCount: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -29,6 +35,7 @@ export function createRuntime(stack: Stack): RuntimeState {
     stack,
     variables: { score: 0 },
     currentCardId: stack.cards[0]!.id,
+    autoNavCount: 0,
   };
 }
 
