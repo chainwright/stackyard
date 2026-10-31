@@ -46,6 +46,10 @@ Instead, do the following:
 - The new property tests pass with zero failures.
 - The existing eight-invariant property tests continue to pass unchanged.
 
+✅ **Done** — invariant 9 added to `src/shared/validator.ts` (iterative DFS, three-colour),
+`ExportValidationError` added to `server/exporter.ts`, property tests for invariant 9
+added to `tests/validator.property.test.ts` (500 runs each). All 146 tests green, typecheck clean.
+
 ---
 
 ## Phase 2 — Player runtime
@@ -83,6 +87,10 @@ Implement:
 **Done when:** Unit tests in `tests/runtime.test.ts` cover all four action
 types, the `goto`-terminates-early behaviour, and the score accumulation across
 multiple dispatches.
+
+✅ **Done** — `src/player/runtime.ts` implemented (`RuntimeState`, `createRuntime()`,
+`dispatch()` with all four action types and goto-terminates-early). 24 unit tests in
+`tests/runtime.test.ts` all pass. Typecheck clean.
 
 ---
 

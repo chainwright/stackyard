@@ -41,3 +41,7 @@ Kept from day one for the Kiroween write-up.
 - Kiro wrote `.kiro/specs/exporter/` (requirements, design, 18 tasks): one self-contained HTML file, player under 50 KB gzipped, stack JSON embedded for lossless re-import (fast-check round-trip), synthesised sounds, ES2018 target.
 - We reviewed it like a pull request and sent five fixes back to Kiro: reuse the existing types/validator instead of re-specifying them; the right key variable name for the no-secrets test; a card-level auto-advance cycle could hang the player (now invariant 9 `goto-cycle` plus a runtime cap); image inlining must never read arbitrary paths from stack data (only data URIs or files inside one assets directory, path-traversal tests); a teacher's text containing a URL must still export with no raw `https://` and round-trip exactly.
 - Kiro applied all five across requirements, design, tasks and the steering.
+
+## 30 Oct 2026: invariant 9 and the player runtime
+- Kiro added invariant 9 (`goto-cycle`: the card-level auto-advance graph must have no cycle) with property tests, `ExportValidationError`, and `src/player/runtime.ts` (state, dispatcher, `goto` stops the action list, injected sound callback) with 24 unit tests.
+- 146/146, `tsc` clean. Mutation check: removing the cycle check fails 2 tests.

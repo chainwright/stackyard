@@ -602,3 +602,290 @@ describe("invariant: invalid-id", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// 9. goto-cycle
+
+describe("invariant: goto-cycle", () => {
+  /**
+   * Arbitrary that generates a stack with a deliberate cycle in card-level gotos.
+   * Strategy: take a valid stack and wire card-level goto chains into a cycle.
+   *
+   * We build a chain  A -> B -> C -> ... -> A  using card-level actions.
+   * The cards themselves are valid (story kind), so only the goto graph is cyclic.
+   */
+  const cyclicGotoStackArb: fc.Arbitrary<Stack> = fc
+    .tuple(
+      uuidV4(), // stack id
+      fc.array(
+        fc.tuple(uuidV4(), uuidV4()), // [cardId, elementId] for each story card
+        { minLength: 2, maxLength: 6 }
+      ),
+      fc.tuple(uuidV4(), uuidV4()), // [endCardId, endFieldId]
+      themeArb,
+    )
+    .filter(([stackId, cardPairs, [endId, endFieldId], _theme]) => {
+      const allIds = [
+        stackId,
+        ...cardPairs.flatMap(([cid, eid]) => [cid, eid]),
+        endId,
+        endFieldId,
+      ];
+      return new Set(allIds).size === allIds.length;
+    })
+    .map(([stackId, cardPairs, [endId, endFieldId], theme]) => {
+      const n = cardPairs.length;
+
+      // Build story cards where card[i]'s card-level action goes to card[(i+1)%n],
+      // forming a cycle among the story cards.
+      const storyCards: Card[] = cardPairs.map(([cardId, elemId], i) => {
+        const nextCardId = cardPairs[(i + 1) % n]![0]!;
+        return {
+          id: cardId,
+          kind: "story" as const,
+          elements: [
+            {
+              type: "text" as const,
+              id: elemId,
+              x: 0,
+              y: 0,
+              w: 200,
+              h: 50,
+              content: `Card ${i}`,
+            },
+          ],
+          // Card-level goto: creates the cycle
+          actions: [{ type: "goto" as const, cardId: nextCardId }],
+        };
+      });
+
+      const endCardObj: Card = {
+        id: endId,
+        kind: "end",
+        elements: [
+          {
+            type: "field" as const,
+            id: endFieldId,
+            x: 0,
+            y: 0,
+            w: 200,
+            h: 50,
+            variable: "score",
+          },
+        ],
+        actions: [],
+      };
+
+      const stack: Stack = {
+        id: stackId,
+        title: "Cyclic stack",
+        theme,
+        cards: [...storyCards, endCardObj],
+      };
+      return stack;
+    });
+
+  it(
+    "reports goto-cycle when card-level gotos form a cycle (≥500 runs)",
+    () => {
+      fc.assert(
+        fc.property(cyclicGotoStackArb, (stack) => {
+          const result = validate(stack);
+          expect(result.valid).toBe(false);
+          if (!result.valid) {
+            expect(result.errors).toContain("goto-cycle");
+          }
+        }),
+        { numRuns: 500 },
+      );
+    },
+  );
+
+  /**
+   * Arbitrary that generates a stack with an acyclic (or absent) card-level
+   * goto graph.
+   *
+   * Strategy: build a linear chain  A -> B -> C -> end  using card-level
+   * actions. There is no back-edge, so no cycle.
+   */
+  const acyclicGotoStackArb: fc.Arbitrary<Stack> = fc
+    .tuple(
+      uuidV4(), // stack id
+      fc.array(
+        fc.tuple(uuidV4(), uuidV4()), // [cardId, elementId]
+        { minLength: 1, maxLength: 5 }
+      ),
+      fc.tuple(uuidV4(), uuidV4()), // [endCardId, endFieldId]
+      themeArb,
+    )
+    .filter(([stackId, cardPairs, [endId, endFieldId], _theme]) => {
+      const allIds = [
+        stackId,
+        ...cardPairs.flatMap(([cid, eid]) => [cid, eid]),
+        endId,
+        endFieldId,
+      ];
+      return new Set(allIds).size === allIds.length;
+    })
+    .map(([stackId, cardPairs, [endId, endFieldId], theme]) => {
+      const n = cardPairs.length;
+
+      // Linear chain: card[i] -> card[i+1]; last card -> end (no cycle).
+      const storyCards: Card[] = cardPairs.map(([cardId, elemId], i) => {
+        const nextId = i < n - 1 ? cardPairs[i + 1]![0]! : endId;
+        return {
+          id: cardId,
+          kind: "story" as const,
+          elements: [
+            {
+              type: "text" as const,
+              id: elemId,
+              x: 0,
+              y: 0,
+              w: 200,
+              h: 50,
+              content: `Card ${i}`,
+            },
+          ],
+          actions: [{ type: "goto" as const, cardId: nextId }],
+        };
+      });
+
+      const endCardObj: Card = {
+        id: endId,
+        kind: "end",
+        elements: [
+          {
+            type: "field" as const,
+            id: endFieldId,
+            x: 0,
+            y: 0,
+            w: 200,
+            h: 50,
+            variable: "score",
+          },
+        ],
+        actions: [],
+      };
+
+      const stack: Stack = {
+        id: stackId,
+        title: "Acyclic stack",
+        theme,
+        cards: [...storyCards, endCardObj],
+      };
+      return stack;
+    });
+
+  it(
+    "never reports goto-cycle for acyclic card-level goto graphs (≥500 runs)",
+    () => {
+      fc.assert(
+        fc.property(acyclicGotoStackArb, (stack) => {
+          const result = validate(stack);
+          // There must be no goto-cycle error.
+          // (The stack may fail other invariants — we only assert no goto-cycle.)
+          if (!result.valid) {
+            expect(result.errors).not.toContain("goto-cycle");
+          }
+        }),
+        { numRuns: 500 },
+      );
+    },
+  );
+
+  it("accepts a linear chain A → B → end (concrete acceptance test)", () => {
+    // Uses fixed UUIDs so the test is deterministic.
+    const stackId = "10000000-0000-4000-8000-000000000001";
+    const cardA   = "20000000-0000-4000-8000-000000000002";
+    const elemA   = "30000000-0000-4000-8000-000000000003";
+    const cardB   = "40000000-0000-4000-8000-000000000004";
+    const elemB   = "50000000-0000-4000-8000-000000000005";
+    const endId   = "60000000-0000-4000-8000-000000000006";
+    const endFld  = "70000000-0000-4000-8000-000000000007";
+
+    const stack: Stack = {
+      id: stackId,
+      title: "Linear chain",
+      theme: { background: "#fff", foreground: "#000", font: "sans-serif" },
+      cards: [
+        {
+          id: cardA,
+          kind: "story",
+          elements: [
+            { type: "text", id: elemA, x: 0, y: 0, w: 200, h: 50, content: "A" },
+          ],
+          actions: [{ type: "goto", cardId: cardB }],
+        },
+        {
+          id: cardB,
+          kind: "story",
+          elements: [
+            { type: "text", id: elemB, x: 0, y: 0, w: 200, h: 50, content: "B" },
+          ],
+          actions: [{ type: "goto", cardId: endId }],
+        },
+        {
+          id: endId,
+          kind: "end",
+          elements: [
+            { type: "field", id: endFld, x: 0, y: 0, w: 200, h: 50, variable: "score" },
+          ],
+          actions: [],
+        },
+      ],
+    };
+
+    const result = validate(stack);
+    expect(result.valid).toBe(true);
+    if (!result.valid) expect(result.errors).not.toContain("goto-cycle");
+  });
+
+  it("rejects a two-card cycle A → B → A via card-level actions (concrete rejection test)", () => {
+    const stackId = "10000000-0000-4000-8000-000000000001";
+    const cardA   = "20000000-0000-4000-8000-000000000002";
+    const elemA   = "30000000-0000-4000-8000-000000000003";
+    const cardB   = "40000000-0000-4000-8000-000000000004";
+    const elemB   = "50000000-0000-4000-8000-000000000005";
+    const endId   = "60000000-0000-4000-8000-000000000006";
+    const endFld  = "70000000-0000-4000-8000-000000000007";
+
+    const stack: Stack = {
+      id: stackId,
+      title: "Two-card cycle",
+      theme: { background: "#fff", foreground: "#000", font: "sans-serif" },
+      cards: [
+        {
+          id: cardA,
+          kind: "story",
+          elements: [
+            { type: "text", id: elemA, x: 0, y: 0, w: 200, h: 50, content: "A" },
+          ],
+          // Card-level goto A → B
+          actions: [{ type: "goto", cardId: cardB }],
+        },
+        {
+          id: cardB,
+          kind: "story",
+          elements: [
+            { type: "text", id: elemB, x: 0, y: 0, w: 200, h: 50, content: "B" },
+          ],
+          // Card-level goto B → A (back-edge, forms cycle)
+          actions: [{ type: "goto", cardId: cardA }],
+        },
+        {
+          id: endId,
+          kind: "end",
+          elements: [
+            { type: "field", id: endFld, x: 0, y: 0, w: 200, h: 50, variable: "score" },
+          ],
+          actions: [],
+        },
+      ],
+    };
+
+    const result = validate(stack);
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.errors).toContain("goto-cycle");
+  });
+});

@@ -1,0 +1,95 @@
+// src/player/runtime.ts
+// Player runtime state and action dispatcher.
+// No framework. No external dependencies. Vanilla TypeScript.
+
+import type { Stack, Action } from "../shared/types.js";
+
+// ---------------------------------------------------------------------------
+// Runtime state
+
+export interface RuntimeState {
+  /** The stack being played. */
+  readonly stack: Stack;
+  /** Runtime variables — always contains at least `score: 0`. */
+  variables: Record<string, string | number>;
+  /** ID of the card currently being displayed. */
+  currentCardId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Factory
+
+/**
+ * Initialise runtime state for a stack.
+ * `variables` starts with `score: 0`.
+ * `currentCardId` is the first card in the deck.
+ */
+export function createRuntime(stack: Stack): RuntimeState {
+  return {
+    stack,
+    variables: { score: 0 },
+    currentCardId: stack.cards[0]!.id,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Dispatcher
+
+/**
+ * Process a list of actions against the current state.
+ *
+ * - `goto`  — calls `navigate(cardId)` then stops processing further actions.
+ * - `score` — adds `action.delta` to `state.variables.score`.
+ * - `set`   — assigns `action.value` to `state.variables[action.variable]`.
+ * - `sound` — calls `playSound(action.sound)` (injected dependency, may be a
+ *             no-op in environments without an AudioContext).
+ *
+ * @param actions   - Ordered list of actions to process.
+ * @param state     - Mutable runtime state (mutated in-place).
+ * @param navigate  - Callback invoked by a `goto` action; receives the target card id.
+ * @param playSound - Optional callback for `sound` actions; defaults to no-op.
+ */
+export function dispatch(
+  actions: Action[],
+  state: RuntimeState,
+  navigate: (id: string) => void,
+  playSound: (sound: "cheer" | "buzz") => void = _noop,
+): void {
+  for (const action of actions) {
+    switch (action.type) {
+      case "goto": {
+        navigate(action.cardId);
+        // A goto stops all further action processing.
+        return;
+      }
+      case "score": {
+        const current = state.variables["score"];
+        state.variables["score"] =
+          (typeof current === "number" ? current : 0) + action.delta;
+        break;
+      }
+      case "set": {
+        state.variables[action.variable] = action.value;
+        break;
+      }
+      case "sound": {
+        playSound(action.sound);
+        break;
+      }
+      default: {
+        // Exhaustiveness guard — TypeScript will error here if a new action
+        // type is added to the union without a corresponding case.
+        const _exhaustive: never = action;
+        void _exhaustive;
+        break;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Private helpers
+
+function _noop(_sound: "cheer" | "buzz"): void {
+  // intentional no-op default
+}

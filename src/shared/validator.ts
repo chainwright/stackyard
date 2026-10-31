@@ -276,6 +276,62 @@ function checkInvariants(stack: Stack): string[] {
   }
   if (invalidId) errors.push("invalid-id");
 
+  // 9. No cycle in card-level goto graph.
+  // Build adjacency list: edges from card.actions gotos only (not button actions).
+  // Use iterative DFS with three-colour visited set (white=0, grey=1, black=2).
+  const adjacency = new Map<string, string[]>();
+  for (const card of stack.cards) {
+    const targets: string[] = [];
+    for (const action of card.actions) {
+      if (action.type === "goto" && cardIds.has(action.cardId)) {
+        targets.push(action.cardId);
+      }
+    }
+    adjacency.set(card.id, targets);
+  }
+
+  // Three-colour DFS: 0 = unvisited, 1 = in-stack (grey), 2 = done (black)
+  const colour = new Map<string, 0 | 1 | 2>();
+  for (const card of stack.cards) {
+    colour.set(card.id, 0);
+  }
+
+  let hasCycle = false;
+  for (const card of stack.cards) {
+    if (colour.get(card.id) !== 0 || hasCycle) continue;
+
+    // Iterative DFS using an explicit stack of [nodeId, neighbourIndex] frames
+    const dfsStack: Array<{ id: string; nextIdx: number }> = [];
+    colour.set(card.id, 1);
+    dfsStack.push({ id: card.id, nextIdx: 0 });
+
+    while (dfsStack.length > 0 && !hasCycle) {
+      const frame = dfsStack[dfsStack.length - 1]!;
+      const neighbours = adjacency.get(frame.id) ?? [];
+
+      if (frame.nextIdx < neighbours.length) {
+        const neighbourId = neighbours[frame.nextIdx]!;
+        frame.nextIdx++;
+
+        const c = colour.get(neighbourId);
+        if (c === 1) {
+          // Back edge — cycle found
+          hasCycle = true;
+        } else if (c === 0) {
+          colour.set(neighbourId, 1);
+          dfsStack.push({ id: neighbourId, nextIdx: 0 });
+        }
+        // c === 2: already fully explored, skip
+      } else {
+        // All neighbours visited — mark node black and pop
+        colour.set(frame.id, 2);
+        dfsStack.pop();
+      }
+    }
+  }
+
+  if (hasCycle) errors.push("goto-cycle");
+
   return errors;
 }
 
