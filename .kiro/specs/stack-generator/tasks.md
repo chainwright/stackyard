@@ -6,7 +6,7 @@ Tasks are ordered so that each one can be built and verified before the next beg
 
 ## Phase 1 — Shared types and validator
 
-### Task 1 — Define shared TypeScript types
+### Task 1 — [x] Define shared TypeScript types
 **Refs:** REQ-2, design §Module boundaries
 
 - Create `src/shared/types.ts`.
@@ -22,7 +22,7 @@ Tasks are ordered so that each one can be built and verified before the next beg
 
 ---
 
-### Task 2 — Implement the shared validator
+### Task 2 — [x] Implement the shared validator
 **Refs:** REQ-2, design §Validator
 
 - Create `src/shared/validator.ts`.
@@ -34,7 +34,7 @@ Tasks are ordered so that each one can be built and verified before the next beg
 
 ---
 
-### Task 3 — Property-based tests for all seven invariants
+### Task 3 — [x] Property-based tests for all seven invariants
 **Refs:** REQ-2, design §Validator, tech.md §Testing
 
 Write `tests/validator.property.test.ts` using Vitest and fast-check. One `it` block per invariant. Each test must:
@@ -53,7 +53,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ## Phase 2 — Server modules (no LLM call yet)
 
-### Task 4 — Implement the prompt builder
+### Task 4 — [x] Implement the prompt builder
 **Refs:** REQ-1, REQ-6, design §Prompt design
 
 - Create `server/promptBuilder.ts`.
@@ -65,7 +65,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ---
 
-### Task 5 — Implement the fallback stack builder
+### Task 5 — [x] Implement the fallback stack builder
 **Refs:** REQ-4, design §Fallback stack
 
 - Create `server/fallback.ts`.
@@ -82,7 +82,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ## Phase 3 — LLM gateway
 
-### Task 6 — Implement the LLM gateway
+### Task 6 — [x] Implement the LLM gateway
 **Refs:** REQ-5, design §LLM call contract
 
 - Create `server/llmGateway.ts`.
@@ -103,7 +103,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ## Phase 4 — Stack generator orchestration
 
-### Task 7 — Implement the stack generator
+### Task 7 — [x] Implement the stack generator
 **Refs:** REQ-1, REQ-2, REQ-3, REQ-4, design §Data flow
 
 - Create `server/stackGenerator.ts`.
@@ -126,7 +126,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ## Phase 5 — HTTP route
 
-### Task 8 — Implement the generate route
+### Task 8 — [x] Implement the generate route
 **Refs:** REQ-7, design §Route handler
 
 - Create `server/routes/generate.ts`.
@@ -147,7 +147,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 
 ## Phase 6 — End-to-end smoke test
 
-### Task 9 — End-to-end smoke test (LLM stubbed)
+### Task 9 — [x] End-to-end smoke test (LLM stubbed)
 **Refs:** REQ-1, REQ-2, REQ-3, REQ-4
 
 - Create `tests/stackGenerator.e2e.test.ts`.

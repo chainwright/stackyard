@@ -29,3 +29,7 @@ Kept from day one for the Kiroween write-up.
 - Throttled twice by the service mid-task; each time we resumed the same session and Kiro picked up where it stopped (it also fixed its own TypeScript precedence error and added Node types).
 - Property tests: for any string and any JSON value the model might return, `generate()` never throws, returns a valid stack or a plain-language error, and never contains the API key.
 - 89/89 tests, `tsc` clean. Mutation check: if the generator skips validation, 9 tests fail.
+
+## 30 Oct 2026: Phase 5–6 (route, end-to-end) and a bug the tests missed
+- Kiro implemented `POST /api/generate` on `node:http` (plain-language 400/422/500, response stripped to `{ ok, stack, isFallback }`) and an end-to-end test of the three paths. 113/113 tests, `tsc` clean. All 9 spec tasks are now ticked.
+- A live run without an API key returned the fallback stack (good), but its ids were 38 characters, not UUID v4 as REQ-2 says. The validator only checks uniqueness, so no test caught it. Next: make the fallback ids real UUID v4 and add the format to the validator with a property test.
