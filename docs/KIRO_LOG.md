@@ -23,3 +23,9 @@ Kept from day one for the Kiroween write-up.
 - The service throttled the first run halfway; we resumed the same Kiro session and it finished the phase.
 - Two fast-check properties (500 runs each): any non-empty prompt up to 500 characters gives a fallback stack that passes the validator, and the same prompt always gives the identical stack.
 - 49/49 tests, `tsc` clean. Mutation check: turning the fallback's end card into a story card fails 5 tests.
+
+## 30 Oct 2026: Phase 3–4 (LLM gateway, generator)
+- Kiro implemented `server/llmGateway.ts` (OpenAI-compatible; base URL, model and key from env, read only in this file; key never in errors) and `server/stackGenerator.ts` (validate → one retry at lower temperature with the validator's errors → plain-language error; fallback stack when the model is unreachable).
+- Throttled twice by the service mid-task; each time we resumed the same session and Kiro picked up where it stopped (it also fixed its own TypeScript precedence error and added Node types).
+- Property tests: for any string and any JSON value the model might return, `generate()` never throws, returns a valid stack or a plain-language error, and never contains the API key.
+- 89/89 tests, `tsc` clean. Mutation check: if the generator skips validation, 9 tests fail.
