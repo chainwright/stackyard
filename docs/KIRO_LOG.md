@@ -17,3 +17,9 @@ Kept from day one for the Kiroween write-up.
 - Kiro CLI implemented tasks 1–3 of the spec: `src/shared/types.ts`, `src/shared/validator.ts` (collects every failing invariant, no `any`), and `tests/validator.property.test.ts` (18 fast-check properties, one block per invariant).
 - `npm test` 18/18, `tsc --noEmit` clean.
 - We checked the tests can actually fail: removing any one of five invariant checks from the validator makes 1–2 property tests fail; restoring it brings 18/18 back.
+
+## 30 Oct 2026: Phase 2 (prompt builder, fallback stack)
+- Kiro implemented `server/promptBuilder.ts` (system prompt carries the schema, the seven invariants and the audience rules; card count clamped to 20; retry message leads with the validator's errors) and `server/fallback.ts` (3-card stack with ids seeded from the prompt).
+- The service throttled the first run halfway; we resumed the same Kiro session and it finished the phase.
+- Two fast-check properties (500 runs each): any non-empty prompt up to 500 characters gives a fallback stack that passes the validator, and the same prompt always gives the identical stack.
+- 49/49 tests, `tsc` clean. Mutation check: turning the fallback's end card into a story card fails 5 tests.
