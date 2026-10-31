@@ -45,3 +45,8 @@ Kept from day one for the Kiroween write-up.
 ## 30 Oct 2026: invariant 9 and the player runtime
 - Kiro added invariant 9 (`goto-cycle`: the card-level auto-advance graph must have no cycle) with property tests, `ExportValidationError`, and `src/player/runtime.ts` (state, dispatcher, `goto` stops the action list, injected sound callback) with 24 unit tests.
 - 146/146, `tsc` clean. Mutation check: removing the cycle check fails 2 tests.
+
+## 31 Oct 2026: design system as steering
+- Three directions were mocked up at full fidelity (Stamp Pad, Bit Garden, Answer Tiles, plus a hybrid); the team picked the hybrid: a ring-bound pad with rubber-stamp feedback and shaped answer tiles (▲ ◆ ● ■) for kids and colour-blind readers. Reference: `docs/design/reference-stamp-pad-tiles.png`.
+- Kiro wrote `.kiro/steering/design-system.md` from the exact tokens (colours, fonts, type scale, radii, motion, accessibility, banned AI-default patterns).
+- Review round: we measured contrast with the WCAG formula instead of trusting estimates. The first stamp red (#E5402B) failed AA (3.88 on paper, 4.12 under white text), so Kiro switched it to #CE3926 (4.67 / 4.96), fixed a token typo and raised a 16px label to the 18px floor.
