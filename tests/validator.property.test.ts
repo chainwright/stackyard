@@ -1,5 +1,5 @@
 // tests/validator.property.test.ts
-// Property-based tests for all seven invariants in src/shared/validator.ts.
+// Property-based tests for all eight invariants in src/shared/validator.ts.
 // One `it` block per invariant, using Vitest + fast-check.
 
 import { describe, it, expect } from "vitest";
@@ -10,8 +10,8 @@ import type { Stack, Card, Element, Action, ButtonElement } from "../src/shared/
 // ---------------------------------------------------------------------------
 // Arbitraries — building blocks for generating valid stacks
 
-const uuid = (): fc.Arbitrary<string> =>
-  fc.uuid().filter((s) => s.length > 0);
+/** Always produces a valid RFC 4122 v4 UUID. */
+const uuidV4 = (): fc.Arbitrary<string> => fc.uuid({ version: 4 });
 
 const themeArb = fc.record({
   background: fc.constantFrom("#000", "#fff", "blue", "red"),
@@ -94,14 +94,14 @@ function quizCard(
   };
 }
 
-function endCard(id: string): Card {
+function endCard(id: string, fieldId: string): Card {
   return {
     id,
     kind: "end",
     elements: [
       {
         type: "field",
-        id: `${id}-score`,
+        id: fieldId,
         x: 0, y: 0, w: 200, h: 50,
         variable: "score",
       },
@@ -129,10 +129,14 @@ function storyCard(id: string, gotoCardId: string, btnId: string): Card {
 
 /**
  * Produce a minimal valid stack: one quiz card + one end card.
- * All IDs drawn from uuid() so they are unique across runs.
+ * All IDs are UUID v4 so they satisfy invariant 8.
  */
 const validStackArb: fc.Arbitrary<Stack> = fc
-  .tuple(uuid(), uuid(), uuid(), uuid(), uuid(), uuid(), uuid(), themeArb)
+  .tuple(uuidV4(), uuidV4(), uuidV4(), uuidV4(), uuidV4(), uuidV4(), uuidV4(), themeArb)
+  .filter(([stackId, quizId, endId, correctBtnId, incorrectBtnId, endFieldId, _extra, _theme]) =>
+    // All IDs must be distinct
+    new Set([stackId, quizId, endId, correctBtnId, incorrectBtnId, endFieldId]).size === 6
+  )
   .map(
     ([stackId, quizId, endId, correctBtnId, incorrectBtnId, endFieldId, _storyBtnId, theme]) => {
       const stack: Stack = {
@@ -141,12 +145,7 @@ const validStackArb: fc.Arbitrary<Stack> = fc
         theme,
         cards: [
           quizCard(quizId, correctBtnId, incorrectBtnId, endId),
-          {
-            ...endCard(endId),
-            elements: [
-              { type: "field", id: endFieldId, x: 0, y: 0, w: 200, h: 50, variable: "score" },
-            ],
-          },
+          endCard(endId, endFieldId),
         ],
       };
       return stack;
@@ -191,7 +190,7 @@ describe("invariant: duplicate-id", () => {
 describe("invariant: invalid-goto", () => {
   it("reports invalid-goto when a button goto targets a non-existent card", () => {
     fc.assert(
-      fc.property(validStackArb, uuid(), (stack, bogusId) => {
+      fc.property(validStackArb, uuidV4(), (stack, bogusId) => {
         // Make sure bogusId is not a real card id
         fc.pre(!stack.cards.some((c) => c.id === bogusId));
         // Replace every goto in card[0]'s first button with bogusId
@@ -252,7 +251,7 @@ describe("invariant: end-card-count", () => {
 
   it("reports end-card-count when there are two or more end cards", () => {
     fc.assert(
-      fc.property(validStackArb, uuid(), uuid(), (stack, extraEndId, extraFieldId) => {
+      fc.property(validStackArb, uuidV4(), uuidV4(), (stack, extraEndId, extraFieldId) => {
         fc.pre(
           extraEndId !== stack.id &&
           !stack.cards.some((c) => c.id === extraEndId || c.id === extraFieldId) &&
@@ -324,7 +323,7 @@ describe("invariant: quiz-answer", () => {
 
   it("reports quiz-answer when a quiz card has two correct buttons", () => {
     fc.assert(
-      fc.property(validStackArb, uuid(), (stack, extraBtnId) => {
+      fc.property(validStackArb, uuidV4(), (stack, extraBtnId) => {
         fc.pre(
           !stack.cards.some((c) => c.id === extraBtnId) &&
           !stack.cards.flatMap((c) => c.elements).some((e) => e.id === extraBtnId)
@@ -478,7 +477,7 @@ describe("invariant: no-content-cards", () => {
   it("reports no-content-cards when the stack has only an end card", () => {
     fc.assert(
       fc.property(
-        fc.tuple(uuid(), uuid(), uuid(), themeArb),
+        fc.tuple(uuidV4(), uuidV4(), uuidV4(), themeArb),
         ([stackId, endId, fieldId, theme]) => {
           fc.pre(
             stackId !== endId &&
@@ -514,6 +513,87 @@ describe("invariant: no-content-cards", () => {
   });
 
   it("accepts a stack with at least one non-end card", () => {
+    fc.assert(
+      fc.property(validStackArb, (stack) => {
+        const result = validate(stack);
+        expect(result.valid).toBe(true);
+      })
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. invalid-id
+
+/** An arbitrary that always produces a string that is NOT a valid UUID v4. */
+const nonUuidArb: fc.Arbitrary<string> = fc.oneof(
+  fc.constant("not-a-uuid"),
+  fc.constant(""),
+  fc.constant("00000000-0000-1000-8000-000000000000"), // v1, not v4
+  fc.constant("00000000-0000-5000-8000-000000000000"), // v5, not v4
+  fc.constant("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"), // template, not hex
+  fc.hexaString({ minLength: 32, maxLength: 32 }),      // 32 hex chars, no dashes
+  fc.string({ minLength: 1, maxLength: 40 }).filter(
+    (s) => !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+  ),
+);
+
+describe("invariant: invalid-id", () => {
+  it("reports invalid-id when the stack id is not a UUID v4", () => {
+    fc.assert(
+      fc.property(validStackArb, nonUuidArb, (stack, badId) => {
+        const broken: Stack = { ...stack, id: badId };
+        const result = validate(broken);
+        expect(result.valid).toBe(false);
+        if (!result.valid) expect(result.errors).toContain("invalid-id");
+      })
+    );
+  });
+
+  it("reports invalid-id when a card id is not a UUID v4", () => {
+    fc.assert(
+      fc.property(validStackArb, nonUuidArb, (stack, badId) => {
+        const broken: Stack = {
+          ...stack,
+          cards: [
+            { ...stack.cards[0]!, id: badId },
+            ...stack.cards.slice(1),
+          ],
+        };
+        const result = validate(broken);
+        expect(result.valid).toBe(false);
+        if (!result.valid) expect(result.errors).toContain("invalid-id");
+      })
+    );
+  });
+
+  it("reports invalid-id when an element id is not a UUID v4", () => {
+    fc.assert(
+      fc.property(validStackArb, nonUuidArb, (stack, badId) => {
+        const firstCard = stack.cards[0]!;
+        const firstEl = firstCard.elements[0];
+        if (!firstEl) return;
+        const broken: Stack = {
+          ...stack,
+          cards: [
+            {
+              ...firstCard,
+              elements: [
+                { ...firstEl, id: badId },
+                ...firstCard.elements.slice(1),
+              ],
+            },
+            ...stack.cards.slice(1),
+          ],
+        };
+        const result = validate(broken);
+        expect(result.valid).toBe(false);
+        if (!result.valid) expect(result.errors).toContain("invalid-id");
+      })
+    );
+  });
+
+  it("accepts a stack where all ids are valid UUID v4", () => {
     fc.assert(
       fc.property(validStackArb, (stack) => {
         const result = validate(stack);

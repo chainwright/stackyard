@@ -65,6 +65,9 @@ The stack generator takes a single sentence from the teacher and returns a compl
 - WHEN a stack is returned to the client,  
   THE SYSTEM SHALL ensure the stack contains at least one card that is not `kind === "end"`.
 
+- WHEN a stack is returned to the client,  
+  THE SYSTEM SHALL ensure every `id` (stack, card, element) is a valid RFC 4122 v4 UUID (36 characters, version nibble `4`, variant bits `8`–`b`).
+
 ---
 
 ### REQ-3: Retry on validation failure
@@ -98,7 +101,7 @@ The stack generator takes a single sentence from the teacher and returns a compl
   THE SYSTEM SHALL return a deterministic fallback stack built from the teacher's prompt without calling the LLM again.
 
 - WHEN the fallback stack is returned,  
-  THE SYSTEM SHALL ensure it passes all seven format invariants.
+  THE SYSTEM SHALL ensure it passes all eight format invariants.
 
 - WHEN the fallback stack is returned,  
   THE SYSTEM SHALL include a flag in the response indicating it is a fallback, so the client can display an appropriate message to the teacher.

@@ -27,14 +27,14 @@ Tasks are ordered so that each one can be built and verified before the next beg
 
 - Create `src/shared/validator.ts`.
 - Export `validate(input: unknown): ValidationResult`.
-- Implement all seven invariant checks in order; collect all failures before returning.
-- Use the error message keys from the design's validator table (`duplicate-id`, `invalid-goto`, `end-card-count`, `quiz-answer`, `canvas-bounds`, `blank-title`, `no-content-cards`).
+- Implement all eight invariant checks in order; collect all failures before returning.
+- Use the error message keys from the design's validator table (`duplicate-id`, `invalid-goto`, `end-card-count`, `quiz-answer`, `canvas-bounds`, `blank-title`, `no-content-cards`, `invalid-id`).
 - Do not throw; always return a `ValidationResult`.
 - TypeScript strict mode; no `any`.
 
 ---
 
-### Task 3 — [x] Property-based tests for all seven invariants
+### Task 3 — [x] Property-based tests for all eight invariants
 **Refs:** REQ-2, design §Validator, tech.md §Testing
 
 Write `tests/validator.property.test.ts` using Vitest and fast-check. One `it` block per invariant. Each test must:
@@ -46,6 +46,7 @@ Write `tests/validator.property.test.ts` using Vitest and fast-check. One `it` b
 5. **`canvas-bounds`** — Generate an element where `x + w > 800` or `y + h > 600`. Assert `canvas-bounds`.
 6. **`blank-title`** — Generate a stack with an empty or whitespace-only title. Assert `blank-title`.
 7. **`no-content-cards`** — Generate a stack with only an end card. Assert `no-content-cards`.
+8. **`invalid-id`** — Generate a stack with one id replaced by a non-UUID string. Assert `invalid-id`. Generate a stack whose ids are all valid UUID v4 strings; assert `valid === true`.
 
 Each test must also assert that a conforming stack (all invariants satisfied) returns `valid === true`.
 
@@ -59,7 +60,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 - Create `server/promptBuilder.ts`.
 - Export `build(request: GenerateRequest): { system: string; user: string }`.
 - Export `buildRetry(request: GenerateRequest, errors: string[]): { system: string; user: string }`.
-- System prompt must include: output format instruction, compact Stack schema summary, all seven invariants as numbered rules, and the audience writing rules (short sentences, active voice, Irish/UK English, age-appropriate, "pupils" not "students").
+- System prompt must include: output format instruction, compact Stack schema summary, all eight invariants as numbered rules, and the audience writing rules (short sentences, active voice, Irish/UK English, age-appropriate, "pupils" not "students").
 - Clamp any detected card count to a maximum of 20 in the user message.
 - Unit test in `tests/promptBuilder.test.ts`: assert the system prompt contains the invariant rules and audience rules; assert the retry message includes the supplied error strings.
 
@@ -74,7 +75,7 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
 - Derive the title from the prompt (trim, cap at 120 characters).
 - Generate all IDs deterministically from the prompt string (e.g. using a hash-seeded approach) so the same prompt always returns the same stack.
 - Unit test in `tests/fallback.test.ts`:
-  - Assert the returned stack passes `validate()` (all seven invariants).
+  - Assert the returned stack passes `validate()` (all eight invariants).
   - Assert the same prompt returns the same stack on repeated calls (determinism).
   - Assert a different prompt returns a different stack.
 

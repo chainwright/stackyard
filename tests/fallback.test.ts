@@ -147,7 +147,10 @@ describe("fallback.build — determinism", () => {
 });
 
 // ---------------------------------------------------------------------------
-// fast-check property test
+// fast-check property tests
+
+const UUID_V4_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 describe("fallback.build — property: any non-empty prompt up to 500 chars", () => {
   // Arbitrary: any string between 1 and 500 characters
@@ -176,6 +179,28 @@ describe("fallback.build — property: any non-empty prompt up to 500 chars", ()
         const s1 = build({ prompt });
         const s2 = build({ prompt });
         expect(JSON.stringify(s1)).toBe(JSON.stringify(s2));
+      }),
+      { numRuns: 500 }
+    );
+  });
+
+  it("every id in a fallback stack is a valid RFC 4122 v4 UUID", () => {
+    fc.assert(
+      fc.property(promptArb, (prompt) => {
+        const stack = build({ prompt });
+        // Collect all ids: stack, cards, elements
+        const ids: string[] = [
+          stack.id,
+          ...stack.cards.map((c) => c.id),
+          ...stack.cards.flatMap((c) => c.elements.map((e) => e.id)),
+        ];
+        for (const id of ids) {
+          if (!UUID_V4_RE.test(id)) {
+            throw new Error(
+              `ID "${id}" in fallback stack for prompt "${prompt.slice(0, 60)}" is not a valid UUID v4`
+            );
+          }
+        }
       }),
       { numRuns: 500 }
     );

@@ -158,6 +158,14 @@ function parseStack(raw: unknown): Stack | null {
 // ---------------------------------------------------------------------------
 // Invariant checks
 
+/** RFC 4122 v4 UUID: version nibble = 4, variant bits = 8-b */
+const UUID_V4_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuidV4(id: string): boolean {
+  return UUID_V4_RE.test(id);
+}
+
 /** Collect all goto actions recursively from a list of actions. */
 function collectGotos(actions: Action[]): string[] {
   return actions
@@ -253,6 +261,20 @@ function checkInvariants(stack: Stack): string[] {
   // 7. At least one non-end card.
   const nonEndCount = stack.cards.filter((c) => c.kind !== "end").length;
   if (nonEndCount < 1) errors.push("no-content-cards");
+
+  // 8. All IDs must be valid RFC 4122 v4 UUIDs.
+  let invalidId = false;
+  if (!isUuidV4(stack.id)) invalidId = true;
+  if (!invalidId) {
+    for (const card of stack.cards) {
+      if (!isUuidV4(card.id)) { invalidId = true; break; }
+      for (const el of card.elements) {
+        if (!isUuidV4(el.id)) { invalidId = true; break; }
+      }
+      if (invalidId) break;
+    }
+  }
+  if (invalidId) errors.push("invalid-id");
 
   return errors;
 }

@@ -100,7 +100,7 @@ The system prompt instructs the LLM to act as a lesson card generator and specif
 
 1. **Output format** — Return only a JSON object that conforms to the `Stack` schema. No prose, no markdown fences, no extra keys.
 2. **Schema summary** — A compact inline description of `Stack`, `Card`, `Element`, and `Action` types (not the full TypeScript, just enough for the model to produce the right shape).
-3. **Invariant checklist** — All seven invariants listed as numbered rules the model must satisfy before responding.
+3. **Invariant checklist** — All eight invariants listed as numbered rules the model must satisfy before responding.
 4. **Audience rules** — Short sentences; active voice; Irish/UK English spelling; age-appropriate for the year group; "pupils" not "students"; one clearly correct quiz answer per card.
 5. **ID instruction** — Generate UUIDs for all `id` fields. Every id must be unique within the document.
 
@@ -143,6 +143,7 @@ Checks, in order:
 | 5 | All elements within 800×600 canvas | `canvas-bounds` |
 | 6 | `stack.title` not blank | `blank-title` |
 | 7 | At least one non-end card | `no-content-cards` |
+| 8 | All IDs are valid RFC 4122 v4 UUIDs | `invalid-id` |
 
 All failing invariants are collected before returning — the validator does not short-circuit on the first error, so a single LLM response can produce a complete list of problems for the retry prompt.
 
@@ -152,7 +153,7 @@ All failing invariants are collected before returning — the validator does not
 
 `build(request: GenerateRequest): Stack`
 
-Produces a deterministic stack without calling the LLM. The output must pass all seven invariants.
+Produces a deterministic stack without calling the LLM. The output must pass all eight invariants.
 
 Structure (example for a quiz prompt):
 

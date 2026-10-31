@@ -81,6 +81,7 @@ These must all pass before a stack can be exported. They are enforced by the val
 5. **Canvas bounds** — Every element's bounding box (`x + w ≤ 800`, `y + h ≤ 600`) fits within the card canvas.
 6. **Non-empty title** — `stack.title` is not blank after trimming.
 7. **At least one non-end card** — `stack.cards` contains at least one card that is not `kind === "end"`.
+8. **Valid UUID v4 IDs** — Every `stack.id`, `card.id`, and `element.id` is a valid RFC 4122 v4 UUID (36 characters, version nibble `4`, variant bits `8`–`b`).
 
 ## Notes
 
