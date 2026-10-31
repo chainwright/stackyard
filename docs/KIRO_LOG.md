@@ -7,3 +7,8 @@ Kept from day one for the Kiroween write-up.
 - Before any code, we asked Kiro to write the project steering from a one-paragraph brief: `product.md`, `tech.md`, `stack-format.md`, `audience.md` in `.kiro/steering/`.
 - The stack format and its seven invariants (unique ids, valid goto targets, exactly one end card, one correct answer per quiz card, canvas bounds, non-empty title, at least one playable card) become the contract for the generator, the editor, the exporter and the property-based tests.
 - First attempt drafted the files but did not write them (file tools were not trusted for the session); resumed the same session with write access and it saved what it had drafted.
+
+## 30 Oct 2026: first spec (stack generator)
+- Asked Kiro (CLI) for a spec of the first feature with EARS acceptance criteria. It wrote `.kiro/specs/stack-generator/{requirements,design,tasks}.md`: 7 requirements, a data-flow design (one LLM call → shared validator → one retry with the validator's errors → deterministic fallback stack if the model is down), and 9 tasks.
+- The spec turned the steering's seven invariants into the validator contract and into one property-based test per invariant (fast-check).
+- Cost so far: under 1 credit for steering and spec together.
