@@ -36,3 +36,8 @@ Kept from day one for the Kiroween write-up.
 - Fixed with Kiro (two throttles, resumed both times): fallback ids are now real RFC 4122 v4 UUIDs, still deterministic; the validator gained invariant 8 (`invalid-id`); steering and spec updated to eight invariants; property tests for invalid ids and for every fallback id over 500 random prompts. The old "conforming stack" arbitraries had produced non-v4 ids, so Kiro switched them to a v4 generator rather than weakening the check.
 - 118/118, `tsc` clean. Mutation check: removing the `invalid-id` check fails 3 tests. Live run: all 10 ids in a fallback stack match UUID v4.
 - Lesson for the write-up: the spec and 113 green tests still let a real defect through; a 30-second live run caught it, and the fix went back into the spec as a new invariant.
+
+## 30 Oct 2026: second spec (exporter + player) and a review round
+- Kiro wrote `.kiro/specs/exporter/` (requirements, design, 18 tasks): one self-contained HTML file, player under 50 KB gzipped, stack JSON embedded for lossless re-import (fast-check round-trip), synthesised sounds, ES2018 target.
+- We reviewed it like a pull request and sent five fixes back to Kiro: reuse the existing types/validator instead of re-specifying them; the right key variable name for the no-secrets test; a card-level auto-advance cycle could hang the player (now invariant 9 `goto-cycle` plus a runtime cap); image inlining must never read arbitrary paths from stack data (only data URIs or files inside one assets directory, path-traversal tests); a teacher's text containing a URL must still export with no raw `https://` and round-trip exactly.
+- Kiro applied all five across requirements, design, tasks and the steering.

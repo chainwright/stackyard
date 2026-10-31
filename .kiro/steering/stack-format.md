@@ -82,6 +82,7 @@ These must all pass before a stack can be exported. They are enforced by the val
 6. **Non-empty title** — `stack.title` is not blank after trimming.
 7. **At least one non-end card** — `stack.cards` contains at least one card that is not `kind === "end"`.
 8. **Valid UUID v4 IDs** — Every `stack.id`, `card.id`, and `element.id` is a valid RFC 4122 v4 UUID (36 characters, version nibble `4`, variant bits `8`–`b`).
+9. **No cycle in card-level goto graph** — The directed graph formed by card-level `goto` actions (edges from `card.actions` only, not button actions) contains no cycle. A cycle would cause the player to auto-navigate forever.
 
 ## Notes
 
