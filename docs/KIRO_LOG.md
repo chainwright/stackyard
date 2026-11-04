@@ -56,3 +56,8 @@ Kept from day one for the Kiroween write-up.
 - All jsdom tests were green, yet the first look in real Chrome showed five problems the tests could not see: the card pinned top-left, small question text, the CORRECT stamp never visible (the goto fired instantly), an end card showing a bare "1", doubled ruled lines. We sent screenshots and measured numbers back to Kiro over four rounds (docs/design/review/).
 - Each round was checked in a foreground Chrome tab (a background tab pauses CSS animations, which once made the stamp look faded). The stamp now lands on the tile's top edge and the answer stays readable; the end card says "Well done! Score N of M" with a stamp per correct answer; heading fallback is a grotesque, never a serif.
 - 201 tests. The Kiro free monthly quota ran out at the end of this round; the rest waits for the hackathon credits.
+
+## 4 Nov 2026: the exporter core (hackathon credits arrived)
+- With the 4,000 hackathon credits active, Kiro picked the exporter spec up where the free quota stopped: TASK-11 `server/inline-assets.ts`, TASK-12 `server/html-template.ts`, TASK-13 `server/exporter.ts`, each with its own tests (23 new).
+- Kiro hit a real macOS trap in its own tests: the temp folder `/var/...` is a symlink to `/private/var/...`, so the realpath check rejected valid asset paths. It canonicalised both sides of the comparison instead of loosening the check.
+- 224/224 tests, `tsc` clean. Mutation check: switching off the realpath containment check makes the symlink-escape test fail.

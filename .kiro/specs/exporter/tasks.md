@@ -260,6 +260,13 @@ Implement `inlineImages(stack: Stack, assetsDir: string): Promise<Stack>`:
   with `"path-traversal"`.
 - Non-existent file inside `assetsDir`: rejects with a descriptive error.
 
+✅ **Done** — `server/inline-assets.ts` implemented. `inlineImages()` deep-copies via
+`structuredClone`, passes `data:` URIs through untouched (filesystem never read), rejects
+absolute paths and `..` escapes with `ExportValidationError("path-traversal")`, and re-checks
+`fs.realpath` against a canonicalised base to catch symlink escapes (macOS `/var`→`/private/var`
+handled). Missing files raise a plain "Asset not found" error. 8 unit tests in
+`tests/inline-assets.test.ts` cover all six listed cases. Typecheck clean.
+
 ---
 
 ### TASK-12: Implement `server/html-template.ts`
@@ -273,6 +280,13 @@ Implement `buildHtml(options: { title: string; stackJson: string; playerIife: st
 
 **Done when:** Unit test asserts the output contains `<title>`, `#stack-data`,
 and the player IIFE content, and that the `<title>` value is correctly escaped.
+
+✅ **Done** — `server/html-template.ts` implemented. `buildHtml()` assembles the
+`design.md` document (doctype, `<html lang="en">`, inlined shell CSS, `#player-root`,
+inert `#stack-data` JSON block, IIFE `<script>`) by plain string concatenation — no
+templating library. The title is HTML-escaped (`&`, `<`, `>`, `"`, `'`). 7 unit tests in
+`tests/html-template.test.ts` assert the doctype, `<title>`, `#stack-data`, verbatim IIFE,
+`#player-root`, and title escaping. Typecheck clean.
 
 ---
 
@@ -303,6 +317,17 @@ No environment variables are read inside this module.
   `"invalid-goto"`, `"duplicate-id"`).
 - Returns a non-empty string for a valid stack.
 - The returned string contains `<!doctype html>`.
+
+✅ **Done** — `server/exporter.ts` `exportStack()` implemented. Validates via
+`validate()` and wraps any failure in `ExportValidationError` (never a plain `Error`);
+calls `inlineImages(stack, assetsDir)` (default `assetsDir` = project `assets/`, resolved
+from `import.meta.url`, no env vars); serialises with `JSON.stringify` then escapes
+`<`→`\u003c`, `>`→`\u003e`, `/`→`\u002f` so no raw `</script>` or `https://` survives while
+`JSON.parse` round-trips exactly; reads `dist/player/player.iife.js`; returns
+`buildHtml(...)`. 8 unit tests in `tests/exporter.test.ts` cover the three invariant failures
+(`end-card-count`, `invalid-goto`, `duplicate-id`) with the expected codes, the
+`ExportValidationError` type, a non-empty string, `<!doctype html>`, and the escaped-JSON
+round-trip. Full suite 224 tests green; typecheck clean.
 
 ---
 
