@@ -342,6 +342,13 @@ and asserts:
 
 **Done when:** Test passes and is run as part of `vitest run`.
 
+✅ **Done** — "no external URLs (TASK-14)" test added to `tests/exporter.test.ts`: exports a
+valid stack with a data-URI image element and asserts the HTML matches no `/https?:\/\//`.
+Removed the redundant `xmlns="http://www.w3.org/2000/svg"` from the four inline answer-tile
+SVGs in `src/player/renderer.ts` (not needed when SVG is injected via `innerHTML` into an HTML
+document) and rebuilt the player bundle, so the exported file now contains zero URLs. Full
+suite green (228 tests); typecheck clean.
+
 ---
 
 ### TASK-15: No-API-key test (`tests/exporter.test.ts`)
@@ -355,6 +362,12 @@ Add a test that:
 
 **Done when:** Test passes regardless of whether the env variable is normally
 set in the development environment.
+
+✅ **Done** — "no API key in output (TASK-15)" test added to `tests/exporter.test.ts`: sets
+`process.env.STACKYARD_LLM_API_KEY` to the sentinel `"sk-test-sentinel-value-do-not-use"`,
+exports a valid stack, and asserts the sentinel does not appear in the HTML. The env var is
+saved and restored in a `finally` block so the test leaves no side effect. Passes whether or
+not the var is pre-set (the exporter reads no env vars). Full suite green; typecheck clean.
 
 ---
 
@@ -374,6 +387,13 @@ Add a test that:
 
 **Done when:** Both assertions (no raw URL in HTML, exact value after parse)
 pass for both `https://` and `http://` variants.
+
+✅ **Done** — "URL escaping round-trip (TASK-15b)" test added to `tests/exporter.test.ts`,
+parametrised over `https://` and `http://`. Sets a card's text to
+`"Visit <scheme>example.com for more."`, exports, asserts the raw HTML contains zero
+occurrences of the scheme, then extracts `#stack-data`, `JSON.parse`s it, and asserts the
+parsed card text equals the original byte-for-byte (the `\u002f` escapes restore to `/`).
+Both variants pass (2 cases). Full suite green (228 tests); typecheck clean.
 
 ---
 
@@ -396,6 +416,14 @@ Using fast-check:
 **Done when:** `vitest run tests/roundtrip.property.test.ts` reports zero
 failures across all runs.
 
+✅ **Done** — `tests/roundtrip.property.test.ts` created. A fast-check arbitrary generates
+valid stacks with 1–5 content cards (quiz/story/flash in any mix) wired into a linear,
+acyclic goto chain to a single end card, varied non-button elements (text with tricky
+chars incl. URLs, `</script>`, quotes, emoji; data-URI images; score fields), optional
+card-level auto-advance and sound actions, and a uniqueness filter so every stack passes
+`validate()`. For each: `exportStack()` → regex-extract `#stack-data` → `JSON.parse` →
+`expect(parsed).toEqual(stack)`. Runs `{ numRuns: 1000 }`, zero failures; typecheck clean.
+
 ---
 
 ## Phase 6 — CI and size guard
@@ -415,6 +443,12 @@ if the budget is exceeded.
 **Done when:** The check passes after TASK-10 and is re-run after every
 `build:player`.
 
+✅ **Done** — `tests/player-size.test.ts` reads `dist/player/player.iife.js`, gzips it with
+Node's built-in `zlib.gzipSync` at the default level, and asserts the compressed size is
+≤ 51,200 bytes (current: ~6.4 kB). The `test` script in `package.json` is now
+`"npm run build:player && vitest run"`, so the bundle is rebuilt and re-checked on every
+`npm test`. `npm test` passes (230 tests); typecheck clean.
+
 ---
 
 ### TASK-18: Staleness check for the committed player bundle
@@ -429,6 +463,14 @@ Document the script in the root `README.md` under a "Development" section.
 
 **Done when:** The script exits 0 when the source and bundle are in sync, and
 exits 1 after any source change that has not been rebuilt.
+
+✅ **Done** — `scripts/check-player-fresh.sh` (executable) rebuilds the player via
+`npx vite build --config vite.player.config.ts --outDir <tmp>` into a `mktemp -d` directory
+(cleaned up with a `trap`), then `cmp -s` against the committed
+`dist/player/player.iife.js`; exits 0 if identical, 1 if they differ or the committed bundle
+is missing. Verified: in-sync → exit 0; after changing the error-message string in
+`src/player/errors.ts` → exit 1; reverted → exit 0 again. Documented under a "Development"
+section in the root `README.md`. No new dependencies (uses Vite's own CLI).
 
 ---
 

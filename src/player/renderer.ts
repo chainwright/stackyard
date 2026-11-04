@@ -38,25 +38,25 @@ const TILE_SLOTS = [
     color: COLOR.tileA,
     textColor: COLOR.ink,
     // Equilateral triangle pointing up, 28×28
-    shapePath: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg>',
+    shapePath: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg>',
   },
   {
     color: COLOR.tileB,
     textColor: COLOR.ink,
     // Diamond (rotated square 45°), 28×28
-    shapePath: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg>',
+    shapePath: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg>',
   },
   {
     color: COLOR.tileC,
     textColor: COLOR.ink,
     // Circle, 28×28
-    shapePath: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg>',
+    shapePath: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg>',
   },
   {
     color: COLOR.tileD,
     textColor: COLOR.white,
     // Square, 28×28
-    shapePath: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg>',
+    shapePath: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg>',
   },
 ] as const;
 

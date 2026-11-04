@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run build:player && vitest run",
     "typecheck": "tsc --noEmit",
     "dev:server": "node --import tsx/esm server/index.ts",
     "build:player": "vite build --config vite.player.config.ts"

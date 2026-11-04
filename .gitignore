@@ -1,4 +1,6 @@
 node_modules/
-dist/
+dist/*
+!dist/player/
+# the player bundle is committed on purpose: the exporter inlines it, and scripts/check-player-fresh.sh compares it with a fresh build
 .env
 .env.*

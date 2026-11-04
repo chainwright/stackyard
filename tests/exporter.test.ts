@@ -184,3 +184,98 @@ describe("exportStack — valid stack", () => {
     expect(parsed.title).toBe("Vikings Quiz");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Helpers for the security / correctness tests below.
+
+/** A tiny 1×1 transparent PNG as a data URI — a legitimate inlined image. */
+const PNG_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+
+/** Extract and JSON.parse the #stack-data block from an exported HTML string. */
+function extractStackData(html: string): Stack {
+  const match = html.match(
+    /<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/,
+  );
+  if (!match) throw new Error("no #stack-data block found in HTML");
+  return JSON.parse(match[1]!) as Stack;
+}
+
+/** A valid stack whose quiz card also carries one image element (data URI). */
+function validStackWithImage(): Stack {
+  const stack = validStack();
+  stack.cards[0]!.elements.push({
+    type: "image",
+    id: "80000000-0000-4000-8000-000000000008",
+    x: 40,
+    y: 300,
+    w: 200,
+    h: 200,
+    src: PNG_DATA_URI,
+    alt: "A longship",
+  });
+  return stack;
+}
+
+// ---------------------------------------------------------------------------
+// TASK-14 — No external URLs in the exported file.
+
+describe("exportStack — no external URLs (TASK-14)", () => {
+  it("produces HTML containing no http:// or https:// URLs", async () => {
+    const html = await exportStack(validStackWithImage());
+    expect(html).not.toMatch(/https?:\/\//);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-15 — No API key leaks into the exported file.
+
+describe("exportStack — no API key in output (TASK-15)", () => {
+  it("never embeds the LLM API key, even when STACKYARD_LLM_API_KEY is set", async () => {
+    const SENTINEL = "sk-test-sentinel-value-do-not-use";
+    const previous = process.env.STACKYARD_LLM_API_KEY;
+    process.env.STACKYARD_LLM_API_KEY = SENTINEL;
+    try {
+      const html = await exportStack(validStack());
+      expect(html).not.toContain(SENTINEL);
+    } finally {
+      // Restore the environment so the test leaves no side effect.
+      if (previous === undefined) {
+        delete process.env.STACKYARD_LLM_API_KEY;
+      } else {
+        process.env.STACKYARD_LLM_API_KEY = previous;
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-15b — URL escaping round-trip.
+//
+// A card text value containing a URL must not appear as a raw `https://`
+// (or `http://`) in the HTML, because the serialiser escapes `/` to `\u002f`.
+// After JSON.parse, the value must be restored byte-for-byte.
+
+describe("exportStack — URL escaping round-trip (TASK-15b)", () => {
+  for (const scheme of ["https://", "http://"] as const) {
+    it(`escapes "${scheme}" in card text but round-trips it exactly`, async () => {
+      const original = `Visit ${scheme}example.com for more.`;
+      const stack = validStack();
+      // Replace the quiz question text with a URL-bearing string.
+      const text = stack.cards[0]!.elements[0]!;
+      if (text.type !== "text") throw new Error("expected a text element");
+      text.content = original;
+
+      const html = await exportStack(stack);
+
+      // 1. No raw URL scheme survives in the HTML.
+      expect(html).not.toContain(scheme);
+
+      // 2. The JSON round-trip restores the exact original value.
+      const parsed = extractStackData(html);
+      const parsedText = parsed.cards[0]!.elements[0]!;
+      if (parsedText.type !== "text") throw new Error("expected a text element");
+      expect(parsedText.content).toBe(original);
+    });
+  }
+});
