@@ -3,66 +3,83 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Stackyard — Play</title>
+<title>Stackyard — Play (correct answer)</title>
 <style>
 /* ============================================================
    Stackyard — Stamp Pad design system (design-system.md)
-   Static mockup of Play mode: the player shell with cards only,
-   no editing chrome. Matches src/player/renderer.ts.
-   No build step, no framework, no external URLs.
+   Static mockup of Play mode: the player shell with cards only.
+   Fonts are self-hosted woff2 subsets in ./fonts (offline-safe).
+   The exported file inlines these as base64; here they are local.
    ============================================================ */
+/* Fonts: Bricolage Grotesque (c)2022 Bricolage Project Authors, OFL-1.1, no RFN.
+   'Stackyard Reading' = Latin subset of Atkinson Hyperlegible (c)2020 Braille
+   Institute, OFL-1.1 with Reserved Font Names 'Atkinson'/'Hyperlegible'; the
+   subset is a Modified Version, renamed to avoid the RFN. See fonts/OFL-*.txt. */
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700 800; font-display:swap; src:url('fonts/bricolage.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/reading-400.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/reading-700.woff2') format('woff2'); }
+
 :root {
   --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
   --color-stamp:#CE3926;
   --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
-  --color-white:#FFFFFF; --color-desk:#D4C9B0;
+  --color-white:#FFFFFF; --color-desk:#C9A47C;
   --radius-card:10px; --radius-tile:12px;
   --tile-min-height:56px; --rule-gap:32px;
-  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:18px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:20px;
   --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
-  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+  --font-body:'Stackyard Reading','Atkinson Hyperlegible','Arial',sans-serif;
+  --card-scale:1;
 }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+html, body { height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; -webkit-font-smoothing:antialiased; }
 button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 
-.app { display:flex; flex-direction:column; min-height:100vh; }
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
 /* Player top bar: navy, wordmark left, score right. No menus, no editing. */
-.topbar { background:var(--color-ink); display:flex; align-items:center; justify-content:space-between; padding:16px 32px; }
-.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
-.score { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+.topbar { flex:0 0 auto; background:var(--color-ink); display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:64px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); }
+.score { display:inline-flex; align-items:center; gap:12px; font-family:var(--font-head); font-weight:800; font-size:36px; color:var(--color-paper); }
+.score .burst svg { display:block; }
 
-.stage { flex:1; display:flex; align-items:center; justify-content:center; padding:32px; perspective:1200px; }
-.stage-scale { transform:scale(0.78); transform-origin:center center; }
+.stage { flex:1 1 auto; display:flex; align-items:center; justify-content:center; padding:24px; perspective:1200px; overflow:hidden; min-height:0; background-image:repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); }
+.stage-scale { width:calc(820px * var(--card-scale)); height:calc(640px * var(--card-scale)); flex:0 0 auto; }
+.stage-scale > .sy-card-stack { transform:scale(var(--card-scale)); transform-origin:top left; }
 
 .sy-card-stack { position:relative; width:800px; height:600px; }
-.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background:var(--color-paper); border:1.5px solid var(--color-rule); pointer-events:none; }
-.sy-card-edge-1 { transform:translate(4px,4px); z-index:1; }
-.sy-card-edge-2 { transform:translate(8px,8px); z-index:0; }
-.sy-card-edge-3 { transform:translate(12px,12px); z-index:-1; }
-.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1.5px solid var(--color-rule); overflow:hidden; z-index:2; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); border:1px solid #D8CDB6; box-shadow:0 2px 0 rgba(30,42,71,.10); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(6px,6px); background:#F4EFE3; z-index:1; }
+.sy-card-edge-2 { transform:translate(12px,12px); background:#EDE6D6; z-index:0; }
+.sy-card-edge-3 { transform:translate(18px,18px); background:#E6DDC9; z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1px solid var(--color-rule); box-shadow:0 2px 0 rgba(30,42,71,.10); overflow:visible; z-index:2; }
 .sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
-.sy-ring-holes { position:absolute; top:0; left:0; width:800px; display:flex; justify-content:space-around; padding:0 200px; pointer-events:none; z-index:10; }
-.sy-ring-hole { width:20px; height:20px; border-radius:50%; background:var(--color-white); border:1px solid var(--color-rule); margin-top:6px; }
+.sy-rings { position:absolute; top:-22px; left:0; width:800px; height:52px; display:flex; justify-content:center; gap:240px; pointer-events:none; z-index:12; }
+.sy-ring svg { display:block; }
 
 .sy-element { position:absolute; z-index:1; }
-.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.5; color:var(--color-ink); }
-.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:1.3; color:var(--color-ink); }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.6; color:var(--color-ink); }
+.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:64px; color:var(--color-ink); }
 
 .sy-tile { position:relative; display:flex; align-items:center; gap:12px; border:none; border-radius:var(--radius-tile); padding:0 20px; min-height:var(--tile-min-height); font-size:var(--text-tile); font-family:var(--font-body); font-weight:700; line-height:1.3; cursor:pointer; width:100%; height:100%; text-align:left; outline:none; }
+.sy-tile .tile-label { flex:1 1 auto; }
 .sy-tile:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 .sy-tile-shape { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
 
-/* CORRECT ✓ stamp overlay (same as renderer.ts) */
+/* CORRECT ✓ ink stamp: straddles the tile's TOP edge on the label side,
+   like the approved reference. Most of it sits over the paper above the
+   tile (stamp red on paper = 4.67:1, passes AA), never over the answer
+   word and never into the next tile's gutter. */
 .sy-stamp {
-  position:absolute; bottom:calc(100% - 14px); right:16px; left:auto;
-  transform:rotate(-8deg) scale(1);
+  position:absolute; top:-24px; left:64px; right:auto;
+  transform:rotate(-8deg);
   color:var(--color-stamp);
-  font-size:26px; font-family:var(--font-head); font-weight:800;
-  text-transform:uppercase; background:var(--color-paper);
+  font-size:30px; font-family:var(--font-head); font-weight:800;
+  text-transform:uppercase; background:transparent; mix-blend-mode:multiply;
   border:3px solid var(--color-stamp); border-radius:4px;
-  padding:6px 12px; opacity:0.92; pointer-events:none; white-space:nowrap; z-index:20;
+  padding:4px 10px; opacity:0.92; pointer-events:none; white-space:nowrap; z-index:20;
+  -webkit-mask-image:url(#inkTexture); mask:url(#inkTexture);
   animation:stamp-land 120ms ease-out;
 }
 @keyframes stamp-land {
@@ -77,11 +94,26 @@ button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 </style>
 </head>
 <body>
+<!-- Inline ink-texture mask: a few hundred bytes, offline-safe (feTurbulence threshold) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <mask id="inkTexture" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+      <filter id="inkNoise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.4 1.25"/></filter>
+      <rect x="0" y="0" width="1" height="1" fill="white"/>
+      <rect x="0" y="0" width="1" height="1" filter="url(#inkNoise)" fill="black"/>
+    </mask>
+  </defs>
+</svg>
+
 <div class="app">
   <!-- Player top bar: no editing controls, no menus -->
   <header class="topbar">
     <span class="wordmark">Stackyard</span>
-    <span class="score" aria-label="Score 3">&#8827; Score 3 &#8826;</span>
+    <span class="score" aria-label="Score 3">
+      <span class="burst" aria-hidden="true"><svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true"><line x1="3" y1="9" x2="19" y2="9" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/><line x1="6" y1="14" x2="19" y2="14" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/><line x1="3" y1="19" x2="19" y2="19" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/></svg></span>
+      Score 3
+      <span class="burst" aria-hidden="true"><svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true"><line x1="3" y1="9" x2="19" y2="9" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/><line x1="3" y1="14" x2="16" y2="14" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/><line x1="3" y1="19" x2="19" y2="19" stroke="#FBF8F1" stroke-width="3" stroke-linecap="round"/></svg></span>
+    </span>
   </header>
 
   <main class="stage" aria-label="Card">
@@ -92,49 +124,42 @@ button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
         <div class="sy-card-edge sy-card-edge-3"></div>
 
         <div class="sy-card">
-          <div class="sy-ring-holes" aria-hidden="true">
-            <div class="sy-ring-hole"></div>
-            <div class="sy-ring-hole"></div>
+          <div class="sy-rings" aria-hidden="true">
+            <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+            <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
           </div>
 
-          <div class="sy-element" style="left:48px; top:56px; width:400px; height:28px;">
+          <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;">
             <p class="sy-meta">Card 3 of 10</p>
           </div>
-
-          <div class="sy-element" style="left:48px; top:96px; width:704px; height:140px;">
+          <div class="sy-element" style="left:48px; top:104px; width:704px; height:128px;">
             <p class="sy-question">Where did the Vikings build a town in 841?</p>
           </div>
 
-          <!-- Dublin (correct) — stamped -->
-          <div class="sy-element" style="left:48px; top:300px; width:344px; height:96px;">
+          <!-- Dublin (correct) — ink stamp lands over the tile -->
+          <div class="sy-element" style="left:48px; top:296px; width:344px; height:96px;">
             <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button">
               <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg></span>
-              <span>Dublin</span>
-              <span class="sy-stamp" aria-hidden="true">CORRECT &#10003;</span>
+              <span class="tile-label">Dublin</span>
+              <span class="sy-stamp" aria-hidden="true">CORRECT ✓</span>
             </button>
           </div>
-
-          <!-- Cork -->
-          <div class="sy-element" style="left:408px; top:300px; width:344px; height:96px;">
+          <div class="sy-element" style="left:408px; top:296px; width:344px; height:96px;">
             <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button">
               <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg></span>
-              <span>Cork</span>
+              <span class="tile-label">Cork</span>
             </button>
           </div>
-
-          <!-- Galway -->
-          <div class="sy-element" style="left:48px; top:412px; width:344px; height:96px;">
+          <div class="sy-element" style="left:48px; top:424px; width:344px; height:96px;">
             <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button">
               <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg></span>
-              <span>Galway</span>
+              <span class="tile-label">Galway</span>
             </button>
           </div>
-
-          <!-- Sligo (navy, white text) -->
-          <div class="sy-element" style="left:408px; top:412px; width:344px; height:96px;">
+          <div class="sy-element" style="left:408px; top:424px; width:344px; height:96px;">
             <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button">
               <span class="sy-tile-shape" style="color:var(--color-white);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg></span>
-              <span>Sligo</span>
+              <span class="tile-label">Sligo</span>
             </button>
           </div>
         </div>
@@ -144,5 +169,20 @@ button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 
   <div class="sr-only" aria-live="polite">Correct</div>
 </div>
+<script>
+/* Fit the card to the viewport. In the player there is no top clamp:
+   on a 1920x1080 projector the card scales up to fill the screen. */
+(function () {
+  var stage = document.querySelector('.stage');
+  var root = document.documentElement;
+  function fit() {
+    var w = stage.clientWidth, h = stage.clientHeight;
+    var s = Math.min((w - 48) / 800, (h - 48) / 600);
+    s = Math.max(0.5, s);
+    root.style.setProperty('--card-scale', s.toFixed(3));
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Editor (add picture)</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   Adding a picture: the editor enforces a non-empty alt-text
+   before export (design-system.md accessibility). Self-hosted fonts.
+   ============================================================ */
+/* Fonts: Bricolage Grotesque (c)2022 Bricolage Project Authors, OFL-1.1, no RFN.
+   'Stackyard Reading' = Latin subset of Atkinson Hyperlegible (c)2020 Braille
+   Institute, OFL-1.1 with Reserved Font Names 'Atkinson'/'Hyperlegible'; the
+   subset is a Modified Version, renamed to avoid the RFN. See fonts/OFL-*.txt. */
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700 800; font-display:swap; src:url('fonts/bricolage.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/reading-400.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/reading-700.woff2') format('woff2'); }
+
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926; --color-stamp-hover:#B8321F;
+  --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
+  --color-white:#FFFFFF; --color-desk:#C9A47C; --shell-sub:#E0E6F0;
+  --radius-card:10px; --radius-tile:12px; --radius-button:10px;
+  --tile-min-height:56px; --rule-gap:32px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:20px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Stackyard Reading','Atkinson Hyperlegible','Arial',sans-serif;
+  --card-scale:0.95;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; -webkit-font-smoothing:antialiased; }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+.topbar { flex:0 0 auto; background:var(--color-ink); display:flex; align-items:center; gap:20px; height:56px; padding:0 24px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); line-height:1; flex-shrink:0; }
+.stack-desc { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.topbar .tryit { flex-shrink:0; margin-left:auto; min-height:40px; background:transparent; border:2px solid var(--shell-sub); border-radius:var(--radius-button); color:var(--color-paper); font-family:var(--font-body); font-weight:700; font-size:18px; padding:6px 18px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.topbar .tryit svg { width:18px; height:18px; }
+
+.workspace { flex:1 1 auto; display:grid; grid-template-columns:200px 1fr 280px; min-height:0; overflow:hidden; }
+
+.cardlist { display:flex; flex-direction:column; background:var(--color-paper); border-right:1px solid var(--color-rule); min-height:0; }
+.cardlist h2 { font-family:var(--font-body); font-weight:700; font-size:18px; padding:12px 14px 8px; flex-shrink:0; }
+.cardlist-scroll { flex:1 1 auto; overflow-y:auto; padding:0 10px; }
+.card-entry { display:flex; align-items:center; gap:8px; width:100%; height:52px; text-align:left; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:0 10px; margin-bottom:6px; font-family:var(--font-body); font-size:18px; color:var(--color-ink); cursor:pointer; line-height:1.2; overflow:hidden; }
+.card-entry .num { font-weight:700; flex-shrink:0; }
+.card-entry .kshape { flex-shrink:0; width:20px; height:20px; display:inline-flex; }
+.card-entry .label { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-entry .grip { flex-shrink:0; color:#4a5878; cursor:grab; font-size:18px; }
+.card-entry[aria-current="true"] { border:2px solid var(--color-ink); background:#fff; }
+.cardlist-foot { flex-shrink:0; padding:10px; border-top:1px solid var(--color-rule); }
+.add-card { width:100%; min-height:44px; background:var(--color-paper); border:2px solid var(--color-ink); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; }
+
+.canvas-area { position:relative; background:var(--color-desk); background-image:repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); display:flex; align-items:center; justify-content:center; overflow:hidden; min-height:0; padding:16px; }
+.canvas-scale { width:calc(820px * var(--card-scale)); height:calc(640px * var(--card-scale)); flex:0 0 auto; }
+.canvas-scale > .sy-card-stack { transform:scale(var(--card-scale)); transform-origin:top left; }
+.sy-card-stack { position:relative; width:800px; height:600px; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); border:1px solid #D8CDB6; box-shadow:0 2px 0 rgba(30,42,71,.10); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(6px,6px); background:#F4EFE3; z-index:1; }
+.sy-card-edge-2 { transform:translate(12px,12px); background:#EDE6D6; z-index:0; }
+.sy-card-edge-3 { transform:translate(18px,18px); background:#E6DDC9; z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1px solid var(--color-rule); box-shadow:0 2px 0 rgba(30,42,71,.10); overflow:visible; z-index:2; }
+.sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
+.sy-rings { position:absolute; top:-22px; left:0; width:800px; height:52px; display:flex; justify-content:center; gap:240px; pointer-events:none; z-index:12; }
+.sy-ring svg { display:block; }
+
+.sy-element { position:absolute; z-index:1; }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.6; color:var(--color-ink); }
+.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:64px; color:var(--color-ink); }
+
+/* Placed picture element (a simple illustrated longship) */
+.sy-image { width:100%; height:100%; border-radius:8px; overflow:hidden; background:#DCE6F0; border:1px solid var(--color-rule); }
+.sy-image svg { width:100%; height:100%; display:block; }
+
+.selection { position:absolute; border:3px solid var(--color-ink); border-radius:8px; pointer-events:none; z-index:30; }
+.handle { position:absolute; width:12px; height:12px; background:var(--color-ink); border:2px solid var(--color-paper); }
+.handle.tl { top:-7px; left:-7px; } .handle.tr { top:-7px; right:-7px; }
+.handle.bl { bottom:-7px; left:-7px; } .handle.br { bottom:-7px; right:-7px; }
+.drag-tab { position:absolute; top:-34px; left:50%; transform:translateX(-50%); background:var(--color-ink); color:var(--color-paper); font-family:var(--font-body); font-weight:700; font-size:18px; padding:4px 12px; border-radius:6px; white-space:nowrap; }
+
+.inspector { background:var(--color-paper); border-left:1px solid var(--color-rule); padding:18px 16px; overflow-y:auto; min-height:0; }
+.inspector h2 { font-family:var(--font-head); font-weight:800; font-size:22px; margin-bottom:14px; }
+.field-group { margin-bottom:18px; }
+.field-group > label { display:block; font-size:18px; font-weight:700; margin-bottom:6px; }
+.req { color:var(--color-ink); font-weight:700; }
+.field-group input, .field-group textarea { width:100%; font-family:var(--font-body); font-size:18px; color:var(--color-ink); background:#fff; border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:10px 12px; min-height:44px; }
+.field-group textarea { line-height:1.4; resize:vertical; min-height:72px; }
+/* Empty required field flagged with an ink border, not red */
+.field-group input.needs, .field-group textarea.needs { border:2px solid var(--color-ink); }
+.pick-file { width:100%; min-height:44px; background:var(--color-paper); border:2px dashed var(--color-ink); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
+.pick-file svg { width:20px; height:20px; }
+.notice-inline { display:flex; align-items:flex-start; gap:10px; background:var(--color-paper); border:1px solid var(--color-rule); border-left:6px solid var(--color-ink); border-radius:var(--radius-button); padding:12px 14px; font-size:18px; line-height:1.4; margin-top:6px; }
+.notice-inline .mark { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:var(--color-ink); color:var(--color-paper); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:15px; }
+.hint { font-size:18px; color:#4a5878; line-height:1.4; margin-top:6px; }
+
+.toolbar { flex:0 0 auto; background:var(--color-paper); border-top:1px solid var(--color-rule); display:flex; align-items:center; gap:10px; padding:8px 16px; }
+.tool-card { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; height:64px; min-width:76px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:6px 12px; }
+.tool-card.active { border:2px solid var(--color-ink); }
+.tool-card svg { width:24px; height:24px; }
+.tool-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); cursor:pointer; }
+.tool-icon-btn svg { width:22px; height:22px; }
+.tool-sep { width:1px; align-self:stretch; background:var(--color-rule); margin:6px 4px; }
+.spacer { flex:1; }
+.export-btn { display:inline-flex; align-items:center; gap:10px; background:var(--color-stamp); color:var(--color-white); border:none; border-radius:var(--radius-button); padding:12px 24px; font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; min-height:44px; }
+.export-btn:hover { background:var(--color-stamp-hover); }
+.export-btn svg { width:20px; height:20px; }
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="wordmark">Stackyard</span>
+    <span class="stack-desc">A 10-card quiz about the Vikings in Ireland — the right answer plays a cheer</span>
+    <button class="tryit" type="button" aria-label="Try it: play this card like the class will">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> Try It
+    </button>
+  </header>
+
+  <div class="workspace">
+    <nav class="cardlist" aria-label="Cards">
+      <h2>Cards</h2>
+      <div class="cardlist-scroll">
+        <button class="card-entry" type="button"><span class="num">1</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who sailed to Ireland first?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button" aria-current="true"><span class="num">2</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What is a longship?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">3</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Where did the Vikings…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">4</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Longphort</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">5</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 23V13c0-2 1.6-3.6 3.6-3.6H20" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 5l5 4.4-5 4.4" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="label">The longship lands…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">6</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who led the first raid?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">7</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What did they trade?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">8</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Which king fought back?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">9</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Thingmote</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">10</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M7 3v22" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round"/><path d="M7 4h14l-3 5 3 5H7z" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linejoin="round"/></svg></span><span class="label">Last card — the score</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+      </div>
+      <div class="cardlist-foot"><button class="add-card" type="button">+ Add Card</button></div>
+    </nav>
+
+    <main class="canvas-area" aria-label="Card preview">
+      <div class="canvas-scale">
+        <div class="sy-card-stack">
+          <div class="sy-card-edge sy-card-edge-1"></div>
+          <div class="sy-card-edge sy-card-edge-2"></div>
+          <div class="sy-card-edge sy-card-edge-3"></div>
+
+          <div class="sy-card">
+            <div class="sy-rings" aria-hidden="true">
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+            </div>
+
+            <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;"><p class="sy-meta">Card 2 of 10</p></div>
+            <div class="sy-element" style="left:48px; top:104px; width:704px; height:64px;"><p class="sy-question">What is a longship?</p></div>
+
+            <!-- The placed picture element -->
+            <div class="sy-element" style="left:200px; top:200px; width:400px; height:300px;">
+              <div class="sy-image" role="img" aria-label="A Viking longship with a striped sail on the sea">
+                <svg viewBox="0 0 400 300" aria-hidden="true">
+                  <rect width="400" height="300" fill="#DCE6F0"/>
+                  <rect y="210" width="400" height="90" fill="#26A69A" opacity="0.5"/>
+                  <path d="M60 210 Q200 250 340 210 L300 180 L100 180 Z" fill="#1E2A47"/>
+                  <rect x="196" y="70" width="8" height="112" fill="#1E2A47"/>
+                  <path d="M204 80 H320 L300 150 H204 Z" fill="#F2735F"/>
+                  <path d="M240 80 V150 M276 80 V150" stroke="#FBF8F1" stroke-width="6"/>
+                  <path d="M60 210 L40 190 Q30 182 44 180 L100 180" fill="#1E2A47"/>
+                </svg>
+              </div>
+            </div>
+            <div class="selection" style="left:196px; top:196px; width:408px; height:308px;">
+              <span class="drag-tab">Drag to move</span>
+              <span class="handle tl"></span><span class="handle tr"></span><span class="handle bl"></span><span class="handle br"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="inspector" aria-label="Edit">
+      <h2>Edit this picture</h2>
+      <div class="field-group">
+        <button class="pick-file" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5l5 5M4 18v1a1 1 0 001 1h14a1 1 0 001-1v-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Choose a Picture</button>
+        <p class="hint">longship.png added. It's saved inside your file, so it still shows with no internet.</p>
+      </div>
+      <div class="field-group">
+        <label for="alt">Describe the picture <span class="req">(needed)</span></label>
+        <textarea id="alt" class="needs" rows="2" placeholder="e.g. A Viking longship with a striped sail on the sea"></textarea>
+        <div class="notice-inline">
+          <span class="mark" aria-hidden="true">!</span>
+          <span>Add a short description so every pupil knows what the picture shows. You'll need it before you can export.</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="toolbar">
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 6V4h16v2M12 6v14M9 20h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add Text</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg> Add Button</button>
+    <button class="tool-card active" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="1.8" fill="currentColor"/><path d="M4 18l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg> Add Picture</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h8a3 3 0 010 6h-3M15 17H7a3 3 0 010-6h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Link a Card</button>
+    <span class="tool-sep" aria-hidden="true"></span>
+    <button class="tool-icon-btn" type="button" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tool-icon-btn" type="button" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <span class="spacer"></span>
+    <button class="export-btn" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0l-4-4m4 4l4-4M3 15v2a1 1 0 001 1h12a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Export File</button>
+  </footer>
+
+  <div class="sr-only" aria-live="polite">Picture added. Add a description before you export.</div>
+</div>
+<script>
+(function () {
+  var area = document.querySelector('.canvas-area');
+  var root = document.documentElement;
+  function fit() { var w=area.clientWidth,h=area.clientHeight; var s=Math.min((w-48)/812,(h-48)/612); s=Math.max(0.9,Math.min(s,1.35)); root.style.setProperty('--card-scale', s.toFixed(3)); }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

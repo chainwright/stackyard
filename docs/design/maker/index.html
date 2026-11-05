@@ -8,41 +8,43 @@
 /* ============================================================
    Stackyard — Stamp Pad design system (design-system.md)
    Index of the static Maker screen mockups. Self-contained.
+   Fonts are self-hosted woff2 subsets in ./fonts (offline-safe).
    ============================================================ */
+/* Fonts: Bricolage Grotesque (c)2022 Bricolage Project Authors, OFL-1.1, no RFN.
+   'Stackyard Reading' = Latin subset of Atkinson Hyperlegible (c)2020 Braille
+   Institute, OFL-1.1 with Reserved Font Names 'Atkinson'/'Hyperlegible'; the
+   subset is a Modified Version, renamed to avoid the RFN. See fonts/OFL-*.txt. */
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700 800; font-display:swap; src:url('fonts/bricolage.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/reading-400.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/reading-700.woff2') format('woff2'); }
 :root {
   --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
-  --color-stamp:#CE3926; --color-white:#FFFFFF; --color-desk:#D4C9B0; --shell-sub:#E0E6F0;
+  --color-stamp:#CE3926; --color-white:#FFFFFF; --color-desk:#C9A47C; --shell-sub:#E0E6F0;
   --radius-card:10px; --radius-button:10px;
-  --text-question:44px; --text-body:22px; --text-meta:18px;
+  --text-question:44px; --text-body:22px; --text-meta:20px;
   --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
-  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+  --font-body:'Stackyard Reading','Atkinson Hyperlegible','Arial',sans-serif;
 }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { min-height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+html, body { min-height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; -webkit-font-smoothing:antialiased; }
 a:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 
-.topbar { background:var(--color-ink); display:flex; align-items:center; gap:24px; padding:14px 28px; }
-.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+.topbar { background:var(--color-ink); display:flex; align-items:center; gap:18px; height:56px; padding:0 28px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); }
 .topbar .sub { font-size:18px; color:var(--shell-sub); line-height:1.5; }
 
-.wrap { max-width:960px; margin:0 auto; padding:40px 24px 64px; }
-.intro {
-  background:var(--color-paper); border:1.5px solid var(--color-rule);
-  border-radius:var(--radius-card); padding:28px 32px; margin-bottom:28px;
-}
-.intro h1 { font-family:var(--font-head); font-weight:800; font-size:var(--text-question); line-height:1.3; margin-bottom:10px; }
+.wrap { max-width:1000px; margin:0 auto; padding:40px 24px 64px; }
+.intro { background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-card); box-shadow:0 2px 0 rgba(30,42,71,.10); padding:28px 32px; margin-bottom:28px; }
+.intro h1 { font-family:var(--font-head); font-weight:800; font-size:var(--text-question); line-height:1.2; margin-bottom:10px; }
 .intro p { font-size:var(--text-body); line-height:1.5; max-width:62ch; }
 
-.group-title { font-family:var(--font-head); font-weight:700; font-size:24px; margin:28px 0 14px; color:var(--color-ink); }
+.group-title { font-family:var(--font-head); font-weight:800; font-size:24px; margin:28px 0 14px; color:var(--color-paper); }
 
 .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
-.tile {
-  display:block; background:var(--color-paper); color:var(--color-ink);
-  border:1.5px solid var(--color-rule); border-radius:var(--radius-card);
-  padding:18px 20px; text-decoration:none; min-height:88px;
-}
+.tile { display:block; background:var(--color-paper); color:var(--color-ink); border:1px solid var(--color-rule); border-radius:var(--radius-card); box-shadow:0 2px 0 rgba(30,42,71,.10); padding:18px 20px; text-decoration:none; min-height:96px; }
 .tile:hover { border-color:var(--color-ink); }
-.tile .name { font-family:var(--font-head); font-weight:700; font-size:22px; line-height:1.3; margin-bottom:4px; }
+.tile .name { font-family:var(--font-head); font-weight:800; font-size:22px; line-height:1.2; margin-bottom:4px; }
 .tile .state { font-size:18px; color:#4a5878; line-height:1.4; }
 .tile .file { font-size:18px; color:#4a5878; margin-top:8px; }
 </style>
@@ -56,24 +58,24 @@ a:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 <div class="wrap">
   <section class="intro">
     <h1>Maker screen mockups</h1>
-    <p>Static reference mockups of every Maker screen state, drawn in the Stamp Pad design system. Each file is self-contained (inline CSS, no external fonts or URLs) and shows the card drawn the same way the class sees it. These anchor the design review before any UI code is written.</p>
+    <p>Static reference mockups of every Maker screen state, drawn in the Stamp Pad design system. Each file is self-contained — inline CSS with self-hosted fonts in ./fonts, no external URLs — and shows the card drawn the same way the class sees it. These anchor the design review before any UI code is written.</p>
   </section>
 
   <h2 class="group-title">Start</h2>
   <div class="grid">
     <a class="tile" href="start-empty.html">
       <div class="name">Start — empty</div>
-      <div class="state">Empty sentence field, Build disabled.</div>
+      <div class="state">Sentence pre-filled, example tabs, result stack peeking out.</div>
       <div class="file">start-empty.html</div>
     </a>
     <a class="tile" href="start-generating.html">
       <div class="name">Start — building</div>
-      <div class="state">Waiting while the cards are built.</div>
+      <div class="state">Cards deal out one by one with their real questions.</div>
       <div class="file">start-generating.html</div>
     </a>
     <a class="tile" href="start-error.html">
       <div class="name">Start — something went wrong</div>
-      <div class="state">Plain-language error, try again.</div>
+      <div class="state">Plain-language error, your sentence is still here.</div>
       <div class="file">start-error.html</div>
     </a>
   </div>
@@ -82,41 +84,81 @@ a:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
   <div class="grid">
     <a class="tile" href="editor-quiz.html">
       <div class="name">Editor — quiz card</div>
-      <div class="state">Shaped tiles, right-answer indicator.</div>
+      <div class="state">Shaped tiles, navy right-answer tag, selection handles.</div>
       <div class="file">editor-quiz.html</div>
     </a>
     <a class="tile" href="editor-flash.html">
       <div class="name">Editor — flash card</div>
-      <div class="state">Term on the front, explanation on the back.</div>
+      <div class="state">Front only, with a Front / Back flip control.</div>
       <div class="file">editor-flash.html</div>
     </a>
     <a class="tile" href="editor-story.html">
       <div class="name">Editor — story card</div>
-      <div class="state">Branching "go to card" buttons.</div>
+      <div class="state">Chunky branch buttons with "→ Card N" labels.</div>
       <div class="file">editor-story.html</div>
     </a>
     <a class="tile" href="editor-end.html">
       <div class="name">Editor — last card</div>
-      <div class="state">Score display on the final card.</div>
+      <div class="state">The stamp collection — one stamp per right answer.</div>
       <div class="file">editor-end.html</div>
     </a>
     <a class="tile" href="editor-invalid.html">
-      <div class="name">Editor — invalid edit</div>
-      <div class="state">Plain-language message, Export disabled.</div>
+      <div class="name">Editor — needs a right answer</div>
+      <div class="state">Names the card, flags it in the list, Export stays on.</div>
       <div class="file">editor-invalid.html</div>
+    </a>
+    <a class="tile" href="editor-drag.html">
+      <div class="name">Editor — mid-drag</div>
+      <div class="state">A tile lifted, snapping to the inked rule line.</div>
+      <div class="file">editor-drag.html</div>
+    </a>
+    <a class="tile" href="editor-add-picture.html">
+      <div class="name">Editor — add a picture</div>
+      <div class="state">The required description field, enforced before export.</div>
+      <div class="file">editor-add-picture.html</div>
+    </a>
+    <a class="tile" href="editor-new-card.html">
+      <div class="name">Editor — add a card</div>
+      <div class="state">Pick Quiz, Flash or Story, each with a preview.</div>
+      <div class="file">editor-new-card.html</div>
+    </a>
+    <a class="tile" href="editor-try.html">
+      <div class="name">Editor — Try It ★</div>
+      <div class="state">The same card flips over in place and plays: the editor WOW.</div>
+      <div class="file">editor-try.html</div>
+    </a>
+    <a class="tile" href="editor-try-storyboard.html">
+      <div class="name">Try It storyboard ★</div>
+      <div class="state">The two beats side by side, for the demo video and README.</div>
+      <div class="file">editor-try-storyboard.html</div>
     </a>
   </div>
 
   <h2 class="group-title">Play &amp; Export</h2>
   <div class="grid">
     <a class="tile" href="play.html">
-      <div class="name">Play</div>
-      <div class="state">Cards only — what the class sees.</div>
+      <div class="name">Play — correct answer</div>
+      <div class="state">The ink CORRECT stamp lands on the tile's top edge.</div>
       <div class="file">play.html</div>
+    </a>
+    <a class="tile" href="play-wrong.html">
+      <div class="name">Play — wrong answer</div>
+      <div class="state">The tile shakes, then a bold ✗ stamp lands on its edge.</div>
+      <div class="file">play-wrong.html</div>
+    </a>
+    <a class="tile" href="play-flash-back.html">
+      <div class="name">Play — flash card back</div>
+      <div class="state">The class tapped and the card flipped to the answer.</div>
+      <div class="file">play-flash-back.html</div>
+    </a>
+    <a class="tile" href="play-end.html">
+      <div class="name">Play — last card</div>
+      <div class="state">The class sees its stamp collection and score.</div>
+      <div class="file">play-end.html</div>
     </a>
     <a class="tile" href="export-done.html">
       <div class="name">File exported</div>
-      <div class="state">Download-triggered confirmation.</div>
+      <div class="state">EXPORTED stamp, three next steps, open the file.</div>
       <div class="file">export-done.html</div>
     </a>
   </div>

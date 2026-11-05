@@ -6,8 +6,7 @@ The UI looks like a physical notepad on a wooden desk.
 Cards are white paper with faint ruled lines and two metal ring holes at the top.
 Three offset card edges peek out behind the current card, giving depth.
 Answer tiles are chunky, flat-colour rectangles — like coloured card stock.
-The only decorative red is the rubber stamp: used for the "CORRECT ✓" feedback overlay and the Export button.
-Everything else uses the ink-on-paper palette.
+The only red is the rubber stamp — an ink stamp the pupil or teacher *earns*. It appears in exactly five places: the "CORRECT ✓" overlay, the wrong-answer "✗" stamp, the "EXPORTED ✓" stamp, the end-card stamp collection, and the Export button. (See the five-role list under Colour usage rules.) Everything else uses the ink-on-paper palette.
 
 ---
 
@@ -18,7 +17,7 @@ Everything else uses the ink-on-paper palette.
 | `--color-paper`    | `#FBF8F1` | Card background, app shell background                                 |
 | `--color-ink`      | `#1E2A47` | All body text, headings, icons, borders, focus rings                  |
 | `--color-rule`     | `#C9D3E3` | Ruled lines on cards (1px horizontal, every 32px)                     |
-| `--color-stamp`    | `#CE3926` | Rubber stamp overlay text/border, Export button background only       |
+| `--color-stamp`    | `#CE3926` | Earned stamps (CORRECT ✓, wrong ✗, EXPORTED ✓, end-card collection) + Export button only |
 | `--color-tile-a`   | `#F2735F` | Answer tile A — coral                                                 |
 | `--color-tile-b`   | `#F6C744` | Answer tile B — sun yellow                                            |
 | `--color-tile-c`   | `#26A69A` | Answer tile C — teal                                                  |
@@ -27,7 +26,13 @@ Everything else uses the ink-on-paper palette.
 
 ### Colour usage rules
 
-- `--color-stamp` appears in exactly three places: the rubber-stamp "CORRECT ✓" overlay, the wrong-answer "✗" stamp, and the Export button. Nowhere else.
+- `--color-stamp` is reserved for an ink stamp the pupil or teacher *earns*, plus the Export button. It appears in exactly these five places and nowhere else:
+  1. the rubber-stamp "CORRECT ✓" overlay (the class earns it),
+  2. the wrong-answer "✗" stamp,
+  3. the "EXPORTED ✓" stamp on the export-done screen,
+  4. the end-card stamp collection (one earned stamp per correct answer),
+  5. the Export button.
+- Not allowed in stamp red: the editor's right-answer marker and the inspector's "right answer" tick. These are an editing state, not something earned, so they use `--color-ink` (navy). Mark the right answer in the editor with a navy tag ("✓ Right answer", white text on `--color-ink`), never red.
 - Tile text colour: white (`#FFFFFF`) on tile D (navy); ink (`#1E2A47`) on tiles A, B, C.
 - Never use `--color-stamp` as a general accent, link colour, or hover state.
 - Background of the app shell (behind the card stack) is `--color-paper` with a subtle warm shadow, not a photograph or texture image.
@@ -45,6 +50,13 @@ All text/background pairs must pass WCAG AA (4.5:1 for normal text), checked wit
 | white on tile D      | #FFFFFF / #1E2A47 | 14.21          | ✓ passes AA |
 | stamp red on paper   | #CE3926 / #FBF8F1 | 4.67           | ✓ passes AA |
 | white on stamp red   | #FFFFFF / #CE3926 | 4.96           | ✓ passes AA |
+
+The CORRECT ✓ and wrong ✗ stamps sit **over the paper**, straddling the chosen
+tile's top edge on the label side — never over the answer word and never over
+another tile. That keeps the stamp on the 4.67:1 paper pairing above and leaves
+the tile label readable. Do not measure stamp red over a tile colour (e.g. red
+over coral under `mix-blend-mode: multiply` is ~2.1:1 and fails); the placement
+rule exists precisely to avoid that.
 
 ---
 
@@ -70,21 +82,35 @@ Shape colour matches tile text colour (ink on A/B/C; white on D).
 
 ### Fonts
 
-Both fonts are OFL-licensed and must be self-hosted as woff2 subsets.
+Both fonts are under the SIL Open Font License 1.1 and must be self-hosted as woff2 subsets.
 No CDN links anywhere — not in the Maker app, not in the exported file.
 Include Latin subset only (U+0020–U+007E, U+00A0–U+00FF) to keep file size small.
 
-| Role     | Family                | Weights loaded |
-|----------|-----------------------|----------------|
-| Headings | Bricolage Grotesque   | 700, 800       |
-| Body     | Atkinson Hyperlegible | 400, 700       |
+| Role     | Family (CSS `font-family`) | Subset of           | Weights loaded |
+|----------|----------------------------|---------------------|----------------|
+| Headings | `Bricolage Grotesque`      | Bricolage Grotesque | 700, 800       |
+| Body     | `Stackyard Reading`        | Atkinson Hyperlegible | 400, 700     |
 
 Download sources:
 - Bricolage Grotesque: https://fonts.google.com/specimen/Bricolage+Grotesque
 - Atkinson Hyperlegible: https://fonts.google.com/specimen/Atkinson+Hyperlegible
 
-Font files live at `src/assets/fonts/` in the Maker app.
-The player runtime inlines the same files as base64 data URIs inside the exported HTML `<style>` block.
+**Reserved Font Name.** Atkinson Hyperlegible reserves the names "Atkinson" and
+"Hyperlegible". A Latin subset is a Modified Version under the OFL and may not
+present a Reserved Font Name, so the body subset is referenced under the
+non-reserved family name `Stackyard Reading` (outlines unchanged, codepoints
+reduced). Bricolage Grotesque declares no Reserved Font Name and keeps its name.
+
+Font files live at `src/assets/fonts/` in the Maker app, each beside its
+`OFL-*.txt` (full licence text with the copyright line).
+
+**The exported HTML must carry the font notice.** When the player runtime
+inlines the two subsets as base64 data URIs inside the exported `<style>`
+block, it must also inline, as a CSS comment immediately above each
+`@font-face`, the font's copyright line, "SIL Open Font License 1.1", and the
+upstream source URL — so the notice travels with the font in every
+self-contained file, as the OFL requires. The same `OFL-*.txt` files ship with
+the repo (see README "Third-party assets").
 
 ### Type scale (800 × 600 card canvas)
 
@@ -164,12 +190,20 @@ Triggered on answer selection; renders as an SVG overlay on the chosen tile.
 - Transform: `rotate(-8deg)`
 - Border: 3px solid `--color-stamp`, border-radius 4px, padding 4px 8px
 - Appearance: stamped-ink look — slightly uneven opacity (0.92), no drop shadow
+- Placement: straddles the tile's **top edge on the label side**, mostly over the
+  paper above the tile (`top: -24px; left: 64px`). Never over the answer word,
+  never crossing the gutter into the next tile.
 
 **Wrong answer:**
-- No stamp overlay. Tile shakes instead (see Motion).
-- Optionally: a faint ✗ mark in `--color-stamp` at 40% opacity after shake settles.
+- The tile shakes first (see Motion).
+- After the shake settles, a ✗ stamp in `--color-stamp` at **100% opacity**
+  (not 40% — a faint mark fails AA over a tile colour and is invisible on a
+  washed-out projector), ~44px, boxed like the CORRECT stamp, straddling the
+  tile's **top edge** over the paper — the same placement as CORRECT, so it
+  reads on the 4.67:1 paper pairing.
 
-Stamp is never used decoratively outside these two feedback moments and the Export button.
+Stamp (red) is never used outside the five earned-stamp roles (CORRECT ✓, wrong ✗,
+EXPORTED ✓, end-card stamp collection) and the Export button.
 
 ---
 
@@ -334,7 +368,7 @@ reject the change.
 | Sparkle / star / magic-wand icons (✨ 🪄)   | AI-product cliché                           |
 | Chicago bitmap font or striped title bars   | Classic Mac pastiche — wrong era, wrong feel|
 | Hand/pointer cursor used decoratively       | Classic Mac pastiche                        |
-| `--color-stamp` used outside its three roles| Dilutes the stamp metaphor                  |
+| `--color-stamp` used outside its five earned-stamp + Export roles | Dilutes the stamp metaphor        |
 | External font CDN links in any output file  | Breaks offline use; violates tech.md        |
 | `box-shadow` glow (blur > 4px, spread > 0) | Glassmorphism-adjacent                      |
 
@@ -345,7 +379,7 @@ reject the change.
 - [ ] Fonts loaded from `src/assets/fonts/`, not CDN
 - [ ] All text ≥ 18px
 - [ ] Answer tiles ≥ 56px tall, shape icon present alongside colour
-- [ ] `--color-stamp` appears only on stamp overlay and Export button
+- [ ] `--color-stamp` appears only on earned stamps (CORRECT ✓, wrong ✗, EXPORTED ✓, end-card stamp collection) and the Export button; editor right-answer markers use `--color-ink`
 - [ ] Focus ring: 3px solid `--color-ink`, offset 2px
 - [ ] Motion animations wrapped in `prefers-reduced-motion` media query
 - [ ] Contrast checked with WCAG relative-luminance formula for every new colour pair

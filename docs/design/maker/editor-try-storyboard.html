@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Try It storyboard (for the video)</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   STORYBOARD ONLY (not a product screen): the two beats of the
+   Try It flip, side by side, for the demo video and README.
+   editor-try.html is the real product screen; this is the strip.
+   Each card uses the sized-wrapper scale so nothing clips, and
+   the captions are ink-on-paper pills (13.4:1), never white on
+   the desk. Rendered at 1920.
+   Fonts: Bricolage Grotesque (c)2022 Bricolage Project Authors,
+   OFL-1.1, no RFN. 'Stackyard Reading' = Latin subset of Atkinson
+   Hyperlegible (c)2020 Braille Institute, OFL-1.1 with Reserved
+   Font Names; subset renamed to avoid the RFN. See fonts/OFL-*.txt.
+   ============================================================ */
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700 800; font-display:swap; src:url('fonts/bricolage.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/reading-400.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/reading-700.woff2') format('woff2'); }
+
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926;
+  --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
+  --color-white:#FFFFFF; --color-desk:#C9A47C; --shell-sub:#E0E6F0;
+  --radius-card:10px; --radius-tile:12px; --radius-button:10px;
+  --tile-min-height:56px; --rule-gap:32px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:20px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Stackyard Reading','Atkinson Hyperlegible','Arial',sans-serif;
+  --card-scale:0.62; /* storyboard thumbnails; the product uses the fit scale */
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; -webkit-font-smoothing:antialiased; }
+
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+.topbar { flex:0 0 auto; background:var(--color-ink); display:flex; align-items:center; gap:20px; height:56px; padding:0 24px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); line-height:1; }
+.topbar .caption { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); }
+
+.desk { flex:1 1 auto; background:var(--color-desk); background-image:repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); display:flex; align-items:center; justify-content:center; gap:56px; padding:40px; overflow:hidden; min-height:0; perspective:1600px; }
+
+.frame { display:flex; flex-direction:column; align-items:center; gap:18px; }
+/* Caption as an ink-on-paper pill (13.4:1), never white on the desk */
+.frame-cap { display:inline-flex; align-items:center; gap:10px; font-family:var(--font-body); font-weight:700; font-size:20px; color:var(--color-ink); background:var(--color-paper); border:1px solid var(--color-rule); border-radius:999px; padding:10px 20px; }
+.frame-cap svg { width:18px; height:18px; }
+
+/* Sized wrapper so each scaled card takes its scaled space */
+.canvas-scale { width:calc(820px * var(--card-scale)); height:calc(640px * var(--card-scale)); flex:0 0 auto; }
+.canvas-scale > .sy-card-stack { transform:scale(var(--card-scale)); transform-origin:top left; }
+
+.flip-arrow { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.flip-arrow svg { width:52px; height:52px; }
+.flip-arrow .lbl { display:inline-flex; align-items:center; font-family:var(--font-body); font-weight:700; font-size:18px; color:var(--color-ink); background:var(--color-paper); border:1px solid var(--color-rule); border-radius:999px; padding:6px 14px; white-space:nowrap; }
+
+.sy-card-stack { position:relative; width:800px; height:600px; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); border:1px solid #D8CDB6; box-shadow:0 2px 0 rgba(30,42,71,.10); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(6px,6px); background:#F4EFE3; z-index:1; }
+.sy-card-edge-2 { transform:translate(12px,12px); background:#EDE6D6; z-index:0; }
+.sy-card-edge-3 { transform:translate(18px,18px); background:#E6DDC9; z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1px solid var(--color-rule); box-shadow:0 2px 0 rgba(30,42,71,.10); overflow:visible; z-index:2; }
+.sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
+.sy-rings { position:absolute; top:-22px; left:0; width:800px; height:52px; display:flex; justify-content:center; gap:240px; pointer-events:none; z-index:12; }
+.sy-ring svg { display:block; }
+
+.sy-element { position:absolute; z-index:1; }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.6; color:var(--color-ink); }
+.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:64px; color:var(--color-ink); }
+
+.sy-tile { position:relative; display:flex; align-items:center; gap:12px; border:none; border-radius:var(--radius-tile); padding:0 20px; min-height:var(--tile-min-height); font-size:var(--text-tile); font-family:var(--font-body); font-weight:700; line-height:1.3; width:100%; height:100%; text-align:left; }
+.sy-tile .tile-label { flex:1 1 auto; }
+.sy-tile-shape { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+
+.right-tag { flex-shrink:0; display:inline-flex; align-items:center; gap:6px; background:var(--color-ink); color:var(--color-white); border-radius:4px; padding:4px 10px; font-family:var(--font-body); font-weight:700; font-size:18px; line-height:1; }
+
+.selection { position:absolute; border:3px solid var(--color-ink); border-radius:var(--radius-tile); pointer-events:none; z-index:30; }
+.handle { position:absolute; width:12px; height:12px; background:var(--color-ink); border:2px solid var(--color-paper); }
+.handle.tl { top:-7px; left:-7px; } .handle.tr { top:-7px; right:-7px; }
+.handle.bl { bottom:-7px; left:-7px; } .handle.br { bottom:-7px; right:-7px; }
+.drag-tab { position:absolute; top:-34px; left:50%; transform:translateX(-50%); background:var(--color-ink); color:var(--color-paper); font-family:var(--font-body); font-weight:700; font-size:18px; padding:4px 12px; border-radius:6px; white-space:nowrap; }
+
+.sy-stamp { position:absolute; top:-24px; left:64px; transform:rotate(-8deg); color:var(--color-stamp); font-size:30px; font-family:var(--font-head); font-weight:800; text-transform:uppercase; background:transparent; mix-blend-mode:multiply; border:3px solid var(--color-stamp); border-radius:4px; padding:4px 10px; opacity:0.92; white-space:nowrap; z-index:20; }
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="wordmark">Stackyard</span>
+    <span class="caption">Try It storyboard — edit it, flip it, it plays (for the demo video)</span>
+  </header>
+
+  <main class="desk">
+    <!-- BEAT 1: editing, with handles and the navy right-answer tag -->
+    <div class="frame">
+      <span class="frame-cap">1 · Editing — drag it, mark the right answer</span>
+      <div class="canvas-scale">
+        <div class="sy-card-stack">
+          <div class="sy-card-edge sy-card-edge-1"></div>
+          <div class="sy-card-edge sy-card-edge-2"></div>
+          <div class="sy-card-edge sy-card-edge-3"></div>
+          <div class="sy-card">
+            <div class="sy-rings" aria-hidden="true">
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+            </div>
+            <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;"><p class="sy-meta">Card 3 of 10</p></div>
+            <div class="sy-element" style="left:48px; top:104px; width:704px; height:128px;"><p class="sy-question">Where did the Vikings build a town in 841?</p></div>
+            <div class="sy-element" style="left:48px; top:296px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg></span><span class="tile-label">Dublin</span><span class="right-tag">✓ Right answer</span></button>
+            </div>
+            <div class="sy-element" style="left:408px; top:296px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg></span><span class="tile-label">Cork</span></button>
+            </div>
+            <div class="sy-element" style="left:48px; top:424px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg></span><span class="tile-label">Galway</span></button>
+            </div>
+            <div class="sy-element" style="left:408px; top:424px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button"><span class="sy-tile-shape" style="color:var(--color-white);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg></span><span class="tile-label">Sligo</span></button>
+            </div>
+            <div class="selection" style="left:44px; top:292px; width:352px; height:104px;">
+              <span class="drag-tab">Drag to move</span>
+              <span class="handle tl"></span><span class="handle tr"></span><span class="handle bl"></span><span class="handle br"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-arrow" aria-hidden="true">
+      <svg viewBox="0 0 48 48"><path d="M10 24h24M26 14l10 10-10 10" fill="none" stroke="#1E2A47" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 36c-6-6-6-18 0-24" fill="none" stroke="#1E2A47" stroke-width="3" stroke-linecap="round" opacity="0.7"/></svg>
+      <span class="lbl">Press Try It — it flips over</span>
+    </div>
+
+    <!-- BEAT 2: the class view, CORRECT stamp landed on the label side -->
+    <div class="frame">
+      <span class="frame-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> 2 · Playing — the stamp lands</span>
+      <div class="canvas-scale">
+        <div class="sy-card-stack">
+          <div class="sy-card-edge sy-card-edge-1"></div>
+          <div class="sy-card-edge sy-card-edge-2"></div>
+          <div class="sy-card-edge sy-card-edge-3"></div>
+          <div class="sy-card">
+            <div class="sy-rings" aria-hidden="true">
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+            </div>
+            <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;"><p class="sy-meta">Card 3 of 10</p></div>
+            <div class="sy-element" style="left:48px; top:104px; width:704px; height:128px;"><p class="sy-question">Where did the Vikings build a town in 841?</p></div>
+            <div class="sy-element" style="left:48px; top:296px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg></span><span class="tile-label">Dublin</span><span class="sy-stamp" aria-hidden="true">Correct ✓</span></button>
+            </div>
+            <div class="sy-element" style="left:408px; top:296px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg></span><span class="tile-label">Cork</span></button>
+            </div>
+            <div class="sy-element" style="left:48px; top:424px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button"><span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg></span><span class="tile-label">Galway</span></button>
+            </div>
+            <div class="sy-element" style="left:408px; top:424px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button"><span class="sy-tile-shape" style="color:var(--color-white);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg></span><span class="tile-label">Sligo</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="sr-only">Storyboard: the teacher edits the card, presses Try It, and the same card flips over and plays with the CORRECT stamp.</div>
+</div>
+</body>
+</html>

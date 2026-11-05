@@ -8,75 +8,104 @@
 /* ============================================================
    Stackyard — Stamp Pad design system (design-system.md)
    Static mockup. No build step, no framework, no external URLs.
+   Fonts are self-hosted woff2 subsets in ./fonts (offline-safe).
    ============================================================ */
+/* Fonts: Bricolage Grotesque (c)2022 Bricolage Project Authors, OFL-1.1, no RFN.
+   'Stackyard Reading' = Latin subset of Atkinson Hyperlegible (c)2020 Braille
+   Institute, OFL-1.1 with Reserved Font Names 'Atkinson'/'Hyperlegible'; the
+   subset is a Modified Version, renamed to avoid the RFN. See fonts/OFL-*.txt. */
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700 800; font-display:swap; src:url('fonts/bricolage.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:400; font-display:swap; src:url('fonts/reading-400.woff2') format('woff2'); }
+@font-face { font-family:'Stackyard Reading'; font-style:normal; font-weight:700; font-display:swap; src:url('fonts/reading-700.woff2') format('woff2'); }
+
 :root {
   --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
   --color-stamp:#CE3926; --color-stamp-hover:#B8321F;
   --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
-  --color-white:#FFFFFF; --color-desk:#D4C9B0; --shell-sub:#E0E6F0;
+  --color-white:#FFFFFF; --color-desk:#C9A47C; --shell-sub:#E0E6F0;
   --radius-card:10px; --radius-tile:12px; --radius-button:10px;
   --tile-min-height:56px; --rule-gap:32px;
-  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:18px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:20px;
   --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
-  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+  --font-body:'Stackyard Reading','Atkinson Hyperlegible','Arial',sans-serif;
+  --card-scale:0.95;
 }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
-button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; -webkit-font-smoothing:antialiased; }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 
-.app { display:flex; flex-direction:column; min-height:100vh; }
-.topbar { background:var(--color-ink); display:flex; align-items:center; gap:24px; padding:14px 28px; }
-.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
-.stack-desc { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); max-width:560px; line-height:1.5; }
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+.topbar { flex:0 0 auto; background:var(--color-ink); display:flex; align-items:center; gap:20px; height:56px; padding:0 24px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); line-height:1; flex-shrink:0; }
+.stack-desc { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.topbar .tryit { flex-shrink:0; margin-left:auto; min-height:40px; background:transparent; border:2px solid var(--shell-sub); border-radius:var(--radius-button); color:var(--color-paper); font-family:var(--font-body); font-weight:700; font-size:18px; padding:6px 18px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.topbar .tryit svg { width:18px; height:18px; }
 
-.workspace { flex:1; display:grid; grid-template-columns:220px 1fr 300px; min-height:0; }
-.cardlist { background:var(--color-paper); border-right:1px solid var(--color-rule); padding:16px 12px; overflow-y:auto; }
-.cardlist h2 { font-family:var(--font-body); font-weight:700; font-size:18px; margin-bottom:12px; }
-.card-entry { display:block; width:100%; min-height:44px; text-align:left; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:10px 12px; margin-bottom:8px; font-family:var(--font-body); font-size:18px; color:var(--color-ink); cursor:pointer; line-height:1.3; }
-.card-entry .pos { font-weight:700; } .card-entry .kind { color:#4a5878; font-size:18px; }
+.workspace { flex:1 1 auto; display:grid; grid-template-columns:200px 1fr 280px; min-height:0; overflow:hidden; }
+
+.cardlist { display:flex; flex-direction:column; background:var(--color-paper); border-right:1px solid var(--color-rule); min-height:0; }
+.cardlist h2 { font-family:var(--font-body); font-weight:700; font-size:18px; padding:12px 14px 8px; flex-shrink:0; }
+.cardlist-scroll { flex:1 1 auto; overflow-y:auto; padding:0 10px; }
+.card-entry { display:flex; align-items:center; gap:8px; width:100%; height:52px; text-align:left; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:0 10px; margin-bottom:6px; font-family:var(--font-body); font-size:18px; color:var(--color-ink); cursor:pointer; line-height:1.2; overflow:hidden; }
+.card-entry .num { font-weight:700; flex-shrink:0; }
+.card-entry .kshape { flex-shrink:0; width:20px; height:20px; display:inline-flex; }
+.card-entry .label { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-entry .grip { flex-shrink:0; color:#4a5878; cursor:grab; font-size:18px; }
 .card-entry[aria-current="true"] { border:2px solid var(--color-ink); background:#fff; }
-.cardlist-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-.mini-btn { min-height:44px; min-width:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:8px 12px; }
+.cardlist-foot { flex-shrink:0; padding:10px; border-top:1px solid var(--color-rule); }
+.add-card { width:100%; min-height:44px; background:var(--color-paper); border:2px solid var(--color-ink); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; }
 
-.canvas-area { background:var(--color-desk); display:flex; align-items:center; justify-content:center; padding:32px; overflow:auto; }
-.canvas-scale { transform:scale(0.72); transform-origin:center center; }
+.canvas-area { position:relative; background:var(--color-desk); background-image:repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; overflow:hidden; min-height:0; padding:16px; }
 
+/* Front | Back segmented control above the card */
+.segmented { display:inline-flex; border:2px solid var(--color-ink); border-radius:var(--radius-button); overflow:hidden; background:var(--color-paper); flex-shrink:0; }
+.segmented button { min-height:44px; min-width:96px; border:none; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; padding:8px 20px; }
+.segmented button[aria-pressed="true"] { background:var(--color-ink); color:var(--color-paper); }
+
+.canvas-scale { width:calc(820px * var(--card-scale)); height:calc(640px * var(--card-scale)); flex:0 0 auto; }
+.canvas-scale > .sy-card-stack { transform:scale(var(--card-scale)); transform-origin:top left; }
 .sy-card-stack { position:relative; width:800px; height:600px; }
-.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background:var(--color-paper); border:1.5px solid var(--color-rule); pointer-events:none; }
-.sy-card-edge-1 { transform:translate(4px,4px); z-index:1; }
-.sy-card-edge-2 { transform:translate(8px,8px); z-index:0; }
-.sy-card-edge-3 { transform:translate(12px,12px); z-index:-1; }
-.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1.5px solid var(--color-rule); overflow:hidden; z-index:2; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); border:1px solid #D8CDB6; box-shadow:0 2px 0 rgba(30,42,71,.10); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(6px,6px); background:#F4EFE3; z-index:1; }
+.sy-card-edge-2 { transform:translate(12px,12px); background:#EDE6D6; z-index:0; }
+.sy-card-edge-3 { transform:translate(18px,18px); background:#E6DDC9; z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1px solid var(--color-rule); box-shadow:0 2px 0 rgba(30,42,71,.10); overflow:visible; z-index:2; }
 .sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
-.sy-ring-holes { position:absolute; top:0; left:0; width:800px; display:flex; justify-content:space-around; padding:0 200px; pointer-events:none; z-index:10; }
-.sy-ring-hole { width:20px; height:20px; border-radius:50%; background:var(--color-white); border:1px solid var(--color-rule); margin-top:6px; }
+.sy-rings { position:absolute; top:-22px; left:0; width:800px; height:52px; display:flex; justify-content:center; gap:240px; pointer-events:none; z-index:12; }
+.sy-ring svg { display:block; }
+
 .sy-element { position:absolute; z-index:1; }
-.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.5; color:var(--color-ink); }
-.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:1.3; color:var(--color-ink); }
-.sy-text { font-size:var(--text-body); font-family:var(--font-body); font-weight:400; line-height:1.5; color:var(--color-ink); }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.6; color:var(--color-ink); }
+.sy-flash-term { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:64px; color:var(--color-ink); text-align:center; }
+.sy-flash-hint { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; color:#4a5878; text-align:center; }
 
-.sy-button { border:2px solid var(--color-ink); border-radius:10px; background:var(--color-paper); color:var(--color-ink); font-size:var(--text-body); font-family:var(--font-body); font-weight:400; cursor:pointer; min-height:44px; min-width:44px; padding:8px 16px; width:100%; height:100%; }
+/* Direct manipulation */
+.selection { position:absolute; border:3px solid var(--color-ink); border-radius:var(--radius-tile); pointer-events:none; z-index:30; }
+.handle { position:absolute; width:12px; height:12px; background:var(--color-ink); border:2px solid var(--color-paper); }
+.handle.tl { top:-7px; left:-7px; } .handle.tr { top:-7px; right:-7px; }
+.handle.bl { bottom:-7px; left:-7px; } .handle.br { bottom:-7px; right:-7px; }
+.drag-tab { position:absolute; top:-34px; left:50%; transform:translateX(-50%); background:var(--color-ink); color:var(--color-paper); font-family:var(--font-body); font-weight:700; font-size:18px; padding:4px 12px; border-radius:6px; white-space:nowrap; display:inline-flex; align-items:center; gap:8px; }
+.drag-tab svg { width:16px; height:16px; }
 
-.selected-outline { position:absolute; border:2px dashed var(--color-ink); border-radius:var(--radius-tile); pointer-events:none; z-index:30; }
-
-.inspector { background:var(--color-paper); border-left:1px solid var(--color-rule); padding:20px 16px; overflow-y:auto; }
-.inspector h2 { font-family:var(--font-head); font-weight:700; font-size:22px; margin-bottom:14px; }
+.inspector { background:var(--color-paper); border-left:1px solid var(--color-rule); padding:18px 16px; overflow-y:auto; min-height:0; }
+.inspector h2 { font-family:var(--font-head); font-weight:800; font-size:22px; margin-bottom:14px; }
 .field-group { margin-bottom:18px; }
-.field-group label { display:block; font-size:18px; font-weight:700; margin-bottom:6px; }
+.field-group > label { display:block; font-size:18px; font-weight:700; margin-bottom:6px; }
 .field-group input, .field-group select, .field-group textarea { width:100%; font-family:var(--font-body); font-size:18px; color:var(--color-ink); background:#fff; border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:10px 12px; min-height:44px; }
-.field-group textarea { min-height:96px; line-height:1.5; resize:vertical; }
+.field-group textarea { min-height:168px; line-height:1.5; resize:vertical; overflow:auto; }
 .hint { font-size:18px; color:#4a5878; line-height:1.4; margin-top:6px; }
 
-.toolbar { background:var(--color-paper); border-top:1px solid var(--color-rule); display:flex; align-items:center; gap:12px; padding:10px 20px; }
-.tool-btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; min-width:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:8px 14px; }
-.tool-sep { width:1px; align-self:stretch; background:var(--color-rule); margin:4px 4px; }
+.toolbar { flex:0 0 auto; background:var(--color-paper); border-top:1px solid var(--color-rule); display:flex; align-items:center; gap:10px; padding:8px 16px; }
+.tool-card { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; height:64px; min-width:76px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:6px 12px; }
+.tool-card svg { width:24px; height:24px; }
+.tool-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); cursor:pointer; }
+.tool-icon-btn svg { width:22px; height:22px; }
+.tool-sep { width:1px; align-self:stretch; background:var(--color-rule); margin:6px 4px; }
 .spacer { flex:1; }
 .export-btn { display:inline-flex; align-items:center; gap:10px; background:var(--color-stamp); color:var(--color-white); border:none; border-radius:var(--radius-button); padding:12px 24px; font-family:var(--font-body); font-weight:700; font-size:18px; cursor:pointer; min-height:44px; }
 .export-btn:hover { background:var(--color-stamp-hover); }
 .export-btn svg { width:20px; height:20px; }
-
-/* Flash: a small front/back toggle badge on the card */
-.flip-badge { position:absolute; right:40px; top:56px; font-family:var(--font-body); font-weight:700; font-size:18px; color:#4a5878; border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:6px 12px; background:#fff; z-index:12; }
 
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 </style>
@@ -86,24 +115,35 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px so
   <header class="topbar">
     <span class="wordmark">Stackyard</span>
     <span class="stack-desc">A 10-card quiz about the Vikings in Ireland — the right answer plays a cheer</span>
+    <button class="tryit" type="button" aria-label="Try it: play this card like the class will">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> Try It
+    </button>
   </header>
 
   <div class="workspace">
     <nav class="cardlist" aria-label="Cards">
       <h2>Cards</h2>
-      <button class="card-entry" type="button"><span class="pos">Card 3 of 10</span><br><span class="kind">Quiz</span></button>
-      <button class="card-entry" type="button" aria-current="true"><span class="pos">Card 4 of 10</span><br><span class="kind">Flash</span></button>
-      <button class="card-entry" type="button"><span class="pos">Card 5 of 10</span><br><span class="kind">Story</span></button>
-      <button class="card-entry" type="button"><span class="pos">Card 10 of 10</span><br><span class="kind">Last card</span></button>
-      <div class="cardlist-actions">
-        <button class="mini-btn" type="button">Add Card</button>
-        <button class="mini-btn" type="button">Remove</button>
-        <button class="mini-btn" type="button" aria-label="Move card up">↑</button>
-        <button class="mini-btn" type="button" aria-label="Move card down">↓</button>
+      <div class="cardlist-scroll">
+        <button class="card-entry" type="button"><span class="num">1</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who sailed to Ireland first?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">2</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What is a longship?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">3</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Where did the Vikings…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button" aria-current="true"><span class="num">4</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Longphort</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">5</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 23V13c0-2 1.6-3.6 3.6-3.6H20" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 5l5 4.4-5 4.4" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="label">The longship lands…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">6</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who led the first raid?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">7</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What did they trade?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">8</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Which king fought back?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">9</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Thingmote</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">10</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M7 3v22" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round"/><path d="M7 4h14l-3 5 3 5H7z" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linejoin="round"/></svg></span><span class="label">Last card — the score</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
       </div>
+      <div class="cardlist-foot"><button class="add-card" type="button">+ Add Card</button></div>
     </nav>
 
     <main class="canvas-area" aria-label="Card preview">
+      <!-- Two-state segmented control; the flip plays the rotateX motion the class sees -->
+      <div class="segmented" role="group" aria-label="Show front or back">
+        <button type="button" aria-pressed="true">Front</button>
+        <button type="button" aria-pressed="false">Back</button>
+      </div>
       <div class="canvas-scale">
         <div class="sy-card-stack">
           <div class="sy-card-edge sy-card-edge-1"></div>
@@ -111,28 +151,29 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px so
           <div class="sy-card-edge sy-card-edge-3"></div>
 
           <div class="sy-card">
-            <div class="sy-ring-holes" aria-hidden="true">
-              <div class="sy-ring-hole"></div>
-              <div class="sy-ring-hole"></div>
+            <div class="sy-rings" aria-hidden="true">
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
+              <span class="sy-ring"><svg width="26" height="52" viewBox="0 0 26 52"><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/><ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/><ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/></svg></span>
             </div>
 
-            <span class="flip-badge">Front</span>
-
-            <div class="sy-element" style="left:48px; top:56px; width:400px; height:28px;">
-              <p class="sy-meta">Card 4 of 10</p>
+            <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;">
+              <p class="sy-meta">Card 4 of 10 · Flash</p>
             </div>
 
-            <!-- Flash: term on the front (question token) -->
-            <div class="sy-element" style="left:48px; top:150px; width:704px; height:120px;">
-              <p class="sy-question">Longphort</p>
+            <!-- Only the front: the term, centred -->
+            <div class="sy-element" style="left:48px; top:264px; width:704px; height:72px;">
+              <p class="sy-flash-term">Longphort</p>
+            </div>
+            <div class="sy-element" style="left:48px; top:488px; width:704px; height:32px;">
+              <p class="sy-flash-hint">Tap the card to see the answer</p>
             </div>
 
-            <!-- Flash back body text (preview below) -->
-            <div class="sy-element" style="left:48px; top:300px; width:704px; height:200px;">
-              <p class="sy-text">A longphort was a fortified ship harbour the Vikings built on the coast. They used it to raid and to trade. Dublin began as a longphort in 841.</p>
+            <!-- Direct-manipulation selection on the term -->
+            <div class="selection" style="left:200px; top:260px; width:400px; height:80px;">
+              <span class="drag-tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H5v2l-3-3 3-3v2h4V5H7z" fill="currentColor"/></svg>Drag to move</span>
+              <span class="handle tl"></span><span class="handle tr"></span>
+              <span class="handle bl"></span><span class="handle br"></span>
             </div>
-
-            <div class="selected-outline" style="left:44px; top:146px; width:712px; height:128px;"></div>
           </div>
         </div>
       </div>
@@ -146,7 +187,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px so
       </div>
       <div class="field-group">
         <label for="back">Back (the explanation)</label>
-        <textarea id="back">A longphort was a fortified ship harbour the Vikings built on the coast. They used it to raid and to trade. Dublin began as a longphort in 841.</textarea>
+        <textarea id="back" rows="6">A longphort was a fortified ship harbour the Vikings built on the coast. They used it to raid and to trade. Dublin began as a longphort in 841.</textarea>
         <p class="hint">The class taps the card to flip from the term to the explanation.</p>
       </div>
       <div class="field-group">
@@ -162,23 +203,31 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px so
   </div>
 
   <footer class="toolbar">
-    <button class="tool-btn" type="button"><strong>T</strong> Text</button>
-    <button class="tool-btn" type="button">
-      <svg width="18" height="18" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,4 24,24 4,24" fill="currentColor"/></svg> Button</button>
-    <button class="tool-btn" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="2" fill="currentColor"/><path d="M4 18l6-6 4 4 4-4 2 2" fill="none" stroke="currentColor" stroke-width="2"/></svg> Picture</button>
-    <button class="tool-btn" type="button">… Go to card…</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 6V4h16v2M12 6v14M9 20h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add Text</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg> Add Button</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="1.8" fill="currentColor"/><path d="M4 18l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg> Add Picture</button>
+    <button class="tool-card" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h8a3 3 0 010 6h-3M15 17H7a3 3 0 010-6h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Link a Card</button>
     <span class="tool-sep" aria-hidden="true"></span>
-    <button class="tool-btn" type="button">Undo</button>
-    <button class="tool-btn" type="button">Redo</button>
+    <button class="tool-icon-btn" type="button" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tool-icon-btn" type="button" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <span class="spacer"></span>
-    <button class="export-btn" type="button">
-      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0l-4-4m4 4l4-4M3 15v2a1 1 0 001 1h12a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Export File
-    </button>
+    <button class="export-btn" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0l-4-4m4 4l4-4M3 15v2a1 1 0 001 1h12a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Export File</button>
   </footer>
 
   <div class="sr-only" aria-live="polite">Editing the front of card 4.</div>
 </div>
+<script>
+(function () {
+  var area = document.querySelector('.canvas-area');
+  var root = document.documentElement;
+  function fit() {
+    var w = area.clientWidth, h = area.clientHeight - 60;
+    var s = Math.min((w - 48) / 812, (h - 48) / 612);
+    s = Math.max(0.9, Math.min(s, 1.35));
+    root.style.setProperty('--card-scale', s.toFixed(3));
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
 </body>
 </html>

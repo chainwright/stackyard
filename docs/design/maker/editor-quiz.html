@@ -8,10 +8,37 @@
 /* ============================================================
    Stackyard — Stamp Pad design system (design-system.md)
    Static mockup. No build step, no framework, no external URLs.
-   Fonts use the system fallbacks named in the renderer:
-     headings: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif
-     body:     'Atkinson Hyperlegible', 'Arial', sans-serif
+   Fonts are self-hosted woff2 subsets in ./fonts (offline-safe).
    ============================================================ */
+
+/* ---- Self-hosted fonts (Latin subset woff2, local files) ----
+   Bricolage Grotesque — Copyright 2022 The Bricolage Grotesque Project
+   Authors, SIL Open Font License 1.1 (no Reserved Font Name). See
+   fonts/OFL-BricolageGrotesque.txt.
+   "Stackyard Reading" is a Latin subset of Atkinson Hyperlegible —
+   Copyright 2020 Braille Institute of America, Inc., SIL OFL 1.1 with
+   Reserved Font Names "Atkinson" and "Hyperlegible". The subset is a
+   Modified Version, so it is renamed here to avoid the reserved name.
+   See fonts/OFL-AtkinsonHyperlegible.txt. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal; font-weight: 700 800;
+  font-display: swap;
+  src: url('fonts/bricolage.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Stackyard Reading';
+  font-style: normal; font-weight: 400;
+  font-display: swap;
+  src: url('fonts/reading-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Stackyard Reading';
+  font-style: normal; font-weight: 700;
+  font-display: swap;
+  src: url('fonts/reading-700.woff2') format('woff2');
+}
+
 :root {
   --color-paper:   #FBF8F1;
   --color-ink:     #1E2A47;
@@ -23,8 +50,8 @@
   --color-tile-c:  #26A69A;
   --color-tile-d:  #1E2A47;
   --color-white:   #FFFFFF;
-  --color-desk:    #D4C9B0; /* canvas backdrop only */
-  --shell-sub:     #E0E6F0; /* description text on navy top bar */
+  --color-desk:    #C9A47C; /* warmer wood desk, canvas backdrop only */
+  --shell-sub:     #E0E6F0;
 
   --radius-card:   10px;
   --radius-tile:   12px;
@@ -35,136 +62,187 @@
   --text-question: 44px;
   --text-tile:     32px;
   --text-body:     22px;
-  --text-meta:     18px;
+  --text-meta:     20px;   /* raised 18 -> 20 so 0.9 x 20 = 18 on the card */
 
   --font-head: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
-  --font-body: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  --font-body: 'Stackyard Reading', 'Atkinson Hyperlegible', 'Arial', sans-serif;
+
+  /* Fit scale: fill the canvas, clamp to >= 0.9 in the Maker. */
+  --card-scale: 0.95;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Controls inherit the paper fonts, so nothing leaks to system Arial */
+button, input, select, textarea { font: inherit; color: inherit; }
 
 html, body {
   height: 100%;
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 18px;            /* 18px floor */
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Shared focus ring */
-button:focus-visible,
-a:focus-visible,
-[tabindex]:focus-visible {
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 3px solid var(--color-ink);
   outline-offset: 2px;
 }
 
-/* ---------------- App shell ---------------- */
+/* ---------------- App shell: locks to the viewport height ---------------- */
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* Top bar (navy) */
+/* Top bar (navy) — one line, 56px */
 .topbar {
+  flex: 0 0 auto;
   background: var(--color-ink);
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 14px 28px;
+  gap: 20px;
+  height: 56px;
+  padding: 0 24px;
 }
 .wordmark {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 24px;
+  font-size: 30px;
   color: var(--color-paper);
-  letter-spacing: 0;
+  line-height: 1;
+  flex-shrink: 0;
 }
 .stack-desc {
   font-family: var(--font-body);
   font-weight: 400;
   font-size: 18px;
   color: var(--shell-sub);
-  max-width: 560px;
-  line-height: 1.5;
+  max-width: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
+.topbar .tryit {
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 40px;
+  background: transparent;
+  border: 2px solid var(--shell-sub);
+  border-radius: var(--radius-button);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 18px;
+  padding: 6px 18px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.topbar .tryit svg { width: 18px; height: 18px; }
 
-/* Workspace: card list + canvas + inspector */
+/* Workspace: card list + canvas + inspector, fills remaining height */
 .workspace {
-  flex: 1;
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 220px 1fr 300px;
+  grid-template-columns: 200px 1fr 280px;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* --- Card list (left) --- */
 .cardlist {
+  display: flex;
+  flex-direction: column;
   background: var(--color-paper);
   border-right: 1px solid var(--color-rule);
-  padding: 16px 12px;
-  overflow-y: auto;
+  min-height: 0;
 }
 .cardlist h2 {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 18px;
-  margin-bottom: 12px;
+  padding: 12px 14px 8px;
+  flex-shrink: 0;
 }
+.cardlist-scroll { flex: 1 1 auto; overflow-y: auto; padding: 0 10px; }
 .card-entry {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  min-height: 44px;
+  height: 52px;
   text-align: left;
   background: var(--color-paper);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-button);
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 0 10px;
+  margin-bottom: 6px;
   font-family: var(--font-body);
   font-size: 18px;
   color: var(--color-ink);
   cursor: pointer;
-  line-height: 1.3;
+  line-height: 1.2;
+  overflow: hidden;
 }
-.card-entry .pos { font-weight: 700; }
-.card-entry .kind { color: #4a5878; font-size: 18px; }
+.card-entry .num { font-weight: 700; flex-shrink: 0; }
+.card-entry .kshape { flex-shrink: 0; width: 20px; height: 20px; display: inline-flex; }
+.card-entry .label {
+  flex: 1 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-entry .grip { flex-shrink: 0; color: #4a5878; cursor: grab; font-size: 18px; }
 .card-entry[aria-current="true"] {
   border: 2px solid var(--color-ink);
   background: #fff;
 }
-.cardlist-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+.card-entry .flag {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--color-ink); color: var(--color-paper);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-head); font-weight: 800; font-size: 16px;
 }
-.mini-btn {
+.cardlist-foot { flex-shrink: 0; padding: 10px; border-top: 1px solid var(--color-rule); }
+.add-card {
+  width: 100%;
   min-height: 44px;
-  min-width: 44px;
   background: var(--color-paper);
-  border: 1px solid var(--color-rule);
+  border: 2px solid var(--color-ink);
   border-radius: var(--radius-button);
   color: var(--color-ink);
   font-family: var(--font-body);
+  font-weight: 700;
   font-size: 18px;
   cursor: pointer;
-  padding: 8px 12px;
 }
 
 /* --- Canvas (centre) --- */
 .canvas-area {
+  position: relative;
   background: var(--color-desk);
+  background-image: repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
+  padding: 16px;
 }
+/* Sized wrapper: the scaled card takes its *scaled* space in the layout,
+   so two cards never overflow and nothing clips. The card-stack itself is
+   scaled from its top-left corner inside this box. */
 .canvas-scale {
-  /* Scales the logical 800x600 card down to fit. */
-  transform: scale(0.72);
-  transform-origin: center center;
+  width: calc(820px * var(--card-scale));
+  height: calc(640px * var(--card-scale));
+  flex: 0 0 auto;
+}
+.canvas-scale > .sy-card-stack {
+  transform: scale(var(--card-scale));
+  transform-origin: top left;
 }
 
 /* ---- Card stack wrapper (same look as the player) ---- */
@@ -173,23 +251,25 @@ a:focus-visible,
   position: absolute; top: 0; left: 0;
   width: 800px; height: 600px;
   border-radius: var(--radius-card);
-  background: var(--color-paper);
-  border: 1.5px solid var(--color-rule);
+  border: 1px solid #D8CDB6;
+  box-shadow: 0 2px 0 rgba(30,42,71,.10);
   pointer-events: none;
 }
-.sy-card-edge-1 { transform: translate(4px, 4px);   z-index: 1; }
-.sy-card-edge-2 { transform: translate(8px, 8px);   z-index: 0; }
-.sy-card-edge-3 { transform: translate(12px, 12px); z-index: -1; }
+.sy-card-edge-1 { transform: translate(6px, 6px);   background: #F4EFE3; z-index: 1; }
+.sy-card-edge-2 { transform: translate(12px, 12px); background: #EDE6D6; z-index: 0; }
+.sy-card-edge-3 { transform: translate(18px, 18px); background: #E6DDC9; z-index: -1; }
 
 .sy-card {
   position: absolute; top: 0; left: 0;
   width: 800px; height: 600px;
   border-radius: var(--radius-card);
   background-color: var(--color-paper);
-  border: 1.5px solid var(--color-rule);
-  overflow: hidden;
+  border: 1px solid var(--color-rule);
+  box-shadow: 0 2px 0 rgba(30,42,71,.10);
+  overflow: visible;   /* rings stand above the card, not clipped */
   z-index: 2;
 }
+/* Ruled lines at full strength, seated on the 32px grid from y=40 */
 .sy-card::after {
   content: '';
   position: absolute; inset: 0;
@@ -202,32 +282,27 @@ a:focus-visible,
   background-size: 100% calc(100% - 40px);
 }
 
-/* Ring holes */
-.sy-ring-holes {
-  position: absolute; top: 0; left: 0;
-  width: 800px; display: flex;
-  justify-content: space-around;
-  padding: 0 200px; pointer-events: none; z-index: 10;
+/* Metal ring loops standing above the card, punched holes beneath */
+.sy-rings {
+  position: absolute; top: -22px; left: 0;
+  width: 800px; height: 52px;
+  display: flex; justify-content: center; gap: 240px;
+  pointer-events: none; z-index: 12;
 }
-.sy-ring-hole {
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--color-white);
-  border: 1px solid var(--color-rule);
-  margin-top: 6px;
-}
+.sy-ring svg { display: block; }
 
 .sy-element { position: absolute; z-index: 1; }
 
 .sy-meta {
   font-size: var(--text-meta);
   font-family: var(--font-body);
-  font-weight: 400; line-height: 1.5;
+  font-weight: 400; line-height: 1.6;
   color: var(--color-ink);
 }
 .sy-question {
   font-size: var(--text-question);
   font-family: var(--font-head);
-  font-weight: 800; line-height: 1.3;
+  font-weight: 800; line-height: 64px;  /* two rule rows */
   color: var(--color-ink);
 }
 
@@ -248,46 +323,59 @@ a:focus-visible,
   flex-shrink: 0; width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
 }
+.sy-tile .tile-label { flex: 1 1 auto; }
 
-/* Mark-correct indicator: a label/tick, not colour alone */
-.correct-badge {
-  position: absolute;
-  top: -12px; left: 14px;
-  background: var(--color-paper);
-  color: var(--color-stamp);
-  border: 2px solid var(--color-stamp);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 18px;
-  text-transform: uppercase;
-  transform: rotate(-4deg);
+/* Editor right-answer marker: NAVY, inside the tile (earns no red) */
+.right-tag {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--color-ink); color: var(--color-white);
+  border-radius: 4px; padding: 4px 10px;
+  font-family: var(--font-body); font-weight: 700; font-size: 18px;
+  line-height: 1;
 }
 
-/* Editor selection overlay (sibling layer above the card) */
-.selected-outline {
+/* ---- Direct manipulation: selection handles + drag tab ---- */
+.selection {
   position: absolute;
-  border: 2px dashed var(--color-ink);
+  border: 3px solid var(--color-ink);
   border-radius: var(--radius-tile);
   pointer-events: none;
   z-index: 30;
 }
+.handle {
+  position: absolute; width: 12px; height: 12px;
+  background: var(--color-ink);
+  border: 2px solid var(--color-paper);
+}
+.handle.tl { top: -7px; left: -7px; }
+.handle.tr { top: -7px; right: -7px; }
+.handle.bl { bottom: -7px; left: -7px; }
+.handle.br { bottom: -7px; right: -7px; }
+.drag-tab {
+  position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+  background: var(--color-ink); color: var(--color-paper);
+  font-family: var(--font-body); font-weight: 700; font-size: 18px;
+  padding: 4px 12px; border-radius: 6px; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.drag-tab svg { width: 16px; height: 16px; }
 
 /* --- Inspector (right) --- */
 .inspector {
   background: var(--color-paper);
   border-left: 1px solid var(--color-rule);
-  padding: 20px 16px;
+  padding: 18px 16px;
   overflow-y: auto;
+  min-height: 0;
 }
 .inspector h2 {
   font-family: var(--font-head);
-  font-weight: 700; font-size: 22px;
+  font-weight: 800; font-size: 22px;
   margin-bottom: 14px;
 }
 .field-group { margin-bottom: 18px; }
-.field-group label {
+.field-group > label {
   display: block;
   font-size: 18px; font-weight: 700;
   margin-bottom: 6px;
@@ -305,39 +393,53 @@ a:focus-visible,
   padding: 10px 12px;
   min-height: 44px;
 }
-.inspector-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 44px;
-  background: var(--color-paper);
-  border: 2px solid var(--color-ink);
-  border-radius: var(--radius-button);
-  color: var(--color-ink);
-  font-family: var(--font-body);
+/* Right-answer toggle row: an ink checkbox, not a mystery button */
+.toggle-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; cursor: pointer;
   font-size: 18px; font-weight: 700;
-  padding: 8px 16px; cursor: pointer;
+  background: transparent; border: 0; padding: 0;
+  color: var(--color-ink); text-align: left;
 }
-.inspector-btn .tick { color: var(--color-stamp); font-weight: 800; }
+.toggle-box {
+  flex-shrink: 0; width: 28px; height: 28px;
+  border: 2px solid var(--color-ink); border-radius: 6px;
+  background: var(--color-ink); color: var(--color-paper);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-head); font-weight: 800; font-size: 18px;
+}
 .hint { font-size: 18px; color: #4a5878; line-height: 1.4; margin-top: 6px; }
 
-/* --- Bottom toolbar --- */
+/* --- Bottom toolbar: chunky tool cards --- */
 .toolbar {
+  flex: 0 0 auto;
   background: var(--color-paper);
   border-top: 1px solid var(--color-rule);
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 20px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
 }
-.tool-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 44px; min-width: 44px;
+.tool-card {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; height: 64px; min-width: 76px;
   background: var(--color-paper);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-button);
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 18px; cursor: pointer;
-  padding: 8px 14px;
+  padding: 6px 12px;
 }
-.tool-sep { width: 1px; align-self: stretch; background: var(--color-rule); margin: 4px 4px; }
+.tool-card svg { width: 24px; height: 24px; }
+.tool-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-button);
+  color: var(--color-ink); cursor: pointer;
+}
+.tool-icon-btn svg { width: 22px; height: 22px; }
+.tool-sep { width: 1px; align-self: stretch; background: var(--color-rule); margin: 6px 4px; }
 .spacer { flex: 1; }
 .export-btn {
   display: inline-flex; align-items: center; gap: 10px;
@@ -353,7 +455,6 @@ a:focus-visible,
 .export-btn:hover { background: var(--color-stamp-hover); }
 .export-btn svg { width: 20px; height: 20px; }
 
-/* Visually hidden (aria-live region) */
 .sr-only {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;
@@ -367,22 +468,30 @@ a:focus-visible,
   <header class="topbar">
     <span class="wordmark">Stackyard</span>
     <span class="stack-desc">A 10-card quiz about the Vikings in Ireland — the right answer plays a cheer</span>
+    <button class="tryit" type="button" aria-label="Try it: play this card like the class will">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+      Try It
+    </button>
   </header>
 
   <div class="workspace">
-    <!-- Card list -->
+    <!-- Card list: all ten rows, content, kind shapes -->
     <nav class="cardlist" aria-label="Cards">
       <h2>Cards</h2>
-      <button class="card-entry" type="button"><span class="pos">Card 1 of 10</span><br><span class="kind">Quiz</span></button>
-      <button class="card-entry" type="button"><span class="pos">Card 2 of 10</span><br><span class="kind">Quiz</span></button>
-      <button class="card-entry" type="button" aria-current="true"><span class="pos">Card 3 of 10</span><br><span class="kind">Quiz</span></button>
-      <button class="card-entry" type="button"><span class="pos">Card 4 of 10</span><br><span class="kind">Flash</span></button>
-      <button class="card-entry" type="button"><span class="pos">Card 10 of 10</span><br><span class="kind">Last card</span></button>
-      <div class="cardlist-actions">
-        <button class="mini-btn" type="button">Add Card</button>
-        <button class="mini-btn" type="button">Remove</button>
-        <button class="mini-btn" type="button" aria-label="Move card up">↑</button>
-        <button class="mini-btn" type="button" aria-label="Move card down">↓</button>
+      <div class="cardlist-scroll">
+        <button class="card-entry" type="button"><span class="num">1</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who sailed to Ireland first?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">2</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What is a longship?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button" aria-current="true"><span class="num">3</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Where did the Vikings…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">4</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Longphort</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">5</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 23V13c0-2 1.6-3.6 3.6-3.6H20" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 5l5 4.4-5 4.4" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="label">The longship lands…</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">6</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Who led the first raid?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">7</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">What did they trade?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">8</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="4" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="4" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/><rect x="16" y="16" width="8" height="8" rx="1.5" fill="none" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Which king fought back?</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">9</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="2" fill="none" stroke="#1E2A47" stroke-width="2.4"/><line x1="14" y1="6" x2="14" y2="22" stroke="#1E2A47" stroke-width="2.4"/></svg></span><span class="label">Thingmote</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+        <button class="card-entry" type="button"><span class="num">10</span><span class="kshape"><svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true"><path d="M7 3v22" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linecap="round"/><path d="M7 4h14l-3 5 3 5H7z" fill="none" stroke="#1E2A47" stroke-width="2.4" stroke-linejoin="round"/></svg></span><span class="label">Last card — the score</span><span class="grip" aria-hidden="true">⋮⋮</span></button>
+      </div>
+      <div class="cardlist-foot">
+        <button class="add-card" type="button">+ Add Card</button>
       </div>
     </nav>
 
@@ -395,64 +504,81 @@ a:focus-visible,
           <div class="sy-card-edge sy-card-edge-3"></div>
 
           <div class="sy-card">
-            <div class="sy-ring-holes" aria-hidden="true">
-              <div class="sy-ring-hole"></div>
-              <div class="sy-ring-hole"></div>
+            <!-- Metal ring loops standing above the card -->
+            <div class="sy-rings" aria-hidden="true">
+              <span class="sy-ring">
+                <svg width="26" height="52" viewBox="0 0 26 52">
+                  <ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/>
+                  <ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/>
+                  <ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/>
+                </svg>
+              </span>
+              <span class="sy-ring">
+                <svg width="26" height="52" viewBox="0 0 26 52">
+                  <ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/>
+                  <ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/>
+                  <ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/>
+                </svg>
+              </span>
             </div>
 
-            <!-- Card N of M -->
-            <div class="sy-element" style="left:48px; top:56px; width:400px; height:28px;">
+            <!-- Card N of M (seated on the rule grid: 40 + 32) -->
+            <div class="sy-element" style="left:48px; top:48px; width:400px; height:32px;">
               <p class="sy-meta">Card 3 of 10</p>
             </div>
 
-            <!-- Question -->
-            <div class="sy-element" style="left:48px; top:96px; width:704px; height:140px;">
+            <!-- Question (seated at 104 = 40 + 64, two rule rows tall) -->
+            <div class="sy-element" style="left:48px; top:104px; width:704px; height:128px;">
               <p class="sy-question">Where did the Vikings build a town in 841?</p>
             </div>
 
-            <!-- Tile A: Dublin (coral, triangle) — marked correct -->
-            <div class="sy-element" style="left:48px; top:300px; width:344px; height:96px;">
+            <!-- Tile A: Dublin (coral, triangle) — marked correct (navy tag) -->
+            <div class="sy-element" style="left:48px; top:296px; width:344px; height:96px;">
               <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button">
                 <span class="sy-tile-shape" style="color:var(--color-ink);">
                   <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg>
                 </span>
-                <span>Dublin</span>
-                <span class="correct-badge">Right answer ✓</span>
+                <span class="tile-label">Dublin</span>
+                <span class="right-tag">✓ Right answer</span>
               </button>
             </div>
 
             <!-- Tile B: Cork (sun, diamond) -->
-            <div class="sy-element" style="left:408px; top:300px; width:344px; height:96px;">
+            <div class="sy-element" style="left:408px; top:296px; width:344px; height:96px;">
               <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button">
                 <span class="sy-tile-shape" style="color:var(--color-ink);">
                   <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg>
                 </span>
-                <span>Cork</span>
+                <span class="tile-label">Cork</span>
               </button>
             </div>
 
             <!-- Tile C: Galway (teal, circle) -->
-            <div class="sy-element" style="left:48px; top:412px; width:344px; height:96px;">
+            <div class="sy-element" style="left:48px; top:424px; width:344px; height:96px;">
               <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button">
                 <span class="sy-tile-shape" style="color:var(--color-ink);">
                   <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg>
                 </span>
-                <span>Galway</span>
+                <span class="tile-label">Galway</span>
               </button>
             </div>
 
             <!-- Tile D: Sligo (navy, square, white text) -->
-            <div class="sy-element" style="left:408px; top:412px; width:344px; height:96px;">
+            <div class="sy-element" style="left:408px; top:424px; width:344px; height:96px;">
               <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button">
                 <span class="sy-tile-shape" style="color:var(--color-white);">
                   <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg>
                 </span>
-                <span>Sligo</span>
+                <span class="tile-label">Sligo</span>
               </button>
             </div>
 
-            <!-- Selection overlay on the selected (Dublin) tile -->
-            <div class="selected-outline" style="left:44px; top:296px; width:352px; height:104px;"></div>
+            <!-- Direct-manipulation selection on the Dublin tile -->
+            <div class="selection" style="left:44px; top:292px; width:352px; height:104px;">
+              <span class="drag-tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H5v2l-3-3 3-3v2h4V5H7z" fill="currentColor"/></svg>Drag to move</span>
+              <span class="handle tl"></span><span class="handle tr"></span>
+              <span class="handle bl"></span><span class="handle br"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -460,14 +586,17 @@ a:focus-visible,
 
     <!-- Inspector -->
     <aside class="inspector" aria-label="Edit">
-      <h2>Edit this tile</h2>
+      <h2>Edit this answer</h2>
       <div class="field-group">
         <label for="label">Answer</label>
         <input id="label" type="text" value="Dublin" />
       </div>
       <div class="field-group">
-        <button class="inspector-btn" type="button"><span class="tick">✓</span> Marked as the right answer</button>
-        <p class="hint">Only one tile can be the right answer. The class hears a cheer when they pick it.</p>
+        <button class="toggle-row" type="button" aria-pressed="true">
+          <span class="toggle-box" aria-hidden="true">✓</span>
+          <span>Right answer</span>
+        </button>
+        <p class="hint">Only one answer can be the right one. The class hears a cheer when they pick it.</p>
       </div>
       <div class="field-group">
         <label for="kind">Card type</label>
@@ -479,7 +608,7 @@ a:focus-visible,
         </select>
       </div>
       <div class="field-group">
-        <label for="goto">On click, go to…</label>
+        <label for="goto">When picked, go to…</label>
         <select id="goto">
           <option selected>Next card (Card 4)</option>
           <option>Card 1</option>
@@ -492,15 +621,23 @@ a:focus-visible,
 
   <!-- Bottom toolbar -->
   <footer class="toolbar">
-    <button class="tool-btn" type="button"><strong>T</strong> Text</button>
-    <button class="tool-btn" type="button">
-      <svg width="18" height="18" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,4 24,24 4,24" fill="currentColor"/></svg> Button</button>
-    <button class="tool-btn" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="2" fill="currentColor"/><path d="M4 18l6-6 4 4 4-4 2 2" fill="none" stroke="currentColor" stroke-width="2"/></svg> Picture</button>
-    <button class="tool-btn" type="button">… Go to card…</button>
+    <button class="tool-card" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 6V4h16v2M12 6v14M9 20h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Add Text</button>
+    <button class="tool-card" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      Add Button</button>
+    <button class="tool-card" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="1.8" fill="currentColor"/><path d="M4 18l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      Add Picture</button>
+    <button class="tool-card" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h8a3 3 0 010 6h-3M15 17H7a3 3 0 010-6h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Link a Card</button>
     <span class="tool-sep" aria-hidden="true"></span>
-    <button class="tool-btn" type="button">Undo</button>
-    <button class="tool-btn" type="button">Redo</button>
+    <button class="tool-icon-btn" type="button" aria-label="Undo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tool-icon-btn" type="button" aria-label="Redo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <span class="spacer"></span>
     <button class="export-btn" type="button">
       <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0l-4-4m4 4l4-4M3 15v2a1 1 0 001 1h12a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -510,5 +647,21 @@ a:focus-visible,
 
   <div class="sr-only" aria-live="polite">Dublin marked as the right answer.</div>
 </div>
+<script>
+/* Fit the 800x600 card to the canvas, clamped to >= 0.9 in the Maker.
+   Mirrors the planned runtime rule: min((w-64)/812, (h-64)/612). */
+(function () {
+  var area = document.querySelector('.canvas-area');
+  var root = document.documentElement;
+  function fit() {
+    var w = area.clientWidth, h = area.clientHeight;
+    var s = Math.min((w - 48) / 812, (h - 48) / 612);
+    s = Math.max(0.9, Math.min(s, 1.35));
+    root.style.setProperty('--card-scale', s.toFixed(3));
+  }
+  fit();
+  window.addEventListener('resize', fit);
+})();
+</script>
 </body>
 </html>
