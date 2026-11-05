@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Ready-made deck content check",
+      "trigger": "PostFileSave",
+      "description": "When the agent saves src/shared/readyMadeStacks.ts, check every quiz card has one correct answer, the correct position varies, no duplicate answers, and no over-long answer labels.",
+      "matcher": "readyMadeStacks\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run check:decks",
+        "timeout": 60
+      }
+    }
+  ]
+}

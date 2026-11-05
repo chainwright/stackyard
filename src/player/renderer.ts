@@ -1066,6 +1066,10 @@ export function renderCard(
       )
     : [];
   let answerSlotIndex = 0;
+  // Only the FIRST text element on a quiz/flash card is the big question token;
+  // any later text (e.g. an image credit line) renders as small body text, so a
+  // credit doesn't shout in 44px (TASK-23 d).
+  let questionTextPlaced = false;
 
   for (const el of card.elements) {
     const wrapper = document.createElement("div");
@@ -1075,8 +1079,10 @@ export function renderCard(
     switch (el.type) {
       case "text": {
         const p = document.createElement("p");
-        // Quiz and flash cards use the question token for their text elements.
-        p.className = (isQuizCard || card.kind === "flash") ? "sy-question" : "sy-text";
+        // Quiz and flash cards use the question token for their FIRST text.
+        const isQuestion = (isQuizCard || card.kind === "flash") && !questionTextPlaced;
+        p.className = isQuestion ? "sy-question" : "sy-text";
+        if (isQuestion) questionTextPlaced = true;
         p.textContent = el.content;
         wrapper.appendChild(p);
         break;

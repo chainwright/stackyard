@@ -13,15 +13,58 @@
 // and the last card shows the real score). Shared so the server fallback and
 // the editor demo use the same source of truth.
 
-import type { Stack, Card } from "./types.js";
+import type { Stack, Card, Element } from "./types.js";
 import { linkQuizAnswersForward } from "./linkForward.js";
 import { shuffleQuizAnswers } from "./shuffleAnswers.js";
+import { READY_MADE_IMAGES } from "./readyMadeImages.js";
+import { creditLine } from "./deckImageTypes.js";
 
 /** Link quiz answers forward, then shuffle which tile the correct answer sits
  *  on (deterministic per stack id), so the right answer is not always tile A
  *  (J3 P0, 5 Nov panel). */
 function finalise(stack: Stack): Stack {
   return shuffleQuizAnswers(linkQuizAnswersForward(stack));
+}
+
+/**
+ * Place one public-domain image (picked via the Openverse MCP server, TASK-23 d)
+ * and its credit line on the FIRST card of a deck, keyed by `deckKey`. The image
+ * sits top-right and the credit line runs along the bottom, both inside the
+ * 800×600 canvas and clear of the existing elements. Returns a NEW stack; the
+ * input is unchanged. If there is no image for the key, the stack is returned
+ * as-is.
+ */
+function withDeckImage(uuid: () => string, stack: Stack, deckKey: string): Stack {
+  const img = READY_MADE_IMAGES[deckKey];
+  // Target the first card that renders image elements. Flash cards use a fixed
+  // front/back layout that ignores image elements, so for an all-flash deck
+  // (Irish words) the image lands on the first quiz/story card instead.
+  const targetIndex = stack.cards.findIndex(
+    (c) => c.kind === "quiz" || c.kind === "story",
+  );
+  const first = targetIndex >= 0 ? stack.cards[targetIndex] : undefined;
+  if (img === undefined || first === undefined) return stack;
+
+  // A small thumbnail tucked in the top strip ABOVE the question (which starts
+  // at y:104), and a credit line along the bottom. Both fit the canvas
+  // (x+w ≤ 800, y+h ≤ 600): the image is y:8..104, the credit y:566..594.
+  const imageEl: Element = {
+    type: "image",
+    id: uuid(),
+    x: 504, y: 8, w: 150, h: 90,
+    src: img.dataUri,
+    alt: `${deckKey} illustration`,
+  };
+  const creditEl: Element = {
+    type: "text",
+    id: uuid(),
+    x: 48, y: 566, w: 704, h: 28,
+    content: creditLine(img),
+  };
+
+  const cards = stack.cards.slice();
+  cards[targetIndex] = { ...first, elements: [...first.elements, imageEl, creditEl] };
+  return { ...stack, cards };
 }
 
 // ---------------------------------------------------------------------------
@@ -145,12 +188,14 @@ export function vikingsStack(): Stack {
   // long after people already lived there — so "who sailed first?" is wrong
   // (J1/J3, 5 Nov panel). Ask who the raiders of 795 were instead.
   const c1 = quizCard(uuid, "Which people began raiding Ireland around the year 795?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0);
-  const c2 = quizCard(uuid, "What is a longship?", ["A fast boat", "A house", "A sword", "A town"], 0);
+  const c2 = quizCard(uuid, "What is a longship?", ["A long Viking boat", "A house", "A sword", "A town"], 0);
   const c3 = quizCard(uuid, "Where did the Vikings build a town in 841?", ["Dublin", "Cork", "Galway", "Sligo"], 0);
   const c8 = quizCard(uuid, "Who led a Viking raiding party?", ["A chieftain", "A monk", "A baker", "A farmer"], 0);
-  // Believable distractors — goods a Viking trader in Dublin might handle, not
-  // joke options (J1/J3). Silver is right; wool, salt and amber are plausible.
-  const c9 = quizCard(uuid, "What did the Vikings trade in Dublin?", ["Silver", "Wool", "Salt", "Amber"], 0);
+  // Narrowed so exactly one answer is defensible: the Vikings of Dublin traded
+  // silver, wool, salt and amber alike, so the old distractors were all true
+  // too (lesson-checker agent, TASK-23). Ask for a precious METAL and use
+  // metals they did NOT trade as distractors (no joke options).
+  const c9 = quizCard(uuid, "Which precious metal did the Vikings trade in Dublin?", ["Silver", "Tin", "Lead", "Copper"], 0);
   const c10 = quizCard(uuid, "Which Irish king fought the Vikings at Clontarf?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
   // Flash + story reference later ids; build them after the ids exist.
   const c11 = flashCard(uuid, "Thingmote", "A raised mound where the Norse of Dublin held their meetings.", endId);
@@ -187,7 +232,7 @@ export function vikingsStack(): Stack {
     theme: THEME,
     cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, end],
   };
-  return finalise(stack);
+  return finalise(withDeckImage(uuid, stack, "vikings"));
 }
 
 // ---------------------------------------------------------------------------
@@ -215,7 +260,7 @@ export function timesTablesStack(): Stack {
     theme: THEME,
     cards,
   };
-  return finalise(stack);
+  return finalise(withDeckImage(uuid, stack, "times-tables"));
 }
 
 // ---------------------------------------------------------------------------
@@ -274,7 +319,7 @@ export function irishWordsStack(): Stack {
     theme: THEME,
     cards: ordered,
   };
-  return finalise(stack);
+  return finalise(withDeckImage(uuid, stack, "irish-words"));
 }
 
 // ---------------------------------------------------------------------------

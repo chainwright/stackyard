@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "openverse": {
+      "command": "node",
+      "args": ["--import", "tsx/esm", "mcp/openverse/server.ts"],
+      "disabled": false,
+      "autoApprove": ["search_images"]
+    }
+  }
+}

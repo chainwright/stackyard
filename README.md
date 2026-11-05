@@ -66,6 +66,16 @@ The model is used **only in the Maker, at build time** — it never runs in, and
 is never inlined into, the exported file. Fonts are listed under
 [Third-party assets](#third-party-assets).
 
+## By the numbers
+
+These figures are checked against the code by `scripts/check-claims` (run by the
+`pre-submit` hook), so the docs can't drift:
+
+- Tests: **581** passing (`npm test`).
+- Player bundle: **9.7 KB** gzipped (budget 50 KB).
+- Stack invariants: **9** (enforced by `src/shared/validator.ts`).
+- Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
+
 ## Development
 
 Install dependencies with `npm ci`, then:

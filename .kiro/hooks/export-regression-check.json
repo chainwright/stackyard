@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Exported file opens and plays",
+      "trigger": "PostFileSave",
+      "description": "When the agent changes the exporter, security headers, or the HTML template, export a deck and confirm it opens from disk and plays (not a blank page) in headless Chrome.",
+      "matcher": "^server/(securityHeaders|exporter|html-template)\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run check:export-opens",
+        "timeout": 120
+      }
+    }
+  ]
+}

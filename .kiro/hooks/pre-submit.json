@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Pre-submit: full gate",
+      "description": "Run the full submission gate in one go: the whole test suite, strict type-check, the Maker build, and the README claim checker. Also runnable directly as `npm run pre-submit`.",
+      "trigger": "Manual",
+      "action": {
+        "type": "command",
+        "command": "npm run pre-submit"
+      },
+      "timeout": 0
+    }
+  ]
+}

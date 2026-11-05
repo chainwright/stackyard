@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Stack invariants + player size on save",
+      "trigger": "PostFileSave",
+      "description": "When the agent saves a file under src/shared or src/player, run the stack invariant/property tests and the player bundle size check; failures surface in chat.",
+      "matcher": "^src/(shared|player)/.*\\.(ts|tsx)$",
+      "action": {
+        "type": "command",
+        "command": "npm run check:invariants",
+        "timeout": 180
+      }
+    }
+  ]
+}

@@ -1268,3 +1268,39 @@ Each sub-item has acceptance criteria ("Done when"). Every pre-existing test sta
 - **Done when:** a form on the Start/fallback screen turns typed questions into a valid stack (through the shared validator) and opens it in the editor with no network call.
 
 > **Note on scope:** J3's "living file" (edit inside the exported HTML) and the Openverse picture MCP are NOT in TASK-22 — they are larger follow-ups. TASK-22 fixes the correctness, honesty, robustness and teacher-usability defects the panel found on the live build.
+
+
+---
+
+## Phase 10 — Real Kiro depth: hooks, a custom agent, an MCP server (TASK-23)
+
+### TASK-23: fill the empty Kiro features for real work (5 Nov panel J1 + J4)
+**Refs:** `judge_2026-11-05/J1_official.md` ("hooks, MCP, agents and powers … all four are zero"; `.kiro/agents/` empty and untracked), `J4_engineering.md` ("No hooks, no MCP config, `.kiro/agents/` empty"). The 2025 Resurrection winner shipped 4 hooks and 2 custom MCP servers; this closes the Kiro-depth gap with features that do actual work, each used at least once and recorded in `docs/KIRO_LOG.md`.
+
+Schemas follow the current kiro.dev docs: hooks are JSON in `.kiro/hooks/<id>.json` (`version`, `hooks[]` with `name`/`trigger`/`matcher` path-regex/`action`); custom agents are Markdown-with-frontmatter or JSON in `.kiro/agents/`; MCP servers are registered in `.kiro/settings/mcp.json` (`command`/`args`/`env`/`disabled`/`autoApprove`).
+
+**a) Hooks in `.kiro/hooks/` (JSON, documented schema).**
+  1. **invariants-on-save** — `FileSave`, matcher `^src/(shared|player)/.*\.(ts|tsx)$` → runs the stack invariant/property tests and the player bundle-size check; reports failures in chat.
+  2. **ready-made-content-check** — `FileSave`, matcher `readyMadeStacks\.ts$` → runs a content check (`scripts/check-decks`): every quiz card has exactly one correct answer, the correct position varies across each deck, no duplicate answers within a card, and no answer label longer than the two-line wrap width.
+  3. **export-regression-check** — `FileSave`, matcher `^server/(securityHeaders|exporter|html-template)\.ts$` → runs a headless check (`scripts/check-export-opens`) that an exported file opens from disk and plays (renders a card, no blank page) — the regression shipped on 5 Nov (J4 H1).
+  4. **pre-submit** — `Manual` trigger → `npm test` + `tsc --noEmit` + build + the README claim checker (b), in one command.
+  - **Done when:** the four hook files exist and validate against the documented schema; each command runs green on a clean tree; running hook 1 (edit + save a `shared`/`player` file) and hook 2 (edit `readyMadeStacks.ts`) actually executes its check.
+
+**b) README claim checker `scripts/check-claims`.** Asserts the README's stated numbers match reality: the test count (`npm test` total), the player gzipped size (KB, within a small tolerance), the number of stack invariants, and the property-test run count. Exits non-zero on drift. Hook 4 runs it.
+  - **Done when:** the README carries a "By the numbers" block with the exact values; `scripts/check-claims` passes on the current tree and fails if a number is edited to be wrong.
+
+**c) Custom agent `.kiro/agents/lesson-checker`.** A reviewer persona (read-only) that reads a stack JSON and flags: factual errors, ambiguous questions, joke/implausible distractors, and reading level for 8–10-year-olds. Run it on the three ready-made decks; record findings and fixes in KIRO_LOG.
+  - **Done when:** the agent file exists with a clear persona and read-only tools; it has been run against the three decks and its findings (and any fixes) are in KIRO_LOG.
+
+**d) MCP server `mcp/openverse` (local stdio, Node/TS, minimal deps).** Tools:
+  - `search_images(query, license="cc0|pdm")` → Openverse public API; returns `title`, `creator`, `license`, `source` URL, `thumbnail` URL per result.
+  - `fetch_image_as_data_uri(url, maxKB)` → fetch an image and return a `data:` URI, with an **allowlist** of Openverse/Wikimedia hosts, **no off-list redirects**, a **size cap** (`maxKB`), and a **timeout**.
+  Register it in `.kiro/settings/mcp.json`. Use it via Kiro to pick one public-domain image per ready-made deck and embed it into the deck as a data URI, with a credit line on the card (licence + creator + source).
+  - **Done when:** the server builds and its own tests pass — host allowlist enforced, off-list redirect refused, size cap enforced, timeout honoured; it is registered in `.kiro/settings/mcp.json`; each ready-made deck's first card carries one inlined public-domain image and a visible credit line; the decks still pass the validator and the export round-trip.
+
+**e) KIRO_LOG.** One dated entry per item (a–d), honest about what each hook/agent/MCP actually caught or produced.
+  - **Done when:** KIRO_LOG has the entries with concrete findings.
+
+**Gate:** `npm test` and `npx tsc --noEmit` exit 0; the MCP server's own tests pass.
+
+> **Note:** Kiro IDE 1.0 has no user-creatable "manual button" hook trigger; hook 4 uses the `Manual` trigger recognised by the hook schema (and is also runnable directly as `npm run pre-submit`). File-save hooks fire on agent-made saves per the Kiro docs; the commands are plain `npm`/`node` so they are equally runnable by hand and in CI.

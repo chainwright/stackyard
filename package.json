@@ -15,7 +15,14 @@
     "preview:maker": "vite preview --port 4173",
     "build:player": "vite build --config vite.player.config.ts",
     "fonts:rename": "python3 scripts/rename-reading-font.py",
-    "fonts:check": "python3 scripts/rename-reading-font.py --check"
+    "fonts:check": "python3 scripts/rename-reading-font.py --check",
+    "check:invariants": "npm run build:player && vitest run tests/validator.property.test.ts tests/roundtrip.property.test.ts tests/shuffle-answers.test.ts tests/reachability.test.ts tests/player-size.test.ts",
+    "check:decks": "node --import tsx/esm scripts/check-decks.ts",
+    "check:export-opens": "node --import tsx/esm scripts/check-export-opens.ts",
+    "check:claims": "node --import tsx/esm scripts/check-claims.ts",
+    "check:mcp": "vitest run mcp/openverse/openverse.test.ts",
+    "pick:images": "node --import tsx/esm scripts/pick-deck-images.ts",
+    "pre-submit": "npm test && npm run typecheck && npm run build:maker && npm run check:claims"
   },
   "dependencies": {
     "preact": "11.1.1",

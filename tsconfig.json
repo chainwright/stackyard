@@ -17,5 +17,5 @@
     "jsxImportSource": "preact",
     "types": ["node"]
   },
-  "include": ["src/**/*", "tests/**/*", "server/**/*"]
+  "include": ["src/**/*", "tests/**/*", "server/**/*", "mcp/**/*", "scripts/check-claims.ts", "scripts/check-decks.ts", "scripts/check-export-opens.ts", "scripts/pick-deck-images.ts"]
 }
