@@ -1062,3 +1062,31 @@ The two remaining P1s are both one-sitting fixes:
 - the overlap on the Irish flash backs, which is the example most likely to be opened second.
 
 With 1–2 done the app is at **8.0**. With 1–5 it's about **8.3**. Re-shoot the Irish back and Try It after the fix.
+
+---
+
+## Built app verdict, round 4 (judge, 2026-11-05)
+
+### Method
+- Same method as before, at commit b284d81, offline (no LLM key), CDP-driven headless Chrome. Scratch scripts and shots are in `mkjudge/m/`.
+- **Start:** built all three examples plus the free sentence.
+- **Editor:** filled card 11 and then card 1 until the "card is full" notice appeared, changed cards, entered Try It, hit-tested the Back to Editing pill, flipped Irish card 1, and checked the hint and Next Card rects.
+- **End card:** checked the editor end card and its preview.
+- **Exported Irish file:** played all 10 flash cards (tap → Next Card), answered the quiz, then pressed Play Again.
+
+### Verdict
+**8.1 / 10: meets the 8 bar.** All five round-3 items are fixed and verified in the running app:
+- **Notice:** clears on card change and on entering Try It, and Back to Editing is hit-testable (`elementFromPoint` lands on the pill).
+- **Irish flash back:** the hint "Tap the card to flip back" and "Next Card" no longer intersect.
+- **Example sentence** now describes the 12-card deck ("…with quiz questions and a story choice…").
+- **End-card preview** reads "Score __ of 1" for the Irish deck, matching the card.
+- **Exported end card** has a "Play Again" paper tab that runs `card-exit` and restarts at card 1 with Score 0.
+
+The Irish exported file plays end to end to "Score 1 of 1" with one stamp. The three examples still deal in about 3.5–4.5 s with honest wording, and free text still gets the honest banner.
+
+### Left (none blocks the bar)
+- **Irish flash backs** keep the explanation **centred** mid-card, while the Vikings back is left-aligned under the term. Not broken, but the "one fixed layout" isn't fully uniform. Left-align the body at x 48 under the term.
+- **Free sentence offline** still gets the Vikings deck (honest banner); a neutral starter would read better.
+- **1024×768 editor** still clips the card. Use a card-list drawer below 1200 px if time allows.
+- **Static shots of the deal-in** catch the land animation mid-flight. Shoot README/Devpost frames with animations settled.
+- **Before judging:** set the LLM key on the Render deploy and keep it warm, so the live path (real sentence → real deck, "About 20 seconds") is what judges see. Then do one live run-through on the deployed URL.
