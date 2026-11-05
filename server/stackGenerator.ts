@@ -13,12 +13,14 @@ import type {
   GenerateRequest,
   GenerateSuccess,
   GenerateError,
+  FallbackReason,
 } from "../src/shared/types.js";
 import { validate } from "../src/shared/validator.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
+import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { build as buildPrompt, buildRetry } from "./promptBuilder.js";
 import { buildReadyMade } from "./fallback.js";
-import { call, LlmUnavailableError } from "./llmGateway.js";
+import { call, LlmUnavailableError, ConfigurationError } from "./llmGateway.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -27,16 +29,22 @@ import { call, LlmUnavailableError } from "./llmGateway.js";
  * Attempt one LLM call, then parse and validate the result.
  * Returns the parsed Stack on success, or errors[] on validation failure.
  * Re-throws LlmUnavailableError so the outer handler can fall back.
+ *
+ * `onModelCall` is invoked exactly once, immediately before the real upstream
+ * call, so the caller can count real paid model calls for the daily budget
+ * (J4 M2, 5 Nov panel) — one unit per attempt/retry, never per request.
  */
 async function attempt(
   messages: { system: string; user: string },
-  temperature: number
+  temperature: number,
+  onModelCall?: () => void,
 ): Promise<
   | { ok: true; stack: import("../src/shared/types.js").Stack }
   | { ok: false; errors: string[] }
 > {
   // LlmUnavailableError and ConfigurationError are intentionally NOT caught here —
   // they propagate up to generate() where they trigger the fallback path.
+  onModelCall?.();
   const raw = await call(messages, { temperature });
 
   let parsed: unknown;
@@ -50,10 +58,10 @@ async function attempt(
   const result = validate(parsed);
   if (result.valid) {
     // The model often points every quiz answer at the end card, which ends the
-    // game on the first click. Rewrite quiz answers to advance to the next card
-    // so the class walks the whole deck. The rewrite only retargets existing
-    // cards, so the stack stays valid (invariant 2 preserved).
-    return { ok: true, stack: linkQuizAnswersForward(result.stack) };
+    // game on the first click. Rewrite quiz answers to advance to the next card,
+    // then vary which tile the correct answer sits on. Both only reorder/retarget
+    // existing cards and preserve the one-correct-answer rule (invariants 2, 4).
+    return { ok: true, stack: shuffleQuizAnswers(linkQuizAnswersForward(result.stack)) };
   }
   return { ok: false, errors: result.errors };
 }
@@ -69,6 +77,25 @@ export interface GenerateOptions {
    * public instance degrades to ready-made decks without spending the paid key.
    */
   forceFallback?: boolean;
+  /**
+   * Called once per REAL upstream model call (first attempt AND retry),
+   * immediately before the call. The server uses this to count paid calls for
+   * the daily budget — one unit per call, never per request (J4 M2).
+   */
+  onModelCall?: () => void;
+}
+
+/** Infer the honest fallback reason from a thrown error (never leaks details). */
+function reasonFromError(err: unknown): FallbackReason {
+  if (err instanceof ConfigurationError) return "no-key";
+  if (err instanceof LlmUnavailableError) {
+    // llmGateway throws this for deadlines/cancels too; its message mentions
+    // time for the deadline case. Use "timeout" when it looks time-related.
+    const msg = (err.message ?? "").toLowerCase();
+    if (msg.includes("time") || msg.includes("cancel")) return "timeout";
+    return "error";
+  }
+  return "error";
 }
 
 /**
@@ -76,8 +103,8 @@ export interface GenerateOptions {
  * Never throws — all errors are represented in the return type.
  *
  * When `opts.forceFallback` is true, no model call is made: the request is
- * answered from the deterministic ready-made decks (same path as an unavailable
- * LLM), with the honest ready-made labelling the fallback already carries.
+ * answered from the deterministic ready-made decks (daily budget exhausted),
+ * labelled `fallbackReason: "cap"`.
  */
 export async function generate(
   request: GenerateRequest,
@@ -85,12 +112,18 @@ export async function generate(
 ): Promise<GenerateSuccess | GenerateError> {
   if (opts.forceFallback) {
     const ready = buildReadyMade(request);
-    return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
+    return {
+      ok: true,
+      stack: ready.stack,
+      isFallback: true,
+      isReadyMadeExample: !ready.matched,
+      fallbackReason: "cap",
+    };
   }
   try {
     // --- First attempt (temperature 0.7) ---
     const firstMessages = buildPrompt(request);
-    const first = await attempt(firstMessages, 0.7);
+    const first = await attempt(firstMessages, 0.7, opts.onModelCall);
 
     if (first.ok) {
       return { ok: true, stack: first.stack, isFallback: false };
@@ -98,7 +131,7 @@ export async function generate(
 
     // --- Retry attempt (temperature 0.2) ---
     const retryMessages = buildRetry(request, first.errors);
-    const retry = await attempt(retryMessages, 0.2);
+    const retry = await attempt(retryMessages, 0.2, opts.onModelCall);
 
     if (retry.ok) {
       return { ok: true, stack: retry.stack, isFallback: false };
@@ -112,17 +145,16 @@ export async function generate(
         "We couldn't build your set of cards. Try rephrasing your description and have another go.",
     };
   } catch (err) {
-    // LlmUnavailableError (or any unexpected error) → return deterministic fallback.
-    // We treat *any* uncaught error here as "LLM unavailable" to keep the API key
-    // and internal details out of the response.
-    if (err instanceof LlmUnavailableError) {
-      const ready = buildReadyMade(request);
-      return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
-    }
-
-    // ConfigurationError or truly unexpected errors also fall back rather than
-    // crashing — the server route layer can log the real error separately.
+    // A missing key, an unreachable/erroring model, or a deadline → return the
+    // deterministic ready-made deck, labelled with the honest reason so the
+    // Maker can say WHY (never "no internet" when the teacher is online).
     const ready = buildReadyMade(request);
-    return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
+    return {
+      ok: true,
+      stack: ready.stack,
+      isFallback: true,
+      isReadyMadeExample: !ready.matched,
+      fallbackReason: reasonFromError(err),
+    };
   }
 }

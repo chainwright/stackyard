@@ -13,6 +13,7 @@ import type {
   Action,
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
+import { linkQuizAnswersForward } from "../shared/linkForward.js";
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -145,7 +146,9 @@ function seedCard(kind: Card["kind"]): Card {
   const cardId = newId();
   switch (kind) {
     case "quiz": {
-      // A quiz seed must satisfy invariant 4: exactly one correct answer.
+      // A quiz seed must satisfy invariant 4: exactly one correct answer. The
+      // question starts at y:104 so it clears the "Card N of M" meta line at
+      // y:48 (J2: the counter overlapped the question on new cards).
       return {
         id: cardId,
         kind: "quiz",
@@ -153,13 +156,13 @@ function seedCard(kind: Card["kind"]): Card {
           {
             type: "text",
             id: newId(),
-            x: 40, y: 40, w: 720, h: 120,
+            x: 48, y: 104, w: 704, h: 120,
             content: "Your question?",
           },
           {
             type: "button",
             id: newId(),
-            x: 40, y: 200, w: 340, h: 80,
+            x: 48, y: 296, w: 344, h: 96,
             label: "Right answer",
             actions: [
               { type: "score", delta: 1 },
@@ -169,7 +172,7 @@ function seedCard(kind: Card["kind"]): Card {
           {
             type: "button",
             id: newId(),
-            x: 420, y: 200, w: 340, h: 80,
+            x: 408, y: 296, w: 344, h: 96,
             label: "Wrong answer",
             actions: [
               { type: "score", delta: 0 },
@@ -185,8 +188,8 @@ function seedCard(kind: Card["kind"]): Card {
         id: cardId,
         kind: "flash",
         elements: [
-          { type: "text", id: newId(), x: 40, y: 60, w: 720, h: 160, content: "Term" },
-          { type: "text", id: newId(), x: 40, y: 260, w: 720, h: 160, content: "Explanation" },
+          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 160, content: "Term" },
+          { type: "text", id: newId(), x: 48, y: 300, w: 704, h: 160, content: "Explanation" },
         ],
         actions: [],
       };
@@ -196,7 +199,7 @@ function seedCard(kind: Card["kind"]): Card {
         id: cardId,
         kind: "story",
         elements: [
-          { type: "text", id: newId(), x: 40, y: 60, w: 720, h: 200, content: "Your text" },
+          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 200, content: "Your text" },
         ],
         actions: [],
       };
@@ -230,6 +233,70 @@ export function addCard(
   const at = clamp(index, 0, stack.cards.length);
   const cards = [...stack.cards.slice(0, at), card, ...stack.cards.slice(at)];
   return { ...stack, cards };
+}
+
+/** The id a freshly-inserted card is given, so callers can select it. */
+let lastInsertedCardId: string | null = null;
+export function takeLastInsertedCardId(): string | null {
+  const id = lastInsertedCardId;
+  lastInsertedCardId = null;
+  return id;
+}
+
+/**
+ * Insert a new quiz card immediately AFTER `afterCardId` (never after the end
+ * card), and re-link every quiz card's answers so play reaches the new card
+ * (J2 #1 / J3 D6: Add Card used to append after "Well done!", unreachable). The
+ * new card's own answers advance to the next card too, so there is no dead end.
+ * The inserted card's id is recorded so the caller can select it.
+ */
+export function addCardAfter(
+  stack: Stack,
+  afterCardId: string,
+  kind: Card["kind"] = "quiz",
+): Stack | Rejected {
+  if (kind === "end") {
+    return reject("A set of cards can only have one last card.");
+  }
+  const endIndex = stack.cards.findIndex((c) => c.kind === "end");
+  const afterIndex = stack.cards.findIndex((c) => c.id === afterCardId);
+
+  // Insert right after the current card, but always BEFORE the end card so the
+  // new card is part of the playable sequence.
+  let at = afterIndex >= 0 ? afterIndex + 1 : stack.cards.length;
+  if (endIndex >= 0 && at > endIndex) at = endIndex;
+
+  const card = seedCard(kind);
+  lastInsertedCardId = card.id;
+  const cards = [...stack.cards.slice(0, at), card, ...stack.cards.slice(at)];
+  const inserted: Stack = { ...stack, cards };
+
+  // Re-link quiz answers forward so the new card (and the card before it) lead
+  // into the flow — no card is stranded after the end card, and no quiz answer
+  // dead-ends (J2's "max score can never be reached" bug).
+  return linkQuizAnswersForward(inserted);
+}
+
+/**
+ * Repair the flow so every card is reachable and no quiz answer dead-ends
+ * (the one-click fix behind the "before you share" check — J2 item 3):
+ *   1. move any content card that sits AFTER the end card to just before it, in
+ *      order, so it is part of the playable sequence; then
+ *   2. re-link every quiz answer forward (so a quiz answer always advances and
+ *      the newly-placed cards are linked into the run).
+ * Only reorders and retargets existing cards, so every invariant is preserved.
+ */
+export function repairFlow(stack: Stack): Stack | Rejected {
+  const endIndex = stack.cards.findIndex((c) => c.kind === "end");
+  if (endIndex < 0) return reject("A set of cards needs a last card first.");
+
+  const before = stack.cards.slice(0, endIndex);
+  const end = stack.cards[endIndex]!;
+  const after = stack.cards.slice(endIndex + 1);
+
+  // Keep the end card last; everything else stays in its current relative order.
+  const reordered: Card[] = [...before, ...after, end];
+  return linkQuizAnswersForward({ ...stack, cards: reordered });
 }
 
 /** Strip every goto action that targets `removedId` from an action list. */
@@ -397,9 +464,26 @@ export function setGotoTarget(
   );
 }
 
+/** True if two axis-aligned boxes overlap (with a small gap tolerance). */
+function boxesOverlap(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+  gap = 0,
+): boolean {
+  return (
+    a.x < b.x + b.w + gap &&
+    a.x + a.w + gap > b.x &&
+    a.y < b.y + b.h + gap &&
+    a.y + a.h + gap > b.y
+  );
+}
+
 /**
  * Move an element to (x, y), clamped so the element stays fully on the
- * 800 × 600 canvas: x ∈ [0, 800 - w], y ∈ [0, 600 - h] (invariant 5).
+ * 800 × 600 canvas: x ∈ [0, 800 - w], y ∈ [0, 600 - h] (invariant 5). A move
+ * that would drop the element ON TOP of another element on the same card is
+ * REJECTED (the element stays where it was), so a teacher can't stack one
+ * answer over another (J3 D7). Dragging simply stops at the obstacle's edge.
  */
 export function moveElement(
   stack: Stack,
@@ -410,13 +494,30 @@ export function moveElement(
   const card = cardOfElement(stack, elementId);
   if (card === undefined) return reject("That item isn't here any more.");
 
+  const moving = card.elements.find((el) => el.id === elementId);
+  if (moving === undefined) return reject("That item isn't here any more.");
+
+  const clampedX = clamp(x, 0, 800 - moving.w);
+  const clampedY = clamp(y, 0, 600 - moving.h);
+  const proposed = { x: clampedX, y: clampedY, w: moving.w, h: moving.h };
+
+  // Block dropping one BUTTON on top of another button (e.g. an answer tile
+  // over another answer tile — J3 D7). We only guard button-over-button so the
+  // check never fights a large question-text box the tiles sit beneath.
+  if (moving.type === "button") {
+    const collides = card.elements.some(
+      (el) => el.id !== elementId && el.type === "button" && boxesOverlap(proposed, el),
+    );
+    if (collides) {
+      // Keep the element where it is rather than stacking it on another tile.
+      return reject("Answers can't sit on top of each other. Drop it in a clear spot.");
+    }
+  }
+
   return mapCard(stack, card.id, (c) =>
-    mapElements(c, (el) => {
-      if (el.id !== elementId) return el;
-      const clampedX = clamp(x, 0, 800 - el.w);
-      const clampedY = clamp(y, 0, 600 - el.h);
-      return { ...el, x: clampedX, y: clampedY };
-    })
+    mapElements(c, (el) =>
+      el.id === elementId ? { ...el, x: clampedX, y: clampedY } : el,
+    )
   );
 }
 

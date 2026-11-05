@@ -172,8 +172,11 @@ describe("Irish words example plays end to end", () => {
         next.click();
         vi.advanceTimersByTime(240); // the flip to the next card
       } else if (card.kind === "quiz") {
-        const tile = root.querySelector<HTMLButtonElement>(".sy-tile")!;
-        tile.click(); // first tile is the correct answer in the ready-made deck
+        // The correct answer is no longer always the first tile (answers are
+        // shuffled per stack), so click the tile the renderer marks correct.
+        const correct = root.querySelector<HTMLButtonElement>('.sy-tile[data-correct="true"]')!;
+        expect(correct, `card ${i} should render a correct tile`).not.toBeNull();
+        correct.click();
         vi.advanceTimersByTime(900 + 240);
       }
     }

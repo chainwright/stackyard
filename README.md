@@ -1,8 +1,70 @@
 # Stackyard
 
-Make a clickable lesson from one sentence. Works offline.
+Make a clickable lesson from one sentence. The **lesson file works offline**.
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
+
+**Live app:** https://stackyard-sdqt.onrender.com
+
+## What it is
+
+A teacher types one sentence — "a 10-card quiz about the Vikings in Ireland, the
+right answer plays a cheer" — and Stackyard builds a set of interactive lesson
+cards (quiz, flashcards, a branching story, a score card). The teacher can edit
+any card (move a button, change an answer, link a card to another) and then
+**export the whole lesson as one self-contained HTML file**. That file plays on
+any laptop from 2018 onward with no internet, no account and no install.
+
+Two halves:
+
+- **The Maker** (the editor) is a web app. It needs the server once, to generate
+  and to export. Generation calls a model server-side; if the model is
+  unavailable the Maker hands back a ready-made deck you can edit (and says so).
+- **The Player** is the exported file. It is fully offline: all fonts and the
+  runtime are inlined; it makes **zero network requests**.
+
+"Works offline" means the **exported lesson file**, not the Maker.
+
+## Why HyperCard
+
+HyperCard let non-programmers build clickable, branching "stacks" in 1987 and
+nothing really replaced it for them. Stackyard brings that back for a teacher
+with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
+scored lesson the class plays, every stack satisfies nine validity invariants so
+it always plays to an end score, and the exported file is re-importable
+(round-tripped losslessly, checked by a 1,000-run property test).
+
+## Prior art (and what only Stackyard does)
+
+- **Decker** (a modern HyperCard-tradition tool) exports one offline HTML with
+  the runtime inside — but it has no generation and uses a scripting language.
+- **H5P / Lumi** export an offline interactive activity for teachers — but
+  authoring is form-based per content type, with no generation from a sentence
+  and no free-form card editing.
+- **AI quiz makers** turn a topic into a quiz — but they export to
+  PDF/Word/platform links, need accounts, and give one-shot output you can't
+  edit card by card.
+
+What only Stackyard does: **a teacher's sentence → a validated, branching,
+always-playable stack → direct card editing → one self-contained offline file.**
+
+## Libraries and model
+
+| Dependency | Role | Licence |
+|---|---|---|
+| Preact | the Maker UI (only runtime UI dependency) | MIT |
+| tsx | run/transpile TypeScript for the server | MIT |
+| Vite | dev server + builds (Maker SPA, player IIFE) | MIT |
+| Vitest | test runner | MIT |
+| fast-check | property-based tests | MIT |
+| jsdom | DOM for player/UI tests | MIT |
+| TypeScript | strict type checking | Apache-2.0 |
+
+The generator calls an **OpenAI-compatible** chat endpoint, configured on the
+live deploy for **Anthropic** (`STACKYARD_LLM_BASE_URL` / `STACKYARD_LLM_MODEL`).
+The model is used **only in the Maker, at build time** — it never runs in, and
+is never inlined into, the exported file. Fonts are listed under
+[Third-party assets](#third-party-assets).
 
 ## Development
 
@@ -25,9 +87,10 @@ changing anything under `src/player/`, rebuild and commit the bundle:
 npm run build:player
 ```
 
-CI runs `scripts/check-player-fresh.sh` to catch a stale bundle. The script
-rebuilds the player into a temporary directory and compares it with the
-committed file:
+GitHub Actions (`.github/workflows/ci.yml`) runs `npm test`, `npx tsc --noEmit`
+and `scripts/check-player-fresh.sh` on every push and pull request. The
+freshness script rebuilds the player into a temporary directory and compares it
+with the committed file:
 
 ```sh
 ./scripts/check-player-fresh.sh
@@ -79,16 +142,26 @@ Environment variables (server-only; the model key never reaches the browser):
 | Variable | Purpose | Default |
 |---|---|---|
 | `STACKYARD_LLM_API_KEY` | Model API key (set in the host's dashboard, never committed) | — |
-| `STACKYARD_LLM_BASE_URL` | OpenAI-compatible endpoint | `https://api.openai.com/v1` |
+| `STACKYARD_LLM_BASE_URL` | OpenAI-compatible endpoint (live deploy uses Anthropic) | `https://api.openai.com/v1` |
 | `STACKYARD_LLM_MODEL` | Model name | `gpt-4o-mini` |
 | `PORT` | Port to listen on | `3001` |
-| `TRUST_PROXY` | `1` behind a proxy (e.g. Render) so `X-Forwarded-For` is used for rate limiting | off |
-| `GENERATE_RATE_PER_10MIN` | Per-client generate limit per 10 minutes | `6` |
+| `TRUST_PROXY` | `1` behind a trusted proxy (e.g. Render), so a forwarding header is used for the client's rate-limit identity | off |
+| `CLIENT_IP_HEADER` | the single-value client-IP header the proxy sets; on Render set to `cf-connecting-ip`. Falls back to the rightmost `X-Forwarded-For` entry (never the client-controlled leftmost) | — |
+| `DEBUG_CLIENT_ADDR` | `1` logs the forwarding headers + chosen client address for the first few generate requests (temporary diagnostics) | off |
+| `GENERATE_RATE_PER_10MIN` | Per-client generate limit per 10 minutes (schools share one address) | `20` |
+| `EXPORT_RATE_PER_10MIN` | Per-client export limit per 10 minutes | `60` |
 | `GENERATE_DAILY_CAP` | Global real model calls per UTC day; over the cap the app serves ready-made decks | `300` |
 
-Because the public instance holds a paid key, `/api/generate` is protected two
-ways: a per-client rate limit and a global daily budget. Over either limit the
-app degrades to the offline ready-made decks rather than spending the key.
+Because the public instance holds a paid key, `/api/generate` has two guards:
+
+- a **per-client rate limit** — over it, the request gets a friendly **HTTP 429**
+  with a `Retry-After` header and a plain message (not a deck); the Maker's
+  start screen then offers ready-made decks you can open locally; and
+- a **global daily budget** — once the day's real model calls are spent, the
+  request is served from the offline ready-made decks and makes no model call.
+
+A request that is served from a ready-made deck (budget spent, or no key) makes
+no model call and does not consume a per-client rate-limit slot.
 
 ### Deploy to Render (free web service)
 

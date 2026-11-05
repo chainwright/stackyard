@@ -31,6 +31,7 @@ import type {
 import { generate as defaultGenerate } from "./stackGenerator.js";
 import { validate, validateCard } from "../src/shared/validator.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
+import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { callStream as defaultCallStream } from "./llmGateway.js";
 import { buildStream as defaultBuildStream } from "./promptBuilder.js";
 
@@ -78,6 +79,13 @@ export interface StreamGenerateDeps {
    * never touched once the cap is hit.
    */
   forceFallback?: boolean;
+  /**
+   * Called once per REAL upstream model call so the server can count paid calls
+   * for the daily budget (J4 M2). The streaming attempt makes one `callStream`;
+   * the non-streaming fallback forwards this to `generate()` which calls it per
+   * attempt/retry.
+   */
+  onModelCall?: () => void;
 }
 
 const realSleep = (ms: number): Promise<void> =>
@@ -207,6 +215,7 @@ async function attemptStreamedLlm(
   sink: LineSink,
   deps: Required<Pick<StreamGenerateDeps, "callStream" | "buildStream">>,
   signal?: AbortSignal,
+  onModelCall?: () => void,
 ): Promise<StreamAttemptResult> {
   const messages = deps.buildStream(request);
   const lineBuffer = new LineBuffer();
@@ -251,6 +260,8 @@ async function attemptStreamedLlm(
     const callOptions = signal === undefined
       ? { temperature: 0.7 }
       : { temperature: 0.7, signal };
+    // One real upstream call is about to happen — count it for the budget.
+    onModelCall?.();
     for await (const delta of deps.callStream(messages, callOptions)) {
       lineBuffer.push(delta);
       for (const line of lineBuffer.takeCompleteLines()) {
@@ -289,10 +300,11 @@ async function attemptStreamedLlm(
   if (!whole.valid) {
     return { ok: false, dealtCards };
   }
-  // Quiz answers advance to the next card (not straight to the end). The final
-  // `done` stack the editor loads carries the corrected links; see
-  // linkQuizAnswersForward. Only existing cards are retargeted, so it stays valid.
-  return { ok: true, stack: linkQuizAnswersForward(whole.stack) };
+  // Quiz answers advance to the next card (not straight to the end), then the
+  // correct answer is shuffled off tile A. The final `done` stack the editor
+  // loads carries both; the per-card previews already dealt are animation only.
+  // Both operations only reorder/retarget existing cards, so it stays valid.
+  return { ok: true, stack: shuffleQuizAnswers(linkQuizAnswersForward(whole.stack)) };
 }
 
 // ---------------------------------------------------------------------------
@@ -308,10 +320,14 @@ async function streamFallback(
   sink: LineSink,
   deps: Required<Pick<StreamGenerateDeps, "generate" | "sleep">>,
   forceFallback: boolean,
+  onModelCall?: () => void,
 ): Promise<void> {
   let outcome: Awaited<ReturnType<typeof defaultGenerate>>;
   try {
-    outcome = await deps.generate(request, { forceFallback });
+    outcome = await deps.generate(request, {
+      forceFallback,
+      ...(onModelCall ? { onModelCall } : {}),
+    });
   } catch {
     sink.write({ type: "error", message: GENERIC_FAILURE });
     sink.end();
@@ -326,6 +342,13 @@ async function streamFallback(
 
   const stack = outcome.stack;
   const isReadyMadeExample = outcome.isReadyMadeExample === true;
+  const fallbackReason = outcome.fallbackReason;
+
+  // Log the fallback reason server-side (status only, never the key) so an
+  // operator can see WHY the live deck is canned (J4: stream-generate.ts:262).
+  if (outcome.isFallback && fallbackReason !== undefined) {
+    console.warn(`[generate] served ready-made deck — reason: ${fallbackReason}`);
+  }
 
   sink.write({
     type: "start",
@@ -333,6 +356,7 @@ async function streamFallback(
     title: stack.title,
     isFallback: outcome.isFallback,
     isReadyMadeExample,
+    ...(fallbackReason ? { fallbackReason } : {}),
   });
 
   for (let i = 0; i < stack.cards.length; i++) {
@@ -355,7 +379,13 @@ async function streamFallback(
     return;
   }
 
-  sink.write({ type: "done", stack: whole.stack, isFallback: outcome.isFallback, isReadyMadeExample });
+  sink.write({
+    type: "done",
+    stack: whole.stack,
+    isFallback: outcome.isFallback,
+    isReadyMadeExample,
+    ...(fallbackReason ? { fallbackReason } : {}),
+  });
   sink.end();
 }
 
@@ -386,11 +416,12 @@ export async function streamGenerate(
   const sleep = deps.sleep ?? realSleep;
   const signal = deps.signal;
   const forceFallback = deps.forceFallback === true;
+  const onModelCall = deps.onModelCall;
 
   // 0. Daily budget exhausted: skip the model entirely and stream the
   //    ready-made offline deck. No callStream, no tokens spent.
   if (forceFallback) {
-    await streamFallback(request, sink, { generate, sleep }, true);
+    await streamFallback(request, sink, { generate, sleep }, true, onModelCall);
     return;
   }
 
@@ -400,6 +431,7 @@ export async function streamGenerate(
     sink,
     { callStream, buildStream },
     signal,
+    onModelCall,
   );
 
   if (attempt.ok) {
@@ -424,5 +456,5 @@ export async function streamGenerate(
   }
 
   // 3. Fall back to the non-streaming retry + deterministic fallback path.
-  await streamFallback(request, sink, { generate, sleep }, false);
+  await streamFallback(request, sink, { generate, sleep }, false, onModelCall);
 }

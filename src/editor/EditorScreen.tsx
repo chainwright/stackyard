@@ -13,6 +13,9 @@ import { CardList } from "./CardList.js";
 import { Inspector } from "./Inspector.js";
 import { Toolbar } from "./Toolbar.js";
 import { ExportDone } from "./ExportDone.js";
+import { PlayerPreview } from "./PlayerPreview.js";
+import { fallbackMessage } from "./fallbackMessages.js";
+import { repairFlow } from "./operations.js";
 import { PlayIcon } from "./icons.js";
 import { exportStack as exportStackApi, triggerDownload } from "./api.js";
 import { announce } from "./a11y.js";
@@ -34,8 +37,8 @@ export function EditorScreen({
   // from the teacher's sentence), start with an honest note they can dismiss.
   const [notice, setNotice] = useState<string | null>(
     __demoNotice ??
-      (state.isReadyMadeExample
-        ? "We couldn't reach the internet, so this is a ready-made example. Edit it, or try your own sentence again."
+      (state.isFallback
+        ? fallbackMessage(state.fallbackReason, state.fallbackOnline)
         : null),
   );
   // Which side of a flash card the canvas is previewing.
@@ -44,7 +47,9 @@ export function EditorScreen({
   // the filename shown on the confirmation overlay (null = overlay hidden).
   const [exporting, setExporting] = useState(false);
   const [exportedName, setExportedName] = useState<string | null>(null);
-  const [exportedHtml, setExportedHtml] = useState<string | null>(null);
+  // When set, play the exported stack in-app (avoids the blob CSP blank page,
+  // J4 H1). We play the current stack through the shared mountPlayer.
+  const [previewing, setPreviewing] = useState(false);
 
   if (stack === null) return <div class="app" />;
 
@@ -57,7 +62,6 @@ export function EditorScreen({
     setExporting(false);
     if (outcome.ok) {
       triggerDownload(outcome.html, outcome.filename);
-      setExportedHtml(outcome.html);
       setExportedName(outcome.filename);
       announce(`Your file is ready. Saved as ${outcome.filename}.`);
     } else {
@@ -81,6 +85,20 @@ export function EditorScreen({
 
   return (
     <div class="app">
+      {/* Phone-width guard (J1): the editor needs room to drag and inspect, so
+          below a tablet width show a polite notice instead of a broken layout.
+          The exported file plays fine on any device — only the EDITOR needs a
+          bigger screen. Shown/hidden purely by CSS media query. */}
+      <div class="small-screen-notice" role="note">
+        <div class="small-screen-card">
+          <h1>Open on a laptop or tablet</h1>
+          <p>
+            Stackyard's editor needs a laptop or tablet to move cards around. The
+            files it makes play on any device, including this one.
+          </p>
+        </div>
+      </div>
+
       <TopBar>
         <span class="stack-desc">{desc}</span>
         <button
@@ -178,19 +196,28 @@ export function EditorScreen({
       {exportedName !== null ? (
         <ExportDone
           filename={exportedName}
+          stack={stack}
           onOpen={() => {
-            if (exportedHtml !== null) {
-              const blob = new Blob([exportedHtml], { type: "text/html" });
-              const url = URL.createObjectURL(blob);
-              window.open(url, "_blank");
-            }
+            // Play it in-app (not a blob: window, which the CSP blanks — J4 H1).
+            setPreviewing(true);
           }}
           onBack={() => setExportedName(null)}
           onExportAgain={() => {
             setExportedName(null);
             void onExport();
           }}
+          onFixFlow={() => {
+            // Link unreachable cards into the flow, then export the fixed stack.
+            const res = store.apply((s) => repairFlow(s));
+            setExportedName(null);
+            if (res.ok) void onExport();
+            else setNotice(res.message);
+          }}
         />
+      ) : null}
+
+      {previewing && stack !== null ? (
+        <PlayerPreview stack={stack} onClose={() => setPreviewing(false)} />
       ) : null}
     </div>
   );

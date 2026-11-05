@@ -100,7 +100,9 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(root.textContent).toContain("Where did the Vikings build a town in 841?");
   });
 
-  it("shows the offline notice when isFallback is true (streamed)", async () => {
+  it("announces an honest ready-made-deck notice when isFallback is true (streamed)", async () => {
+    // The fallback message must NOT claim "we couldn't reach the internet" when
+    // the browser is online — it names a ready-made deck instead (TASK-22 d).
     const stack = quizStack();
     vi.stubGlobal("fetch", vi.fn(async () => ndjsonResponse(streamFor(stack, true))));
     const root = mount();
@@ -109,7 +111,9 @@ describe("TASK-12: Start screen generate flow", () => {
     root.querySelector<HTMLButtonElement>(".build-btn")!.click();
     await flush();
     const announcer = document.querySelector('[data-announcer="maker"]');
-    expect(announcer?.textContent ?? "").toContain("offline");
+    const text = announcer?.textContent ?? "";
+    expect(text).toContain("ready-made deck");
+    expect(text).not.toContain("couldn't reach the internet");
   });
 
   it("the building screen is honest offline: no time estimate on the fallback path", async () => {

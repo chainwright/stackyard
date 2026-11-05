@@ -499,4 +499,80 @@ describe("global daily budget on /api/generate (TASK-21d)", () => {
       server.close();
     }
   });
+
+  it("the fallback carries an honest reason (no-key / error), never 'no internet'", async () => {
+    // With no key configured the gateway spy throws LlmUnavailableError, so the
+    // served deck is flagged with a reason — the client turns that into honest
+    // copy (TASK-22 d). It must never be "no internet".
+    const { server, baseUrl } = await startServer({
+      staticRoot,
+      generateRatePer10Min: 100_000,
+      generateDailyCap: 1_000_000,
+    });
+    try {
+      const lines = await genStream(baseUrl);
+      const done = lines.find((l) => (l as { type: string }).type === "done") as
+        | { isFallback: boolean; fallbackReason?: string }
+        | undefined;
+      expect(done?.isFallback).toBe(true);
+      expect(typeof done?.fallbackReason).toBe("string");
+      expect(JSON.stringify(lines)).not.toContain("couldn't reach the internet");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("forced-fallback requests (cap reached) do NOT consume a per-visitor rate-limit slot", async () => {
+    // Cap 0 → every request is served from ready-made decks with no model call,
+    // so even a tiny per-visitor limit must never trip (TASK-22 c).
+    const { server, baseUrl } = await startServer({
+      staticRoot,
+      generateRatePer10Min: 2,
+      generateDailyCap: 0,
+    });
+    try {
+      for (let i = 0; i < 6; i++) {
+        const res = await fetch(`${baseUrl}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: "a quiz about the moon" }),
+        });
+        expect(res.status, `request ${i + 1}`).not.toBe(429);
+        await res.text();
+      }
+    } finally {
+      server.close();
+    }
+  });
+
+  it("the default per-visitor limit is 20 per 10 minutes", async () => {
+    // No explicit limit → the env default (20). Make 20 real-call requests OK,
+    // the 21st blocked. The gateway spy throws, so each is a real attempt that
+    // consumes a slot.
+    const { server, baseUrl } = await startServer({
+      staticRoot,
+      trustProxy: true,
+      clientIpHeader: "cf-connecting-ip",
+      generateDailyCap: 1_000_000,
+    });
+    try {
+      for (let i = 0; i < 20; i++) {
+        const res = await fetch(`${baseUrl}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "cf-connecting-ip": "20.20.20.20" },
+          body: JSON.stringify({ prompt: "a quiz about rivers" }),
+        });
+        expect(res.status, `request ${i + 1}`).not.toBe(429);
+        await res.text();
+      }
+      const blocked = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "cf-connecting-ip": "20.20.20.20" },
+        body: JSON.stringify({ prompt: "a quiz about rivers" }),
+      });
+      expect(blocked.status).toBe(429);
+    } finally {
+      server.close();
+    }
+  });
 });

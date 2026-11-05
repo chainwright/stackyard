@@ -194,7 +194,7 @@ export function Toolbar({
       {tool("Add Text", <TextIcon />, addText)}
       {tool("Add Button", <ButtonIcon />, addButton)}
       {tool("Add Picture", <PictureIcon />, addPicture)}
-      {tool("Link a Card", <LinkCardIcon />, onLinkClick, { pressed: linking })}
+      {tool("Go to card…", <LinkCardIcon />, onLinkClick, { pressed: linking })}
 
       <input
         ref={fileInputRef}

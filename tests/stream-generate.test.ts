@@ -318,6 +318,52 @@ describe("streamGenerate — streamed attempt fails → reset + fallback", () =>
     expect(ended()).toBe(true);
   });
 
+  it("NEVER emits a parseable-but-invalid card as a `card` message (per-card validation pinned)", async () => {
+    // TASK-22 n (J4 L4/M7): if the per-card validateCard() check were removed,
+    // the invalid card below (a quiz with no correct answer) would be written
+    // to the client as a `card` before the whole-stack check resets. Assert
+    // that no emitted card carries the invalid id, so removing that check fails
+    // this test.
+    const stack = validStack();
+    const header = JSON.stringify({ kind: "stack", id: stack.id, title: stack.title, theme: stack.theme });
+    const good = JSON.stringify({ kind: "card", card: stack.cards[0] });
+    // Shape-parseable JSON but a card validateCard() must REJECT: the element's
+    // `x` is a string, not a number. Without the per-card check this would be
+    // dealt to the client before the whole-stack check.
+    const invalidQuizId = "aaaaaaaa-0000-4000-8000-00000000bad0";
+    const invalidCard = {
+      id: invalidQuizId,
+      kind: "quiz",
+      elements: [
+        { type: "text", id: "aaaaaaaa-0000-4000-8000-00000000bad1", x: "nope", y: 104, w: 704, h: 128, content: "Bad element" },
+        { type: "button", id: "aaaaaaaa-0000-4000-8000-00000000bad2", x: 48, y: 296, w: 344, h: 96, label: "A", actions: [{ type: "score", delta: 1 }] },
+        { type: "button", id: "aaaaaaaa-0000-4000-8000-00000000bad3", x: 408, y: 296, w: 344, h: 96, label: "B", actions: [{ type: "score", delta: 0 }] },
+      ],
+      actions: [],
+    };
+    const bad = JSON.stringify({ kind: "card", card: invalidCard });
+    const text = [header, good, bad].join("\n") + "\n";
+
+    const fallbackStack = validStack();
+    const generate = vi.fn(async () => ({ ok: true as const, stack: fallbackStack, isFallback: true }));
+    const { sink, lines } = collector();
+
+    await streamGenerate(req(), sink, {
+      callStream: fakeCallStream([text]),
+      generate,
+      sleep: instantSleep,
+    });
+
+    // The invalid card must NEVER have been dealt to the client.
+    const dealtInvalid = lines.some(
+      (l) => l.type === "card" && (l.card as { id?: string }).id === invalidQuizId,
+    );
+    expect(dealtInvalid).toBe(false);
+    // And the run still recovers via reset + fallback.
+    expect(lines.some((l) => l.type === "reset")).toBe(true);
+    expect(lines[lines.length - 1]).toMatchObject({ type: "done", isFallback: true });
+  });
+
   it("resets, then falls back, when the stream dies halfway", async () => {
     const stack = validStack();
     const header = JSON.stringify({ kind: "stack", id: stack.id, title: stack.title, theme: stack.theme }) + "\n";

@@ -452,13 +452,17 @@ describe("moveElement", () => {
     expect(el.y).toBe(120);
   });
 
-  it("property: result always fits the canvas for any input (>=500 runs)", () => {
+  it("property: a move either fits the canvas or is rejected (never overlaps) (>=500 runs)", () => {
     fc.assert(
       fc.property(
         fc.integer({ min: -5000, max: 5000 }),
         fc.integer({ min: -5000, max: 5000 }),
         (x, y) => {
-          const next = moveElement(quizStack(), CORRECT_BTN_ID, x, y) as Stack;
+          const result = moveElement(quizStack(), CORRECT_BTN_ID, x, y);
+          // A move that would drop a tile on top of another tile is rejected
+          // (J3 D7); otherwise the result fits the canvas (invariant 5).
+          if (isRejected(result)) return;
+          const next = result as Stack;
           const el = next.cards[0]!.elements.find((e) => e.id === CORRECT_BTN_ID)!;
           expect(el.x).toBeGreaterThanOrEqual(0);
           expect(el.y).toBeGreaterThanOrEqual(0);

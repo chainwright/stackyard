@@ -10,6 +10,14 @@ import { generateStackStream } from "./api.js";
 import { announce } from "./a11y.js";
 import { TopBar } from "./TopBar.js";
 import { Ring, TileShape } from "./icons.js";
+import { fallbackMessage, browserOnline } from "./fallbackMessages.js";
+import {
+  READY_MADE_DECKS,
+  buildReadyMadeDeck,
+  buildTypedStack,
+  type ReadyMadeKey,
+  type TypedQuestion,
+} from "./localDecks.js";
 
 /** A card dealt onto the pile during progressive generation. */
 interface DealtCard {
@@ -64,14 +72,11 @@ export function StartScreen({
   /** Harness-only: show the generating screen's honest offline wording. */
   __demoOffline?: boolean;
 }): JSX.Element {
-  const [sentence, setSentence] = useState(
-    __demoError
-      ? EXAMPLES[0]!.sentence
-      : // Pre-fill the Vikings example as real text so one click on Build Cards
-        // gives the demo, and Build Cards starts enabled (built-app review:
-        // start-empty had an empty textarea and a disabled button).
-        EXAMPLES[0]!.sentence,
-  );
+  // Start EMPTY with a grey example in the placeholder; the three example chips
+  // fill the box on tap (J2: a pre-filled real sentence read like someone had
+  // left their text there). The error state keeps whatever the teacher typed,
+  // which the harness seeds via __demoError.
+  const [sentence, setSentence] = useState(__demoError ? EXAMPLES[0]!.sentence : "");
   const [error, setError] = useState<string | null>(__demoError ?? null);
   // Cards dealt so far during progressive generation, and the expected total.
   const [dealt, setDealt] = useState<DealtCard[]>(__demoDealt ?? []);
@@ -82,9 +87,20 @@ export function StartScreen({
   // appears as it's ready, with no time (built-app review round 2, P1 #3).
   const [offline, setOffline] = useState<boolean>(__demoOffline ?? false);
 
+  // "Type your own questions" form (J2 item q): shown on request, no server.
+  const [typing, setTyping] = useState(false);
+
   const status = store.getState().status;
   const generating = status === "generating";
   const canBuild = sentence.trim().length > 0 && !generating;
+
+  /** Load a ready-made deck CLIENT-SIDE (no server) — the 429/failure way out. */
+  function openReadyMade(key: ReadyMadeKey): void {
+    const stack = buildReadyMadeDeck(key);
+    store.setStack(stack, { isFallback: true, isReadyMadeExample: false, fallbackReason: "error", fallbackOnline: browserOnline() });
+    store.setStatus("idle");
+    announce("Here's a ready-made deck you can edit.");
+  }
 
   async function build(): Promise<void> {
     if (sentence.trim().length === 0) return;
@@ -95,10 +111,11 @@ export function StartScreen({
     store.setStatus("generating");
 
     const outcome = await generateStackStream(sentence.trim(), {
-      onStart: ({ total: t, isFallback, isReadyMadeExample }) => {
+      onStart: ({ total: t, isFallback }) => {
         setTotal(t);
-        // The fallback (and any ready-made example) is the offline path.
-        setOffline(isFallback || isReadyMadeExample);
+        // A fallback deck is the offline/ready-made path; the honest wording is
+        // chosen from the reason when the run completes.
+        setOffline(isFallback);
       },
       onCard: ({ index, card, total: t }) => {
         setTotal(t);
@@ -120,17 +137,18 @@ export function StartScreen({
     });
 
     if (outcome.ok) {
+      const online = browserOnline();
       store.setStack(outcome.stack, {
         isFallback: outcome.isFallback,
         isReadyMadeExample: outcome.isReadyMadeExample,
+        ...(outcome.fallbackReason ? { fallbackReason: outcome.fallbackReason } : {}),
+        fallbackOnline: online,
       });
       store.setStatus("idle");
       announce(
-        outcome.isReadyMadeExample
-          ? "We couldn't reach the internet, so here's a ready-made example you can edit."
-          : outcome.isFallback
-            ? "Your cards are ready. We built them offline."
-            : "Your cards are ready.",
+        outcome.isFallback
+          ? fallbackMessage(outcome.fallbackReason, online)
+          : "Your cards are ready.",
       );
     } else {
       store.setStatus("idle");
@@ -202,6 +220,7 @@ export function StartScreen({
                 id="sentence"
                 class="sentence"
                 aria-label="Your sentence"
+                placeholder="e.g. A 6-card quiz about the water cycle for 4th class"
                 value={sentence}
                 onInput={(e) => setSentence((e.target as HTMLTextAreaElement).value)}
               />
@@ -235,10 +254,131 @@ export function StartScreen({
                     : "Or tap an example to fill it in."}
                 </span>
               </div>
+
+              {/* Always-available ways to start without the AI: ready-made
+                  decks (built locally) and a quick type-your-own form. On the
+                  429/failure screen these are the only way forward (J1/J3/J2
+                  items e + q). */}
+              <div class="ready-made" aria-label="Start without the AI">
+                <p class="ready-made-lede">Or open a ready-made deck you can edit:</p>
+                <div class="ready-made-buttons">
+                  {READY_MADE_DECKS.map((d) => (
+                    <button
+                      class="example-tab"
+                      type="button"
+                      onClick={() => openReadyMade(d.key)}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  class="link-btn"
+                  type="button"
+                  onClick={() => setTyping((v) => !v)}
+                  aria-expanded={typing ? "true" : "false"}
+                >
+                  {typing ? "Hide the question form" : "Type your own questions"}
+                </button>
+                {typing ? (
+                  <TypeYourOwn
+                    onBuilt={(stack) => {
+                      store.setStack(stack, { isFallback: false, isReadyMadeExample: false });
+                      store.setStatus("idle");
+                      announce("Your cards are ready.");
+                    }}
+                  />
+                ) : null}
+              </div>
             </div>
           </section>
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * "Type your own questions" — a local quiz builder (J2 item q). Each row is a
+ * question with a right answer and up to three wrong answers. Build turns the
+ * rows into a playable stack through the shared validator, with NO server call.
+ */
+function TypeYourOwn({ onBuilt }: { onBuilt: (stack: import("../shared/types.js").Stack) => void }): JSX.Element {
+  const [title, setTitle] = useState("");
+  const [rows, setRows] = useState<TypedQuestion[]>([
+    { question: "", right: "", wrong: ["", ""] },
+  ]);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  function update(i: number, patch: Partial<TypedQuestion>): void {
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function updateWrong(i: number, j: number, value: string): void {
+    setRows((prev) =>
+      prev.map((r, idx) =>
+        idx === i ? { ...r, wrong: r.wrong.map((w, k) => (k === j ? value : w)) } : r,
+      ),
+    );
+  }
+  function addRow(): void {
+    setRows((prev) => [...prev, { question: "", right: "", wrong: ["", ""] }]);
+  }
+
+  function build(): void {
+    const stack = buildTypedStack(title, rows);
+    if (stack === null) {
+      setFormError("Each question needs a right answer and at least one wrong answer.");
+      return;
+    }
+    setFormError(null);
+    onBuilt(stack);
+  }
+
+  return (
+    <div class="type-own" aria-label="Type your own questions">
+      <label class="field-label" for="own-title">Title</label>
+      <input
+        id="own-title"
+        type="text"
+        value={title}
+        placeholder="e.g. Fractions quiz"
+        onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
+      />
+      {rows.map((row, i) => (
+        <fieldset class="type-own-row">
+          <legend>Question {i + 1}</legend>
+          <input
+            type="text"
+            aria-label={`Question ${i + 1}`}
+            placeholder="Question"
+            value={row.question}
+            onInput={(e) => update(i, { question: (e.target as HTMLInputElement).value })}
+          />
+          <input
+            type="text"
+            aria-label={`Right answer for question ${i + 1}`}
+            placeholder="Right answer"
+            value={row.right}
+            onInput={(e) => update(i, { right: (e.target as HTMLInputElement).value })}
+          />
+          {row.wrong.map((w, j) => (
+            <input
+              type="text"
+              aria-label={`Wrong answer ${j + 1} for question ${i + 1}`}
+              placeholder={`Wrong answer ${j + 1}`}
+              value={w}
+              onInput={(e) => updateWrong(i, j, (e.target as HTMLInputElement).value)}
+            />
+          ))}
+        </fieldset>
+      ))}
+      <div class="type-own-actions">
+        <button class="ghost-btn" type="button" onClick={addRow}>Add another question</button>
+        <button class="build-btn" type="button" onClick={build}>Make these cards</button>
+      </div>
+      {formError !== null ? (
+        <p class="hint hint-warn" role="alert">{formError}</p>
+      ) : null}
     </div>
   );
 }

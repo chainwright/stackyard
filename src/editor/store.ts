@@ -68,6 +68,8 @@ export class EditorStore {
       lastValidation,
       isFallback: initial?.isFallback ?? false,
       isReadyMadeExample: initial?.isReadyMadeExample ?? false,
+      ...(initial?.fallbackReason ? { fallbackReason: initial.fallbackReason } : {}),
+      fallbackOnline: initial?.fallbackOnline ?? true,
       status: initial?.status ?? "idle",
     };
   }
@@ -184,7 +186,15 @@ export class EditorStore {
   // Stack / screen setters used by generate + play
 
   /** Load a freshly generated (or restored) stack. Resets history. */
-  setStack(stack: Stack, opts?: { isFallback?: boolean; isReadyMadeExample?: boolean }): void {
+  setStack(
+    stack: Stack,
+    opts?: {
+      isFallback?: boolean;
+      isReadyMadeExample?: boolean;
+      fallbackReason?: import("../shared/types.js").FallbackReason;
+      fallbackOnline?: boolean;
+    },
+  ): void {
     this.state.stack = stack;
     this.state.history = createHistory();
     this.lastCommit = null;
@@ -193,6 +203,12 @@ export class EditorStore {
     this.state.lastValidation = validate(stack);
     this.state.isFallback = opts?.isFallback ?? false;
     this.state.isReadyMadeExample = opts?.isReadyMadeExample ?? false;
+    if (opts?.fallbackReason !== undefined) {
+      this.state.fallbackReason = opts.fallbackReason;
+    } else {
+      delete (this.state as { fallbackReason?: unknown }).fallbackReason;
+    }
+    this.state.fallbackOnline = opts?.fallbackOnline ?? true;
     this.state.screen = "editor";
     persistence.save(stack, this.hooks.storage);
     this.changed();

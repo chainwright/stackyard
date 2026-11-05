@@ -99,7 +99,11 @@ async function inlineOne(
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === "ENOENT") {
-      throw new Error(`Asset not found: ${src}`);
+      // A relative/missing image src — surface as a validation error so the
+      // export route answers a clean 422 (not a 500). The exported file must be
+      // self-contained, so a picture that can't be inlined is a user-fixable
+      // problem, not a server crash (J4 L2).
+      throw new ExportValidationError(["missing-asset"]);
     }
     throw err;
   }

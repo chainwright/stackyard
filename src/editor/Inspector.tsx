@@ -106,7 +106,7 @@ export function Inspector({
     const current = gotoTargetOf(el);
     return (
       <div class="field-group">
-        <label for="goto">When picked, go to…</label>
+        <label for="goto">If they pick this, show card…</label>
         <select
           id="goto"
           value={current ?? ""}
@@ -198,6 +198,14 @@ export function Inspector({
   // ---- A quiz answer tile selected ----
   if (selectedEl && selectedEl.type === "button" && isAnswerButton(selectedEl)) {
     const correct = isCorrect(selectedEl);
+    // The card's current right answer (may be a DIFFERENT tile from the one
+    // selected). Used so a wrong tile doesn't claim "no answer is right yet"
+    // when another answer is clearly ticked (J2/J3 D5, 5 Nov panel).
+    const rightAnswer = card.elements.find(
+      (e): e is ButtonElement =>
+        e.type === "button" && e.actions.some((a) => a.type === "score" && a.delta === 1),
+    );
+    const rightLabel = rightAnswer?.label.trim() ?? "";
     return (
       <aside class="inspector" aria-label="Edit">
         <h2>Edit this answer</h2>
@@ -228,7 +236,9 @@ export function Inspector({
           <p class="hint">
             {correct
               ? "Only one answer can be the right one. The class hears a cheer when they pick it."
-              : "No answer is the right one yet. Pick one so the class can earn a point."}
+              : rightLabel.length > 0
+                ? `“${rightLabel}” is the right answer. Tick this box to make this one right instead.`
+                : "No answer is the right one yet. Pick one so the class can earn a point."}
           </p>
         </div>
         {kindPicker}

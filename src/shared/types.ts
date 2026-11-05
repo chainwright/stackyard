@@ -77,6 +77,18 @@ export type GenerateRequest = {
   prompt: string;
 };
 
+/**
+ * Why a ready-made deck was served instead of a model-generated one. Used so
+ * the Maker can tell the teacher the TRUTH (never "no internet" when they are
+ * online — J1/J3/J5, 5 Nov panel):
+ *   - "no-key"  — the server has no model API key configured
+ *   - "cap"     — today's model-call budget is used up
+ *   - "timeout" — the model didn't answer in time
+ *   - "error"   — the model call failed for another reason
+ * Absent on the normal (model) success path.
+ */
+export type FallbackReason = "no-key" | "cap" | "timeout" | "error";
+
 export type GenerateSuccess = {
   ok: true;
   stack: Stack;
@@ -89,6 +101,8 @@ export type GenerateSuccess = {
    * example.
    */
   isReadyMadeExample?: boolean;
+  /** Why the fallback happened (only present when isFallback is true). */
+  fallbackReason?: FallbackReason;
 };
 
 export type GenerateError = {
@@ -120,6 +134,8 @@ export type GenerateStreamStart = {
   /** True when this is the closest ready-made example for an unmatched
    *  free-text sentence (see GenerateSuccess.isReadyMadeExample). */
   isReadyMadeExample?: boolean;
+  /** Why the fallback happened (only present when isFallback is true). */
+  fallbackReason?: FallbackReason;
 };
 
 export type GenerateStreamCard = {
@@ -135,6 +151,8 @@ export type GenerateStreamDone = {
   /** True when this is the closest ready-made example for an unmatched
    *  free-text sentence (see GenerateSuccess.isReadyMadeExample). */
   isReadyMadeExample?: boolean;
+  /** Why the fallback happened (only present when isFallback is true). */
+  fallbackReason?: FallbackReason;
 };
 
 export type GenerateStreamError = {

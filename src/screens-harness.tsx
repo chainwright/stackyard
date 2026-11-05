@@ -170,9 +170,11 @@ switch (state) {
         <EditorScreen store={makeStore({ card: 2, element: "firstAnswer" })} />
         <ExportDone
           filename="Vikings-in-Ireland.html"
+          stack={demoStack()}
           onOpen={() => {}}
           onBack={() => {}}
           onExportAgain={() => {}}
+          onFixFlow={() => {}}
         />
       </>,
       root,

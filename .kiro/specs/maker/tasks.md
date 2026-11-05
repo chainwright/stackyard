@@ -1204,3 +1204,67 @@ per request and get a fresh bucket every time, bypassing the per-visitor limit.
 > provider header (e.g. Cloudflare's `cf-connecting-ip`) can't be spoofed past
 > the proxy. We keep the rightmost-XFF fallback so the limiter still keys on a
 > non-client-controlled value even if the header isn't set.
+
+---
+
+## Phase 9 — 5 Nov judge-panel fixes (live app)
+
+### TASK-22: fixes from the 5 Nov AI review panel (J1 official, J2 teacher, J3 wow/design, J4 engineering, J5 hound)
+**Refs:** `judge_2026-11-05/J1_official.md`, `J2_teacher.md`, `J3_wow_design.md`, `J4_engineering.md`, `J5_hound.md`. Related specs: exporter (a, k), stack-generator (d), maker (the rest).
+
+Each sub-item has acceptance criteria ("Done when"). Every pre-existing test stays green; `npm test` and `npx tsc --noEmit` exit 0.
+
+**a) [J4 H1] "Open the File" is blank on the live site.** The exported file opened as a `blob:` inherits the app CSP (`script-src 'self'`, `font-src 'self'`), which blocks the player's inline `<script>` and `data:` fonts.
+- Fix so the exported file plays when opened from the app AND when downloaded. Chosen approach: open the exported file in-app via the shared `mountPlayer` (same renderer as Try It) in a new document/overlay that does NOT inherit the restrictive CSP — no blob script execution needed — and revoke any created object URL.
+- **Done when:** after Export, "Open the File" shows the playing player (not a blank page), verified in headless Chromium against the production build served by `npm start`; the downloaded file still plays from disk.
+
+**b) [J4 M1/M3] Client disconnect must abort the upstream model call.** `req.on("close")` never fires after `readBody` consumed the body; listen on `res` close instead (`res.on("close", () => { if (!res.writableFinished) abort(); })`).
+- Correct the KIRO_LOG/spec lines that overclaim the abort worked.
+- **Done when:** an HTTP-level test with a mock upstream proves the upstream `callStream` is aborted when the client destroys the connection mid-stream (M3 mutant killed).
+
+**c) [J4 M2/J1] Daily cap counts REAL paid model calls.** Record one unit per actual upstream call (first attempt AND retry), at the moment the call is made — not one unit per request before validation. A request served from a ready-made deck with no model call must NOT count against the per-visitor rate limit either. Raise the default per-visitor limit to **20** per 10 minutes (schools share one address); keep it env-tunable (`GENERATE_RATE_PER_10MIN`).
+- **Done when:** a request that makes two upstream calls records 2; a forced-fallback request records 0 and does not consume a rate-limit slot; the default limit is 20 (pinned by a test); existing budget/limiter tests stay green.
+
+**d) [J5/J1/J3] Honest fallback messages.** The Maker must say WHY a ready-made deck was served: "AI generation isn't set up on this server", "Today's AI budget is used up", "The AI didn't answer in time" (or similar), never "We couldn't reach the internet" unless the browser is actually offline (`navigator.onLine === false` or the fetch itself threw). Carry a `fallbackReason` from the server (`no-key` | `cap` | `timeout` | `error`) on the stream `start`/`done` and the non-stream JSON, and log the reason server-side on the stream path (J4: stream-generate.ts:262).
+- **Done when:** each reason maps to its honest sentence in the Maker; a true network failure (fetch throws) shows the offline sentence; the server logs the reason once; types carry `fallbackReason`.
+
+**e) [J1/J3] 429 screen offers ready-made decks.** The rate-limit (and any generation-failure) screen shows real buttons that open each ready-made deck locally (built client-side, no server call).
+- **Done when:** on a 429/failure the Start screen shows three deck buttons that load the Vikings / Times tables / Irish words deck straight into the editor with no network call.
+
+**f) [J3 P0] Correct answer is not always the first tile.** Shuffle answer-tile order per quiz card, deterministically per stack (seed from `stack.id`) so export round-trips stay lossless, keeping the correct pointer right, for generated and ready-made decks. Instruct the generator to vary the correct position.
+- **Done when:** a property test shows the correct index is not constant across a deck and every quiz card still has exactly one correct answer linked forward; the roundtrip property stays green.
+
+**g) [J1/J3] Ready-made deck content.** Believable wrong answers (no "Cars / Phones / Plastic"); fix the factual error "Who sailed to Ireland first? → Vikings"; the longphort is on a river, not "the coast". Check every ready-made card for accuracy.
+- **Done when:** the Vikings deck's card 1 is factually true; no joke distractors remain; fallback tests still pass (valid, deterministic, linked forward).
+
+**h) [J1/J3] Long answers wrap.** Answer labels wrap to two lines in the player and the exported file instead of truncating with an ellipsis.
+- **Done when:** a long label ("Norsemen from Norway") renders on two lines (no `text-overflow: ellipsis` clip) in the player CSS; renderer tests stay green.
+
+**i) [J3/J1] Editor correctness.** "+ Add Card" inserts after the current card (never after the last card), selects it, and links it into the flow so play reaches it. The answer inspector must not say "No answer is the right one yet" when another answer is marked right. Dragging must not drop one answer on top of another. Ruled lines must not run through question text, and the CORRECT stamp must not cover the answer word at 1920×1080.
+- **Done when:** Add Card lands reachable + selected; the inspector copy names the current right answer when another is correct; drag rejects an overlapping drop (or nudges clear); the `.sy-card::after` rule grid and `.sy-stamp`/question geometry no longer collide (stamp bottom clears the label; question sits clear of a rule).
+
+**j) [J1] Phone-width editor.** Under a laptop/tablet width, the editor shows "Stackyard's editor needs a laptop or tablet; the files it makes play on any device" instead of a broken layout.
+- **Done when:** below a threshold width the editor renders the notice (CSS + a small responsive guard), and the player/exported file are unaffected.
+
+**k) [J4 low] Robustness.** Malformed export bodies → 400 (not 500); missing relative image paths handled without 500; an error handler on the static file stream; do not serve `screens.html` in production; remove the stale `tests/maker/start-screen.test.ts` glob from `vitest.config.ts`; a light rate limit on `POST /api/export`.
+- **Done when:** `{stack:{cards:[null]}}` → a 4xx with a plain message; a non-`data:` image src → a 4xx (not 500); the static stream has an `error` listener; `screens.html` is excluded from the production static root; the stale glob is gone; `/api/export` is behind a looser limiter.
+
+**l) [J5] README for judges.** Live link at top; what "works offline" means (the exported file; the Maker needs the server); correct env table (`CLIENT_IP_HEADER=cf-connecting-ip` on Render, `DEBUG_CLIENT_ADDR`); replace the false "CI runs check-player-fresh.sh" with a real GitHub Actions workflow that runs `npm test` + `tsc` + the freshness check; say plainly the per-visitor limit returns a friendly 429; list npm libraries + the model provider (Anthropic, OpenAI-compatible) with licences; name prior art (Decker, H5P/Lumi) and what only Stackyard does.
+- **Done when:** the README reflects reality, a `.github/workflows` CI exists, and the claims J5 flagged are corrected.
+
+**m) [J5] KIRO_LOG honesty.** Call the reviewers "our AI review panel", not "outside judge"; note the loosened external-URL test honestly (OFL font comments contain https links; the player makes 0 requests).
+- **Done when:** the KIRO_LOG wording is corrected with a dated note.
+
+**n) [J4] Mutation gaps.** A test that fails if per-card `validateCard` is removed on the stream path; and the disconnect-abort coverage from (b).
+- **Done when:** removing the stream-path per-card validation makes a test fail; the disconnect abort has a test.
+
+**o) [J2] "Before you share" export check.** On the export screen, list cards the class can never reach and scores that can't be completed, with a one-click "link it in" fix where possible. The flash card's "Next Card" button must be selectable and re-linkable in the editor.
+- **Done when:** a reachability check (from card 1 over all gotos, card-level and button) lists unreachable cards and dead-end quiz answers; a one-click fix links an unreachable card after the current one; the flash "Next Card" button is selectable in the editor and its goto editable.
+
+**p) [J2] Plain words.** "Link a Card" → "Go to card…"; "When picked, go to…" → "If they pick this, show card…"; start with an empty sentence box (examples stay as chips); fix the card counter overlapping the question.
+- **Done when:** the labels read as above; the Start textarea is empty with the examples as chips; the "Card N of M" meta no longer overlaps the question text.
+
+**q) [J2] "Type your own questions".** When AI generation is unavailable, offer a quick local form (question + right answer + 2–3 wrong answers, repeatable) that builds a playable stack locally — no server model.
+- **Done when:** a form on the Start/fallback screen turns typed questions into a valid stack (through the shared validator) and opens it in the editor with no network call.
+
+> **Note on scope:** J3's "living file" (edit inside the exported HTML) and the Openverse picture MCP are NOT in TASK-22 — they are larger follow-ups. TASK-22 fixes the correctness, honesty, robustness and teacher-usability defects the panel found on the live build.

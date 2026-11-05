@@ -50,6 +50,11 @@ export interface HandleGenerateOptions {
    * (see createServer) before the handler runs.
    */
   forceFallback?: boolean;
+  /**
+   * Called once per REAL upstream model call so the server can count paid calls
+   * against the daily budget (J4 M2). Not called on the forced-fallback path.
+   */
+  onModelCall?: () => void;
 }
 
 /**
@@ -62,6 +67,7 @@ export async function handleGenerate(
   options: HandleGenerateOptions = {}
 ): Promise<void> {
   const forceFallback = options.forceFallback === true;
+  const onModelCall = options.onModelCall;
   // Only accept POST.
   if (req.method !== "POST") {
     sendJson(res, 405, { ok: false, message: "Method not allowed." });
@@ -125,13 +131,16 @@ export async function handleGenerate(
   // existing tests and clients keep working.
   const accept = (req.headers["accept"] ?? "").toLowerCase();
   if (accept.includes(NDJSON_MEDIA_TYPE)) {
-    await streamGenerateToResponse(req, res, request, forceFallback);
+    await streamGenerateToResponse(req, res, request, forceFallback, onModelCall);
     return;
   }
 
   let result: Awaited<ReturnType<typeof generate>>;
   try {
-    result = await generate(request, { forceFallback });
+    result = await generate(request, {
+      forceFallback,
+      ...(onModelCall ? { onModelCall } : {}),
+    });
   } catch (err) {
     // generate() is documented to never throw, but guard anyway.
     console.error("[generate route] unexpected error:", err);
@@ -143,12 +152,19 @@ export async function handleGenerate(
   }
 
   if (result.ok) {
-    // Strip everything except ok, stack, isFallback.
-    sendJson(res, 200, {
+    // Strip everything except ok, stack, isFallback — plus the honest fallback
+    // labels ONLY when a fallback happened, so the default success response is
+    // unchanged (and the "exactly these keys" test stays green).
+    const payload: Record<string, unknown> = {
       ok: true,
       stack: result.stack,
       isFallback: result.isFallback,
-    });
+    };
+    if (result.isFallback) {
+      if (result.isReadyMadeExample) payload["isReadyMadeExample"] = true;
+      if (result.fallbackReason) payload["fallbackReason"] = result.fallbackReason;
+    }
+    sendJson(res, 200, payload);
   } else {
     sendJson(res, 422, {
       ok: false,
@@ -171,6 +187,7 @@ async function streamGenerateToResponse(
   res: ServerResponse,
   request: GenerateRequest,
   forceFallback: boolean,
+  onModelCall?: () => void,
 ): Promise<void> {
   res.writeHead(200, {
     "Content-Type": NDJSON_MEDIA_TYPE,
@@ -180,9 +197,18 @@ async function streamGenerateToResponse(
 
   // When the client disconnects mid-stream, abort so the upstream LLM request
   // is cancelled and the server stops paying for tokens nobody will read.
+  //
+  // Listen on `res` (the writable side), NOT `req`: on Node ≥16 the request
+  // `close` event fires once the request body has been fully consumed — which
+  // readBody already did — so a `req.on("close")` listener never fires on a
+  // real mid-stream disconnect (J4 M1). The response's `close` fires when the
+  // socket actually goes away; `res.writableFinished` is true only if we ended
+  // the stream ourselves, so we abort only on a genuine early disconnect.
   const connection = new AbortController();
-  const onClose = (): void => connection.abort();
-  req.on("close", onClose);
+  const onClose = (): void => {
+    if (!res.writableFinished) connection.abort();
+  };
+  res.on("close", onClose);
 
   // A closed connection can't be written to; swallow EPIPE-style write errors.
   const sink: LineSink = {
@@ -196,8 +222,12 @@ async function streamGenerateToResponse(
   };
 
   try {
-    await streamGenerate(request, sink, { signal: connection.signal, forceFallback });
+    await streamGenerate(request, sink, {
+      signal: connection.signal,
+      forceFallback,
+      ...(onModelCall ? { onModelCall } : {}),
+    });
   } finally {
-    req.off("close", onClose);
+    res.off("close", onClose);
   }
 }

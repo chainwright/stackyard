@@ -138,7 +138,15 @@ function sendFile(
     res.end();
     return;
   }
-  createReadStream(filePath).pipe(res);
+  // Attach an error handler before piping: a stat/read race (e.g. a redeploy
+  // swapping dist/ between statFile and the stream open) would otherwise emit
+  // an unhandled 'error' and crash the process (J4 L5). Headers are already
+  // sent, so we can only destroy the response.
+  const stream = createReadStream(filePath);
+  stream.on("error", () => {
+    res.destroy();
+  });
+  stream.pipe(res);
 }
 
 /** Cache-Control for a resolved file: immutable for hashed /assets/, else no-cache. */
@@ -176,6 +184,14 @@ export async function serveStatic(
   const rootAbs = path.resolve(opts.root);
   const urlPathname = (req.url ?? "/").split("?")[0]!.split("#")[0]!;
   const indexPath = path.join(rootAbs, "index.html");
+
+  // The screenshot harness (screens.html + its screens-*.js chunk) is a
+  // dev/CI tool, not part of the product. Never serve it in production even if
+  // the build emits it (J4 L6): treat a request for it as a plain 404.
+  if (/(^|\/)screens(\.html|-[^/]*\.js)$/.test(urlPathname)) {
+    sendJson(res, 404, { ok: false, message: "Not found." });
+    return;
+  }
 
   const resolved = resolveSafePath(rootAbs, urlPathname);
   if (resolved.filePath === null) {

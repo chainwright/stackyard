@@ -63,8 +63,10 @@ export interface ServerConfig {
    * requests. Defaults from DEBUG_CLIENT_ADDR=1. Temporary, off by default.
    */
   debugClientAddr?: boolean;
-  /** Max generations per client per 10 minutes. Default from env, else 6. */
+  /** Max generations per client per 10 minutes. Default from env, else 20. */
   generateRatePer10Min?: number;
+  /** Max exports per client per 10 minutes (a looser bucket). Default 60. */
+  exportRatePer10Min?: number;
   /** Max real model calls per UTC day. Default from env, else 300. */
   generateDailyCap?: number;
   /** Clock seam for the limiter + budget (tests pass fake clocks). */
@@ -107,7 +109,8 @@ export function createServer(config: ServerConfig = {}): Server {
   const clientIpHeader =
     config.clientIpHeader !== undefined ? config.clientIpHeader : clientIpHeaderFromEnv(env);
   const debugClientAddr = config.debugClientAddr ?? env["DEBUG_CLIENT_ADDR"] === "1";
-  const rateLimit = config.generateRatePer10Min ?? intFromEnv(env, "GENERATE_RATE_PER_10MIN", 6);
+  const rateLimit = config.generateRatePer10Min ?? intFromEnv(env, "GENERATE_RATE_PER_10MIN", 20);
+  const exportRate = config.exportRatePer10Min ?? intFromEnv(env, "EXPORT_RATE_PER_10MIN", 60);
   const dailyCap = config.generateDailyCap ?? intFromEnv(env, "GENERATE_DAILY_CAP", 300);
   const now = config.now;
 
@@ -116,6 +119,13 @@ export function createServer(config: ServerConfig = {}): Server {
 
   const limiter = new RateLimiter({
     limit: rateLimit,
+    windowMs: TEN_MINUTES_MS,
+    ...(now ? { now } : {}),
+  });
+  // Export is cheap but not free (it reads the player IIFE + fonts and builds a
+  // document), so put it behind a looser per-client bucket too (J4 L3).
+  const exportLimiter = new RateLimiter({
+    limit: exportRate,
     windowMs: TEN_MINUTES_MS,
     ...(now ? { now } : {}),
   });
@@ -154,8 +164,6 @@ export function createServer(config: ServerConfig = {}): Server {
         return;
       }
 
-      // Per-client rate limit — checked BEFORE the body is read or any model
-      // work happens, so a flood cannot cost tokens or memory.
       const clientId = clientAddress(req, { trustProxy, clientIpHeader });
 
       // Temporary diagnostics: the forwarding headers + chosen address for the
@@ -168,30 +176,56 @@ export function createServer(config: ServerConfig = {}): Server {
         );
       }
 
-      const decision = limiter.check(clientId);
-      if (!decision.allowed) {
-        sendJson(
-          res,
-          429,
-          { ok: false, message: RATE_LIMITED_MESSAGE },
-          { "Retry-After": String(decision.retryAfterSeconds) },
-        );
-        return;
+      // Global daily budget first: when it is exhausted, the request is served
+      // from the ready-made decks with NO model call — so it must NOT cost the
+      // paid key AND must NOT consume a per-visitor rate-limit slot (J4 M2 /
+      // J1). canSpend() is non-consuming; the real spend is counted per upstream
+      // call via onModelCall (so a request that makes two calls records two, and
+      // a fallback-only request records none).
+      const canSpend = budget.canSpend();
+
+      if (canSpend) {
+        // A real model call is about to be attempted — this is the only path
+        // that can drain the key, so this is the path the per-visitor limit
+        // guards. Check (and count) a slot here.
+        const decision = limiter.check(clientId);
+        if (!decision.allowed) {
+          sendJson(
+            res,
+            429,
+            { ok: false, message: RATE_LIMITED_MESSAGE },
+            { "Retry-After": String(decision.retryAfterSeconds) },
+          );
+          return;
+        }
       }
 
-      // Global daily budget: when exhausted, force the ready-made fallback and
-      // make NO model call. Otherwise count this as a real model call.
-      const canSpend = budget.canSpend();
-      if (canSpend) budget.record();
       const forceFallback = !canSpend;
+      const onModelCall = (): void => budget.record();
 
       applySecurityHeaders(res);
-      await handleGenerate(req, res, { forceFallback }).catch((err) => onUnhandled(res, err));
+      await handleGenerate(req, res, {
+        forceFallback,
+        ...(canSpend ? { onModelCall } : {}),
+      }).catch((err) => onUnhandled(res, err));
       return;
     }
 
-    // ---- Export ----
+    // ---- Export (lightly rate-limited) ----
     if (pathname === "/api/export") {
+      if (method === "POST") {
+        const exportClient = clientAddress(req, { trustProxy, clientIpHeader });
+        const decision = exportLimiter.check(exportClient);
+        if (!decision.allowed) {
+          sendJson(
+            res,
+            429,
+            { ok: false, message: "That's a lot of exports — give it a minute and try again." },
+            { "Retry-After": String(decision.retryAfterSeconds) },
+          );
+          return;
+        }
+      }
       applySecurityHeaders(res);
       await handleExport(req, res).catch((err) => onUnhandled(res, err));
       return;

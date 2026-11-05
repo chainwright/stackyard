@@ -29,7 +29,6 @@ export default defineConfig({
       ["tests/play-again-flash-back.test.ts", "jsdom"],
       // Maker UI tests (Preact components) need a DOM.
       ["tests/maker/app-shell.test.ts", "jsdom"],
-      ["tests/maker/start-screen.test.ts", "jsdom"],
       ["tests/maker/generate-flow.test.ts", "jsdom"],
       ["tests/maker/card-list.test.ts", "jsdom"],
       ["tests/maker/canvas.test.ts", "jsdom"],

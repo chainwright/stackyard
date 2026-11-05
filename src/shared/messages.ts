@@ -34,6 +34,10 @@ const MESSAGE_BY_CODE: Record<string, string> = {
     "This set has too many cards to export. Remove a few and try again.",
   "text-too-long":
     "Some text on a card is too long to export. Shorten it and try again.",
+  "missing-asset":
+    "A picture on a card couldn't be found. Add the picture again, then export.",
+  "path-traversal":
+    "A picture on a card couldn't be read. Add the picture again, then export.",
 };
 
 const FALLBACK_MESSAGE =

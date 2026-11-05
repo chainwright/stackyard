@@ -265,11 +265,14 @@ const PLAYER_STYLES = `
 }
 
 /* ---- Question text — quiz / flash heading ---- */
+/* line-height is 64px = two 32px rule bands, so the text baseline lands ON a
+   ruled line (the copybook look) instead of a rule striking through the glyph
+   mid-height at large scales (J3 D3, 1920×1080). */
 .sy-question {
   font-size: var(--text-question);   /* 44px */
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 64px;
   color: var(--color-ink);
 }
 
@@ -407,13 +410,20 @@ const PLAYER_STYLES = `
   align-items: center;
   justify-content: center;
 }
-/* Long labels shrink to fit the tile rather than clipping mid-word. */
+/* Long labels WRAP to two lines rather than being cut off with an ellipsis
+   ("Norsemen from…" in the class player — J1/J3, 5 Nov panel). Two lines fit
+   the 96px tile; a third would clamp. line-height stays tight so two lines
+   clear the tile padding. */
 .sy-tile .sy-tile-label {
   flex: 1 1 auto;
   min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  line-height: 1.15;
 }
 
 /* ---- Generic button (story branch / nav) — chunky paper tab with a pressed
@@ -448,7 +458,7 @@ const PLAYER_STYLES = `
    (design-system Rubber stamp feedback). */
 .sy-stamp {
   position: absolute;
-  top: -24px;
+  top: -34px;
   left: 64px;
   right: auto;
   bottom: auto;

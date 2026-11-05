@@ -6,6 +6,7 @@
 import type {
   Stack,
   Card,
+  FallbackReason,
   GenerateStreamMessage,
 } from "../shared/types.js";
 import { safeFileName } from "../shared/messages.js";
@@ -14,8 +15,21 @@ import { safeFileName } from "../shared/messages.js";
 // Generate
 
 export type GenerateOutcome =
-  | { ok: true; stack: Stack; isFallback: boolean; isReadyMadeExample: boolean }
-  | { ok: false; message: string };
+  | {
+      ok: true;
+      stack: Stack;
+      isFallback: boolean;
+      isReadyMadeExample: boolean;
+      /** Why a ready-made deck was served (only when isFallback). */
+      fallbackReason?: FallbackReason;
+    }
+  | {
+      ok: false;
+      message: string;
+      /** True when the fetch itself failed (the browser is genuinely offline),
+       *  so the UI may honestly say "we couldn't reach Stackyard". */
+      networkFailed?: boolean;
+    };
 
 /** POST /api/generate with a teacher's sentence. */
 export async function generateStack(
@@ -76,7 +90,7 @@ export async function generateStack(
 
 /** Callbacks the Start screen uses to deal cards as they stream in. */
 export interface GenerateStreamHandlers {
-  onStart?: (info: { total: number; title: string; isFallback: boolean; isReadyMadeExample: boolean }) => void;
+  onStart?: (info: { total: number; title: string; isFallback: boolean; isReadyMadeExample: boolean; fallbackReason?: FallbackReason }) => void;
   onCard?: (info: { index: number; card: Card; total: number }) => void;
   /**
    * The server abandoned a partial stream (dead stream, bad card, or a stack
@@ -110,10 +124,14 @@ export async function generateStackStream(
       body: JSON.stringify({ prompt }),
     });
   } catch {
+    // The fetch itself failed — the browser is genuinely offline (or the
+    // server is unreachable). This is the ONLY case where "couldn't reach
+    // Stackyard" is honest (J1/J3/J5, 5 Nov panel).
     return {
       ok: false,
       message:
         "We couldn't reach Stackyard. Check your internet and press Build Cards again.",
+      networkFailed: true,
     };
   }
 
@@ -139,6 +157,7 @@ export async function generateStackStream(
   let total = 0;
   let isFallback = false;
   let isReadyMadeExample = false;
+  let fallbackReason: FallbackReason | undefined;
 
   // Process a single parsed NDJSON message. Returns a terminal outcome once
   // `done` or `error` is seen; otherwise undefined to keep reading.
@@ -148,11 +167,13 @@ export async function generateStackStream(
         total = msg.total;
         isFallback = msg.isFallback;
         isReadyMadeExample = msg.isReadyMadeExample === true;
+        fallbackReason = msg.fallbackReason;
         handlers.onStart?.({
           total: msg.total,
           title: msg.title,
           isFallback: msg.isFallback,
           isReadyMadeExample,
+          ...(msg.fallbackReason ? { fallbackReason: msg.fallbackReason } : {}),
         });
         return undefined;
       case "card":
@@ -164,15 +185,19 @@ export async function generateStackStream(
         total = 0;
         isFallback = false;
         isReadyMadeExample = false;
+        fallbackReason = undefined;
         handlers.onReset?.();
         return undefined;
-      case "done":
+      case "done": {
+        const reason = msg.fallbackReason ?? fallbackReason;
         return {
           ok: true,
           stack: msg.stack,
           isFallback: msg.isFallback || isFallback,
           isReadyMadeExample: msg.isReadyMadeExample === true || isReadyMadeExample,
+          ...(reason ? { fallbackReason: reason } : {}),
         };
+      }
       case "error":
         return { ok: false, message: msg.message };
       default:

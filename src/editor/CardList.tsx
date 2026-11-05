@@ -8,7 +8,7 @@
 import type { JSX } from "preact";
 import type { Card, Stack } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
-import { addCard, removeCard, reorderCards } from "./operations.js";
+import { addCardAfter, removeCard, reorderCards, takeLastInsertedCardId } from "./operations.js";
 import { KindShape } from "./icons.js";
 
 /**
@@ -61,9 +61,16 @@ export function CardList({
 
   function add(): void {
     onNotice?.(null);
-    const index = n; // append before the end card below
-    const res = store.apply((s) => addCard(s, "quiz", index - 0));
-    if (!res.ok) onNotice?.(res.message);
+    // Insert AFTER the current card (never after the last card) and link it into
+    // the flow, so play reaches it — then select it (J2 #1 / J3 D6).
+    const afterId = selectedId ?? stack.cards[0]!.id;
+    const res = store.apply((s) => addCardAfter(s, afterId, "quiz"));
+    if (!res.ok) {
+      onNotice?.(res.message);
+      return;
+    }
+    const newId = takeLastInsertedCardId();
+    if (newId !== null) store.setSelectedCard(newId);
   }
 
   function remove(cardId: string): void {

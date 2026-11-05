@@ -35,20 +35,36 @@ export const MAX_TEXT_LENGTH = 10_000;
 export function checkExportLimits(stack: Stack): string[] {
   const errors: string[] = [];
 
+  if (!Array.isArray(stack.cards)) {
+    // Not a well-formed cards array — nothing to cap here; the exporter's
+    // validate() reports the real shape error as a clean 422 (J4 L1).
+    return errors;
+  }
+
   if (stack.cards.length > MAX_CARDS) {
     errors.push("too-many-cards");
   }
 
   let textTooLong = false;
-  for (const card of stack.cards) {
-    for (const el of card.elements) {
-      if (el.type === "text" && el.content.length > MAX_TEXT_LENGTH) {
+  for (const rawCard of stack.cards as unknown[]) {
+    // The input may be malformed (e.g. a null card or a card without an
+    // `elements` array). The caps run BEFORE the exporter's validate(), so be
+    // defensive: skip anything that isn't a well-formed card+elements, and let
+    // exportStack()'s validate() report the real shape error instead of this
+    // loop throwing a 500 (J4 L1).
+    if (rawCard === null || typeof rawCard !== "object") continue;
+    const elements = (rawCard as { elements?: unknown }).elements;
+    if (!Array.isArray(elements)) continue;
+    for (const rawEl of elements as unknown[]) {
+      if (rawEl === null || typeof rawEl !== "object") continue;
+      const el = rawEl as Record<string, unknown>;
+      if (el["type"] === "text" && typeof el["content"] === "string" && el["content"].length > MAX_TEXT_LENGTH) {
         textTooLong = true;
-      } else if (el.type === "button" && el.label.length > MAX_TEXT_LENGTH) {
+      } else if (el["type"] === "button" && typeof el["label"] === "string" && el["label"].length > MAX_TEXT_LENGTH) {
         textTooLong = true;
-      } else if (el.type === "image" && el.alt.length > MAX_TEXT_LENGTH) {
+      } else if (el["type"] === "image" && typeof el["alt"] === "string" && el["alt"].length > MAX_TEXT_LENGTH) {
         textTooLong = true;
-      } else if (el.type === "field" && el.variable.length > MAX_TEXT_LENGTH) {
+      } else if (el["type"] === "field" && typeof el["variable"] === "string" && el["variable"].length > MAX_TEXT_LENGTH) {
         textTooLong = true;
       }
       if (textTooLong) break;

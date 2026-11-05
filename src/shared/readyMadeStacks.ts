@@ -15,6 +15,14 @@
 
 import type { Stack, Card } from "./types.js";
 import { linkQuizAnswersForward } from "./linkForward.js";
+import { shuffleQuizAnswers } from "./shuffleAnswers.js";
+
+/** Link quiz answers forward, then shuffle which tile the correct answer sits
+ *  on (deterministic per stack id), so the right answer is not always tile A
+ *  (J3 P0, 5 Nov panel). */
+function finalise(stack: Stack): Stack {
+  return shuffleQuizAnswers(linkQuizAnswersForward(stack));
+}
 
 // ---------------------------------------------------------------------------
 // Deterministic valid v4 UUIDs, namespaced per deck so no two decks collide.
@@ -133,11 +141,16 @@ export function vikingsStack(): Stack {
   const uuid = makeUuid("a1a1a1a1");
   const endId = uuid();
 
-  const c1 = quizCard(uuid, "Who sailed to Ireland first?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0);
+  // Card 1 is factually true: the Vikings began raiding Ireland around 795,
+  // long after people already lived there — so "who sailed first?" is wrong
+  // (J1/J3, 5 Nov panel). Ask who the raiders of 795 were instead.
+  const c1 = quizCard(uuid, "Which people began raiding Ireland around the year 795?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0);
   const c2 = quizCard(uuid, "What is a longship?", ["A fast boat", "A house", "A sword", "A town"], 0);
   const c3 = quizCard(uuid, "Where did the Vikings build a town in 841?", ["Dublin", "Cork", "Galway", "Sligo"], 0);
-  const c8 = quizCard(uuid, "Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0);
-  const c9 = quizCard(uuid, "What did the Vikings trade in Dublin?", ["Silver", "Cars", "Phones", "Plastic"], 0);
+  const c8 = quizCard(uuid, "Who led a Viking raiding party?", ["A chieftain", "A monk", "A baker", "A farmer"], 0);
+  // Believable distractors — goods a Viking trader in Dublin might handle, not
+  // joke options (J1/J3). Silver is right; wool, salt and amber are plausible.
+  const c9 = quizCard(uuid, "What did the Vikings trade in Dublin?", ["Silver", "Wool", "Salt", "Amber"], 0);
   const c10 = quizCard(uuid, "Which Irish king fought the Vikings at Clontarf?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
   // Flash + story reference later ids; build them after the ids exist.
   const c11 = flashCard(uuid, "Thingmote", "A raised mound where the Norse of Dublin held their meetings.", endId);
@@ -165,7 +178,7 @@ export function vikingsStack(): Stack {
     ],
     actions: [],
   };
-  const c4 = flashCard(uuid, "Longphort", "A longphort was a fortified ship harbour the Vikings built on the coast. Dublin began as a longphort in 841.", c5.id);
+  const c4 = flashCard(uuid, "Longphort", "A longphort was a fortified ship harbour the Vikings built on a river or sheltered inlet. Dublin began as a longphort on the River Liffey in 841.", c5.id);
   const end = endCard(uuid, endId);
 
   const stack: Stack = {
@@ -174,7 +187,7 @@ export function vikingsStack(): Stack {
     theme: THEME,
     cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, end],
   };
-  return linkQuizAnswersForward(stack);
+  return finalise(stack);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +215,7 @@ export function timesTablesStack(): Stack {
     theme: THEME,
     cards,
   };
-  return linkQuizAnswersForward(stack);
+  return finalise(stack);
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +274,7 @@ export function irishWordsStack(): Stack {
     theme: THEME,
     cards: ordered,
   };
-  return linkQuizAnswersForward(stack);
+  return finalise(stack);
 }
 
 // ---------------------------------------------------------------------------

@@ -84,6 +84,13 @@ export function Canvas({
         (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
       )
     : [];
+  // On the BACK side, also draw the flash card's "Next Card" button so a
+  // teacher can select it and change where it goes (J2: it was hidden in the
+  // editor, so its link couldn't be edited). It keeps its real position.
+  const flashButton =
+    isFlash && flashSide === "back"
+      ? card.elements.find((e): e is ButtonElement => e.type === "button")
+      : undefined;
   const drawnCard: Card =
     isFlash && flashTexts.length >= 1
       ? {
@@ -99,6 +106,7 @@ export function Canvas({
               w: 704,
               h: flashSide === "front" ? 72 : 320,
             },
+            ...(flashButton ? [flashButton] : []),
           ],
         }
       : card;

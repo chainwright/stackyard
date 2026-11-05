@@ -176,11 +176,16 @@ describe("inlineImages", () => {
     );
   });
 
-  it("rejects with a descriptive error for a non-existent file inside the assets dir", async () => {
+  it("rejects a non-existent file inside the assets dir as a validation error (clean 4xx, not a 500)", async () => {
+    // A missing relative image is a user-fixable problem, so it surfaces as an
+    // ExportValidationError("missing-asset") → the export route answers 422,
+    // not a 500 TypeError (J4 L2, 5 Nov panel).
     const stack = makeStackWithImage("does-not-exist.png");
 
-    await expect(inlineImages(stack, assetsDir)).rejects.toThrow(
-      /Asset not found/,
+    await expect(inlineImages(stack, assetsDir)).rejects.toSatisfy(
+      (err: unknown) =>
+        err instanceof ExportValidationError &&
+        err.errors.includes("missing-asset"),
     );
   });
 });

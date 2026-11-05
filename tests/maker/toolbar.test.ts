@@ -149,7 +149,7 @@ describe("TASK-16: Toolbar", () => {
     // through a props object carrying onNotice.
     render(h(Toolbar, { store, onNotice: (m: string | null) => { notice = m; } }), root);
     const link = Array.from(root.querySelectorAll<HTMLButtonElement>(".tool-card")).find(
-      (b) => (b.textContent ?? "").includes("Link a Card"),
+      (b) => (b.textContent ?? "").includes("Go to card"),
     )!;
     link.click();
     await flush();
@@ -169,7 +169,7 @@ describe("TASK-16: Toolbar", () => {
     store.setSelectedElement(btn.id);
     const root = mount(store);
     const link = Array.from(root.querySelectorAll<HTMLButtonElement>(".tool-card")).find(
-      (b) => (b.textContent ?? "").includes("Link a Card"),
+      (b) => (b.textContent ?? "").includes("Go to card"),
     )!;
     link.click();
     await flush();

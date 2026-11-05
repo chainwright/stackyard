@@ -2,7 +2,7 @@
 // Editor-only state types. Reuses the stack schema from src/shared/types.ts;
 // defines NO new stack-schema types.
 
-import type { Stack, ValidationResult } from "../shared/types.js";
+import type { Stack, ValidationResult, FallbackReason } from "../shared/types.js";
 
 /** Which screen the Maker app is showing. */
 export type Screen = "start" | "editor" | "play";
@@ -32,6 +32,10 @@ export interface EditorState {
   /** True when the open stack is a ready-made example chosen offline for a
    *  sentence that matched no example (so the editor can say so honestly). */
   isReadyMadeExample: boolean;
+  /** Why the last generate fell back to a ready-made deck (for an honest note). */
+  fallbackReason?: FallbackReason;
+  /** Whether the browser was online at the last generate (honest offline copy). */
+  fallbackOnline: boolean;
   status: Status;
 }
 

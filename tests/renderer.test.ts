@@ -492,14 +492,16 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
   /**
    * Design spec (Round 3): the earned ink stamp straddles the tile's TOP edge
    * on the label side, mostly over the paper above the tile:
-   *   - top:-24px; left:64px (never right-aligned, never over the answer word)
+   *   - top:-34px; left:64px (never right-aligned, never over the answer word;
+   *     lifted from -24px so the stamp's lower border clears the label at
+   *     1920×1080 — J3 D4, 5 Nov panel)
    *   - transparent + mix-blend-mode:multiply (an ink stamp, not a paper sticker)
    *   - rotate(-8deg), boxed in stamp red.
    * Measuring stamp red over a tile colour fails AA; the top-edge placement puts
    * it on the 4.67:1 paper pairing. jsdom does no layout, so we assert the CSS
    * rule values; pixel overlap is confirmed by the built-player screenshot.
    */
-  it("stamp CSS rule straddles the tile top edge (top:-24px; left:64px; transparent + multiply)", () => {
+  it("stamp CSS rule straddles the tile top edge (top:-34px; left:64px; transparent + multiply)", () => {
     // Force styles to be injected by rendering a card.
     const card: Card = {
       id: IDS.card1,
@@ -535,8 +537,9 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
 
     const stampRule = stampRuleMatch![1]!;
 
-    // Straddles the tile's top edge on the label side (over the paper above).
-    expect(stampRule).toMatch(/top\s*:\s*-24px/);
+    // Straddles the tile's top edge on the label side (over the paper above),
+    // lifted clear of the answer word.
+    expect(stampRule).toMatch(/top\s*:\s*-34px/);
     expect(stampRule).toMatch(/left\s*:\s*64px/);
     // An ink stamp, not a paper sticker: transparent + multiply.
     expect(stampRule).toMatch(/background\s*:\s*transparent/);

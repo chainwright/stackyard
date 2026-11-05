@@ -48,7 +48,7 @@ Action types:
 1. **Unique IDs** — Every id (stack, cards, elements) must be a UUID v4, unique within the document.
 2. **Valid goto targets** — Every "goto" action must reference a cardId that exists in the stack.
 3. **Exactly one end card** — The cards array must contain exactly one card with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not.
+4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Every element must fit within an 800×600 canvas: x + w ≤ 800 and y + h ≤ 600.
 6. **Non-empty title** — stack.title must not be blank or whitespace only.
 7. **At least one non-end card** — The stack must contain at least one card that is not kind "end".
@@ -122,7 +122,7 @@ Action types:
 1. **Unique IDs** — Every id (stack, cards, elements) must be a UUID v4, unique within the document.
 2. **Valid goto targets** — Every "goto" action must reference a card id you emit on some line.
 3. **Exactly one end card** — Emit exactly one card line with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not.
+4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Every element must fit within an 800×600 canvas: x + w ≤ 800 and y + h ≤ 600.
 6. **Non-empty title** — The header title must not be blank or whitespace only.
 7. **At least one non-end card** — Emit at least one card line whose kind is not "end".
