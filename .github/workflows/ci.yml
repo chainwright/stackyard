@@ -1,0 +1,27 @@
+name: CI
+
+# Runs the full test suite, strict type-check, and the player-bundle freshness
+# check on every push and pull request (TASK-22 l — the README's CI claim is now
+# real, not aspirational).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+      - run: npm ci
+      - name: Type-check (strict)
+        run: npx tsc --noEmit
+      - name: Tests (rebuilds the player bundle, then runs Vitest)
+        run: npm test
+      - name: Player bundle is fresh
+        run: ./scripts/check-player-fresh.sh
