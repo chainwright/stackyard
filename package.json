@@ -9,7 +9,9 @@
     "test": "npm run build:player && vitest run",
     "typecheck": "tsc --noEmit",
     "dev:server": "node --import tsx/esm server/index.ts",
-    "build:player": "vite build --config vite.player.config.ts"
+    "build:player": "vite build --config vite.player.config.ts",
+    "fonts:rename": "python3 scripts/rename-reading-font.py",
+    "fonts:check": "python3 scripts/rename-reading-font.py --check"
   },
   "dependencies": {
     "tsx": "4.19.2"

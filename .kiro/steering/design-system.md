@@ -117,11 +117,17 @@ the repo (see README "Third-party assets").
 | Token              | Size  | Family              | Weight | Usage                              |
 |--------------------|-------|---------------------|--------|------------------------------------|
 | `--text-question`  | 44px  | Bricolage Grotesque | 800    | Quiz/flash question text           |
-| `--text-tile`      | 32px  | Atkinson Hyperlegible | 700  | Answer tile labels                 |
-| `--text-body`      | 22px  | Atkinson Hyperlegible | 400  | Story card body, flash card back   |
-| `--text-meta`      | 18px  | Atkinson Hyperlegible | 400  | "Card 3 of 10", score display      |
+| `--text-tile`      | 32px  | Stackyard Reading   | 700    | Answer tile labels                 |
+| `--text-body`      | 22px  | Stackyard Reading   | 400    | Story card body, flash card back   |
+| `--text-meta`      | 20px  | Stackyard Reading   | 400    | "Card 3 of 10", score display      |
+
+(Both `Stackyard Reading` families are the renamed Atkinson Hyperlegible Latin
+subset — see Fonts above. Use the CSS family name `Stackyard Reading`, never
+`Atkinson Hyperlegible`.)
 
 **Hard floor:** no rendered text on any card may be smaller than 18px.
+`--text-meta` is 20px so that at the minimum card scale (0.9, see Card scaling)
+it still renders at 18px — the floor. Never drop meta below 20px on the card.
 Line height: 1.3 for headings, 1.5 for body.
 Letter spacing: 0 (do not fake tracking on Bricolage).
 
@@ -149,6 +155,84 @@ Tiles fill available width within the card canvas (each ~50% minus gap).
 
 ---
 
+## Card scaling & layout
+
+The card is authored at a fixed **800 × 600 canvas** (elements use the x/y/w/h
+in `stack-format.md`). It is scaled to fit the screen with one rule, never a
+hard-coded scale. The mockups depend on all four of the rules below; the first
+UI pass must follow them or the Round 1/2 bugs (text under the 18px floor, the
+toolbar pushed off-screen at 1366×768, clipped cards, Arial leaks, clipped
+rings) come straight back.
+
+### Fit scale
+
+Compute a single `--card-scale` from the real canvas size, subtracting any
+fixed chrome around the card:
+
+```
+--card-scale: min(
+  (canvasW − 48px) / 812px,
+  (canvasH − 48px − controlsH) / 612px
+)
+```
+
+- `812 × 612` is the 800 × 600 canvas plus a 6px edge margin each side.
+- `controlsH` is the height of any control that sits **above** the card in that
+  view (e.g. the Front/Back switch on the flash editor, the Try It / Back pill),
+  so the card plus its controls always fit. Use 0 where there is no such control.
+- **Maker:** clamp `--card-scale` to `≥ 0.9`. With `--text-meta` at 20px this
+  keeps meta at ≥ 18px (the floor). Do not clamp the top in the Maker; a large
+  monitor may show the card above 1.0.
+- **Player:** do **not** clamp the top. On a 1920 × 1080 projector the card
+  should grow to roughly 1.5× and fill the screen. Keep the 0.9 lower clamp.
+
+### Sized wrapper (scaled cards must not keep an unscaled layout box)
+
+`transform: scale()` does **not** shrink the element's layout box, so a scaled
+card otherwise still reserves its full 800+ px of width and overflows narrow
+screens (this clipped editor-try and the flash control). Wrap the card stack in
+a box whose size tracks the scale, and scale from the top-left:
+
+```css
+.sy-card-stack {
+  width:  calc(820px * var(--card-scale));
+  height: calc(640px * var(--card-scale));
+  transform: scale(var(--card-scale));
+  transform-origin: top left;
+}
+```
+
+(820 × 640 leaves room for the ring loops standing above the card and the
+fanned stack edges to the right/below.)
+
+### Editor workspace height
+
+The editor workspace is `height: 100vh; overflow: hidden` with the top bar and
+bottom toolbar as fixed-height rows, so the **Export File** button can never be
+pushed below the fold — verified at 1366×768, the stated target laptop.
+
+### Global control reset
+
+Form controls do not inherit the page font by default, so without this reset the
+inspector toggle and the new-card descriptions render in Arial on a grey system
+button face, breaking the paper look. Add once, globally:
+
+```css
+button, input, select, textarea { font: inherit; color: inherit; }
+```
+
+Toggle rows additionally reset the button chrome:
+`.toggle-row { background: transparent; border: 0; }`.
+
+### Rings sit outside the card's clip
+
+The card paper is `overflow: visible` and the ring loops are a sibling of the
+card inside `.sy-card-stack` (not a child of `.sy-card`). The loops must stand
+~22px **above** the card's top edge. If the rings are children of a clipped
+card they get cut into a shape that reads as a paperclip, not a binder ring.
+
+---
+
 ## Card anatomy
 
 ```
@@ -173,6 +257,10 @@ Tiles fill available width within the card canvas (each ~50% minus gap).
 ```
 
 Ring holes: 20px diameter circles, `--color-white` fill, 1px `--color-rule` stroke.
+Rings: inline-SVG metal loops that stand ~22px **above** the card's top edge,
+with the punched hole beneath. They are a sibling of `.sy-card` (which is
+`overflow: visible`), never a clipped child — see "Rings sit outside the card's
+clip" under Card scaling & layout.
 Rule lines: 1px horizontal lines at every 32px interval, `--color-rule`, full card width.
 Card edges: three `<div>` layers behind the card, each `--color-paper` with slightly darker
 border, offset by `--ring-offset` steps downward and to the right.
@@ -217,7 +305,7 @@ color:       --color-white  (#FFFFFF)
 border:      none
 border-radius: --radius-button (10px)
 padding:     12px 24px
-font:        Atkinson Hyperlegible 700, 18px
+font:        Stackyard Reading 700, 18px
 icon:        download arrow SVG (white), inline, 20px × 20px
 label:       "Export File"
 ```
@@ -234,7 +322,7 @@ The Maker app wraps the card canvas with a minimal chrome:
 **Top bar:**
 - Background: `--color-ink` (#1E2A47)
 - Logo text: "Stackyard", Bricolage Grotesque 800, `--color-paper`, ~24px
-- Stack description text: Atkinson Hyperlegible 400, `#E0E6F0`, 18px (contrast 11.34 on navy — passes AA)
+- Stack description text: Stackyard Reading 400, `#E0E6F0`, 18px (contrast 11.34 on navy — passes AA)
 
 **Bottom toolbar:**
 - Background: `--color-paper`

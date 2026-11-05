@@ -514,3 +514,215 @@ changed.
 `index.html` lists the new storyboard and the corrected Try It / play copy. All
 20 HTML files render cleanly at both sizes (38 shots refreshed; the two Try It
 files render at the sizes named above).
+
+---
+
+## Round 3 verdict (judge, 2026-11-04)
+
+Method:
+- Read Kiro's Round 3 note and checked each claim against the pixels or the source; none was taken on trust.
+- Looked at the fresh shots for every screen at 1366×768, and at 1920×1080 for start-empty, play, editor-quiz and the storyboard.
+- Re-rendered start-generating, play-wrong and editor-new-card myself with `--virtual-time-budget=3000`, so animations had settled. I also rendered editor-quiz at 1280×720 and editor-try at 1024×768 to probe the edges.
+- Opened the three woff2 files with fontTools to read their internal name tables, and read both OFL files, the README section and the steering diff.
+
+### Verdict in one paragraph
+Round 3 fixed almost everything that mattered in Round 2.
+- **editor-try is now the best screen in the set**: one card flipped in place, a paper "Back to Editing" pill, the stamp on the paper edge, nothing clipped at 1366, and everything at or above 18 px.
+- The CORRECT and ✗ stamps no longer cover any word. The Arial leaks are gone. The rings stand above every card. The story labels are clear of the rules, and the list icons are neutral ink.
+
+Three things keep the set just under the bar:
+- The Atkinson subset still carries the reserved name *inside the font file*. Renaming the CSS and the file isn't enough.
+- The new score decorators look like hamburger-menu icons.
+- The steering, which Kiro will code from, still contradicts the mockups in four places.
+
+**Set score: 7.8 / 10** (R1 5.0 → R2 6.8 → R3 7.8). **Ready for UI code: yes, conditionally.** Start once P0-1 (font name table) and P0-2 (steering sync) are done. Both take under an hour, and both would otherwise be copied straight into the build. Everything else can be fixed in code.
+
+### Scores
+
+| Screen | Clarity | Fidelity | Craft | WOW | Teacher | **R3** | R2 |
+|---|---|---|---|---|---|---|---|
+| start-empty | 8 | 8 | 7 | 6 | 9 | **7.5** | 7.0 |
+| start-generating | 8 | 8 | 8 | 7 | 8 | **8.0** | 7.0 |
+| start-error | 8.5 | 8 | 8 | 2 | 9 | **7.5** | 7.0 |
+| editor-quiz | 8.5 | 8.5 | 8 | 6 | 8.5 | **8.0** | 7.0 |
+| editor-drag | 8.5 | 8.5 | 7.5 | 7 | 8.5 | **8.0** | 7.5 |
+| editor-flash | 8 | 8 | 7.5 | 5 | 8.5 | **7.5** | 6.0 |
+| editor-story | 8.5 | 8.5 | 8 | 6 | 8.5 | **8.0** | 6.5 |
+| editor-end | 8.5 | 8.5 | 8 | 6 | 8.5 | **8.0** | 7.5 |
+| editor-invalid | 9 | 8.5 | 8 | 3 | 9 | **8.0** | 7.0 |
+| editor-add-picture | 8.5 | 8.5 | 8 | 5 | 9 | **8.0** | 7.0 |
+| editor-new-card | 8 | 6.5 | 7 | 4 | 8.5 | **6.5** | 6.0 |
+| **editor-try (WOW)** | 9 | 8.5 | 8.5 | 8 | 9 | **8.5** | 4.5 |
+| editor-try-storyboard ★ | 8 | 8 | 5 | 7 | 8 | **6.5** | — |
+| export-done | 9 | 8 | 8 | 7 | 9 | **8.0** | 8.0 |
+| play | 9 | 8.5 | 7.5 | 7.5 | 9 | **8.0** | 7.0 |
+| play-wrong | 8.5 | 8.5 | 8 | 6 | 9 | **8.0** | 6.0 |
+| play-flash-back | 8.5 | 8 | 7.5 | 4 | 9 | **7.5** | 6.5 |
+| play-end | 9 | 8.5 | 8 | 7 | 9 | **8.0** | 8.0 |
+| **Set** | 8.5 | 8.2 | 7.7 | 6.2 | 8.8 | **7.8** | 6.8 |
+
+### What landed (verified)
+- **editor-try** has the fit script (no hard-coded 0.62). One card, "Trying It" pressed in the top bar, and an inspector that says in plain words what happened and how to get back. At 1366 nothing clips, the meta text is ≥18 px, and every label is ink on paper.
+- **Stamp placement.** `top:-24px; left:64px; rotate(-8deg)`. On play at 1366 and 1920 the stamp sits on the paper above the tile edge, "Dublin" stays fully readable, and nothing crosses into Cork. The wrong ✗ is a boxed 44 px stamp at 100 % in the same place, and it now reads at a glance.
+- **Global control reset.** The inspector toggle and the new-card descriptions render in the body face, and the grey browser button face is gone.
+- **Sized scale wrapper.** The Front/Back switch is fully visible on editor-flash at 1366, and the storyboard cards no longer overflow.
+- **Rings.** `.sy-card { overflow: visible }`. The loops stand above the card on editor and play.
+- **Story labels.** "→ Card 6 / 7" sit between the rules, with no strike-through.
+- **Card-list icons.** Ink grid / card / forked arrow / flag. The tile tokens are no longer reused.
+- **start-generating** (settled frame): the top card has rings, its question and the four tile blocks filling in. It reads unmistakably as "a quiz being built".
+- **play-flash-back.** 32 px ink term, 26 px body.
+- **add-picture.** 2-row alt-text field with a full placeholder; "Choose a Picture" in Title Case.
+- **Licence files.** `OFL-BricolageGrotesque.txt` and `OFL-AtkinsonHyperlegible.txt` contain the full OFL 1.1 with correct upstream copyright lines. Atkinson's RFN ("Atkinson", "Hyperlegible") is correctly identified. README has a clear "Third-party assets" table, and each mockup carries the notice comment above `@font-face`.
+
+### On the start-empty peek (coordinator's question)
+What the shots show is neither the top two nor the bottom two tiles. It's the **right-hand column**: Cork (top-right) and Sligo (bottom-right), plus a fragment of the question, "…gs build a". `.peek { right:-200px }` with a 560 px card behind a 720 px sentence card leaves about 240 px visible.
+- **Which tiles show doesn't matter much.** Two full answer tiles do the job of saying "cards come out". I accept Kiro's deviation in principle.
+- **The execution has two glitches that matter more.** The ◆ and ■ shapes are cut in half by the sentence card's edge (they read as rendering bugs), and the question is cut mid-word.
+- Fix:
+  - `right:-232px` so the shape icons clear the edge by 8 px.
+  - Hide the question on the peek card. Replace it with the meta line "Card 3 of 10" (20 px), which can't be cut mid-word.
+  - Keep both right-column tiles whole.
+
+  That makes it a clean, deliberate glimpse at both 1366 and 1920.
+
+### New problems / not landed (most severe first)
+
+**P0-1. The reserved font name is still inside the Atkinson subset.**
+- fontTools shows: `reading-400.woff2` name table = family **"Atkinson Hyperlegible"**, full name "Atkinson Hyperlegible Regular", PostScript "AtkinsonHyperlegible-Regular". `reading-700.woff2` is the same with Bold.
+- The OFL's RFN clause applies to the *Font Software's* names. Renaming the file and the CSS `font-family` doesn't change what the font itself declares. Any font inspector and the exported HTML's embedded font would still present "Atkinson Hyperlegible", which is exactly what the clause forbids for a Modified Version.
+- Fix: rewrite name IDs 1, 3, 4, 6 (and 16/17 if present) to `Stackyard Reading` / `Stackyard Reading Regular|Bold` / `StackyardReading-Regular|Bold` with fontTools, keep ID 0 (copyright) and ID 13/14 (licence) intact, and save as woff2. Then re-check with `TTFont(...)['name']`. This also has to go into the build script that inlines base64, so the exported file is compliant too.
+- Bricolage is fine (no RFN, upstream name kept). Also move Kiro's "NOTE ON THIS COPY" out of `OFL-AtkinsonHyperlegible.txt` into `fonts/README.md`, and keep the licence file verbatim.
+
+**P0-2. The steering is out of sync with the mockups, and Kiro will code from the steering.**
+- In `design-system.md`, the type-scale table still says `--text-meta` **18px** (the mockups use 20, which the 0.9 clamp depends on) and names "Atkinson Hyperlegible" for tile, body and meta (it should be `Stackyard Reading`). The export-button and top-bar specs (lines ~220, ~237) also still name Atkinson.
+- Four rules exist only in the mockups and need adding to the steering:
+  - the fit-scale formula + `≥0.9` Maker clamp + uncapped player;
+  - the sized-wrapper rule (layout box = 820×640 × scale, origin top-left);
+  - the global `button, input, select, textarea { font: inherit; color: inherit }` reset;
+  - rings outside the card's clip (`overflow: visible`).
+
+  Without them the first UI pass will reproduce the Round 1/2 bugs.
+
+**P1-3. The score decorators read as menu icons (new).**
+- The "dash-bursts" in play/play-wrong/play-flash-back/play-end are three *parallel horizontal* strokes, which is the universal hamburger icon. Next to "Score 3" on a touchscreen it says "tap for menu", and the player has no menu.
+- Fix: make the strokes **radiate**, as in the approved reference: three 10 px strokes at −35°, 0°, +35° fanning outward from the word (mirrored on the right), 3 px, paper colour. Or drop the decorators. Either way there should be no parallel lines.
+
+**P2-4. Storyboard text is too small for its job (it exists for the video).**
+- At 1920 each card renders at about 0.6, so "Card 3 of 10" is ~12 px and the "Drag to move" tab and "✓ Right answer" tag are ~11 px. The cards also use only the middle third of the frame.
+- Use the free vertical space: scale to `min((1920 − 3×48 − 300)/2/820, (1080 − 56 − 200)/640)` ≈ 0.9, captions above.
+- On frame 2 the stamp's lower border still touches the top of "Dublin" at this scale. Nudge it to `top:-30px` for the storyboard.
+
+**P2-5. editor-new-card: the "editor behind the modal" claim isn't true in the pixels.**
+- The `.ghost-stack` (620×466) is smaller than the picker (760×~520) and sits exactly behind it, so the backdrop is still a flat muddy brown (#7D6F66 after the 45 % ink scrim on the desk).
+- Render the real editor (card list, desk with card 3, toolbar) behind the scrim, and anchor the picker near "+ Add Card" or centre it over the desk. Then the "after card 3" context is visible.
+
+**P2-6. Card-list rows still truncate to about two words** ("Who saile…", "Last car…"). The two-line rows / 240 px widening from Round 2 were not done. A teacher can't tell cards 1, 2, 6, 7 and 8 apart. Two-line rows: number + icon on line 1, the first six words on line 2.
+
+**P2-7. Small edges.**
+- **Narrow screens:** at 1024×768 (common on older school laptops and projectors) the editor's 0.9 clamp makes the card overflow the canvas and get cut on both sides. The stated target is 1366, so this isn't a blocker. Below 1200 px wide, collapse the card list into a drawer and the inspector into a bottom sheet.
+- **editor-try:** the toolbar (Add Text / Button / Picture / Link) stays fully active while trying. Dim it to 40 % with `aria-disabled` during Try It, so it's clear that editing is paused.
+- **editor-drag:** the "Snapping to the line" tab overlaps the descenders of "841?". Lift the tab 8 px or show it below the tile while dragging.
+- **play-flash-back:** body at 26/40 drifts off the 32 px rules. Use a line-height of 32 or 64 px, or accept the drift and remove the rules under the body.
+- **Shot hygiene:** the committed `start-generating` shot was captured mid-animation (a translucent double card). Shoot with `--virtual-time-budget=3000` or reduced motion, so the README and Devpost images don't show a glitch.
+
+### Ready for UI code?
+**Yes, after P0-1 and P0-2.**
+- The design language, every state and the WOW moment are now decided and drawn to a standard that holds up against strong entries.
+- What's left is either a compliance fix that must land before anything ships (P0-1), a spec sync that keeps the code from regressing (P0-2), or polish that belongs in the components (P1–P2).
+
+Remaining fixes, in order:
+1. Rewrite the Atkinson subset name tables to "Stackyard Reading" (and in the export build). Keep the OFL file verbatim and move the notes to `fonts/README.md`.
+2. Sync design-system.md: meta 20, Stackyard Reading in all type rows, fit-scale + sized wrapper + control reset + ring overflow rules.
+3. Radiating score decorators (no parallel lines).
+4. start-empty peek `right:-232px`, question replaced by a meta line.
+5. Storyboard at about 0.9 scale with the stamp nudged; re-shoot all with animations settled.
+6. Two-line card-list rows; real editor behind the new-card modal.
+7. Try It toolbar disabled state; drag tab offset; flash-back line rhythm; drawer layout under 1200 px.
+
+With 1–3 done the set is at **8.0** and passes the bar. With all seven, about 8.4.
+
+---
+
+## Round 4 — what changed (2026-11-04)
+
+The two blockers from the Round 3 verdict (P0-1 font name table, P0-2 steering
+sync) plus the open polish items were worked through. Fonts were inspected with
+fontTools; every changed screen was re-rendered with headless Chrome at
+**1366×768** and **1920×1080** into `docs/design/maker/shots/` (with
+`--virtual-time-budget=3000` so animations settle) and looked at. The repo
+stays self-contained and offline (grep confirms no external resource URLs in
+the changed mockups — only SVG `xmlns`).
+
+**1. Reserved Font Name is now gone from inside the font files (P0-1).**
+- `scripts/rename-reading-font.py` rewrites the Atkinson subset name table to
+  **Stackyard Reading** on every platform/encoding: family (ID 1), unique ID
+  (3), full name (4), PostScript name (6), and typographic names (16/17) where
+  present; the version string (5) is scrubbed of the reserved tokens. The
+  copyright (ID 0) and licence records (13/14) are preserved verbatim, as the
+  OFL requires. It verifies by reading the table back, and also accepts explicit
+  paths so the **export build cleans whatever font it inlines** (wired as
+  `npm run fonts:rename` / `fonts:check`).
+  - Needs `pip install --user fonttools brotli` (fonttools reads/writes the name
+    table; brotli lets it de/recompress woff2). Both were installed in this env.
+  - Ran it on `reading-400.woff2` and `reading-700.woff2`. Read back with
+    fontTools: family/full/PostScript/unique all now read `Stackyard Reading …`;
+    copyright still `Braille Institute`. `--check` reports both clean.
+- New test `tests/font-name.test.ts` parses the woff2 `name` table straight out
+  of the binaries (pure Node, built-in brotli — no new dependency) and asserts
+  **no user-facing name record contains "Atkinson"/"Hyperlegible"**, that the
+  family is `Stackyard Reading`, and that the OFL copyright line survives. Part
+  of `npm test`; 6/6 green, full suite still 317/317.
+- The Stackyard "NOTE ON THIS COPY" was moved out of
+  `OFL-AtkinsonHyperlegible.txt` (now kept **verbatim**) into a new
+  `docs/design/maker/fonts/README.md`, which states the subset is a **Modified
+  Version under the OFL** and documents the rename of both the CSS family and
+  the name table.
+
+**2. Steering synced to the mockups (P0-2).**
+- `design-system.md` type scale: `--text-meta` **18 → 20**; the tile/body/meta
+  rows now name **Stackyard Reading** (not Atkinson), with a note to use that CSS
+  family name only. The Export-button and top-bar specs were corrected the same
+  way.
+- A new **Card scaling & layout** section adds the four rules that lived only in
+  the mockups: the fit-scale formula (+ `≥0.9` Maker clamp, uncapped player), the
+  sized-wrapper rule (layout box = 820×640 × scale, origin top-left), the global
+  `button, input, select, textarea { font: inherit; color: inherit }` reset, and
+  rings outside the card's clip (`overflow: visible`). The Card anatomy ring note
+  points at the overflow rule.
+
+**3. Player score decorators no longer read as menu/arrow icons (P1-3).**
+- The three parallel strokes (hamburger) are replaced on play / play-wrong /
+  play-flash-back / play-end with an **outward-fanning burst**: three short
+  ink-on-navy strokes spread at roughly −35° / 0° / +35°, mirrored each side of
+  "Score N". They do not share a vertex, so they read as a small dash-burst, not
+  a chevron. Checked at 1920 and 1366.
+
+**4. start-empty peek (P2 / coordinator item).**
+- The peek card shifted right (`right:-200 → -232`) so both right-column tiles
+  (◆ Cork, ■ Sligo) show **whole**, with their shapes clear of the sentence
+  card's edge — no half-cut shapes at 1366 or 1920. The cut question is replaced
+  by a meta line ("Card 3 of 10") that can't be cut mid-word.
+
+**5. The other open items.**
+- **New-card picker (P2-5):** the real editor now renders **behind the scrim** —
+  card list (card 3 selected), the desk, and the bottom toolbar incl. a red
+  Export File — so the "after card 3" context is visible instead of flat brown.
+- **Card-list rows (P2-6):** every editor screen now uses **two-line rows** —
+  number + ink kind icon + drag grip on line 1, the card's first words on line 2
+  (clamped to two lines). The two baked-in-ellipsis labels were expanded to full
+  phrases. Cards 1–10 are now tellable apart.
+- **Storyboard text (P2-4):** `editor-try-storyboard.html` now scales both beats
+  to **0.9** (meta 20 × 0.9 = 18 px, the floor) inside the sized wrappers, so
+  "Card 3 of 10", the "Drag to move" tab and the "✓ Right answer" tag are all
+  readable in a video frame; both cards fit side by side at 1920 without
+  clipping, captions as ink-on-paper pills. The beat-2 CORRECT stamp is nudged to
+  `top:-30px` so it clears the Dublin label at this larger scale.
+- **Shot hygiene:** `start-generating` was re-shot settled (virtual-time budget) —
+  the top card shows rings, its real question and the four quiz tiles with
+  "4 of 10"; no mid-animation double card.
+
+All changed screens render cleanly at both sizes; the shots in
+`docs/design/maker/shots/` were refreshed. Not addressed this round (left for the
+component pass, as the verdict allowed): the editor-try Try-It toolbar
+disabled state, the editor-drag snap-tab descender overlap, play-flash-back line
+rhythm, and the <1200 px drawer layout.

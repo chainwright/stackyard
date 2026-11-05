@@ -91,16 +91,3 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-
------------------------------------------------------------
-NOTE ON THIS COPY (Stackyard) — RESERVED FONT NAME COMPLIANCE
------------------------------------------------------------
-Atkinson Hyperlegible declares the Reserved Font Names "Atkinson" and
-"Hyperlegible" (Braille Institute of America, Inc.). The files
-`reading-400.woff2` and `reading-700.woff2` in this directory are a
-Latin-subset woff2 of Atkinson Hyperlegible. Under the OFL, deleting
-glyph components to make a subset produces a Modified Version, so this
-copy must not present the Reserved Font Name to users. It is therefore
-referenced in CSS under the non-reserved family name "Stackyard Reading".
-The glyph outlines are unchanged; only the codepoint coverage is reduced.
-Upstream source: https://github.com/googlefonts/atkinson-hyperlegible

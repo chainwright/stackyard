@@ -38,14 +38,40 @@ button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
 .wordmark { font-family:var(--font-head); font-weight:800; font-size:30px; color:var(--color-paper); line-height:1; flex-shrink:0; }
 .stack-desc { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
 
+.workspace { flex:1 1 auto; position:relative; display:flex; min-height:0; overflow:hidden; }
+
+/* ---- The real editor, rendered behind the scrim (dimmed, not interactive) --
+   Full three-column layout — card list, desk with card 3, toolbar — so the
+   "after card 3" context is visible, not flat brown. */
+.editor-bg { position:absolute; inset:0; display:flex; flex-direction:column; }
+.editor-body { flex:1 1 auto; display:flex; min-height:0; }
+
+.card-list { flex:0 0 220px; background:var(--color-paper); border-right:1px solid var(--color-rule); padding:14px 12px; overflow:hidden; }
+.card-list h2 { font-family:var(--font-head); font-weight:800; font-size:18px; margin-bottom:10px; }
+.cl-row { display:flex; align-items:center; gap:10px; min-height:52px; padding:8px 10px; border-radius:8px; border:1px solid transparent; }
+.cl-row.sel { border-color:var(--color-ink); background:#fff; }
+.cl-row .n { font-family:var(--font-head); font-weight:800; font-size:18px; min-width:18px; }
+.cl-row .nm { font-family:var(--font-body); font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cl-ico { flex-shrink:0; color:var(--color-ink); }
+
 .desk { flex:1 1 auto; position:relative; background:var(--color-desk); background-image:repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); overflow:hidden; display:flex; align-items:center; justify-content:center; min-height:0; }
-/* The editor card behind the modal, so the backdrop isn't empty desk */
-.ghost-stack { position:absolute; width:620px; height:466px; }
-.ghost-edge { position:absolute; width:620px; height:466px; border-radius:var(--radius-card); border:1px solid #D8CDB6; background:var(--color-paper); }
-.ghost-edge.g1 { transform:translate(6px,6px); background:#F4EFE3; }
-.ghost-edge.g2 { transform:translate(12px,12px); background:#EDE6D6; }
-.ghost-card { position:absolute; width:620px; height:466px; border-radius:var(--radius-card); background:var(--color-paper); border:1px solid var(--color-rule); }
-.overlay { position:absolute; inset:0; background:rgba(30,42,71,0.45); display:flex; align-items:center; justify-content:center; padding:24px; }
+.bg-stack { position:relative; width:480px; height:360px; }
+.bg-edge { position:absolute; width:480px; height:360px; border-radius:var(--radius-card); border:1px solid #D8CDB6; }
+.bg-edge.g1 { transform:translate(6px,6px); background:#F4EFE3; }
+.bg-edge.g2 { transform:translate(12px,12px); background:#EDE6D6; }
+.bg-card { position:absolute; width:480px; height:360px; border-radius:var(--radius-card); background:var(--color-paper); border:1px solid var(--color-rule); padding:28px 30px; overflow:hidden; }
+.bg-card::after { content:''; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 24px; }
+.bg-meta { position:relative; font-family:var(--font-body); font-size:18px; color:var(--color-ink); margin-bottom:14px; }
+.bg-q { position:relative; font-family:var(--font-head); font-weight:800; font-size:26px; line-height:1.3; color:var(--color-ink); margin-bottom:18px; }
+.bg-tiles { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.bg-tile { height:44px; border-radius:10px; }
+
+.toolbar { flex:0 0 auto; height:72px; background:var(--color-paper); border-top:1px solid var(--color-rule); display:flex; align-items:center; gap:12px; padding:0 16px; }
+.tool { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; width:88px; height:60px; border:1px solid var(--color-rule); border-radius:10px; background:var(--color-paper); font-family:var(--font-body); font-size:16px; color:var(--color-ink); }
+.tool.export { margin-left:auto; background:var(--color-stamp); color:var(--color-white); border:none; width:auto; padding:0 20px; flex-direction:row; gap:8px; font-weight:700; font-size:18px; }
+
+/* Scrim + modal on top */
+.overlay { position:absolute; inset:0; background:rgba(30,42,71,0.45); display:flex; align-items:center; justify-content:center; padding:24px; z-index:2; }
 
 .picker { position:relative; width:760px; max-width:94vw; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-card); box-shadow:0 4px 0 rgba(30,42,71,.18); padding:36px 40px 40px; }
 .picker h1 { font-family:var(--font-head); font-weight:800; font-size:32px; line-height:1.2; margin-bottom:6px; }
@@ -79,12 +105,41 @@ button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
     <span class="stack-desc">A 10-card quiz about the Vikings in Ireland — the right answer plays a cheer</span>
   </header>
 
-  <main class="desk">
-    <!-- The editor card stack, dimmed behind the modal -->
-    <div class="ghost-stack" aria-hidden="true">
-      <div class="ghost-edge g2"></div>
-      <div class="ghost-edge g1"></div>
-      <div class="ghost-card"></div>
+  <main class="workspace">
+    <!-- The real editor behind the scrim: list + card 3 + toolbar, dimmed -->
+    <div class="editor-bg" aria-hidden="true">
+      <div class="editor-body">
+        <aside class="card-list">
+          <h2>Cards</h2>
+          <div class="cl-row"><span class="n">1</span><span class="cl-ico"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nm">Who were the Vikings?</span></div>
+          <div class="cl-row"><span class="n">2</span><span class="cl-ico"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nm">What is a longphort?</span></div>
+          <div class="cl-row sel"><span class="n">3</span><span class="cl-ico"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nm">Where did the Vikings build…</span></div>
+          <div class="cl-row"><span class="n">4</span><span class="cl-ico"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nm">Who led the raids?</span></div>
+        </aside>
+        <div class="desk">
+          <div class="bg-stack">
+            <div class="bg-edge g2"></div>
+            <div class="bg-edge g1"></div>
+            <div class="bg-card">
+              <div class="bg-meta">Card 3 of 10</div>
+              <div class="bg-q">Where did the Vikings build a town in 841?</div>
+              <div class="bg-tiles">
+                <span class="bg-tile" style="background:var(--color-tile-a);"></span>
+                <span class="bg-tile" style="background:var(--color-tile-b);"></span>
+                <span class="bg-tile" style="background:var(--color-tile-c);"></span>
+                <span class="bg-tile" style="background:var(--color-tile-d);"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span class="tool">Add Text</span>
+        <span class="tool">Add Button</span>
+        <span class="tool">Add Picture</span>
+        <span class="tool">Link a Card</span>
+        <span class="tool export">Export File</span>
+      </div>
     </div>
     <div class="overlay">
       <section class="picker" role="dialog" aria-label="Add a card" aria-modal="true">
