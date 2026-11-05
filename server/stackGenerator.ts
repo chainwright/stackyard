@@ -61,13 +61,32 @@ async function attempt(
 // ---------------------------------------------------------------------------
 // Public API
 
+/** Options for generate(). */
+export interface GenerateOptions {
+  /**
+   * Skip the model entirely and return the ready-made offline deck (as if the
+   * LLM were unavailable). Used when the global daily budget is exhausted so the
+   * public instance degrades to ready-made decks without spending the paid key.
+   */
+  forceFallback?: boolean;
+}
+
 /**
  * Generate a Stack from a teacher's prompt.
  * Never throws — all errors are represented in the return type.
+ *
+ * When `opts.forceFallback` is true, no model call is made: the request is
+ * answered from the deterministic ready-made decks (same path as an unavailable
+ * LLM), with the honest ready-made labelling the fallback already carries.
  */
 export async function generate(
-  request: GenerateRequest
+  request: GenerateRequest,
+  opts: GenerateOptions = {}
 ): Promise<GenerateSuccess | GenerateError> {
+  if (opts.forceFallback) {
+    const ready = buildReadyMade(request);
+    return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
+  }
   try {
     // --- First attempt (temperature 0.7) ---
     const firstMessages = buildPrompt(request);

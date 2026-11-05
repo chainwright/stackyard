@@ -9,6 +9,7 @@
     "test": "npm run build:player && vitest run",
     "typecheck": "tsc --noEmit",
     "dev:server": "node --import tsx/esm server/index.ts",
+    "start": "NODE_ENV=production node --import tsx/esm server/index.ts",
     "dev:maker": "vite",
     "build:maker": "vite build",
     "preview:maker": "vite preview --port 4173",

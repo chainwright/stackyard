@@ -71,6 +71,13 @@ export interface StreamGenerateDeps {
    * `req`'s close signal; tests pass their own controller or omit it.
    */
   signal?: AbortSignal;
+  /**
+   * Skip the model entirely and stream the ready-made offline deck (used when
+   * the global daily budget is exhausted). No `callStream` is made and the
+   * non-streaming fallback runs with its own `forceFallback`, so the paid key is
+   * never touched once the cap is hit.
+   */
+  forceFallback?: boolean;
 }
 
 const realSleep = (ms: number): Promise<void> =>
@@ -300,10 +307,11 @@ async function streamFallback(
   request: GenerateRequest,
   sink: LineSink,
   deps: Required<Pick<StreamGenerateDeps, "generate" | "sleep">>,
+  forceFallback: boolean,
 ): Promise<void> {
   let outcome: Awaited<ReturnType<typeof defaultGenerate>>;
   try {
-    outcome = await deps.generate(request);
+    outcome = await deps.generate(request, { forceFallback });
   } catch {
     sink.write({ type: "error", message: GENERIC_FAILURE });
     sink.end();
@@ -377,6 +385,14 @@ export async function streamGenerate(
   const buildStream = deps.buildStream ?? defaultBuildStream;
   const sleep = deps.sleep ?? realSleep;
   const signal = deps.signal;
+  const forceFallback = deps.forceFallback === true;
+
+  // 0. Daily budget exhausted: skip the model entirely and stream the
+  //    ready-made offline deck. No callStream, no tokens spent.
+  if (forceFallback) {
+    await streamFallback(request, sink, { generate, sleep }, true);
+    return;
+  }
 
   // 1. Try the real progressive LLM stream.
   const attempt = await attemptStreamedLlm(
@@ -408,5 +424,5 @@ export async function streamGenerate(
   }
 
   // 3. Fall back to the non-streaming retry + deterministic fallback path.
-  await streamFallback(request, sink, { generate, sleep });
+  await streamFallback(request, sink, { generate, sleep }, false);
 }

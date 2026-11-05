@@ -42,14 +42,26 @@ function sendJson(
 // ---------------------------------------------------------------------------
 // Route handler
 
+/** Server-decided options for a generate request. */
+export interface HandleGenerateOptions {
+  /**
+   * When true, the global daily model-call budget is exhausted: answer from the
+   * ready-made offline decks and make NO model call. The server decides this
+   * (see createServer) before the handler runs.
+   */
+  forceFallback?: boolean;
+}
+
 /**
  * Handle a POST /api/generate request.
  * Can be called directly (e.g. from tests) or wired into an http.Server.
  */
 export async function handleGenerate(
   req: IncomingMessage,
-  res: ServerResponse
+  res: ServerResponse,
+  options: HandleGenerateOptions = {}
 ): Promise<void> {
+  const forceFallback = options.forceFallback === true;
   // Only accept POST.
   if (req.method !== "POST") {
     sendJson(res, 405, { ok: false, message: "Method not allowed." });
@@ -113,13 +125,13 @@ export async function handleGenerate(
   // existing tests and clients keep working.
   const accept = (req.headers["accept"] ?? "").toLowerCase();
   if (accept.includes(NDJSON_MEDIA_TYPE)) {
-    await streamGenerateToResponse(req, res, request);
+    await streamGenerateToResponse(req, res, request, forceFallback);
     return;
   }
 
   let result: Awaited<ReturnType<typeof generate>>;
   try {
-    result = await generate(request);
+    result = await generate(request, { forceFallback });
   } catch (err) {
     // generate() is documented to never throw, but guard anyway.
     console.error("[generate route] unexpected error:", err);
@@ -158,6 +170,7 @@ async function streamGenerateToResponse(
   req: IncomingMessage,
   res: ServerResponse,
   request: GenerateRequest,
+  forceFallback: boolean,
 ): Promise<void> {
   res.writeHead(200, {
     "Content-Type": NDJSON_MEDIA_TYPE,
@@ -183,7 +196,7 @@ async function streamGenerateToResponse(
   };
 
   try {
-    await streamGenerate(request, sink, { signal: connection.signal });
+    await streamGenerate(request, sink, { signal: connection.signal, forceFallback });
   } finally {
     req.off("close", onClose);
   }

@@ -56,6 +56,49 @@ Each state is captured at 1366×768 (the target laptop) and 1920×1080 (a
 classroom projector). `shoot-file.sh` passes Chrome `--allow-file-access-from-files`
 so the built ES modules load from a `file://` URL.
 
+## Run it / Deploy it
+
+Stackyard runs as **one web service**: the same Node server serves the built
+Maker SPA and answers the `/api` routes, so there is a single thing to deploy.
+
+Run the production server locally:
+
+```sh
+npm ci
+npm run build:player   # bundles the player runtime
+npm run build:maker    # builds the Maker SPA into dist/maker
+npm start              # serves dist/maker + /api on PORT (default 3001)
+```
+
+Then open `http://localhost:3001`. `npm start` sets `NODE_ENV=production`, which
+turns on static serving. Without a model key the generator falls back to the
+built-in ready-made decks, so the app still works offline.
+
+Environment variables (server-only; the model key never reaches the browser):
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `STACKYARD_LLM_API_KEY` | Model API key (set in the host's dashboard, never committed) | — |
+| `STACKYARD_LLM_BASE_URL` | OpenAI-compatible endpoint | `https://api.openai.com/v1` |
+| `STACKYARD_LLM_MODEL` | Model name | `gpt-4o-mini` |
+| `PORT` | Port to listen on | `3001` |
+| `TRUST_PROXY` | `1` behind a proxy (e.g. Render) so `X-Forwarded-For` is used for rate limiting | off |
+| `GENERATE_RATE_PER_10MIN` | Per-client generate limit per 10 minutes | `6` |
+| `GENERATE_DAILY_CAP` | Global real model calls per UTC day; over the cap the app serves ready-made decks | `300` |
+
+Because the public instance holds a paid key, `/api/generate` is protected two
+ways: a per-client rate limit and a global daily budget. Over either limit the
+app degrades to the offline ready-made decks rather than spending the key.
+
+### Deploy to Render (free web service)
+
+`render.yaml` is a one-service blueprint. In Render, choose **New → Blueprint**,
+point it at this repo, and set `STACKYARD_LLM_API_KEY` in the dashboard (it is
+`sync: false`, so it is never read from the repo). The build runs
+`npm ci && npm run build:player && npm run build:maker`, the service starts with
+`npm start`, and `/api/health` is the health check (a cheap keep-warm ping that
+makes no model call).
+
 ## Third-party assets
 
 Stackyard ships two open-source typefaces. Both are self-hosted (no CDN) as

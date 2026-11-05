@@ -1,0 +1,32 @@
+# render.yaml — Render blueprint for the one public Stackyard web service.
+# One web service serves the built Maker SPA and the /api routes from the same
+# Node process. The paid model key is set in the Render dashboard (sync: false),
+# never committed.
+#
+# Deploy: push this repo to a Git remote, then "New > Blueprint" in Render and
+# point it at the repo. Set STACKYARD_LLM_API_KEY in the dashboard.
+
+services:
+  - type: web
+    name: stackyard
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build:player && npm run build:maker
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      # The paid model key — set in the Render dashboard, never synced from here.
+      - key: STACKYARD_LLM_API_KEY
+        sync: false
+      # OpenAI-compatible endpoint + model (safe to keep in the blueprint). The live demo
+      # uses Anthropic's OpenAI-compatible API.
+      - key: STACKYARD_LLM_BASE_URL
+        value: https://api.anthropic.com/v1/
+      - key: STACKYARD_LLM_MODEL
+        value: claude-haiku-5-5
+      # Render terminates TLS at its proxy and sets X-Forwarded-For, so trust it
+      # for per-client rate limiting.
+      - key: TRUST_PROXY
+        value: "1"
+      - key: NODE_VERSION
+        value: "24"

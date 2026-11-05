@@ -1044,3 +1044,112 @@ with no hint/Next-Card overlap on the Irish and Vikings decks; the sentence and
 deck card counts agree; the end-card preview total matches the deck; and the
 exported end card has a working Play Again that restarts from card 1 with the
 score reset. `npm test` (489) and `tsc` green. ✓
+
+---
+
+## Phase 8 — Public deployment (one web service)
+
+### TASK-21: Deployable as ONE public web service (Render free web, Node 24)
+**Refs:** tech.md (Node 24; "All LLM calls … server-side only"; "The API key never reaches the browser"); product.md ("works the first time"); the live-Maker ask so judges can open the running app.
+
+**Goal:** the same Node server that answers `/api/*` also serves the built Maker
+SPA, so one Render free web service hosts the whole app. The public instance
+holds a PAID model key, so `/api/generate` must not be an open proxy anyone can
+drain: a per-client rate limit and a global daily budget bound the worst-case
+spend, and over either limit the app degrades to the existing offline
+ready-made decks rather than failing.
+
+Sub-items and acceptance criteria:
+
+**a) Static Maker from the build directory (production).**
+- In production (`NODE_ENV=production` or `SERVE_STATIC=1`) the server serves the
+  built Maker from `dist/maker` (the real `build.outDir` in `vite.config.ts`,
+  kept separate from the player build in `dist/player`).
+- Only `GET`/`HEAD` serve static files; other methods on a non-`/api/` path → 405.
+- Path resolution is safe: percent-decode, normalise, and reject anything that
+  resolves outside the build root — including encoded `..` (`%2e%2e`), backslashes,
+  mixed `..%2f`, and a NUL byte. A rejected path never reads a file outside root.
+- Correct `Content-Type` for `.html .js .mjs .css .woff2 .svg .png .json .ico .txt`.
+- `/` serves `index.html`; an extension-less path that is NOT under `/api/` falls
+  back to `index.html` (SPA routing). A path with a file extension that is missing
+  → 404 (no fallback), so a missing asset is not masked by the SPA shell.
+- Hashed assets under `/assets/` get `Cache-Control: public, max-age=31536000, immutable`;
+  `index.html` gets `Cache-Control: no-cache`.
+- Every response (static, API, 404) carries `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, and a CSP that includes
+  `frame-ancestors 'none'` and under which the built Maker actually loads and runs
+  (verified by loading `/` and an asset against the real build).
+- **Done when:** the real built Maker loads from the server at `/`, its hashed
+  assets load with the immutable cache header, and the traversal strings above
+  never return a file from outside `dist/maker`.
+
+**b) Health route.**
+- `GET /api/health` → `200` `{"ok":true}` (JSON), makes no model call, and is cheap
+  enough for a keep-warm pinger.
+- **Done when:** a request to `/api/health` returns 200 `{"ok":true}` and the model
+  gateway is never invoked.
+
+**c) Per-client rate limit on `POST /api/generate` (in memory).**
+- Client identity = the first address in `X-Forwarded-For` ONLY when `TRUST_PROXY=1`
+  (Render sets the header); otherwise the socket remote address. `X-Forwarded-For`
+  is ignored entirely unless `TRUST_PROXY=1`.
+- Default 6 generations per rolling 10 minutes per client, tunable via
+  `GENERATE_RATE_PER_10MIN`. The 7th request within the window → `429` with a
+  `Retry-After` header (seconds) and the SAME friendly error shape the client already
+  handles: JSON `{ ok:false, message }` for the default path, and a single NDJSON
+  `{"type":"error","message":…}` line (HTTP 200 body is fine for the stream, but the
+  limit is enforced BEFORE any model work either way; for the limit we use 429 on the
+  JSON path and a 429 + error line is not required — see note). The message is the
+  human line "Lots of people are building right now — try again in a few minutes, or
+  start from a ready-made deck."
+- The limiter's memory is bounded: stale entries (window fully elapsed) are evicted,
+  and a hard cap on tracked clients prevents a flood of distinct addresses from
+  growing the map without limit.
+- **Done when:** the 7th request in the window gets 429 + `Retry-After`; a different
+  client in the same window is unaffected; after the window elapses the client is
+  allowed again; `X-Forwarded-For` only changes identity when `TRUST_PROXY=1`; and a
+  flood of distinct client ids does not grow the map beyond the cap.
+
+**d) Global daily model-call budget.**
+- Count REAL model calls per UTC day; cap via `GENERATE_DAILY_CAP` (default 300).
+- Once the cap is reached, `/api/generate` answers from the existing offline
+  fallback decks (same honest ready-made labelling the fallback already carries) and
+  NEVER calls the model; the cap breach is logged once per day.
+- The counter resets at UTC midnight.
+- **Done when:** after the cap is hit the model gateway is not called (verified with a
+  spy) and the response is a ready-made fallback deck; the counter resets at UTC
+  midnight (fake timers).
+
+**e) Production entry + Render blueprint + README.**
+- `npm start` runs the production server (static Maker + API) via `tsx`, with
+  `NODE_ENV=production` so static serving is on.
+- `render.yaml`: one `web` service, env `node`, `buildCommand`
+  `npm ci && npm run build:player && npm run build:maker`, `startCommand` `npm start`,
+  `healthCheckPath /api/health`, and envVars `STACKYARD_LLM_API_KEY` (`sync: false`),
+  `STACKYARD_LLM_BASE_URL`, `STACKYARD_LLM_MODEL`, `TRUST_PROXY=1`, `NODE_VERSION 24`.
+- README gains a short "Run it / Deploy it" section (no secrets).
+- **Done when:** `npm start` serves the built app and API locally; `render.yaml`
+  validates as the single-service blueprint above; README documents running and
+  deploying without leaking secrets.
+
+**f) Tests (vitest, real server on an ephemeral port).**
+- Traversal: `/../package.json`, `/%2e%2e/package.json`, `/assets/..%2f..%2fpackage.json`,
+  backslash variants, and a NUL byte never return a file outside `dist/maker`.
+- SPA fallback for an extension-less non-API path; a missing extensioned asset → 404.
+- Unknown `/api/*` stays JSON 404 (never the SPA shell).
+- `/api/health` → 200 `{"ok":true}`.
+- Limiter: 7th request in the window → 429 + `Retry-After`; a different client
+  unaffected; window expiry allows again (fake timers); `X-Forwarded-For` ignored
+  unless `TRUST_PROXY=1`; eviction keeps the map bounded.
+- Daily cap: after the cap the model gateway is not called (spy) and the response is a
+  fallback deck; cap resets at UTC midnight (fake timers).
+- **Done when:** all of the above pass and every pre-existing test stays green;
+  `npm test` and `npx tsc --noEmit` both exit 0.
+
+> **Note on the 429 + NDJSON shape:** the rate limit is checked before the body is
+> even read, so both the default and NDJSON requests get a real `429` with
+> `Retry-After` and a JSON `{ ok:false, message }` body. The Maker's streaming
+> client already handles a non-OK HTTP status by reading the JSON `message`
+> (`api.ts` `generateStackStream`: "A non-OK HTTP status means the request was
+> rejected before streaming"), so no client change is needed for the shape — only
+> the human wording is surfaced.

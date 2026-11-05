@@ -178,7 +178,11 @@ let server: Server;
 let baseUrl: string;
 
 beforeAll(async () => {
-  server = createServer();
+  // This suite exercises the request/validation/streaming paths, not the
+  // per-client rate limit or the daily budget (those have their own tests), so
+  // give it headroom on both — every request here is from the same localhost
+  // client and the default 6-per-10-min limit would otherwise trip mid-suite.
+  server = createServer({ generateRatePer10Min: 100_000, generateDailyCap: 1_000_000 });
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const addr = server.address();
   const port =
