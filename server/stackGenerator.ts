@@ -149,12 +149,20 @@ export async function generate(
     // deterministic ready-made deck, labelled with the honest reason so the
     // Maker can say WHY (never "no internet" when the teacher is online).
     const ready = buildReadyMade(request);
+    const reason = reasonFromError(err);
+    // One line for the operator, the same as the stream path logs: the reason
+    // and the gateway's own redacted message (an HTTP status at most; the
+    // gateway never puts the key, the URL or a response body in it).
+    console.warn(
+      `[generate] fallback reason=${reason}` +
+        (err instanceof Error ? ` detail=${err.message}` : ""),
+    );
     return {
       ok: true,
       stack: ready.stack,
       isFallback: true,
       isReadyMadeExample: !ready.matched,
-      fallbackReason: reasonFromError(err),
+      fallbackReason: reason,
     };
   }
 }
