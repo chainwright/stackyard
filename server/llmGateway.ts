@@ -45,9 +45,9 @@ interface ChatMessage {
 interface ChatCompletionRequest {
   model: string;
   messages: ChatMessage[];
-  response_format: { type: "json_object" };
+  response_format?: { type: "json_object" };
   max_tokens: number;
-  temperature: number;
+  temperature?: number;
 }
 
 interface ChatCompletionResponse {
@@ -67,7 +67,7 @@ interface ChatCompletionStreamRequest {
   model: string;
   messages: ChatMessage[];
   max_tokens: number;
-  temperature: number;
+  temperature?: number;
   stream: true;
 }
 
@@ -117,6 +117,37 @@ function getBaseUrl(): string {
   );
 }
 
+/**
+ * JSON mode is an OpenAI-style extension. Some OpenAI-compatible endpoints
+ * reject `{type: "json_object"}` (Anthropic's accepts only `json_schema`), so it
+ * can be switched off with STACKYARD_LLM_JSON_MODE=off; the prompt still asks for
+ * JSON and the validator + one retry still guard the result.
+ */
+function jsonModeEnabled(): boolean {
+  return (process.env["STACKYARD_LLM_JSON_MODE"] ?? "").trim().toLowerCase() !== "off";
+}
+
+/**
+ * Some models reject `temperature` (Anthropic's newer models: "`temperature` is
+ * deprecated for this model"). STACKYARD_LLM_TEMPERATURE=off leaves it out; the
+ * retry then relies on the validator's errors alone, not a lower temperature.
+ */
+function temperatureEnabled(): boolean {
+  return (process.env["STACKYARD_LLM_TEMPERATURE"] ?? "").trim().toLowerCase() !== "off";
+}
+
+/**
+ * Output token budget. 4096 is enough for compact JSON, but some models
+ * pretty-print a 10-card stack past it and the JSON arrives cut off
+ * ("Unterminated string"), found on the first live Anthropic call (5 Nov).
+ * STACKYARD_LLM_MAX_TOKENS raises it; clamped to 1,000–32,000.
+ */
+function getMaxTokens(): number {
+  const n = Number((process.env["STACKYARD_LLM_MAX_TOKENS"] ?? "").trim());
+  if (!Number.isFinite(n) || n <= 0) return 4096;
+  return Math.min(32000, Math.max(1000, Math.floor(n)));
+}
+
 function getModel(): string {
   return (
     (process.env["STACKYARD_LLM_MODEL"] ?? "").trim() || "gpt-4o-mini"
@@ -159,9 +190,9 @@ export async function call(
       { role: "system", content: messages.system },
       { role: "user", content: messages.user },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 4096,
-    temperature,
+    ...(jsonModeEnabled() ? { response_format: { type: "json_object" as const } } : {}),
+    max_tokens: getMaxTokens(),
+    ...(temperatureEnabled() ? { temperature } : {}),
   };
 
   // Abort the upstream request if the whole call outlasts its total deadline.
@@ -284,8 +315,8 @@ export async function* callStream(
       { role: "system", content: messages.system },
       { role: "user", content: messages.user },
     ],
-    max_tokens: 4096,
-    temperature,
+    max_tokens: getMaxTokens(),
+    ...(temperatureEnabled() ? { temperature } : {}),
     stream: true,
   };
 

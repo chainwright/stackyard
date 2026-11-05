@@ -29,6 +29,16 @@ services:
       # X-Forwarded-For entry (the one Render appends), not the client-sent
       # leftmost one. If Render is fronted by a provider that sets a single-value
       # client-IP header (e.g. cf-connecting-ip), set CLIENT_IP_HEADER to it.
+      # Anthropic's OpenAI-compatible endpoint rejects response_format json_object
+      # ("Input should be 'json_schema'"), found on the first live call (5 Nov).
+      - key: STACKYARD_LLM_JSON_MODE
+        value: "off"
+      # and the model rejects `temperature` ("deprecated for this model").
+      - key: STACKYARD_LLM_TEMPERATURE
+        value: "off"
+      # and pretty-prints a 10-card stack past 4096 output tokens.
+      - key: STACKYARD_LLM_MAX_TOKENS
+        value: "12000"
       - key: TRUST_PROXY
         value: "1"
       # Render sits behind Cloudflare. Measured on the live service (5 Nov): the

@@ -115,6 +115,54 @@ describe("llmGateway.call — success", () => {
     expect(parsed.response_format.type).toBe("json_object");
   });
 
+  it("omits response_format when STACKYARD_LLM_JSON_MODE=off (endpoints that reject json_object)", async () => {
+    process.env["STACKYARD_LLM_JSON_MODE"] = "off";
+    try {
+      stubFetch(200, makeSuccessBody("{}"));
+      await call(MESSAGES);
+      const fetchMock = vi.mocked(fetch);
+      const bodyArg = fetchMock.mock.calls[0]?.[1]?.body;
+      const parsed = JSON.parse(bodyArg as string) as { response_format?: unknown };
+      expect(parsed.response_format).toBeUndefined();
+    } finally {
+      delete process.env["STACKYARD_LLM_JSON_MODE"];
+    }
+  });
+
+  it("omits temperature when STACKYARD_LLM_TEMPERATURE=off (models that reject it)", async () => {
+    process.env["STACKYARD_LLM_TEMPERATURE"] = "off";
+    try {
+      stubFetch(200, makeSuccessBody("{}"));
+      await call(MESSAGES, { temperature: 0.3 });
+      const fetchMock = vi.mocked(fetch);
+      const bodyArg = fetchMock.mock.calls[0]?.[1]?.body;
+      const parsed = JSON.parse(bodyArg as string) as { temperature?: unknown };
+      expect(parsed.temperature).toBeUndefined();
+    } finally {
+      delete process.env["STACKYARD_LLM_TEMPERATURE"];
+    }
+  });
+
+  it("uses STACKYARD_LLM_MAX_TOKENS (clamped) and 4096 by default", async () => {
+    const sent = async () => {
+      stubFetch(200, makeSuccessBody("{}"));
+      await call(MESSAGES);
+      const fetchMock = vi.mocked(fetch);
+      const calls = fetchMock.mock.calls;
+      const bodyArg = calls[calls.length - 1]?.[1]?.body;
+      return (JSON.parse(bodyArg as string) as { max_tokens: number }).max_tokens;
+    };
+    expect(await sent()).toBe(4096);
+    process.env["STACKYARD_LLM_MAX_TOKENS"] = "12000";
+    try {
+      expect(await sent()).toBe(12000);
+      process.env["STACKYARD_LLM_MAX_TOKENS"] = "999999";
+      expect(await sent()).toBe(32000);
+    } finally {
+      delete process.env["STACKYARD_LLM_MAX_TOKENS"];
+    }
+  });
+
   it("uses STACKYARD_LLM_BASE_URL when set", async () => {
     process.env["STACKYARD_LLM_BASE_URL"] = "https://my-proxy.example.com/v1";
     stubFetch(200, makeSuccessBody("{}"));
