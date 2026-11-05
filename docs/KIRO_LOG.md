@@ -216,3 +216,4 @@ runs with the network fully blocked.
   no literal `</…>`, and the gate passes deterministically across repeated runs.
 - 600 tests (19 new across living, round-trip and exporter), `tsc` clean, living
   bundle 50 KB raw. Nothing committed.
+- Same day, after deploying the living file: the live export failed with ENOENT on `dist/living/living.iife.js`. The bundle is built in tests and locally, but the Render blueprint's build command still built only the player and the Maker. The fix adds `build:living` to `render.yaml`, plus a test that fails if any bundle the server reads is missing from the build command. Our tests passed because they build the bundle themselves; the deploy path was the gap.

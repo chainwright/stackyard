@@ -11,7 +11,7 @@ services:
     name: stackyard
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build:player && npm run build:maker
+    buildCommand: npm ci && npm run build:player && npm run build:living && npm run build:maker
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
