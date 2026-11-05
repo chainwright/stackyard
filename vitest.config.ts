@@ -26,6 +26,7 @@ export default defineConfig({
       ["tests/timing-endcard.test.ts", "jsdom"],
       ["tests/play-through.test.ts", "jsdom"],
       ["tests/flash-play.test.ts", "jsdom"],
+      ["tests/play-again-flash-back.test.ts", "jsdom"],
       // Maker UI tests (Preact components) need a DOM.
       ["tests/maker/app-shell.test.ts", "jsdom"],
       ["tests/maker/start-screen.test.ts", "jsdom"],
@@ -35,6 +36,7 @@ export default defineConfig({
       ["tests/maker/inspector.test.ts", "jsdom"],
       ["tests/maker/toolbar.test.ts", "jsdom"],
       ["tests/maker/play-overlay.test.ts", "jsdom"],
+      ["tests/maker/sticky-notice.test.ts", "jsdom"],
       ["tests/maker/export-download.test.ts", "jsdom"],
       ["tests/maker/persistence-wiring.test.ts", "jsdom"],
       ["tests/maker/a11y.test.ts", "jsdom"],

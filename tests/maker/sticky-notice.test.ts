@@ -37,6 +37,14 @@ async function flush(times = 4): Promise<void> {
   }
 }
 
+/** Poll until `pred()` is truthy or the attempt budget runs out. */
+async function waitFor(pred: () => boolean, tries = 120): Promise<void> {
+  for (let i = 0; i < tries; i++) {
+    if (pred()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+
 /** A stack whose FIRST card is already full (an element reaches the canvas
  *  floor), so Add Text/Add Button is rejected with the card-full notice. The
  *  second card has room. */
@@ -142,25 +150,23 @@ describe("sticky 'card full' notice (round 3, P1 #1)", () => {
     const pill = root.querySelector<HTMLButtonElement>(".try-pill");
     expect(pill).not.toBeNull();
 
-    // The pill actually returns to the editor.
+    // The pill actually returns to the editor. Back to Editing flips the card
+    // out (240ms) before switching screens, so poll for the swap.
     pill!.click();
-    await flush(10);
+    await waitFor(() => root.querySelector(".tryit-area") === null, 200);
+    await flush();
     expect(root.querySelector(".tryit-area")).toBeNull();
     expect(root.querySelector(".workspace")).not.toBeNull();
   });
 
   it("the Back to Editing pill is stacked above any notice (z-index)", async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(fullFirstCardStack()));
-    const root = mountApp();
-    await flush();
-    root.querySelector<HTMLButtonElement>(".tryit")!.click();
-    await flush();
-
-    // The shipped stylesheet gives .try-pill a positive z-index so it can never
-    // sit under a banner.
-    const css = Array.from(document.querySelectorAll("style"))
-      .map((s) => s.textContent ?? "")
-      .join("\n");
+    // The Maker stylesheet (styles.css) is loaded by Vite in the browser, not
+    // injected in the jsdom test env, so assert the shipped rule at source: the
+    // pill carries an explicit position + positive z-index so it can never sit
+    // under the in-flow notice banner. (Same source-reading approach as the
+    // play-overlay "uses the same mountPlayer" test.)
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync("src/editor/styles.css", "utf8");
     const rule = css.match(/\.try-pill\s*\{([^}]+)\}/)?.[1] ?? "";
     expect(rule).toMatch(/z-index\s*:\s*\d+/);
     expect(rule).toMatch(/position\s*:\s*relative/);

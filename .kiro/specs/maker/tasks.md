@@ -978,3 +978,69 @@ and Back to Editing flips the card back with the same animation. ✓
 **Done when:** the small polish items in the verdict (full-card placement,
 centred branch labels, end-card preview, Try It inspector spacing + score scope,
 right-answer reveal) are addressed. ✓
+
+### TASK-R13: Built-app verdict round 3 — sticky notice, flash back, small items — Done
+**Refs:** `docs/design/review/MAKER_MOCKUPS_JUDGE.md` "Built app verdict, round 3" P1 #1, P1 #2, P2 #3, #4, #5
+
+> **Done (the three items the 7.8 verdict put at the bar):**
+>
+> 1. **The "This card is full" notice no longer sticks or traps Try It.** The
+>    notice is `EditorScreen` component state; it was only cleared on the next
+>    toolbar action, so it survived a card change and the Try It toggle (the
+>    screen is reused for both, so it never remounted) and in Try It it pushed
+>    the canvas down under the "Back to Editing" pill. Now:
+>    - `CardList.select()` calls `onNotice(null)`, so moving to another card
+>      clears it;
+>    - the Try It toggle in `EditorScreen` calls `setNotice(null)` on enter and
+>      leave, and the banner is gated `notice !== null && !trying`, so it never
+>      renders in the play view;
+>    - `.try-pill` gets `position: relative; z-index: 50` so it always stacks
+>      above any banner, and the pill works.
+>    `tests/maker/sticky-notice.test.ts` drives the real `App`: a full card
+>    raises the notice, a card change clears it, entering Try It clears it and
+>    the pill returns to the editor, and the shipped `.try-pill` rule carries the
+>    z-index.
+>
+> 2. **One fixed flash-BACK layout regardless of the deck's element positions.**
+>    `renderFlashCard` already derives the back from fixed `.sy-flash-*` CSS
+>    classes (it never reads authored x/y), but the Irish deck showed "Next Card"
+>    sitting over "Tap the card to flip back". The hint is now capped to the
+>    left column (`width: 344px`, ends at x=392, left-aligned) and the Next Card
+>    starts at x=408, so they can never overlap; the back stays term top-left,
+>    body left-aligned, hint bottom-left, Next Card bottom-right. A new
+>    `tests/play-again-flash-back.test.ts` renders a deliberately COLLIDING deck
+>    (term bottom-right, back centred, Next Card top-left) and the real Irish
+>    deck and asserts the fixed classes, no leaked inline positions, and the
+>    hint/Next-Card rects not intersecting.
+>
+> 3. **The small items:**
+>    - **Sentence ↔ deck agree.** The pre-filled example said "A 10-card quiz"
+>      but the Vikings deck is 12 cards (6 quiz, 2 flash, 3 story, 1 end). The
+>      sentence now reads "A lesson about the Vikings in Ireland with quiz
+>      questions and a story choice, the right answer plays a cheer" (both the
+>      live and `__demoError` copies).
+>    - **End-card preview total.** The inspector's score preview was a hard-coded
+>      "Score 3 of 8". It now computes the deck's real quiz-card count and shows
+>      "Score __ of {N}" ("Score __ of 6" for Vikings), the same denominator the
+>      player uses.
+>    - **Play Again in the exported file.** `renderEndCard` now renders a navy
+>      "Play Again" paper tab (never stamp red) under the stamp grid; it calls a
+>      new `resetRuntime(state)` (score back to 0, auto-nav guard reset) then
+>      `navigate(firstCardId, false)`, so a class gets a clean second go with the
+>      flip. Tested in `play-again-flash-back.test.ts`: the button renders,
+>      zeroes the score and navigates to card 1.
+>
+> Two new jsdom test files wired into `vitest.config.ts`'s per-file glob list.
+> Full suite **489 pass**, `tsc` clean, player bundle 9.46 KB gzipped (of 50 KB).
+> Re-shot the Irish answer side (new `exported-player-irish-back`), Try It
+> (`play-flash-back`, `play`), the end card (`exported-player-end`,
+> `editor-end`) and the exported player (`exported-player`); the Irish back is
+> left-aligned with the hint and Next Card clear of each other, and the end card
+> shows "Score 0 of 6" with the Play Again tab.
+
+**Done when:** the card-full notice clears on the next action / card change /
+mode switch and never covers Back to Editing; the flash back is one fixed layout
+with no hint/Next-Card overlap on the Irish and Vikings decks; the sentence and
+deck card counts agree; the end-card preview total matches the deck; and the
+exported end card has a working Play Again that restarts from card 1 with the
+score reset. `npm test` (489) and `tsc` green. ✓
