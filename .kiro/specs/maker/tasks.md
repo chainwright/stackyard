@@ -1153,3 +1153,54 @@ Sub-items and acceptance criteria:
 > (`api.ts` `generateStackStream`: "A non-OK HTTP status means the request was
 > rejected before streaming"), so no client change is needed for the shape — only
 > the human wording is surfaced.
+
+### TASK-21g: the per-visitor rate limit is bypassable on Render (spoofable client IP)
+**Refs:** TASK-21c; verified live against `https://stackyard-sdqt.onrender.com` — 6 requests with `X-Forwarded-For: 203.0.113.9` → 200, 7th → 429, then the same request with `X-Forwarded-For: 203.0.113.77` → 200.
+
+**Problem:** the limiter keyed on the FIRST (leftmost) `X-Forwarded-For` entry.
+Render appends the real client IP to the END of `X-Forwarded-For`; the leftmost
+entry is whatever the visitor sent, so a client can rotate the leftmost value
+per request and get a fresh bucket every time, bypassing the per-visitor limit.
+
+**Fix:**
+
+1. **Trust the proxy-appended entry, not the client-sent one.**
+   - New env `CLIENT_IP_HEADER` (e.g. `cf-connecting-ip`, `true-client-ip`,
+     `x-real-ip`): a single-value header the trusted proxy sets to the real
+     client IP.
+   - When `TRUST_PROXY=1` **and** `CLIENT_IP_HEADER` is set and present on the
+     request, the client address is that header's value (single value, trimmed;
+     if multi-valued, the first value).
+   - When `TRUST_PROXY=1` and that header is absent (or `CLIENT_IP_HEADER`
+     unset), fall back to the **RIGHTMOST** `X-Forwarded-For` entry (the one the
+     nearest trusted proxy appended) — never the leftmost client-controlled one.
+   - When `TRUST_PROXY` is unset, keep using the socket remote address (ignore
+     all forwarding headers).
+   - **Done when:** two requests whose leftmost `X-Forwarded-For` differs but
+     whose rightmost entry is identical share ONE rate-limit bucket;
+     `CLIENT_IP_HEADER` changes the bucket only when `TRUST_PROXY=1`.
+
+2. **Temporary diagnostics (off by default).**
+   - When env `DEBUG_CLIENT_ADDR=1`, log for at most the first **5**
+     `POST /api/generate` requests after start, one line each, containing only:
+     the `x-forwarded-for`, `true-client-ip`, `cf-connecting-ip`, `x-real-ip`
+     header values and the socket address, then the address the limiter chose.
+   - No request body and no other headers are logged. Off by default (no log
+     lines when the flag is unset).
+   - **Done when:** with the flag set, at most 5 diagnostic lines are logged
+     (one per generate request, capped at 5); with the flag unset, none are.
+
+3. **Tests:**
+   - Leftmost-XFF spoofing no longer changes the bucket (different leftmost,
+     same rightmost → shared bucket → still rate-limited).
+   - `CLIENT_IP_HEADER` honoured only with `TRUST_PROXY=1` (ignored when unset).
+   - Diagnostics log at most 5 lines and only with the flag.
+
+4. **`render.yaml`:** add `DEBUG_CLIENT_ADDR` with value `"1"` for now (removed
+   after we read the logs).
+
+> **Note:** the rightmost-XFF default is correct for exactly one trusted proxy
+> hop (Render). `CLIENT_IP_HEADER` is the robust fix because a single-value
+> provider header (e.g. Cloudflare's `cf-connecting-ip`) can't be spoofed past
+> the proxy. We keep the rightmost-XFF fallback so the limiter still keys on a
+> non-client-controlled value even if the header isn't set.

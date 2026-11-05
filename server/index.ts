@@ -26,9 +26,17 @@ import { applySecurityHeaders } from "./securityHeaders.js";
 import { serveStatic } from "./staticFiles.js";
 import { RateLimiter } from "./rateLimiter.js";
 import { DailyBudget } from "./dailyBudget.js";
-import { clientAddress, trustProxyFromEnv } from "./clientAddress.js";
+import {
+  clientAddress,
+  clientAddressDiagnostics,
+  clientIpHeaderFromEnv,
+  trustProxyFromEnv,
+} from "./clientAddress.js";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+/** How many generate requests get a diagnostic line when DEBUG_CLIENT_ADDR=1. */
+const DEBUG_CLIENT_ADDR_MAX_LINES = 5;
 
 /** The human line shown when a client is rate-limited. */
 const RATE_LIMITED_MESSAGE =
@@ -42,8 +50,19 @@ export interface ServerConfig {
   serveStatic?: boolean;
   /** Build root for the static Maker. Defaults to "dist/maker". */
   staticRoot?: string;
-  /** Trust X-Forwarded-For for client identity. Defaults from TRUST_PROXY=1. */
+  /** Trust forwarding headers for client identity. Defaults from TRUST_PROXY=1. */
   trustProxy?: boolean;
+  /**
+   * Single-value provider IP header to trust for the client address (e.g.
+   * `cf-connecting-ip`). Defaults from CLIENT_IP_HEADER. Only used when
+   * `trustProxy` is true.
+   */
+  clientIpHeader?: string | undefined;
+  /**
+   * Log forwarding headers + chosen address for the first few generate
+   * requests. Defaults from DEBUG_CLIENT_ADDR=1. Temporary, off by default.
+   */
+  debugClientAddr?: boolean;
   /** Max generations per client per 10 minutes. Default from env, else 6. */
   generateRatePer10Min?: number;
   /** Max real model calls per UTC day. Default from env, else 300. */
@@ -85,9 +104,15 @@ export function createServer(config: ServerConfig = {}): Server {
   const serveStaticEnabled = config.serveStatic ?? shouldServeStatic(env);
   const staticRoot = config.staticRoot ?? "dist/maker";
   const trustProxy = config.trustProxy ?? trustProxyFromEnv(env);
+  const clientIpHeader =
+    config.clientIpHeader !== undefined ? config.clientIpHeader : clientIpHeaderFromEnv(env);
+  const debugClientAddr = config.debugClientAddr ?? env["DEBUG_CLIENT_ADDR"] === "1";
   const rateLimit = config.generateRatePer10Min ?? intFromEnv(env, "GENERATE_RATE_PER_10MIN", 6);
   const dailyCap = config.generateDailyCap ?? intFromEnv(env, "GENERATE_DAILY_CAP", 300);
   const now = config.now;
+
+  // Temporary diagnostics counter (TASK-21g #2): at most N lines after start.
+  let debugLinesLogged = 0;
 
   const limiter = new RateLimiter({
     limit: rateLimit,
@@ -131,7 +156,18 @@ export function createServer(config: ServerConfig = {}): Server {
 
       // Per-client rate limit — checked BEFORE the body is read or any model
       // work happens, so a flood cannot cost tokens or memory.
-      const clientId = clientAddress(req, trustProxy);
+      const clientId = clientAddress(req, { trustProxy, clientIpHeader });
+
+      // Temporary diagnostics: the forwarding headers + chosen address for the
+      // first few generate requests after start (TASK-21g #2).
+      if (debugClientAddr && debugLinesLogged < DEBUG_CLIENT_ADDR_MAX_LINES) {
+        debugLinesLogged++;
+        console.log(
+          "[client-addr]",
+          JSON.stringify(clientAddressDiagnostics(req, clientId)),
+        );
+      }
+
       const decision = limiter.check(clientId);
       if (!decision.allowed) {
         sendJson(

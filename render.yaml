@@ -25,8 +25,16 @@ services:
       - key: STACKYARD_LLM_MODEL
         value: claude-haiku-5-5
       # Render terminates TLS at its proxy and sets X-Forwarded-For, so trust it
-      # for per-client rate limiting.
+      # for per-client rate limiting. The limiter keys on the RIGHTMOST
+      # X-Forwarded-For entry (the one Render appends), not the client-sent
+      # leftmost one. If Render is fronted by a provider that sets a single-value
+      # client-IP header (e.g. cf-connecting-ip), set CLIENT_IP_HEADER to it.
       - key: TRUST_PROXY
+        value: "1"
+      # TEMPORARY (TASK-21g): log the forwarding headers + chosen client address
+      # for the first few generate requests so we can confirm which header Render
+      # sets. Remove this after reading the logs.
+      - key: DEBUG_CLIENT_ADDR
         value: "1"
       - key: NODE_VERSION
         value: "24"

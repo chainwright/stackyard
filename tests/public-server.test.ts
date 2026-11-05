@@ -287,6 +287,131 @@ describe("per-client rate limit on /api/generate (TASK-21c)", () => {
 });
 
 // ===========================================================================
+// g) Spoofable client IP (TASK-21g)
+
+describe("client identity cannot be spoofed via leftmost X-Forwarded-For (TASK-21g)", () => {
+  async function gen(baseUrl: string, headers: Record<string, string> = {}) {
+    return fetch(`${baseUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ prompt: "a quiz about the water cycle" }),
+    });
+  }
+
+  it("rotating the LEFTMOST XFF entry does not escape the bucket (same rightmost)", async () => {
+    // This is the exact live bypass: 6 OK then 429, then a different leftmost
+    // value must STILL be 429 because the rightmost (proxy-appended) entry is
+    // the same real client.
+    const { server, baseUrl } = await startServer({
+      staticRoot,
+      trustProxy: true,
+      generateRatePer10Min: 6,
+      generateDailyCap: 1_000_000,
+    });
+    try {
+      for (let i = 0; i < 6; i++) {
+        const r = await gen(baseUrl, { "X-Forwarded-For": "203.0.113.9, 10.0.0.1" });
+        expect(r.status, `request ${i + 1}`).not.toBe(429);
+        await r.text();
+      }
+      const blocked = await gen(baseUrl, { "X-Forwarded-For": "203.0.113.9, 10.0.0.1" });
+      expect(blocked.status).toBe(429);
+      // Rotate the client-controlled leftmost entry — still the same bucket.
+      const stillBlocked = await gen(baseUrl, { "X-Forwarded-For": "203.0.113.77, 10.0.0.1" });
+      expect(stillBlocked.status).toBe(429);
+    } finally {
+      server.close();
+    }
+  });
+
+  it("CLIENT_IP_HEADER is honoured only with TRUST_PROXY=1", async () => {
+    // With the proxy trusted, two requests sharing one cf-connecting-ip share a
+    // bucket regardless of XFF; a different cf-connecting-ip is a new bucket.
+    const trusted = await startServer({
+      staticRoot,
+      trustProxy: true,
+      clientIpHeader: "cf-connecting-ip",
+      generateRatePer10Min: 1,
+      generateDailyCap: 1_000_000,
+    });
+    try {
+      await (await gen(trusted.baseUrl, { "cf-connecting-ip": "5.5.5.5", "X-Forwarded-For": "a, b" })).text();
+      const blocked = await gen(trusted.baseUrl, { "cf-connecting-ip": "5.5.5.5", "X-Forwarded-For": "x, y" });
+      expect(blocked.status).toBe(429);
+      const other = await gen(trusted.baseUrl, { "cf-connecting-ip": "6.6.6.6" });
+      expect(other.status).not.toBe(429);
+      await other.text();
+    } finally {
+      trusted.server.close();
+    }
+
+    // With the proxy NOT trusted, the header is ignored: all requests share the
+    // socket bucket, so a differing cf-connecting-ip still trips the limit.
+    const untrusted = await startServer({
+      staticRoot,
+      trustProxy: false,
+      clientIpHeader: "cf-connecting-ip",
+      generateRatePer10Min: 1,
+      generateDailyCap: 1_000_000,
+    });
+    try {
+      await (await gen(untrusted.baseUrl, { "cf-connecting-ip": "7.7.7.7" })).text();
+      const blocked = await gen(untrusted.baseUrl, { "cf-connecting-ip": "8.8.8.8" });
+      expect(blocked.status).toBe(429);
+    } finally {
+      untrusted.server.close();
+    }
+  });
+
+  it("diagnostics log at most 5 lines, and only when DEBUG_CLIENT_ADDR is on", async () => {
+    const logs: string[] = [];
+    const spy = vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
+      if (args[0] === "[client-addr]") logs.push(String(args[1]));
+    });
+    try {
+      // Flag ON: 7 generate requests → at most 5 diagnostic lines.
+      const on = await startServer({
+        staticRoot,
+        trustProxy: true,
+        debugClientAddr: true,
+        generateRatePer10Min: 100_000,
+        generateDailyCap: 1_000_000,
+      });
+      try {
+        for (let i = 0; i < 7; i++) {
+          await (await gen(on.baseUrl, { "X-Forwarded-For": `c${i}, 10.0.0.1` })).text();
+        }
+      } finally {
+        on.server.close();
+      }
+      expect(logs.length).toBe(5);
+      // Each line is JSON carrying the chosen address and the forwarding headers.
+      const parsed = JSON.parse(logs[0]!) as { chosen: string; "x-forwarded-for": string };
+      expect(parsed.chosen).toBe("10.0.0.1");
+      expect(parsed["x-forwarded-for"]).toContain("10.0.0.1");
+
+      // Flag OFF: no diagnostic lines at all.
+      logs.length = 0;
+      const off = await startServer({
+        staticRoot,
+        trustProxy: true,
+        debugClientAddr: false,
+        generateRatePer10Min: 100_000,
+        generateDailyCap: 1_000_000,
+      });
+      try {
+        await (await gen(off.baseUrl, { "X-Forwarded-For": "z, 10.0.0.2" })).text();
+      } finally {
+        off.server.close();
+      }
+      expect(logs.length).toBe(0);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+// ===========================================================================
 // d) Daily budget
 
 describe("global daily budget on /api/generate (TASK-21d)", () => {
