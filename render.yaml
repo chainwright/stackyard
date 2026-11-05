@@ -31,10 +31,13 @@ services:
       # client-IP header (e.g. cf-connecting-ip), set CLIENT_IP_HEADER to it.
       - key: TRUST_PROXY
         value: "1"
-      # TEMPORARY (TASK-21g): log the forwarding headers + chosen client address
-      # for the first few generate requests so we can confirm which header Render
-      # sets. Remove this after reading the logs.
+      # Render sits behind Cloudflare. Measured on the live service (5 Nov): the
+      # X-Forwarded-For chain is "<visitor-supplied>, <client>, <cloudflare>, <render
+      # internal>", so the rightmost entry is the same internal address for everyone.
+      # cf-connecting-ip carries the real client and Cloudflare overwrites it.
+      - key: CLIENT_IP_HEADER
+        value: cf-connecting-ip
       - key: DEBUG_CLIENT_ADDR
-        value: "1"
+        value: "0"
       - key: NODE_VERSION
         value: "24"
