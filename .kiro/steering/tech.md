@@ -51,3 +51,18 @@ stackyard/
 - No secrets in client-side code or exported files.
 - The exported HTML file must be fully self-contained (no CDN links, no external fonts).
 - All user-facing strings go through the audience rules in audience.md.
+
+## Security: request size limits
+
+Every POST route reads the request body through the shared `readBody(req, res, maxBytes)`
+helper in `server/readBody.ts`. It stops reading once the running byte count passes the
+limit, answers `413` with a plain-language JSON message, and destroys the request stream,
+so no single request can buffer an unbounded body into memory.
+
+- `POST /api/generate`: 16 KB (a sentence).
+- `POST /api/export`: 8 MB (a stack with inlined images).
+
+The export path also caps what the validator does not: `server/exportLimits.ts` rejects a
+stack with more than `MAX_CARDS` cards or any text field longer than `MAX_TEXT_LENGTH`
+(the nine stack-format.md invariants bound neither), returning `413` with a plain-language
+message before the exporter runs. Each limit has tests in `tests/request-size-limits.test.ts`.

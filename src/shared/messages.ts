@@ -30,6 +30,10 @@ const MESSAGE_BY_CODE: Record<string, string> = {
   "no-content-cards": "You need at least one card before the last one.",
   "canvas-bounds": "Something is off the edge of the card. Move it back on.",
   "blank-title": "Give your set of cards a name.",
+  "too-many-cards":
+    "This set has too many cards to export. Remove a few and try again.",
+  "text-too-long":
+    "Some text on a card is too long to export. Shorten it and try again.",
 };
 
 const FALLBACK_MESSAGE =

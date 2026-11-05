@@ -10,8 +10,15 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { exportStack, ExportValidationError } from "../exporter.js";
+import { readBody } from "../readBody.js";
+import { checkExportLimits } from "../exportLimits.js";
 import { plainMessageFrom, safeFileName } from "../../src/shared/messages.js";
 import type { Stack } from "../../src/shared/types.js";
+
+// An export body carries a whole stack with image data URIs inlined; 8 MB is
+// enough for a real lesson's images while still refusing a memory-exhausting
+// payload.
+const MAX_EXPORT_BODY_BYTES = 8 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -23,15 +30,6 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
     "Content-Length": Buffer.byteLength(payload),
   });
   res.end(payload);
-}
-
-async function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
-    req.on("error", reject);
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -51,17 +49,10 @@ export async function handleExport(
     return;
   }
 
-  // Parse body.
-  let body: string;
-  try {
-    body = await readBody(req);
-  } catch {
-    sendJson(res, 400, {
-      ok: false,
-      message: "We couldn't read your request. Please try again.",
-    });
-    return;
-  }
+  // Read body with a hard size cap. readBody sends 413/400 itself on failure.
+  const read = await readBody(req, res, MAX_EXPORT_BODY_BYTES);
+  if (!read.ok) return;
+  const body = read.body;
 
   let parsed: unknown;
   try {
@@ -89,6 +80,22 @@ export async function handleExport(
   }
 
   const stack = (parsed as Record<string, unknown>)["stack"] as Stack;
+
+  // Resource caps the validator does not enforce: the nine invariants in
+  // stack-format.md bound neither the number of cards nor the length of text
+  // fields, so a stack that is valid can still be huge. Cap both before the
+  // (more expensive) exportStack() work. Guard against a malformed cards array
+  // first; the exporter's validate() still reports the real shape error below.
+  if (Array.isArray(stack.cards)) {
+    const limitErrors = checkExportLimits(stack);
+    if (limitErrors.length > 0) {
+      sendJson(res, 413, {
+        ok: false,
+        message: plainMessageFrom(limitErrors),
+      });
+      return;
+    }
+  }
 
   // Build the file. exportStack() validates internally and throws
   // ExportValidationError on any invariant failure.

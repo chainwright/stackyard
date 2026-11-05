@@ -545,6 +545,18 @@ No stack trace, raw code, or the word "stack" ever reaches the teacher
 - The client treats `localStorage` content as untrusted on load: it is
   `JSON.parse`d in a guard and must pass `validate()` before use.
 
+### Request size limits
+
+Both `POST /api/generate` and `POST /api/export` read the request body through
+the shared `readBody(req, res, maxBytes)` helper (`server/readBody.ts`). It
+stops reading once the body passes the limit, replies `413` with a
+plain-language JSON message, and destroys the request stream, so one oversized
+request cannot exhaust server memory. Limits: generate 16 KB (a sentence),
+export 8 MB (a stack with inlined images). The export route additionally caps
+what the validator leaves unbounded — more than `MAX_CARDS` cards or any text
+field over `MAX_TEXT_LENGTH` (`server/exportLimits.ts`) is refused with `413`
+before `exportStack` runs. Tests: `tests/request-size-limits.test.ts`.
+
 ---
 
 ## Testing strategy

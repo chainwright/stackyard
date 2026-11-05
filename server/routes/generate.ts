@@ -8,7 +8,12 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { generate } from "../stackGenerator.js";
+import { readBody } from "../readBody.js";
 import type { GenerateRequest } from "../../src/shared/types.js";
+
+// A generate request body is a single sentence plus a little JSON wrapping;
+// 16 KB is far more than that and refuses anything that could exhaust memory.
+const MAX_GENERATE_BODY_BYTES = 16 * 1024;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -24,15 +29,6 @@ function sendJson(
     "Content-Length": Buffer.byteLength(payload),
   });
   res.end(payload);
-}
-
-async function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
-    req.on("error", reject);
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -52,17 +48,10 @@ export async function handleGenerate(
     return;
   }
 
-  // Parse body.
-  let body: string;
-  try {
-    body = await readBody(req);
-  } catch {
-    sendJson(res, 400, {
-      ok: false,
-      message: "We couldn't read your request. Please try again.",
-    });
-    return;
-  }
+  // Read body with a hard size cap. readBody sends 413/400 itself on failure.
+  const read = await readBody(req, res, MAX_GENERATE_BODY_BYTES);
+  if (!read.ok) return;
+  const body = read.body;
 
   let parsed: unknown;
   try {
