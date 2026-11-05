@@ -89,7 +89,16 @@ export function StartScreen({
         // Deal this card onto the pile with its real question. We append in
         // arrival order; the GeneratingScreen shows the latest on top.
         setDealt((prev) => [...prev, summariseCard(card, index, t)]);
-        announce(`Card ${index + 1} of ${t} ready.`);
+        announce(
+          t > 0 ? `Card ${index + 1} of ${t} ready.` : `Card ${index + 1} ready.`,
+        );
+      },
+      onReset: () => {
+        // The server abandoned a partial stream and is restarting from a
+        // fallback. Clear the cards dealt so far so the pile matches the
+        // replacement stack.
+        setDealt([]);
+        setTotal(0);
       },
     });
 
@@ -232,12 +241,17 @@ function GeneratingScreen({
   const top = recent.length > 0 ? recent[recent.length - 1]! : null;
   const behind = recent.slice(0, -1); // up to three cards behind the top one
 
+  // On the real LLM stream the total is not known up front (total === 0): show
+  // a live count of what's been dealt instead of "N of M". On the fallback
+  // path the total is known, so "N of M" / "All M ready" is used.
   const counter =
     total > 0
       ? dealtCount >= total
         ? `All ${total} cards ready`
         : `Card ${Math.min(dealtCount + 1, total)} of ${total}`
-      : "Working…";
+      : dealtCount > 0
+        ? `Card ${dealtCount} ready`
+        : "Working…";
 
   return (
     <div class="app">
@@ -270,7 +284,11 @@ function GeneratingScreen({
               <Ring />
             </div>
             <p class="deal-num">
-              {top ? `Card ${top.index + 1} of ${top.total}` : "Preparing…"}
+              {top
+                ? top.total > 0
+                  ? `Card ${top.index + 1} of ${top.total}`
+                  : `Card ${top.index + 1}`
+                : "Preparing…"}
             </p>
             {top?.question ? <p class="deal-q">{top.question}</p> : null}
             {top && top.kind === "quiz" ? (

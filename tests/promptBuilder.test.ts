@@ -2,7 +2,7 @@
 // Unit tests for server/promptBuilder.ts
 
 import { describe, it, expect } from "vitest";
-import { build, buildRetry } from "../server/promptBuilder.js";
+import { build, buildRetry, buildStream } from "../server/promptBuilder.js";
 import type { GenerateRequest } from "../src/shared/types.js";
 
 const req: GenerateRequest = { prompt: "a five-card quiz about the Vikings in Ireland" };
@@ -89,5 +89,39 @@ describe("promptBuilder.buildRetry", () => {
   it("handles an empty error list gracefully", () => {
     const { user } = buildRetry(req, []);
     expect(user).toContain(req.prompt);
+  });
+});
+
+describe("promptBuilder.buildStream (JSON Lines path)", () => {
+  it("instructs the model to output JSON Lines, one object per line", () => {
+    const { system } = buildStream(req);
+    expect(system).toContain("JSON Lines");
+    expect(system).toContain("one JSON object per line");
+  });
+
+  it("describes the stack header line and the per-card line framing", () => {
+    const { system } = buildStream(req);
+    expect(system).toContain('"kind":"stack"');
+    expect(system).toContain('"kind":"card"');
+  });
+
+  it("still carries all seven invariants and the audience rules", () => {
+    const { system } = buildStream(req);
+    expect(system).toContain("Unique IDs");
+    expect(system).toContain("Exactly one end card");
+    expect(system).toContain("Quiz answer rule");
+    expect(system).toContain("Irish/UK English");
+    expect(system).toContain("pupils");
+    expect(system).toContain("4th class");
+  });
+
+  it("reuses the same user message (prompt + card-count clamp) as build()", () => {
+    expect(buildStream(req).user).toBe(build(req).user);
+    const big: GenerateRequest = { prompt: "a 30-card quiz about space" };
+    expect(buildStream(big).user).toContain("cap the stack at 20 cards maximum");
+  });
+
+  it("uses a different system prompt from the single-object build()", () => {
+    expect(buildStream(req).system).not.toBe(build(req).system);
   });
 });

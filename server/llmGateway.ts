@@ -58,6 +58,27 @@ interface ChatCompletionResponse {
   }>;
 }
 
+// Streaming (Server-Sent Events) request/response shapes. The non-streaming
+// request above forces a single JSON object; the streaming request does NOT set
+// response_format (JSON mode and token streaming don't combine on every
+// OpenAI-compatible endpoint) and instead relies on the prompt asking for JSON
+// Lines — one card per line — so each completed line can be parsed on its own.
+interface ChatCompletionStreamRequest {
+  model: string;
+  messages: ChatMessage[];
+  max_tokens: number;
+  temperature: number;
+  stream: true;
+}
+
+// Each SSE `data:` line carries one chunk of this shape. We only read the
+// incremental text in choices[0].delta.content.
+interface ChatCompletionStreamChunk {
+  choices: Array<{
+    delta?: { content?: string | null };
+  }>;
+}
+
 // ---------------------------------------------------------------------------
 // Config helpers (read env vars once per call to support test overrides)
 
@@ -170,4 +191,125 @@ export async function call(
   throw new LlmMalformedError(
     "The AI service returned an unexpected response shape. Please try again."
   );
+}
+
+/**
+ * Call the configured LLM with `stream: true` and yield the content deltas as
+ * they arrive, so a caller can parse completed JSON-Lines cards incrementally
+ * instead of waiting for the whole response.
+ *
+ * Same endpoint, key handling, base URL and model as {@link call}; the only
+ * differences are `stream: true` and no `response_format` (see
+ * ChatCompletionStreamRequest). The key handling and no-secrets guarantees are
+ * identical: the key is read only from the environment, sent only in the
+ * Authorization header, and never appears in any yielded value or thrown error.
+ *
+ * Timeout: this uses the same request timeout policy as {@link call} — neither
+ * imposes an artificial deadline, so both inherit the platform fetch timeout.
+ * If {@link call} gains an explicit timeout, mirror it here.
+ *
+ * @throws ConfigurationError  if STACKYARD_LLM_API_KEY is absent
+ * @throws LlmUnavailableError for network failures, non-2xx responses, or a
+ *                             stream that dies before any usable output
+ */
+export async function* callStream(
+  messages: { system: string; user: string },
+  options: CallOptions = {}
+): AsyncGenerator<string, void, unknown> {
+  const apiKey = getApiKey(); // throws ConfigurationError if missing
+  const baseUrl = getBaseUrl();
+  const model = getModel();
+  const temperature = options.temperature ?? 0.7;
+
+  const body: ChatCompletionStreamRequest = {
+    model,
+    messages: [
+      { role: "system", content: messages.system },
+      { role: "user", content: messages.user },
+    ],
+    max_tokens: 4096,
+    temperature,
+    stream: true,
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        // Use the key here but never surface the value in any error path below
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    // Network failure — do not include any detail that might contain the key
+    throw new LlmUnavailableError(
+      "We couldn't reach the AI service. Check your internet connection and try again."
+    );
+  }
+
+  if (!response.ok) {
+    // Non-2xx — redact; do not echo the key or raw response body
+    throw new LlmUnavailableError(
+      `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
+    );
+  }
+
+  const body$ = response.body;
+  if (body$ === null) {
+    throw new LlmUnavailableError(
+      "The AI service returned an empty response. Try again in a moment."
+    );
+  }
+
+  const reader = body$.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { value, done } = await reader.read();
+      if (value) buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by a blank line; each event may hold one or
+      // more `data:` lines. We process complete lines as they appear so a
+      // chunk that splits a line mid-way is held in `buffer` until finished.
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) >= 0) {
+        const rawLine = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        const line = rawLine.replace(/\r$/, "").trim();
+        if (line.length === 0) continue;
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice("data:".length).trim();
+        if (data === "[DONE]") return;
+
+        let chunk: ChatCompletionStreamChunk;
+        try {
+          chunk = JSON.parse(data) as ChatCompletionStreamChunk;
+        } catch {
+          // A malformed SSE data line is skipped — not fatal on its own.
+          continue;
+        }
+        const delta = chunk.choices?.[0]?.delta?.content;
+        if (typeof delta === "string" && delta.length > 0) {
+          yield delta;
+        }
+      }
+
+      if (done) break;
+    }
+  } catch {
+    // The stream died partway through. Surface a plain-language unavailable
+    // error; the key never appears in it.
+    throw new LlmUnavailableError(
+      "The connection to the AI service dropped. Try again in a moment."
+    );
+  } finally {
+    reader.releaseLock();
+  }
 }

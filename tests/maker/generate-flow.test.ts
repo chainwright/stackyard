@@ -130,6 +130,40 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(root.querySelector(".error-notice")?.textContent ?? "").toContain("couldn't build your cards");
   });
 
+  it("clears partially-dealt cards on a reset, then lands the replacement stack in the editor", async () => {
+    // A partial stream (start + one card) that the server abandons with a
+    // `reset`, then restarts with a clean fallback stack and `done`.
+    const partialCard = {
+      id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      kind: "quiz",
+      elements: [
+        { type: "text", id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", x: 48, y: 104, w: 704, h: 128, content: "A half-dealt question that must disappear" },
+      ],
+      actions: [],
+    };
+    const stack = quizStack();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ndjsonResponse([
+          { type: "start", total: 0, title: "partial", isFallback: false },
+          { type: "card", index: 0, card: partialCard },
+          { type: "reset" },
+          ...streamFor(stack, true),
+        ]),
+      ),
+    );
+    const root = mount();
+    setSentence(root, "A quiz about the Vikings");
+    await flush();
+    root.querySelector<HTMLButtonElement>(".build-btn")!.click();
+    await flush();
+    // Landed in the editor with the replacement stack, not the abandoned one.
+    expect(root.querySelector(".workspace")).not.toBeNull();
+    expect(root.textContent).toContain("Where did the Vikings build a town in 841?");
+    expect(root.textContent).not.toContain("A half-dealt question that must disappear");
+  });
+
   it("stays on Start with a plain message on a broken stream (no done line)", async () => {
     // Start + one card, then the stream ends abruptly — no done/error line.
     const stack = quizStack();

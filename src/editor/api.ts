@@ -72,6 +72,12 @@ export async function generateStack(
 export interface GenerateStreamHandlers {
   onStart?: (info: { total: number; title: string; isFallback: boolean }) => void;
   onCard?: (info: { index: number; card: Card; total: number }) => void;
+  /**
+   * The server abandoned a partial stream (dead stream, bad card, or a stack
+   * that failed validation) and is restarting from a fallback. Clear every
+   * card dealt so far; a fresh `start` and cards follow.
+   */
+  onReset?: () => void;
 }
 
 /**
@@ -138,6 +144,13 @@ export async function generateStackStream(
         return undefined;
       case "card":
         handlers.onCard?.({ index: msg.index, card: msg.card, total });
+        return undefined;
+      case "reset":
+        // A partial stream was abandoned; a fresh start/cards follow. Drop any
+        // fallback flag carried from the abandoned attempt.
+        total = 0;
+        isFallback = false;
+        handlers.onReset?.();
         return undefined;
       case "done":
         return { ok: true, stack: msg.stack, isFallback: msg.isFallback || isFallback };

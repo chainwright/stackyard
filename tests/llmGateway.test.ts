@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   call,
+  callStream,
   ConfigurationError,
   LlmUnavailableError,
   LlmMalformedError,
@@ -252,5 +253,132 @@ describe("llmGateway.call — API key never in output", () => {
     stubFetchNetworkError();
     const err = await call(MESSAGES).catch((e: unknown) => e);
     expect((err as Error).message).not.toContain(FAKE_API_KEY);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Streaming path (callStream)
+
+/** Build a ReadableStream of UTF-8 bytes from a list of string chunks. */
+function streamFromChunks(chunks: string[]): ReadableStream<Uint8Array> {
+  const enc = new TextEncoder();
+  let i = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (i < chunks.length) {
+        controller.enqueue(enc.encode(chunks[i]!));
+        i++;
+      } else {
+        controller.close();
+      }
+    },
+  });
+}
+
+/** Stub fetch to return a streaming SSE response made of `chunks`. */
+function stubFetchStream(chunks: string[], status = 200, ok = true): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok,
+      status,
+      body: streamFromChunks(chunks),
+    }),
+  );
+}
+
+/** Format one OpenAI-style SSE data line for a content delta. */
+function sse(content: string): string {
+  return `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n`;
+}
+
+/** Drain an async generator of string deltas into one string. */
+async function drain(gen: AsyncGenerator<string>): Promise<string> {
+  let out = "";
+  for await (const d of gen) out += d;
+  return out;
+}
+
+describe("llmGateway.callStream — success", () => {
+  it("yields content deltas in order and concatenates to the full text", async () => {
+    stubFetchStream([sse("Hel"), sse("lo"), sse(" world"), "data: [DONE]\n"]);
+    const out = await drain(callStream(MESSAGES));
+    expect(out).toBe("Hello world");
+  });
+
+  it("reassembles SSE lines split across chunk boundaries", async () => {
+    // One SSE data line delivered in three byte-chunks.
+    const line = sse("spanned");
+    const mid = Math.floor(line.length / 2);
+    stubFetchStream([line.slice(0, 4), line.slice(4, mid), line.slice(mid)]);
+    const out = await drain(callStream(MESSAGES));
+    expect(out).toBe("spanned");
+  });
+
+  it("sends stream:true and no response_format in the request body", async () => {
+    stubFetchStream([sse("x"), "data: [DONE]\n"]);
+    await drain(callStream(MESSAGES, { temperature: 0.2 }));
+
+    const bodyArg = vi.mocked(fetch).mock.calls[0]?.[1]?.body;
+    const parsed = JSON.parse(bodyArg as string) as {
+      stream?: boolean;
+      temperature: number;
+      response_format?: unknown;
+    };
+    expect(parsed.stream).toBe(true);
+    expect(parsed.temperature).toBe(0.2);
+    expect(parsed.response_format).toBeUndefined();
+  });
+
+  it("stops at the [DONE] sentinel and ignores anything after it", async () => {
+    stubFetchStream([sse("a"), "data: [DONE]\n", sse("should-not-appear")]);
+    const out = await drain(callStream(MESSAGES));
+    expect(out).toBe("a");
+  });
+});
+
+describe("llmGateway.callStream — errors (never leak the key)", () => {
+  it("throws ConfigurationError when the key is missing", async () => {
+    delete process.env["STACKYARD_LLM_API_KEY"];
+    await expect(drain(callStream(MESSAGES))).rejects.toThrow(ConfigurationError);
+  });
+
+  it("throws LlmUnavailableError on a non-2xx status", async () => {
+    stubFetchStream([], 500, false);
+    const err = await drain(callStream(MESSAGES)).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).toContain("500");
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+  });
+
+  it("throws LlmUnavailableError when fetch rejects (network failure)", async () => {
+    stubFetchNetworkError();
+    const err = await drain(callStream(MESSAGES)).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+  });
+
+  it("throws LlmUnavailableError when the stream dies partway through", async () => {
+    // A body whose reader rejects mid-stream.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(sse("partial")));
+          },
+          pull() {
+            throw new Error("socket reset");
+          },
+        }),
+      }),
+    );
+    const gen = callStream(MESSAGES);
+    // The first delta arrives, then the next read throws.
+    const first = await gen.next();
+    expect(first.value).toBe("partial");
+    await expect(gen.next()).rejects.toThrow(LlmUnavailableError);
   });
 });

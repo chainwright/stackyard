@@ -217,3 +217,81 @@ the JSON path for the default Accept. `generateStackStream` on the client deals
 cards as they arrive; `StartScreen` shows "Card N of M" with the real question on
 the dealt pile. New/updated tests across the three files, including a broken
 stream. Full suite green (413 tests), typecheck clean.
+
+> **Note (superseded by Task 11):** Task 10 streamed a *finished* stack
+> card-by-card — the cards were dealt only after `generate()` had fully
+> returned, so "N of 10" was cosmetic. Task 11 makes the LLM path genuinely
+> incremental.
+
+---
+
+### Task 11 — [x] Make the streamed LLM path genuinely incremental (REQ-8)
+
+Task 10 awaited the whole `generate()` before writing any card, so the client
+received every card at once after the full wait. Make the real LLM path stream
+card-by-card as the model produces each one, honestly, while keeping the
+non-streaming JSON path and all existing tests.
+
+- **`server/llmGateway.ts`** — add `callStream(messages, options)`: an async
+  generator that calls the same OpenAI-compatible endpoint with `stream: true`
+  and yields content deltas from the SSE `data:` lines. Same key handling,
+  base URL, model, temperature and no-secrets guarantees as `call`; same
+  request-timeout policy. `call` stays for the JSON path and tests.
+- **`server/promptBuilder.ts`** — add `buildStream(request)`: the streaming
+  system prompt asks for JSON Lines (a `{"kind":"stack",…}` header line then one
+  `{"kind":"card","card":{…}}` line per card), with the same seven invariants,
+  the same audience rules, and the same user message / card-count clamp as
+  `build`.
+- **`server/stream-generate.ts`** — rewrite `streamGenerate` to:
+  1. `attemptStreamedLlm`: drive `callStream(buildStream(request))`, reassemble
+     split/partial lines with an incremental `LineBuffer`, emit `start` on the
+     header line, and emit each `card` the instant its line completes and passes
+     `validateCard()`; on stream end, `validate()` the assembled stack and
+     return it.
+  2. On success → `done`. On ANY failure (no key, non-2xx, dead stream,
+     malformed card, whole-stack validation fail) → if cards were already
+     dealt, emit `reset`, then fall back via `streamFallback`.
+  3. `streamFallback`: run the non-streaming `generate()` (retry + offline
+     fallback) and stream its stack out, pacing cards with a cosmetic,
+     offline-fallback-only delay (injectable `sleep`). Plain-language `error`
+     if even the fallback cannot produce a stack.
+  `deps` injects `generate`, `callStream`, `buildStream`, `sleep` for tests.
+- **`src/shared/types.ts`** — add `GenerateStreamReset` to the union.
+- **`src/editor/api.ts`** — `generateStackStream` handles the `reset` line
+  (clear dealt state) via a new `onReset` handler; tolerates `total === 0`.
+- **`src/editor/StartScreen.tsx`** — clear the dealt pile on `onReset`; show
+  "Card N" when the total is unknown (live LLM) and "Card N of M" when known
+  (fallback).
+
+**Tests**
+
+- `tests/stream-generate.test.ts` — fake streaming endpoint that sends partial
+  lines, lines split across chunks, a malformed card in the middle, a stream
+  that dies halfway, and a slow stream; asserts the first card reaches the sink
+  before the stream ends, reset+fallback on each failure mode, and no reset
+  when nothing was dealt. `LineBuffer` unit tests for the incremental parser.
+- `tests/llmGateway.test.ts` — `callStream` over a stubbed `ReadableStream`:
+  in-order deltas, lines split across chunks, `stream:true`/no `response_format`,
+  `[DONE]` sentinel, non-2xx → `LlmUnavailableError`, network failure, a stream
+  that dies partway, key never leaked.
+- `tests/promptBuilder.test.ts` — `buildStream` emits JSON-Lines framing and
+  still carries every invariant + audience rule; reuses the `build` user body.
+- `tests/maker/generate-flow.test.ts` — a `reset` mid-stream clears the
+  partially-dealt cards and lands the replacement stack in the editor.
+
+The incremental parser was deliberately broken once (an off-by-one in
+`LineBuffer.takeCompleteLines`) to confirm the stream tests go red, then
+reverted.
+
+**Done when:** `npm test` and `npx tsc --noEmit` are clean; the LLM path deals
+each card as the model produces it (first card before the stream ends, proven
+by test); the non-streaming JSON path is unchanged; the offline fallback still
+deals card-by-card with clearly offline-only pacing.
+
+✅ **Done** — `callStream` (SSE, `stream:true`) and `buildStream` (JSON Lines)
+added; `stream-generate` now parses the token stream incrementally and emits each
+card the moment its line validates, falling back (with a `reset` when cards were
+already dealt) to the retry + offline path on any failure. Offline-only pacing is
+commented and injectable. Client handles `reset` and unknown totals. 21 new/updated
+tests across four files; the parser was broken on purpose to see red, then fixed.
+Full suite green (434 tests), typecheck clean.

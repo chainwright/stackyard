@@ -189,18 +189,23 @@ The fallback stack's title is derived from the prompt (truncated to 120 chars, t
 
 ---
 
-## Progressive delivery (NDJSON)
+## Progressive delivery (NDJSON) — truly incremental
 
-The generator produces a whole `Stack` in one step (the LLM returns full JSON;
-the fallback builds every card). Progressive delivery does not change that — it
-streams the finished stack to the client card-by-card so the Start screen can
-deal each card onto the pile with its real question, instead of showing a
-spinner. The LLM contract, the 16 KB request limit, and all validation are
-unchanged.
+Progressive delivery is genuinely incremental, not cosmetic. On the streaming
+path the LLM is asked for the stack as **JSON Lines** — a one-line stack header
+followed by one card object per line (`promptBuilder.buildStream`, no
+`response_format`; JSON mode and token streaming don't combine on every
+OpenAI-compatible endpoint). `llmGateway.callStream` makes the `stream: true`
+request and yields content deltas as Server-Sent Events arrive. The token stream
+is parsed incrementally: the moment a card's line is complete and passes
+`validateCard()`, that card is written to the client. So each card reaches the
+Start screen as the model actually produces it — the first card lands long
+before the last.
 
 Opt-in by `Accept: application/x-ndjson` on `POST /api/generate`. The default
-path (single JSON body) is untouched, so existing clients and tests keep
-working.
+path (single JSON body via the non-streaming `generate()`) is untouched, so
+existing clients and tests keep working. The 16 KB request limit and prompt
+validation are identical on both paths.
 
 ```
 Client ──POST /api/generate, Accept: application/x-ndjson──▶ route handler
@@ -208,30 +213,68 @@ Client ──POST /api/generate, Accept: application/x-ndjson──▶ route han
         │
         ▼
 server/stream-generate.ts  streamGenerate(request, sink)
-  ├─ generate(request)                    → GenerateSuccess | GenerateError
-  ├─ if ok:false  → write { type:"error", message } ; end
-  ├─ write { type:"start", total, title, isFallback }
-  ├─ for each card:
-  │     validateCard(card)   (shape only; whole-stack invariants need the deck)
-  │       fail → write { type:"error", message } ; end
-  │       ok   → write { type:"card", index, card }
-  ├─ validate(stack)         (whole-stack invariants, the single source of truth)
-  │     fail → write { type:"error", message } ; end
-  └─ write { type:"done", stack, isFallback } ; end
+  │
+  ├─ attemptStreamedLlm(request, sink):            ← the real progressive path
+  │     callStream(buildStream(request))  → async deltas
+  │     LineBuffer reassembles split/partial lines into whole JSON lines
+  │     line 1 (stack header) → write { type:"start", total:0, title, isFallback:false }
+  │     each card line:
+  │        parseCardLine + validateCard(card)  (shape only)
+  │           ok   → write { type:"card", index, card }   ← emitted immediately
+  │           fail → abort the attempt
+  │     on stream end: assemble { id,title,theme,cards } and validate() it
+  │           ok   → return the whole stack
+  │           fail → abort the attempt
+  │     any throw (no key, non-2xx, dead stream) → abort the attempt
+  │
+  ├─ attempt ok  → write { type:"done", stack, isFallback:false } ; end
+  │
+  └─ attempt failed:
+        if cards were already dealt → write { type:"reset" }   (client clears them)
+        streamFallback(request, sink):
+           generate(request)   → GenerateSuccess | GenerateError  (retry + offline fallback)
+           ok:false → write { type:"error", message } ; end
+           ok       → write start, each card (paced, OFFLINE-FALLBACK-ONLY),
+                      validate() the whole stack, write done ; end
 ```
 
+The `total` on a streamed `start` is `0` (unknown up front — the model has not
+said how many cards it will emit); the client shows a live "Card N" count. On
+the fallback path the whole stack is known, so `start.total` is the real count
+and the Generating screen shows "Card N of M".
+
+**Offline-fallback pacing.** The deterministic offline fallback has no real
+model latency, so `streamFallback` sleeps a small fixed gap
+(`FALLBACK_DEAL_PACING_MS`) between cards purely so the dealing animation shows
+in a demo. This pause is used nowhere on the real LLM path, where the gap
+between cards is the model's genuine output rate; the constant is commented as
+offline-only and the sleep is injectable so tests run instantly.
+
 Line types (`src/shared/types.ts`): `GenerateStreamStart`, `GenerateStreamCard`,
-`GenerateStreamDone`, `GenerateStreamError`. A `validateCard(input)` export in
-`src/shared/validator.ts` checks one card's structural shape; `validate()`
-remains the whole-stack check. The HTTP response is always 200 — the stream's
-final line carries success or failure — so the body can flush before generation
-finishes.
+`GenerateStreamDone`, `GenerateStreamError`, and `GenerateStreamReset`. A
+`validateCard(input)` export in `src/shared/validator.ts` checks one card's
+structural shape; `validate()` remains the whole-stack check and is the single
+source of truth before any `done`. The HTTP response is always 200 — the
+stream's final line carries success or failure — so the body flushes before
+generation finishes.
 
 Client (`src/editor/api.ts` `generateStackStream`): reads the NDJSON body with a
-`ReadableStream` reader, invokes `onStart` / `onCard` callbacks as lines arrive,
-and resolves with the same `GenerateOutcome` shape as the non-streaming
-`generateStack`. A transport failure, an unparseable line, or a stream that ends
-without a `done`/`error` line all resolve to a plain-language `{ ok:false }`.
+`ReadableStream` reader, invokes `onStart` / `onCard` / `onReset` callbacks as
+lines arrive, and resolves with the same `GenerateOutcome` shape as the
+non-streaming `generateStack`. A transport failure, an unparseable line, or a
+stream that ends without a `done`/`error` line all resolve to a plain-language
+`{ ok:false }`. On `reset` the Start screen clears every card it has dealt so
+the pile matches the replacement stack.
+
+### Security on the streaming path
+
+`llmGateway.callStream` carries the identical key-handling and no-secrets
+guarantees as `call`: the API key is read only from the environment, sent only
+in the `Authorization` header, and never appears in any yielded value or thrown
+error. Raw LLM errors are collapsed to plain-language `LlmUnavailableError`
+messages, and `stream-generate` only ever forwards `start` / `card` / `done` /
+`reset` / plain-language `error` lines — never a stack trace or raw error code.
+`callStream` uses the same request-timeout policy as `call`.
 
 ---
 

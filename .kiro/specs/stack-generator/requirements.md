@@ -149,31 +149,54 @@ The stack generator takes a single sentence from the teacher and returns a compl
 
 ---
 
-### REQ-8: Progressive delivery of generated cards
+### REQ-8: Truly progressive delivery of generated cards
 
 **As a** teacher,
-**I want** to watch the cards appear one by one while my set is built,
-**so that** the wait feels alive and I can see the real questions taking shape instead of a spinner.
+**I want** to watch each card appear the moment the AI finishes it,
+**so that** the wait feels alive and I see the real questions taking shape as
+they are written, not all at once after a long pause.
 
 #### Acceptance Criteria
 
 - WHEN the client requests `POST /api/generate` with `Accept: application/x-ndjson`,
-  THE SYSTEM SHALL stream the result as newline-delimited JSON: exactly one
-  `start` message, then one `card` message per card in deck order, then exactly
-  one terminator (`done` with the whole stack, or `error`).
+  THE SYSTEM SHALL ask the LLM to emit the stack as JSON Lines (a stack-header
+  line, then one card object per line) with `stream: true`, parse the token
+  stream incrementally, and write each `card` message to the client the moment
+  that card's line is complete and passes shape validation — before the LLM
+  response has finished.
+
+- WHEN the LLM stream delivers a card line split across network chunks, or a
+  partial line, THE SYSTEM SHALL reassemble the line before parsing it and
+  SHALL NOT emit a card until its line is complete.
+
+- WHEN the client requests NDJSON,
+  THE SYSTEM SHALL stream newline-delimited JSON: exactly one `start` message,
+  then one `card` message per card in the order the model produces them, then
+  exactly one terminator (`done` with the whole validated stack, or `error`).
+  A `reset` message MAY precede a second `start` (see below).
 
 - WHEN the client does not request NDJSON,
   THE SYSTEM SHALL keep the existing single-response JSON behaviour unchanged
-  (`GenerateSuccess` / `GenerateError`).
+  (`GenerateSuccess` / `GenerateError`), produced by the non-streaming path.
 
 - WHEN a card is streamed,
   THE SYSTEM SHALL shape-validate that card before writing it, and SHALL
   validate the whole assembled stack before the `done` message.
 
-- WHEN a streamed card fails shape validation, or the assembled stack fails
-  whole-stack validation, or generation fails,
-  THE SYSTEM SHALL emit a single `error` message with a plain-language string
-  (never a stack trace or raw error code) and stop — a clean fallback.
+- WHEN the LLM stream fails for ANY reason — no API key, the service is
+  unreachable or returns a non-2xx response, the stream dies partway, a card
+  line is malformed, or the assembled stack fails whole-stack validation —
+  THE SYSTEM SHALL stop the streamed attempt and fall back to the non-streaming
+  retry + deterministic offline path. If cards were already dealt from the
+  abandoned partial stream, THE SYSTEM SHALL first emit a `reset` message and
+  THE CLIENT SHALL clear every dealt card before the replacement stack streams
+  in. If even the fallback path cannot produce a stack, THE SYSTEM SHALL emit a
+  single plain-language `error` message (never a stack trace or raw error code).
+
+- WHEN the deterministic offline fallback is streamed,
+  THE SYSTEM SHALL pace the cards with a small fixed delay so the dealing shows
+  in a demo, and THIS PACING SHALL apply only to the offline fallback — never to
+  the real LLM path, where the gap between cards is the model's own output rate.
 
 - WHEN NDJSON is requested but the prompt is empty, whitespace-only, or longer
   than 500 characters,
@@ -181,8 +204,15 @@ The stack generator takes a single sentence from the teacher and returns a compl
   the same 16 KB request-body limit as the JSON path.
 
 - WHEN cards stream in,
-  THE CLIENT SHALL deal each card onto the pile as it arrives, labelled "N of M"
-  with the card's real question.
+  THE CLIENT SHALL deal each card onto the pile as it arrives with the card's
+  real question — labelled "Card N of M" on the fallback path (total known) and
+  "Card N" on the live LLM path (total not known up front).
+
+- WHEN the LLM stream is used,
+  THE SYSTEM SHALL carry the same API-key handling and no-secrets guarantees as
+  the non-streaming call: the key is read only from a server-side environment
+  variable, sent only in the request header, and never appears in any streamed
+  message or error.
 
 ---
 

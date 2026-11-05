@@ -27,6 +27,23 @@ All LLM calls are made from a server-side module only.
 The API key never reaches the browser and is never inlined into any exported file.
 The server validates and sanitises all LLM output before passing it to the client.
 
+Two LLM call shapes live in `server/llmGateway.ts`:
+
+- `call` — a single request with `response_format: { type: "json_object" }`;
+  returns the whole JSON string. Used by the non-streaming `/api/generate` path
+  and the retry/fallback path.
+- `callStream` — a `stream: true` request whose SSE deltas are yielded as they
+  arrive. The streaming prompt (`promptBuilder.buildStream`) asks for the stack
+  as JSON Lines — a stack-header line then one card per line — so `/api/generate`
+  with `Accept: application/x-ndjson` can emit each card the moment its line is
+  complete and passes `validateCard()`. On any streaming failure the server falls
+  back to `call` (retry + deterministic offline stack), emitting a `reset` first
+  if cards were already dealt.
+
+Both calls share identical key handling and no-secrets guarantees: the key is
+read only from the server environment, sent only in the request header, and never
+appears in any returned value, yielded delta, streamed message, or error.
+
 ## Testing
 
 - Vitest for unit and integration tests

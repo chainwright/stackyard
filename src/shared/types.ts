@@ -128,8 +128,19 @@ export type GenerateStreamError = {
   message: string;      // plain language; never a stack trace or raw error code
 };
 
+// Emitted only on the progressive LLM path, when cards already dealt from a
+// partial stream turn out to be unusable (the stream died, a card was
+// malformed, or the assembled stack failed validation) and we restart from a
+// clean fallback/retry. The client MUST clear every card it has dealt so far;
+// a fresh `start` then follows with the replacement stack. Never appears on a
+// stream that succeeds first time.
+export type GenerateStreamReset = {
+  type: "reset";
+};
+
 export type GenerateStreamMessage =
   | GenerateStreamStart
   | GenerateStreamCard
   | GenerateStreamDone
-  | GenerateStreamError;
+  | GenerateStreamError
+  | GenerateStreamReset;
