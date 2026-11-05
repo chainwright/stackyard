@@ -7,16 +7,16 @@ import type { JSX } from "preact";
 import type { Stack } from "../shared/types.js";
 import { Ring } from "./icons.js";
 import { checkReachability } from "../shared/reachability.js";
+import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 
-/** The first line of a card, for naming it in the check ("Card 5 — …"). */
+/** The content line of a card, for naming it in the check ("Card 5 — …").
+ *  Uses the question/front/story text, never a caption or image credit. */
 function cardLabel(stack: Stack, cardId: string): string {
   const index = stack.cards.findIndex((c) => c.id === cardId);
   const card = stack.cards[index];
   if (!card) return "a card";
   if (card.kind === "end") return "the last card";
-  const text = card.elements.find((e) => e.type === "text");
-  const words = text && text.type === "text" ? text.content.trim() : "";
-  const short = words.length > 24 ? words.slice(0, 23) + "…" : words;
+  const short = truncateLabel(primaryText(card), 24);
   return short.length > 0 ? `Card ${index + 1} — ${short}` : `Card ${index + 1}`;
 }
 

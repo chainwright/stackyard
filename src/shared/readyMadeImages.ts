@@ -6,11 +6,13 @@
 //
 // Provenance (honest, for J5 the claims hound): this environment has no
 // outbound network, so the picker could not reach the live Openverse API. The
-// script therefore wrote the OFFLINE-SAFE fallback below: a small vector image
-// drawn for this project and released to the public domain (CC0) by the
-// Stackyard author, credited as such. Re-running `scripts/pick-deck-images.ts`
-// on a networked machine replaces these with live Openverse picks and their
-// real credit lines (licence + creator + source).
+// images below are therefore the OFFLINE-SAFE fallback: small vector drawings
+// made for this project and released to the public domain (CC0) by the
+// Stackyard author. They are NOT Openverse picks, so each is credited as our
+// own illustration ("Illustration: Stackyard, CC0") and names no source URL
+// we did not earn (TASK-25 b). Re-running `scripts/pick-deck-images.ts` on a
+// networked machine replaces these with live Openverse picks and their real
+// credit lines (creditKind "image", licence + creator + a real source URL).
 
 import type { DeckImage } from "./deckImageTypes.js";
 
@@ -30,9 +32,11 @@ export const READY_MADE_IMAGES: Record<string, DeckImage> = {
           `<path d='M124 44 L124 92 L96 92 Z' fill='#E8E2D0'/>` +
           `</svg>`,
       ),
-    creditLicense: "CC0 (public domain)",
+    // Drawn for Stackyard and released to the public domain — not a found image,
+    // so it names no source (TASK-25 b).
+    creditKind: "illustration",
+    creditLicense: "CC0",
     creditCreator: "Stackyard",
-    creditSource: "https://openverse.org",
   },
   "times-tables": {
     dataUri:
@@ -44,9 +48,9 @@ export const READY_MADE_IMAGES: Record<string, DeckImage> = {
           `text-anchor='middle' fill='#1E2A47'>7 × 8</text>` +
           `</svg>`,
       ),
-    creditLicense: "CC0 (public domain)",
+    creditKind: "illustration",
+    creditLicense: "CC0",
     creditCreator: "Stackyard",
-    creditSource: "https://openverse.org",
   },
   "irish-words": {
     dataUri:
@@ -58,9 +62,9 @@ export const READY_MADE_IMAGES: Record<string, DeckImage> = {
           `<rect x='96' y='110' width='8' height='18' fill='#2E7D32'/>` +
           `</svg>`,
       ),
-    creditLicense: "CC0 (public domain)",
+    creditKind: "illustration",
+    creditLicense: "CC0",
     creditCreator: "Stackyard",
-    creditSource: "https://openverse.org",
   },
 };
 

@@ -128,6 +128,43 @@ describe("TASK-13: Card list", () => {
     expect(firstRow.textContent).not.toContain("God be with you");
   });
 
+  it("names a card with an image credit after the question, not the credit (TASK-25a)", () => {
+    // Regression for the 5 Nov live check: a first card carrying a longer image
+    // credit along the bottom was named after the credit. The row must show the
+    // question (the topmost text), never the "Image:/Illustration:" caption.
+    const question = "Which people began raiding Ireland around the year 795?";
+    const credit = "Illustration: Stackyard, CC0 — a longer caption than the question line above";
+    const stack = {
+      id: "1b000000-0000-4000-8000-000000000001",
+      title: "Vikings",
+      theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        {
+          id: "2b000000-0000-4000-8000-000000000002",
+          kind: "quiz" as const,
+          elements: [
+            { type: "text" as const, id: "4b000000-0000-4000-8000-000000000004", x: 48, y: 104, w: 704, h: 128, content: question },
+            { type: "button" as const, id: "5b000000-0000-4000-8000-000000000005", x: 48, y: 296, w: 344, h: 96, label: "Vikings", actions: [{ type: "score" as const, delta: 1 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+            { type: "button" as const, id: "6b000000-0000-4000-8000-000000000006", x: 408, y: 296, w: 344, h: 96, label: "Romans", actions: [{ type: "score" as const, delta: 0 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+            { type: "image" as const, id: "8b000000-0000-4000-8000-000000000008", x: 504, y: 8, w: 150, h: 90, src: "data:image/svg+xml;base64,AA==", alt: "longship" },
+            { type: "text" as const, id: "9b000000-0000-4000-8000-000000000009", x: 48, y: 566, w: 704, h: 28, content: credit },
+          ],
+          actions: [],
+        },
+        { id: "3b000000-0000-4000-8000-000000000003", kind: "end" as const, elements: [{ type: "field" as const, id: "7b000000-0000-4000-8000-000000000007", x: 48, y: 420, w: 704, h: 60, variable: "score" }], actions: [] },
+      ],
+    };
+    expect(credit.length).toBeGreaterThan(question.length); // the trap
+    const store = new EditorStore(
+      { stack, screen: "editor" },
+      { storage: makeStorage(), onChange: () => rerenderRef.current() },
+    );
+    const root = mount(store);
+    const firstRow = root.querySelectorAll(".card-entry")[0]!;
+    expect(firstRow.querySelector(".label")?.textContent).toBe(question);
+    expect(firstRow.textContent).not.toContain("Illustration:");
+  });
+
   it("a rejected removal (sole end card) shows a plain message and does not change the list", async () => {
     const store = freshStore();
     const endId = store.getStack()!.cards.find((c) => c.kind === "end")!.id;

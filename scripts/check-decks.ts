@@ -9,6 +9,10 @@
 //   3. no two answers on a card are the same label,
 //   4. no answer label is longer than the two-line wrap width.
 //
+// It also checks each deck image's CREDIT is truthful (TASK-25 b):
+//   5. a credit that names "Openverse" must carry a real openverse.org source
+//      URL — so we never claim an image came from Openverse when it did not.
+//
 // Exits 0 when all three decks pass, 1 with a report otherwise. The deck
 // builders are the single source of truth, so this runs them and inspects the
 // result — it never parses the TS by hand.
@@ -20,6 +24,8 @@ import {
   timesTablesStack,
   irishWordsStack,
 } from "../src/shared/readyMadeStacks.js";
+import { READY_MADE_IMAGES } from "../src/shared/readyMadeImages.js";
+import { creditLine } from "../src/shared/deckImageTypes.js";
 import type { Stack, Card, ButtonElement } from "../src/shared/types.js";
 
 // Answer tiles are 344px wide at 32px type and wrap to at most two lines
@@ -75,6 +81,31 @@ function checkDeck(name: string, stack: Stack): string[] {
   return problems;
 }
 
+/**
+ * Credit provenance (TASK-25 b): a credit line that names "Openverse" must
+ * carry a real openverse.org source URL. This blocks the live-check bug where
+ * our own CC0 drawings were credited "… — https://openverse.org" even though
+ * they never came from Openverse.
+ */
+export function checkImageCredits(
+  images: Record<string, import("../src/shared/deckImageTypes.js").DeckImage> = READY_MADE_IMAGES,
+): string[] {
+  const problems: string[] = [];
+  for (const [deckKey, img] of Object.entries(images)) {
+    const line = creditLine(img);
+    const namesOpenverse = /openverse/i.test(line);
+    const hasOpenverseUrl =
+      typeof img.creditSource === "string" &&
+      /^https?:\/\/(?:[^/]*\.)?openverse\.org(?:[/?#]|$)/i.test(img.creditSource);
+    if (namesOpenverse && !hasOpenverseUrl) {
+      problems.push(
+        `${deckKey}: image credit names Openverse but has no real openverse.org source URL ("${line}").`,
+      );
+    }
+  }
+  return problems;
+}
+
 function main(): void {
   const decks: Array<[string, Stack]> = [
     ["vikings", vikingsStack()],
@@ -89,6 +120,10 @@ function main(): void {
     problems = problems.concat(found);
   }
 
+  const creditProblems = checkImageCredits();
+  for (const p of creditProblems) console.error(`  [DRIFT] ${p}`);
+  problems = problems.concat(creditProblems);
+
   if (problems.length > 0) {
     console.error(`check-decks: ${problems.length} problem(s) in the ready-made decks.`);
     process.exit(1);
@@ -96,4 +131,9 @@ function main(): void {
   console.log("check-decks: OK — all three ready-made decks pass the content checks.");
 }
 
-main();
+// Run only when invoked directly (node … scripts/check-decks.ts), not when a
+// test imports `checkImageCredits` from this module.
+import { fileURLToPath } from "node:url";
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main();
+}

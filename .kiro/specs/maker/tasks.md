@@ -1304,3 +1304,22 @@ Schemas follow the current kiro.dev docs: hooks are JSON in `.kiro/hooks/<id>.js
 **Gate:** `npm test` and `npx tsc --noEmit` exit 0; the MCP server's own tests pass.
 
 > **Note:** Kiro IDE 1.0 has no user-creatable "manual button" hook trigger; hook 4 uses the `Manual` trigger recognised by the hook schema (and is also runnable directly as `npm run pre-submit`). File-save hooks fire on agent-made saves per the Kiro docs; the commands are plain `npm`/`node` so they are equally runnable by hand and in CI.
+
+---
+
+## Phase 11 — Live-check follow-ups (TASK-25)
+
+### TASK-25: the card list must not be named after an image credit; image credits must be truthful (5 Nov live check)
+**Refs:** live check 5 Nov (`sy_export2.png`). On the Vikings deck's first card the editor's card list read "Image: Stackyard — CC0 (public…" — it took the image CREDIT line as the card's name; and that credit named `https://openverse.org` even though the image was drawn by us, not found on Openverse.
+
+**a) The card title must come from the question/front/story, never a caption or image credit.**
+  - One shared helper, `src/shared/cardTitle.ts` (`primaryText` / `cardTitle` / `truncateLabel`): the primary text is the TOPMOST text element (smallest `y`, tie-break `x`) — the question/front/story body — so a bottom-positioned caption or image credit is never chosen, regardless of length or array order. A flash card is still named by its front (first text element).
+  - All card-naming call sites use it: `CardList`, `Toolbar` and `Inspector` pickers (which previously picked the LONGEST text, so the long credit line won), plus `ExportDone` and the living-file editor.
+  - **Done when:** a card carrying a question plus a longer image-credit text element is named after the question; a test covers it.
+
+**b) Image credits must be truthful.**
+  - A `DeckImage` drawn by us reads "Illustration: Stackyard, CC0" and carries NO source URL; `creditSource` is optional and only set for an image that really came from a source (a live Openverse pick written by `scripts/pick-deck-images.ts`, which also sets `creditKind: "image"`). `creditLine` renders "Illustration: Creator, Licence" with no source, or "Image: Creator — Licence — Source" with one.
+  - `scripts/check-decks.ts` (the `ready-made-content-check` hook) gains a rule: a credit line that names "Openverse" must carry a real `openverse.org` source URL.
+  - **Done when:** the three ready-made images read as our own CC0 illustrations with no Openverse link; the check-decks rule fails a credit that names Openverse without a real Openverse URL; tests cover both.
+
+**Gate:** `npm test` and `npx tsc --noEmit` exit 0.

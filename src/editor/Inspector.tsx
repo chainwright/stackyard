@@ -18,6 +18,7 @@ import {
   changeKind,
   setGotoTarget,
 } from "./operations.js";
+import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 
 type Notice = (m: string | null) => void;
 
@@ -52,13 +53,11 @@ function storyChoicesShareTarget(card: Card): boolean {
   return new Set(targets).size === 1;
 }
 
-/** A plain name for a card in the goto picker (never a raw id). */
+/** A plain name for a card in the goto picker (never a raw id, and never a
+ *  caption or image credit — see src/shared/cardTitle.ts). */
 function cardName(stack: Stack, card: Card, index: number): string {
   if (card.kind === "end") return "Last card";
-  const text = card.elements
-    .filter((e): e is Extract<StackElement, { type: "text" }> => e.type === "text")
-    .reduce((best, t) => (t.content.trim().length > best.length ? t.content.trim() : best), "");
-  const short = text.length > 28 ? text.slice(0, 27) + "…" : text;
+  const short = truncateLabel(primaryText(card), 28);
   return short.length > 0 ? `Card ${index + 1} — ${short}` : `Card ${index + 1}`;
 }
 

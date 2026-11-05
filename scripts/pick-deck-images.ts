@@ -84,6 +84,9 @@ async function main(): Promise<void> {
     .filter((e): e is [string, NonNullable<(typeof picks)[string]>] => e[1] !== null)
     .map(([key, p]) => `  ${JSON.stringify(key)}: {
     dataUri: ${JSON.stringify(p.dataUri)},
+    // A real Openverse pick: label it "Image" and keep its true source URL
+    // (TASK-25 b — a credit that names a source must carry a real one).
+    creditKind: "image",
     creditLicense: ${JSON.stringify(p.creditLicense)},
     creditCreator: ${JSON.stringify(p.creditCreator)},
     creditSource: ${JSON.stringify(p.creditSource)},

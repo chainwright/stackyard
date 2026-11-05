@@ -20,6 +20,7 @@ import {
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { mountPlayer } from "../player/mount.js";
+import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 
 type ApplyFn = (s: Stack) => Stack | import("../editor/types.js").Rejected;
 
@@ -102,9 +103,8 @@ export class LivingEditor {
 
   private cardLabel(card: Card): string {
     if (card.kind === "end") return "Last card";
-    const t = card.elements.find((e) => e.type === "text");
-    const text = t && t.type === "text" ? t.content.trim() : "";
-    const short = text.length > 22 ? text.slice(0, 21) + "…" : text;
+    // The question/front/story line, never a caption or image credit.
+    const short = truncateLabel(primaryText(card), 22);
     return short.length > 0 ? short : card.kind + " card";
   }
 

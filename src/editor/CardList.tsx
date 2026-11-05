@@ -10,33 +10,16 @@ import type { Card, Stack } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
 import { addCardAfter, removeCard, reorderCards, takeLastInsertedCardId } from "./operations.js";
 import { KindShape } from "./icons.js";
+import { cardTitle } from "../shared/cardTitle.js";
 
 /**
- * A plain label for a card list entry: the card's most meaningful line of
- * text (the longest text element, which is the question/term/story rather than
- * a short "Card 3 of 10" meta line). Falls back to a kind description.
+ * A plain label for a card list entry: the card's QUESTION / FRONT / STORY
+ * line (never a caption or image credit — see src/shared/cardTitle.ts). Falls
+ * back to a kind description. The full-length title is shown (the list column
+ * truncates visually with CSS).
  */
 function cardLabel(card: Card): string {
-  const texts = card.elements.filter(
-    (e): e is Extract<typeof e, { type: "text" }> => e.type === "text",
-  );
-  // A flash card is identified by its FRONT (the term), not its back
-  // explanation. Show the first text element — the term the class guesses —
-  // so a flash row reads "Dia duit", not "Hello (literally, God be with
-  // you)." (built-app review round 2, P1 #4).
-  if (card.kind === "flash") {
-    const front = texts[0]?.content.trim() ?? "";
-    if (front.length > 0) return front;
-    return "Flash card";
-  }
-  let best = "";
-  for (const t of texts) {
-    const content = t.content.trim();
-    if (content.length > best.length) best = content;
-  }
-  if (best.length > 0) return best;
-  if (card.kind === "end") return "Last card — the score";
-  return card.kind.charAt(0).toUpperCase() + card.kind.slice(1) + " card";
+  return cardTitle(card, Number.MAX_SAFE_INTEGER);
 }
 
 export function CardList({
