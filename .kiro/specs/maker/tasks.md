@@ -305,8 +305,10 @@ rejects.
 
 ## Phase 4b — Design mockups (review gate before UI)
 
-### TASK-10M: Static HTML mockups of every screen state (`docs/design/maker/`)
+### TASK-10M: Static HTML mockups of every screen state (`docs/design/maker/`) — Done
 **Refs:** REQ-MKR-15, REQ-MKR-16, design §Static design mockups, design-system.md
+
+> **Done:** Hand-wrote all ten self-contained screen-state mockups under `docs/design/maker/` (`start-empty`, `start-generating`, `start-error`, `editor-quiz`, `editor-flash`, `editor-story`, `editor-end`, `editor-invalid`, `play`, `export-done`) plus an `index.html` linking them, all in the Stamp Pad design system with the exact colour/type/spacing tokens, shaped answer tiles (▲◆●■), ring holes, three card-edge layers, ruled lines, the 18 px floor, the CORRECT ✓ stamp, and the card drawn the same way the player renders it. Content uses Ms. Brennan's Vikings-in-Ireland quiz. No external URLs/fonts (system fallbacks only), no banned patterns; HTML validated as well-formed and every index link resolves.
 
 - Hand-write static HTML/CSS mockups (Stamp Pad design system tokens; no
   framework, no build step) under `docs/design/maker/`, one file per state:

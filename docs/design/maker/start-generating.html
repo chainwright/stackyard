@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Start (building)</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   Static mockup. No build step, no framework, no external URLs.
+   ============================================================ */
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926; --color-stamp-hover:#B8321F;
+  --color-white:#FFFFFF; --color-desk:#D4C9B0; --shell-sub:#E0E6F0;
+  --radius-card:10px; --radius-button:10px;
+  --text-question:44px; --text-body:22px; --text-meta:18px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+
+.app { display:flex; flex-direction:column; min-height:100vh; }
+.topbar { background:var(--color-ink); display:flex; align-items:center; gap:24px; padding:14px 28px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+
+.start-area { flex:1; background:var(--color-desk); display:flex; align-items:center; justify-content:center; padding:32px; }
+
+.start-card { position:relative; width:720px; max-width:92vw; background:var(--color-paper); border:1.5px solid var(--color-rule); border-radius:var(--radius-card); padding:56px 56px 48px; }
+.start-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; border-radius:var(--radius-card); background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); opacity:0.5; }
+.start-ring-holes { position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-around; padding:0 240px; z-index:2; }
+.start-ring-hole { width:20px; height:20px; border-radius:50%; background:var(--color-white); border:1px solid var(--color-rule); margin-top:6px; }
+.start-inner { position:relative; z-index:3; }
+
+.start-card h1 { font-family:var(--font-head); font-weight:800; font-size:var(--text-question); line-height:1.3; margin-bottom:12px; }
+.start-card p.lede { font-size:var(--text-body); line-height:1.5; margin-bottom:28px; }
+
+label.field-label { display:block; font-size:18px; font-weight:700; margin-bottom:8px; }
+.sentence { width:100%; min-height:88px; resize:vertical; font-family:var(--font-body); font-size:var(--text-body); line-height:1.5; color:var(--color-ink); background:#F3EFE6; border:1.5px solid var(--color-rule); border-radius:var(--radius-button); padding:14px 16px; }
+.sentence[readonly] { color:#4a5878; }
+
+.actions { display:flex; align-items:center; gap:16px; margin-top:24px; }
+.build-btn { display:inline-flex; align-items:center; gap:12px; background:var(--color-ink); color:var(--color-paper); border:none; border-radius:var(--radius-button); padding:14px 28px; font-family:var(--font-body); font-weight:700; font-size:18px; cursor:progress; min-height:44px; }
+
+/* Ink-on-paper progress dots (no glow, no gradient) */
+.dots { display:inline-flex; gap:6px; }
+.dots span { width:8px; height:8px; border-radius:50%; background:var(--color-paper); opacity:0.35; animation:blink 1s infinite ease-in-out; }
+.dots span:nth-child(2) { animation-delay:0.2s; }
+.dots span:nth-child(3) { animation-delay:0.4s; }
+@keyframes blink { 0%,100%{opacity:0.35;} 50%{opacity:1;} }
+@media (prefers-reduced-motion: reduce) { .dots span { animation:none; opacity:0.7; } }
+
+.hint { font-size:18px; color:#4a5878; line-height:1.4; }
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="wordmark">Stackyard</span>
+  </header>
+
+  <main class="start-area">
+    <section class="start-card" aria-busy="true" aria-label="Building your cards">
+      <div class="start-ring-holes" aria-hidden="true">
+        <div class="start-ring-hole"></div>
+        <div class="start-ring-hole"></div>
+      </div>
+      <div class="start-inner">
+        <h1>Building your cards…</h1>
+        <p class="lede">This takes a few seconds. Stackyard is turning your sentence into a set of cards.</p>
+
+        <label class="field-label" for="sentence">Your sentence</label>
+        <textarea id="sentence" class="sentence" readonly>A 10-card quiz about the Vikings in Ireland, the right answer plays a cheer</textarea>
+
+        <div class="actions">
+          <button class="build-btn" type="button" aria-disabled="true">
+            Building
+            <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          </button>
+          <span class="hint">Hang on one moment.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="sr-only" aria-live="polite">Building your cards.</div>
+</div>
+</body>
+</html>

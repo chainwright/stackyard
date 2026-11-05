@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Editor (invalid edit)</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   Static mockup. No build step, no framework, no external URLs.
+   ============================================================ */
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926; --color-stamp-hover:#B8321F;
+  --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
+  --color-white:#FFFFFF; --color-desk:#D4C9B0; --shell-sub:#E0E6F0;
+  --radius-card:10px; --radius-tile:12px; --radius-button:10px;
+  --tile-min-height:56px; --rule-gap:32px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:18px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:var(--color-paper); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+
+.app { display:flex; flex-direction:column; min-height:100vh; }
+.topbar { background:var(--color-ink); display:flex; align-items:center; gap:24px; padding:14px 28px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+.stack-desc { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--shell-sub); max-width:560px; line-height:1.5; }
+
+/* Plain-language notice banner (ink on paper, no stamp red as an accent) */
+.notice {
+  background:#fff;
+  border-bottom:1px solid var(--color-rule);
+  border-top:3px solid var(--color-ink);
+  padding:14px 28px;
+  display:flex; align-items:center; gap:12px;
+  font-size:18px; line-height:1.4; color:var(--color-ink);
+}
+.notice .mark {
+  flex-shrink:0; width:28px; height:28px; border-radius:50%;
+  background:var(--color-ink); color:var(--color-paper);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-head); font-weight:800; font-size:18px;
+}
+
+.workspace { flex:1; display:grid; grid-template-columns:220px 1fr 300px; min-height:0; }
+.cardlist { background:var(--color-paper); border-right:1px solid var(--color-rule); padding:16px 12px; overflow-y:auto; }
+.cardlist h2 { font-family:var(--font-body); font-weight:700; font-size:18px; margin-bottom:12px; }
+.card-entry { display:block; width:100%; min-height:44px; text-align:left; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:10px 12px; margin-bottom:8px; font-family:var(--font-body); font-size:18px; color:var(--color-ink); cursor:pointer; line-height:1.3; }
+.card-entry .pos { font-weight:700; } .card-entry .kind { color:#4a5878; font-size:18px; }
+.card-entry[aria-current="true"] { border:2px solid var(--color-ink); background:#fff; }
+.cardlist-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.mini-btn { min-height:44px; min-width:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:8px 12px; }
+
+.canvas-area { background:var(--color-desk); display:flex; align-items:center; justify-content:center; padding:32px; overflow:auto; }
+.canvas-scale { transform:scale(0.72); transform-origin:center center; }
+
+.sy-card-stack { position:relative; width:800px; height:600px; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background:var(--color-paper); border:1.5px solid var(--color-rule); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(4px,4px); z-index:1; }
+.sy-card-edge-2 { transform:translate(8px,8px); z-index:0; }
+.sy-card-edge-3 { transform:translate(12px,12px); z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1.5px solid var(--color-rule); overflow:hidden; z-index:2; }
+.sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
+.sy-ring-holes { position:absolute; top:0; left:0; width:800px; display:flex; justify-content:space-around; padding:0 200px; pointer-events:none; z-index:10; }
+.sy-ring-hole { width:20px; height:20px; border-radius:50%; background:var(--color-white); border:1px solid var(--color-rule); margin-top:6px; }
+.sy-element { position:absolute; z-index:1; }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.5; color:var(--color-ink); }
+.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:1.3; color:var(--color-ink); }
+
+.sy-tile { position:relative; display:flex; align-items:center; gap:12px; border:none; border-radius:var(--radius-tile); padding:0 20px; min-height:var(--tile-min-height); font-size:var(--text-tile); font-family:var(--font-body); font-weight:700; line-height:1.3; cursor:pointer; width:100%; height:100%; text-align:left; outline:none; }
+.sy-tile:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+.sy-tile-shape { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+
+.inspector { background:var(--color-paper); border-left:1px solid var(--color-rule); padding:20px 16px; overflow-y:auto; }
+.inspector h2 { font-family:var(--font-head); font-weight:700; font-size:22px; margin-bottom:14px; }
+.field-group { margin-bottom:18px; }
+.field-group label { display:block; font-size:18px; font-weight:700; margin-bottom:6px; }
+.field-group input, .field-group select { width:100%; font-family:var(--font-body); font-size:18px; color:var(--color-ink); background:#fff; border:1px solid var(--color-rule); border-radius:var(--radius-button); padding:10px 12px; min-height:44px; }
+.inspector-btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; background:var(--color-paper); border:2px solid var(--color-ink); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; font-weight:700; padding:8px 16px; cursor:pointer; }
+.hint { font-size:18px; color:#4a5878; line-height:1.4; margin-top:6px; }
+
+.toolbar { background:var(--color-paper); border-top:1px solid var(--color-rule); display:flex; align-items:center; gap:12px; padding:10px 20px; }
+.tool-btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; min-width:44px; background:var(--color-paper); border:1px solid var(--color-rule); border-radius:var(--radius-button); color:var(--color-ink); font-family:var(--font-body); font-size:18px; cursor:pointer; padding:8px 14px; }
+.tool-sep { width:1px; align-self:stretch; background:var(--color-rule); margin:4px 4px; }
+.spacer { flex:1; }
+/* Disabled export: muted, not stamp red, and clearly non-interactive */
+.export-btn[disabled] {
+  display:inline-flex; align-items:center; gap:10px;
+  background:#E4DFD3; color:#8A8577; border:none;
+  border-radius:var(--radius-button); padding:12px 24px;
+  font-family:var(--font-body); font-weight:700; font-size:18px;
+  cursor:not-allowed; min-height:44px;
+}
+.export-btn[disabled] svg { width:20px; height:20px; }
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="wordmark">Stackyard</span>
+    <span class="stack-desc">A 10-card quiz about the Vikings in Ireland — the right answer plays a cheer</span>
+  </header>
+
+  <!-- Plain-language invalid-edit message (audience.md wording) -->
+  <div class="notice" role="status">
+    <span class="mark" aria-hidden="true">!</span>
+    <span>This question needs exactly one right answer. Pick the correct tile.</span>
+  </div>
+
+  <div class="workspace">
+    <nav class="cardlist" aria-label="Cards">
+      <h2>Cards</h2>
+      <button class="card-entry" type="button"><span class="pos">Card 2 of 10</span><br><span class="kind">Quiz</span></button>
+      <button class="card-entry" type="button" aria-current="true"><span class="pos">Card 3 of 10</span><br><span class="kind">Quiz</span></button>
+      <button class="card-entry" type="button"><span class="pos">Card 4 of 10</span><br><span class="kind">Flash</span></button>
+      <button class="card-entry" type="button"><span class="pos">Card 10 of 10</span><br><span class="kind">Last card</span></button>
+      <div class="cardlist-actions">
+        <button class="mini-btn" type="button">Add Card</button>
+        <button class="mini-btn" type="button">Remove</button>
+        <button class="mini-btn" type="button" aria-label="Move card up">↑</button>
+        <button class="mini-btn" type="button" aria-label="Move card down">↓</button>
+      </div>
+    </nav>
+
+    <main class="canvas-area" aria-label="Card preview">
+      <div class="canvas-scale">
+        <div class="sy-card-stack">
+          <div class="sy-card-edge sy-card-edge-1"></div>
+          <div class="sy-card-edge sy-card-edge-2"></div>
+          <div class="sy-card-edge sy-card-edge-3"></div>
+
+          <div class="sy-card">
+            <div class="sy-ring-holes" aria-hidden="true">
+              <div class="sy-ring-hole"></div>
+              <div class="sy-ring-hole"></div>
+            </div>
+
+            <div class="sy-element" style="left:48px; top:56px; width:400px; height:28px;">
+              <p class="sy-meta">Card 3 of 10</p>
+            </div>
+
+            <div class="sy-element" style="left:48px; top:96px; width:704px; height:140px;">
+              <p class="sy-question">Where did the Vikings build a town in 841?</p>
+            </div>
+
+            <!-- No tile marked correct → invalid quiz (invariant 4) -->
+            <div class="sy-element" style="left:48px; top:300px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button">
+                <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg></span>
+                <span>Dublin</span>
+              </button>
+            </div>
+            <div class="sy-element" style="left:408px; top:300px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button">
+                <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg></span>
+                <span>Cork</span>
+              </button>
+            </div>
+            <div class="sy-element" style="left:48px; top:412px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button">
+                <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg></span>
+                <span>Galway</span>
+              </button>
+            </div>
+            <div class="sy-element" style="left:408px; top:412px; width:344px; height:96px;">
+              <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button">
+                <span class="sy-tile-shape" style="color:var(--color-white);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg></span>
+                <span>Sligo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="inspector" aria-label="Edit">
+      <h2>Edit this tile</h2>
+      <div class="field-group">
+        <label for="label">Answer</label>
+        <input id="label" type="text" value="Dublin" />
+      </div>
+      <div class="field-group">
+        <button class="inspector-btn" type="button">Mark as the right answer</button>
+        <p class="hint">No tile is the right answer yet. Pick one so the class can earn a point.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="toolbar">
+    <button class="tool-btn" type="button"><strong>T</strong> Text</button>
+    <button class="tool-btn" type="button">
+      <svg width="18" height="18" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,4 24,24 4,24" fill="currentColor"/></svg> Button</button>
+    <button class="tool-btn" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="10" r="2" fill="currentColor"/><path d="M4 18l6-6 4 4 4-4 2 2" fill="none" stroke="currentColor" stroke-width="2"/></svg> Picture</button>
+    <button class="tool-btn" type="button">… Go to card…</button>
+    <span class="tool-sep" aria-hidden="true"></span>
+    <button class="tool-btn" type="button">Undo</button>
+    <button class="tool-btn" type="button">Redo</button>
+    <span class="spacer"></span>
+    <!-- Export disabled while the set of cards isn't ready -->
+    <button class="export-btn" type="button" disabled aria-disabled="true" title="Fix the card above to export">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0l-4-4m4 4l4-4M3 15v2a1 1 0 001 1h12a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export File
+    </button>
+  </footer>
+
+  <div class="sr-only" aria-live="polite">This question needs exactly one right answer. Pick the correct tile.</div>
+</div>
+</body>
+</html>

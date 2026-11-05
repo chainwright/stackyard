@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Maker design mockups</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   Index of the static Maker screen mockups. Self-contained.
+   ============================================================ */
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926; --color-white:#FFFFFF; --color-desk:#D4C9B0; --shell-sub:#E0E6F0;
+  --radius-card:10px; --radius-button:10px;
+  --text-question:44px; --text-body:22px; --text-meta:18px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { min-height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+a:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+
+.topbar { background:var(--color-ink); display:flex; align-items:center; gap:24px; padding:14px 28px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+.topbar .sub { font-size:18px; color:var(--shell-sub); line-height:1.5; }
+
+.wrap { max-width:960px; margin:0 auto; padding:40px 24px 64px; }
+.intro {
+  background:var(--color-paper); border:1.5px solid var(--color-rule);
+  border-radius:var(--radius-card); padding:28px 32px; margin-bottom:28px;
+}
+.intro h1 { font-family:var(--font-head); font-weight:800; font-size:var(--text-question); line-height:1.3; margin-bottom:10px; }
+.intro p { font-size:var(--text-body); line-height:1.5; max-width:62ch; }
+
+.group-title { font-family:var(--font-head); font-weight:700; font-size:24px; margin:28px 0 14px; color:var(--color-ink); }
+
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
+.tile {
+  display:block; background:var(--color-paper); color:var(--color-ink);
+  border:1.5px solid var(--color-rule); border-radius:var(--radius-card);
+  padding:18px 20px; text-decoration:none; min-height:88px;
+}
+.tile:hover { border-color:var(--color-ink); }
+.tile .name { font-family:var(--font-head); font-weight:700; font-size:22px; line-height:1.3; margin-bottom:4px; }
+.tile .state { font-size:18px; color:#4a5878; line-height:1.4; }
+.tile .file { font-size:18px; color:#4a5878; margin-top:8px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="wordmark">Stackyard</span>
+  <span class="sub">Maker design mockups</span>
+</header>
+
+<div class="wrap">
+  <section class="intro">
+    <h1>Maker screen mockups</h1>
+    <p>Static reference mockups of every Maker screen state, drawn in the Stamp Pad design system. Each file is self-contained (inline CSS, no external fonts or URLs) and shows the card drawn the same way the class sees it. These anchor the design review before any UI code is written.</p>
+  </section>
+
+  <h2 class="group-title">Start</h2>
+  <div class="grid">
+    <a class="tile" href="start-empty.html">
+      <div class="name">Start — empty</div>
+      <div class="state">Empty sentence field, Build disabled.</div>
+      <div class="file">start-empty.html</div>
+    </a>
+    <a class="tile" href="start-generating.html">
+      <div class="name">Start — building</div>
+      <div class="state">Waiting while the cards are built.</div>
+      <div class="file">start-generating.html</div>
+    </a>
+    <a class="tile" href="start-error.html">
+      <div class="name">Start — something went wrong</div>
+      <div class="state">Plain-language error, try again.</div>
+      <div class="file">start-error.html</div>
+    </a>
+  </div>
+
+  <h2 class="group-title">Editor</h2>
+  <div class="grid">
+    <a class="tile" href="editor-quiz.html">
+      <div class="name">Editor — quiz card</div>
+      <div class="state">Shaped tiles, right-answer indicator.</div>
+      <div class="file">editor-quiz.html</div>
+    </a>
+    <a class="tile" href="editor-flash.html">
+      <div class="name">Editor — flash card</div>
+      <div class="state">Term on the front, explanation on the back.</div>
+      <div class="file">editor-flash.html</div>
+    </a>
+    <a class="tile" href="editor-story.html">
+      <div class="name">Editor — story card</div>
+      <div class="state">Branching "go to card" buttons.</div>
+      <div class="file">editor-story.html</div>
+    </a>
+    <a class="tile" href="editor-end.html">
+      <div class="name">Editor — last card</div>
+      <div class="state">Score display on the final card.</div>
+      <div class="file">editor-end.html</div>
+    </a>
+    <a class="tile" href="editor-invalid.html">
+      <div class="name">Editor — invalid edit</div>
+      <div class="state">Plain-language message, Export disabled.</div>
+      <div class="file">editor-invalid.html</div>
+    </a>
+  </div>
+
+  <h2 class="group-title">Play &amp; Export</h2>
+  <div class="grid">
+    <a class="tile" href="play.html">
+      <div class="name">Play</div>
+      <div class="state">Cards only — what the class sees.</div>
+      <div class="file">play.html</div>
+    </a>
+    <a class="tile" href="export-done.html">
+      <div class="name">File exported</div>
+      <div class="state">Download-triggered confirmation.</div>
+      <div class="file">export-done.html</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stackyard — Play</title>
+<style>
+/* ============================================================
+   Stackyard — Stamp Pad design system (design-system.md)
+   Static mockup of Play mode: the player shell with cards only,
+   no editing chrome. Matches src/player/renderer.ts.
+   No build step, no framework, no external URLs.
+   ============================================================ */
+:root {
+  --color-paper:#FBF8F1; --color-ink:#1E2A47; --color-rule:#C9D3E3;
+  --color-stamp:#CE3926;
+  --color-tile-a:#F2735F; --color-tile-b:#F6C744; --color-tile-c:#26A69A; --color-tile-d:#1E2A47;
+  --color-white:#FFFFFF; --color-desk:#D4C9B0;
+  --radius-card:10px; --radius-tile:12px;
+  --tile-min-height:56px; --rule-gap:32px;
+  --text-question:44px; --text-tile:32px; --text-body:22px; --text-meta:18px;
+  --font-head:'Bricolage Grotesque','Arial Black','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Atkinson Hyperlegible','Arial',sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:var(--color-desk); color:var(--color-ink); font-family:var(--font-body); font-size:18px; }
+button:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+
+.app { display:flex; flex-direction:column; min-height:100vh; }
+
+/* Player top bar: navy, wordmark left, score right. No menus, no editing. */
+.topbar { background:var(--color-ink); display:flex; align-items:center; justify-content:space-between; padding:16px 32px; }
+.wordmark { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+.score { font-family:var(--font-head); font-weight:800; font-size:24px; color:var(--color-paper); }
+
+.stage { flex:1; display:flex; align-items:center; justify-content:center; padding:32px; perspective:1200px; }
+.stage-scale { transform:scale(0.78); transform-origin:center center; }
+
+.sy-card-stack { position:relative; width:800px; height:600px; }
+.sy-card-edge { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background:var(--color-paper); border:1.5px solid var(--color-rule); pointer-events:none; }
+.sy-card-edge-1 { transform:translate(4px,4px); z-index:1; }
+.sy-card-edge-2 { transform:translate(8px,8px); z-index:0; }
+.sy-card-edge-3 { transform:translate(12px,12px); z-index:-1; }
+.sy-card { position:absolute; top:0; left:0; width:800px; height:600px; border-radius:var(--radius-card); background-color:var(--color-paper); border:1.5px solid var(--color-rule); overflow:hidden; z-index:2; }
+.sy-card::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 31px,var(--color-rule) 31px,var(--color-rule) 32px); background-position:0 40px; background-size:100% calc(100% - 40px); }
+.sy-ring-holes { position:absolute; top:0; left:0; width:800px; display:flex; justify-content:space-around; padding:0 200px; pointer-events:none; z-index:10; }
+.sy-ring-hole { width:20px; height:20px; border-radius:50%; background:var(--color-white); border:1px solid var(--color-rule); margin-top:6px; }
+
+.sy-element { position:absolute; z-index:1; }
+.sy-meta { font-size:var(--text-meta); font-family:var(--font-body); font-weight:400; line-height:1.5; color:var(--color-ink); }
+.sy-question { font-size:var(--text-question); font-family:var(--font-head); font-weight:800; line-height:1.3; color:var(--color-ink); }
+
+.sy-tile { position:relative; display:flex; align-items:center; gap:12px; border:none; border-radius:var(--radius-tile); padding:0 20px; min-height:var(--tile-min-height); font-size:var(--text-tile); font-family:var(--font-body); font-weight:700; line-height:1.3; cursor:pointer; width:100%; height:100%; text-align:left; outline:none; }
+.sy-tile:focus-visible { outline:3px solid var(--color-ink); outline-offset:2px; }
+.sy-tile-shape { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+
+/* CORRECT ✓ stamp overlay (same as renderer.ts) */
+.sy-stamp {
+  position:absolute; bottom:calc(100% - 14px); right:16px; left:auto;
+  transform:rotate(-8deg) scale(1);
+  color:var(--color-stamp);
+  font-size:26px; font-family:var(--font-head); font-weight:800;
+  text-transform:uppercase; background:var(--color-paper);
+  border:3px solid var(--color-stamp); border-radius:4px;
+  padding:6px 12px; opacity:0.92; pointer-events:none; white-space:nowrap; z-index:20;
+  animation:stamp-land 120ms ease-out;
+}
+@keyframes stamp-land {
+  0%{ transform:rotate(-8deg) scale(1.4); opacity:0; }
+  60%{ transform:rotate(-8deg) scale(0.92); opacity:1; }
+  80%{ transform:rotate(-8deg) scale(1.04); opacity:1; }
+  100%{ transform:rotate(-8deg) scale(1.0); opacity:1; }
+}
+@media (prefers-reduced-motion: reduce) { .sy-stamp { animation:none; opacity:0.92; } }
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Player top bar: no editing controls, no menus -->
+  <header class="topbar">
+    <span class="wordmark">Stackyard</span>
+    <span class="score" aria-label="Score 3">&#8827; Score 3 &#8826;</span>
+  </header>
+
+  <main class="stage" aria-label="Card">
+    <div class="stage-scale">
+      <div class="sy-card-stack">
+        <div class="sy-card-edge sy-card-edge-1"></div>
+        <div class="sy-card-edge sy-card-edge-2"></div>
+        <div class="sy-card-edge sy-card-edge-3"></div>
+
+        <div class="sy-card">
+          <div class="sy-ring-holes" aria-hidden="true">
+            <div class="sy-ring-hole"></div>
+            <div class="sy-ring-hole"></div>
+          </div>
+
+          <div class="sy-element" style="left:48px; top:56px; width:400px; height:28px;">
+            <p class="sy-meta">Card 3 of 10</p>
+          </div>
+
+          <div class="sy-element" style="left:48px; top:96px; width:704px; height:140px;">
+            <p class="sy-question">Where did the Vikings build a town in 841?</p>
+          </div>
+
+          <!-- Dublin (correct) — stamped -->
+          <div class="sy-element" style="left:48px; top:300px; width:344px; height:96px;">
+            <button class="sy-tile" style="background-color:var(--color-tile-a); color:var(--color-ink);" type="button">
+              <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,26 2,26" fill="currentColor"/></svg></span>
+              <span>Dublin</span>
+              <span class="sy-stamp" aria-hidden="true">CORRECT &#10003;</span>
+            </button>
+          </div>
+
+          <!-- Cork -->
+          <div class="sy-element" style="left:408px; top:300px; width:344px; height:96px;">
+            <button class="sy-tile" style="background-color:var(--color-tile-b); color:var(--color-ink);" type="button">
+              <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,2 26,14 14,26 2,14" fill="currentColor"/></svg></span>
+              <span>Cork</span>
+            </button>
+          </div>
+
+          <!-- Galway -->
+          <div class="sy-element" style="left:48px; top:412px; width:344px; height:96px;">
+            <button class="sy-tile" style="background-color:var(--color-tile-c); color:var(--color-ink);" type="button">
+              <span class="sy-tile-shape" style="color:var(--color-ink);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="currentColor"/></svg></span>
+              <span>Galway</span>
+            </button>
+          </div>
+
+          <!-- Sligo (navy, white text) -->
+          <div class="sy-element" style="left:408px; top:412px; width:344px; height:96px;">
+            <button class="sy-tile" style="background-color:var(--color-tile-d); color:var(--color-white);" type="button">
+              <span class="sy-tile-shape" style="color:var(--color-white);"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="2" width="24" height="24" fill="currentColor"/></svg></span>
+              <span>Sligo</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="sr-only" aria-live="polite">Correct</div>
+</div>
+</body>
+</html>
