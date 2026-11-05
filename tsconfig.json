@@ -13,6 +13,8 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "types": ["node"]
   },
   "include": ["src/**/*", "tests/**/*", "server/**/*"]

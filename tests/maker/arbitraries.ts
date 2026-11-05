@@ -21,7 +21,15 @@ import {
   changeKind,
   setGotoTarget,
   moveElement,
+  addTextElement,
+  addButtonElement,
+  addPictureElement,
+  linkButtonToCard,
 } from "../../src/editor/operations.js";
+
+// A tiny valid PNG data URI (1×1 transparent pixel) for addPictureElement.
+const TINY_PNG =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
 const uuidV4 = (): fc.Arbitrary<string> => fc.uuid({ version: 4 });
 
@@ -247,6 +255,36 @@ export const opSpecArb: fc.Arbitrary<OpSpec> = fc.oneof(
     (o): OpSpec => (stack) => {
       const hit = pickElement(stack, () => true, o.seed);
       return hit ? (s) => moveElement(s, hit.el.id, o.x, o.y) : noop;
+    }
+  ),
+  // addTextElement — add a text element to any card
+  fc.record({ kind: fc.constant("addTextElement" as const), seed: fc.nat(), content: fc.string() }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => addTextElement(s, card.id, o.content);
+    }
+  ),
+  // addButtonElement — add a plain (non-answer) button to any card
+  fc.record({ kind: fc.constant("addButtonElement" as const), seed: fc.nat(), label: fc.string({ minLength: 1 }).filter((s) => s.trim().length > 0) }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => addButtonElement(s, card.id, o.label);
+    }
+  ),
+  // addPictureElement — add a picture (valid data URI + alt) to any card
+  fc.record({ kind: fc.constant("addPictureElement" as const), seed: fc.nat(), alt: fc.string({ minLength: 1 }).filter((s) => s.trim().length > 0) }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => addPictureElement(s, card.id, TINY_PNG, o.alt);
+    }
+  ),
+  // linkButtonToCard — link a button to an existing card
+  fc.record({ kind: fc.constant("linkButtonToCard" as const), btnSeed: fc.nat(), cardSeed: fc.nat() }).map(
+    (o): OpSpec => (stack) => {
+      const hit = pickElement(stack, (el) => el.type === "button", o.btnSeed);
+      if (!hit) return noop;
+      const target = stack.cards[o.cardSeed % stack.cards.length]!;
+      return (s) => linkButtonToCard(s, hit.el.id, target.id);
     }
   )
 );

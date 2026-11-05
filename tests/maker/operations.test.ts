@@ -470,3 +470,140 @@ describe("moveElement", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// TASK-21 — addTextElement, addButtonElement, addPictureElement,
+//           linkButtonToCard (the four toolbar tools)
+
+import {
+  addTextElement,
+  addButtonElement,
+  addPictureElement,
+  linkButtonToCard,
+  MAX_PICTURE_BYTES,
+} from "../../src/editor/operations.js";
+
+// A tiny valid PNG data URI (1×1 transparent pixel).
+const TINY_PNG =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+describe("addTextElement", () => {
+  it("adds a text element to a card and keeps the stack valid", () => {
+    const stack = quizStack();
+    const before = structuredClone(stack);
+    const next = asStack(addTextElement(stack, QUIZ_CARD_ID, "A new note"));
+    expect(stack).toEqual(before); // input untouched
+    const card = next.cards.find((c) => c.id === QUIZ_CARD_ID)!;
+    const added = card.elements.filter((e) => e.type === "text");
+    expect(added.some((t) => t.type === "text" && t.content === "A new note")).toBe(true);
+    expect(validate(next).valid).toBe(true);
+  });
+
+  it("the added text sits on the canvas (invariant 5)", () => {
+    const stack = quizStack();
+    const next = asStack(addTextElement(stack, QUIZ_CARD_ID));
+    for (const card of next.cards) {
+      for (const el of card.elements) {
+        expect(el.x + el.w).toBeLessThanOrEqual(800);
+        expect(el.y + el.h).toBeLessThanOrEqual(600);
+      }
+    }
+  });
+
+  it("rejects an unknown card", () => {
+    const stack = quizStack();
+    expect(isRejected(addTextElement(stack, "99999999-9999-4999-8999-999999999999"))).toBe(true);
+  });
+});
+
+describe("addButtonElement", () => {
+  it("adds a plain button and keeps a quiz card valid (not an answer tile)", () => {
+    const stack = quizStack();
+    const before = structuredClone(stack);
+    const next = asStack(addButtonElement(stack, QUIZ_CARD_ID, "Continue"));
+    expect(stack).toEqual(before);
+    // The quiz card still has exactly one correct answer — the new button
+    // carries no score action, so it does not count as a tile.
+    expect(correctCount(next, QUIZ_CARD_ID)).toBe(1);
+    const card = next.cards.find((c) => c.id === QUIZ_CARD_ID)!;
+    expect(card.elements.some((e) => e.type === "button" && e.label === "Continue")).toBe(true);
+    expect(validate(next).valid).toBe(true);
+  });
+
+  it("rejects a blank label", () => {
+    const stack = quizStack();
+    expect(isRejected(addButtonElement(stack, QUIZ_CARD_ID, "   "))).toBe(true);
+  });
+
+  it("rejects an unknown card", () => {
+    const stack = quizStack();
+    expect(isRejected(addButtonElement(stack, "99999999-9999-4999-8999-999999999999"))).toBe(true);
+  });
+});
+
+describe("addPictureElement", () => {
+  it("adds an image from a data URI with alt text and stays valid", () => {
+    const stack = storyStack();
+    const cardId = stack.cards[0]!.id;
+    const next = asStack(addPictureElement(stack, cardId, TINY_PNG, "A Viking longship"));
+    const card = next.cards.find((c) => c.id === cardId)!;
+    const img = card.elements.find((e) => e.type === "image");
+    expect(img && img.type === "image" && img.src).toBe(TINY_PNG);
+    expect(img && img.type === "image" && img.alt).toBe("A Viking longship");
+    expect(validate(next).valid).toBe(true);
+  });
+
+  it("rejects a non-data-URI src (keeps the file self-contained)", () => {
+    const stack = storyStack();
+    const cardId = stack.cards[0]!.id;
+    expect(isRejected(addPictureElement(stack, cardId, "https://example.com/a.png", "A photo"))).toBe(true);
+  });
+
+  it("rejects empty alt text (accessibility)", () => {
+    const stack = storyStack();
+    const cardId = stack.cards[0]!.id;
+    expect(isRejected(addPictureElement(stack, cardId, TINY_PNG, "   "))).toBe(true);
+  });
+
+  it("rejects a picture over the size cap", () => {
+    const stack = storyStack();
+    const cardId = stack.cards[0]!.id;
+    // Build a base64 payload whose decoded size exceeds MAX_PICTURE_BYTES.
+    const bytesNeeded = MAX_PICTURE_BYTES + 1024;
+    const base64Len = Math.ceil(bytesNeeded / 3) * 4;
+    const huge = "data:image/png;base64," + "A".repeat(base64Len);
+    expect(isRejected(addPictureElement(stack, cardId, huge, "Too big"))).toBe(true);
+  });
+
+  it("does not mutate the input stack", () => {
+    const stack = storyStack();
+    const before = structuredClone(stack);
+    addPictureElement(stack, stack.cards[0]!.id, TINY_PNG, "A photo");
+    expect(stack).toEqual(before);
+  });
+});
+
+describe("linkButtonToCard", () => {
+  const STORY_BTN_ID = "51000000-0000-4000-8000-000000000005";
+
+  it("links a button to an existing card and stays valid", () => {
+    const stack = storyStack();
+    const next = asStack(linkButtonToCard(stack, STORY_BTN_ID, END_CARD_ID));
+    const btn = next.cards[0]!.elements.find((e) => e.id === STORY_BTN_ID)!;
+    const gotos = btn.type === "button" ? btn.actions.filter((a) => a.type === "goto") : [];
+    expect(gotos).toHaveLength(1);
+    expect(gotos[0]!.type === "goto" && gotos[0]!.cardId).toBe(END_CARD_ID);
+    expect(validate(next).valid).toBe(true);
+  });
+
+  it("rejects when the selected element is not a button", () => {
+    const stack = storyStack();
+    const textId = stack.cards[0]!.elements.find((e) => e.type === "text")!.id;
+    expect(isRejected(linkButtonToCard(stack, textId, END_CARD_ID))).toBe(true);
+  });
+
+  it("rejects an unknown target card", () => {
+    const stack = storyStack();
+    expect(isRejected(linkButtonToCard(stack, STORY_BTN_ID, "99999999-9999-4999-8999-999999999999"))).toBe(true);
+  });
+});

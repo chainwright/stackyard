@@ -1,0 +1,126 @@
+// src/editor/CardList.tsx
+// Left-hand card list (TASK-13). One entry per card in stack order, each a
+// ≥ 44 px keyboard-focusable control showing its position and kind. Selecting
+// an entry sets selectedCardId. Add / Remove / Move-up / Move-down go through
+// store.apply with addCard / removeCard / reorderCards. A rejected removal
+// (sole end card) surfaces a plain-language message and changes nothing.
+
+import type { JSX } from "preact";
+import type { Card, Stack } from "../shared/types.js";
+import type { EditorStore } from "./store.js";
+import { addCard, removeCard, reorderCards } from "./operations.js";
+import { KindShape } from "./icons.js";
+
+/**
+ * A plain label for a card list entry: the card's most meaningful line of
+ * text (the longest text element, which is the question/term/story rather than
+ * a short "Card 3 of 10" meta line). Falls back to a kind description.
+ */
+function cardLabel(card: Card): string {
+  const texts = card.elements.filter(
+    (e): e is Extract<typeof e, { type: "text" }> => e.type === "text",
+  );
+  let best = "";
+  for (const t of texts) {
+    const content = t.content.trim();
+    if (content.length > best.length) best = content;
+  }
+  if (best.length > 0) return best;
+  if (card.kind === "end") return "Last card — the score";
+  return card.kind.charAt(0).toUpperCase() + card.kind.slice(1) + " card";
+}
+
+export function CardList({
+  store,
+  onNotice,
+}: {
+  store: EditorStore;
+  onNotice?: (message: string | null) => void;
+}): JSX.Element {
+  const state = store.getState();
+  const stack = state.stack as Stack;
+  const selectedId = state.selectedCardId;
+  const n = stack.cards.length;
+
+  function select(cardId: string): void {
+    store.setSelectedCard(cardId);
+  }
+
+  function add(): void {
+    onNotice?.(null);
+    const index = n; // append before the end card below
+    const res = store.apply((s) => addCard(s, "quiz", index - 0));
+    if (!res.ok) onNotice?.(res.message);
+  }
+
+  function remove(cardId: string): void {
+    onNotice?.(null);
+    const res = store.apply((s) => removeCard(s, cardId));
+    if (!res.ok) onNotice?.(res.message);
+  }
+
+  function move(from: number, to: number): void {
+    onNotice?.(null);
+    const res = store.apply((s) => reorderCards(s, from, to));
+    if (!res.ok) onNotice?.(res.message);
+  }
+
+  return (
+    <nav class="cardlist" aria-label="Cards">
+      <h2>Cards</h2>
+      <div class="cardlist-scroll">
+        {stack.cards.map((card, i) => {
+          const current = card.id === selectedId;
+          return (
+            <button
+              class="card-entry"
+              type="button"
+              aria-current={current ? "true" : undefined}
+              onClick={() => select(card.id)}
+            >
+              <span class="num">{i + 1}</span>
+              <span class="kshape"><KindShape kind={card.kind} /></span>
+              <span class="label">{cardLabel(card)}</span>
+              {current ? (
+                <span class="reorder" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    aria-label={`Move card ${i + 1} up`}
+                    disabled={i === 0}
+                    onClick={() => move(i, i - 1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Move card ${i + 1} down`}
+                    disabled={i === n - 1}
+                    onClick={() => move(i, i + 1)}
+                  >
+                    ↓
+                  </button>
+                </span>
+              ) : (
+                <span class="grip" aria-hidden="true">⋮⋮</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div class="cardlist-foot">
+        <button class="add-card" type="button" onClick={add}>
+          + Add Card
+        </button>
+        {selectedId !== null ? (
+          <button
+            class="remove-card"
+            type="button"
+            onClick={() => remove(selectedId)}
+          >
+            Remove this card
+          </button>
+        ) : null}
+      </div>
+    </nav>
+  );
+}

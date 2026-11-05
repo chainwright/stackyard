@@ -66,6 +66,7 @@ function readBase128(buf: Buffer, p: number): [number, number] {
   let result = 0;
   for (let i = 0; i < 5; i++) {
     const byte = buf[p++];
+    if (byte === undefined) throw new Error("UIntBase128 ran past buffer end");
     result = (result << 7) | (byte & 0x7f);
     if ((byte & 0x80) === 0) return [result >>> 0, p];
   }
@@ -85,13 +86,16 @@ function extractNameTable(file: string): Buffer {
   const tables: { tag: string; length: number }[] = [];
   for (let i = 0; i < numTables; i++) {
     const flags = b[p++];
+    if (flags === undefined) throw new Error("table directory ran past buffer end");
     const tagIndex = flags & 0x3f;
     let tag: string;
     if (tagIndex === 0x3f) {
       tag = b.toString("ascii", p, p + 4);
       p += 4;
     } else {
-      tag = KNOWN_TAGS[tagIndex];
+      const knownTag = KNOWN_TAGS[tagIndex];
+      if (knownTag === undefined) throw new Error(`unknown table tag index ${tagIndex}`);
+      tag = knownTag;
     }
     const [origLength, afterOrig] = readBase128(b, p);
     p = afterOrig;

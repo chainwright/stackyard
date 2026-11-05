@@ -419,3 +419,165 @@ export function moveElement(
     })
   );
 }
+
+// ---------------------------------------------------------------------------
+// TASK-21 — addTextElement, addButtonElement, addPictureElement,
+//           linkButtonToCard
+//
+// The four toolbar tools (Add Text, Add Button, Add Picture, Link a Card).
+// Each is a pure operation through the same chokepoint as the other nine, so
+// the stack stays valid by construction (REQ-MKR-09).
+
+/**
+ * Maximum size, in bytes, of a picture a teacher may drop onto a card. A
+ * picture is inlined as a data URI and travels inside the one exported file,
+ * so an over-large image would bloat that file and slow an old laptop. 2 MB of
+ * raw image data (~2.7 MB base64) is generous for a classroom illustration and
+ * well under the 8 MB export-body limit (tech.md).
+ */
+export const MAX_PICTURE_BYTES = 2 * 1024 * 1024;
+
+/** A default on-canvas box for a freshly added element (fits 800 × 600). */
+const NEW_TEXT_BOX = { x: 48, y: 120, w: 704, h: 64 } as const;
+const NEW_BUTTON_BOX = { x: 48, y: 440, w: 344, h: 80 } as const;
+const NEW_IMAGE_BOX = { x: 240, y: 160, w: 320, h: 240 } as const;
+
+/** Append an element to a card's element list, returning a new stack. */
+function addElementToCard(
+  stack: Stack,
+  cardId: string,
+  el: Element
+): Stack {
+  return mapCard(stack, cardId, (c) => ({
+    ...c,
+    elements: [...c.elements, el],
+  }));
+}
+
+/**
+ * Add a text element to a card. The element starts with a short placeholder so
+ * the teacher sees something to edit, placed in a default on-canvas box so
+ * invariant 5 (canvas bounds) always holds.
+ */
+export function addTextElement(
+  stack: Stack,
+  cardId: string,
+  content = "New text"
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  const el: Element = {
+    type: "text",
+    id: newId(),
+    ...NEW_TEXT_BOX,
+    content,
+  };
+  return addElementToCard(stack, cardId, el);
+}
+
+/**
+ * Add a button element to a card with a default label and no actions yet. A
+ * plain button carries no `score` action, so it is not an answer tile and
+ * cannot disturb a quiz card's one-correct-answer invariant (invariant 4). The
+ * teacher wires it up afterwards with "Link a Card".
+ */
+export function addButtonElement(
+  stack: Stack,
+  cardId: string,
+  label = "New button"
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  if (label.trim().length === 0) {
+    return reject("A button needs some words on it. Type a label.");
+  }
+  const el: Element = {
+    type: "button",
+    id: newId(),
+    ...NEW_BUTTON_BOX,
+    label,
+    actions: [],
+  };
+  return addElementToCard(stack, cardId, el);
+}
+
+/**
+ * Add a picture to a card from a local file already read as a data URI. The
+ * picture travels inside the one exported file, so:
+ *   - `src` must be a `data:` URI (never a remote URL — the file stays
+ *     self-contained and offline, tech.md),
+ *   - `alt` must be non-empty (every image needs alt text, design-system.md
+ *     accessibility), and
+ *   - the data must be within MAX_PICTURE_BYTES so the exported file stays
+ *     small.
+ * Any of these fails with a plain-language rejection and changes nothing.
+ */
+export function addPictureElement(
+  stack: Stack,
+  cardId: string,
+  dataUri: string,
+  alt: string
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  if (!dataUri.startsWith("data:")) {
+    return reject("That picture couldn't be read. Choose a picture file from this computer.");
+  }
+  if (alt.trim().length === 0) {
+    return reject("Describe the picture in a few words so every pupil knows what it shows.");
+  }
+  if (dataUriByteLength(dataUri) > MAX_PICTURE_BYTES) {
+    return reject("That picture is too big. Choose a smaller one, under two megabytes.");
+  }
+  const el: Element = {
+    type: "image",
+    id: newId(),
+    ...NEW_IMAGE_BOX,
+    src: dataUri,
+    alt,
+  };
+  return addElementToCard(stack, cardId, el);
+}
+
+/**
+ * Point a button (the selected element) at a card — the toolbar "Link a Card"
+ * tool. It reuses setGotoTarget's guarantees (target must exist, invariant 2),
+ * but first checks the element really is a button so the teacher gets a clear
+ * message when nothing linkable is selected.
+ */
+export function linkButtonToCard(
+  stack: Stack,
+  buttonId: string,
+  targetCardId: string
+): Stack | Rejected {
+  const card = cardOfElement(stack, buttonId);
+  const el = card?.elements.find((e) => e.id === buttonId);
+  if (el === undefined || el.type !== "button") {
+    return reject("Pick a button first, then choose the card it goes to.");
+  }
+  return setGotoTarget(stack, buttonId, targetCardId);
+}
+
+/**
+ * Byte length of the decoded payload of a `data:` URI. For a base64 payload we
+ * compute the decoded size from the base64 length (minus padding); for a
+ * non-base64 (percent-encoded or plain) payload we measure the UTF-8 bytes of
+ * the payload itself.
+ */
+function dataUriByteLength(dataUri: string): number {
+  const comma = dataUri.indexOf(",");
+  if (comma < 0) return 0;
+  const meta = dataUri.slice(0, comma);
+  const payload = dataUri.slice(comma + 1);
+  if (/;base64/i.test(meta)) {
+    const clean = payload.replace(/[^A-Za-z0-9+/=]/g, "");
+    const padding = clean.endsWith("==") ? 2 : clean.endsWith("=") ? 1 : 0;
+    return Math.floor((clean.length * 3) / 4) - padding;
+  }
+  // Percent-decoded / plain text payload: measure its UTF-8 byte length.
+  try {
+    return new TextEncoder().encode(decodeURIComponent(payload)).length;
+  } catch {
+    return new TextEncoder().encode(payload).length;
+  }
+}

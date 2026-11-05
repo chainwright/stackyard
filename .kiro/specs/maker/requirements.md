@@ -486,6 +486,57 @@ mind,
 
 ---
 
+### REQ-MKR-17 — Toolbar tools: add text, button, picture; link a card
+
+**As a** teacher,
+**I want** the four toolbar tools (Add Text, Add Button, Add Picture, Link a
+Card) to really add things to the selected card,
+**so that** I can build on what Stackyard made instead of seeing a button that
+does nothing.
+
+#### Acceptance criteria
+
+- WHEN the teacher presses Add Text,
+  THE SYSTEM SHALL add a new `text` element to the selected card through the
+  store's apply chokepoint, placed within the 800 × 600 canvas (invariant 5),
+  and SHALL select it for editing.
+
+- WHEN the teacher presses Add Button,
+  THE SYSTEM SHALL add a new `button` element with a default label and no
+  actions to the selected card through the apply chokepoint, placed within the
+  canvas, and SHALL select it. A plain button carries no `score` action, so
+  adding one to a `quiz` card SHALL NOT disturb invariant 4.
+
+- WHEN the teacher presses Add Picture and chooses a picture file from this
+  computer,
+  THE SYSTEM SHALL read the file as a `data:` URI (so the exported file stays
+  self-contained and offline, tech.md), SHALL require a non-empty alt-text
+  description (design-system.md accessibility), and SHALL add an `image`
+  element through the apply chokepoint.
+
+- IF the chosen picture is not a readable image, has no alt text, or is larger
+  than the picture size cap,
+  THEN THE SYSTEM SHALL reject the add with a plain-language message and SHALL
+  change nothing.
+
+- WHEN the teacher presses Link a Card with a `button` selected and chooses a
+  destination card,
+  THE SYSTEM SHALL set that button's `goto` to the chosen card through the
+  apply chokepoint, offering only cards that exist, named in plain language
+  (never a raw id), keeping invariant 2.
+
+- IF the teacher presses Link a Card with no button selected,
+  THEN THE SYSTEM SHALL show a plain-language message asking them to pick a
+  button first, and SHALL change nothing.
+
+- WHEN any of the four tools completes,
+  THE SYSTEM SHALL have produced a stack that passes `validate()` (the tools
+  go through the same apply chokepoint as the other nine operations, so this
+  holds by construction and is covered by the edit-sequence property tests
+  P1–P3).
+
+---
+
 ### REQ-MKR-16 — Audience-rule plain language throughout
 
 **As a** teacher,

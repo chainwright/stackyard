@@ -132,6 +132,32 @@ commits if valid (or if the operation is defined to always preserve validity).
 | `reorderCards` | `fromIndex, toIndex` | ids unchanged ⇒ 2 preserved automatically |
 | `setGotoTarget` | `buttonId, targetCardId` | 2 — target must exist; 9 not affected (button gotos excluded from cycle graph) |
 | `moveElement` | `elementId, x, y` | **5** — clamp so `x+w ≤ 800`, `y+h ≤ 600` |
+| `addTextElement` | `cardId, content?` | 5 — placed in a default on-canvas box |
+| `addButtonElement` | `cardId, label?` | 4 (no `score` action ⇒ not an answer tile), 5 — reject a blank label |
+| `addPictureElement` | `cardId, dataUri, alt` | 5; reject a non-`data:` src, blank alt, or data over `MAX_PICTURE_BYTES` |
+| `linkButtonToCard` | `buttonId, targetCardId` | 2 — delegates to `setGotoTarget` after checking the element is a button |
+
+### The four toolbar tools (REQ-MKR-17)
+
+Add Text / Add Button / Add Picture / Link a Card are the toolbar's four tool
+cards. Each is a pure operation through the **same** `store.apply` chokepoint as
+the other nine, so the always-valid guarantee and the P1–P3 property tests cover
+them with no special casing:
+
+- **Add Text** appends a `text` element with a short placeholder in a default
+  on-canvas box, then selects it.
+- **Add Button** appends a `button` with a default label and empty `actions`.
+  Because it carries no `score` action it is not a quiz answer tile, so it
+  cannot break invariant 4 on a quiz card; the teacher wires it with Link a Card.
+- **Add Picture** reads a chosen local file as a `data:` URI (the file travels
+  inside the one exported HTML, so no remote URL), requires non-empty alt text,
+  and caps the decoded size at `MAX_PICTURE_BYTES` (2 MB) — well under the 8 MB
+  export-body limit. The size/alt/`data:` checks are operation-level rejections;
+  they are not stack-format invariants (the validator does not bound image size).
+- **Link a Card** points the selected button's `goto` at a chosen existing card.
+  It checks the selected element really is a button (clear message otherwise),
+  then delegates to `setGotoTarget`, so invariant 2 holds and button gotos stay
+  out of the card-level cycle graph (invariant 9 unaffected).
 
 ### markCorrect detail (invariant 4)
 

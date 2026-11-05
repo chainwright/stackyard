@@ -239,6 +239,42 @@ so `x+w ≤ 800` and `y+h ≤ 600` (invariant 5) for a range of inputs.
 
 ---
 
+### TASK-21: `addTextElement`, `addButtonElement`, `addPictureElement`, `linkButtonToCard` + wire the toolbar — Done
+**Refs:** REQ-MKR-17, design §Edit operations, §The four toolbar tools
+
+> **Done:** Added the four pure operations to `operations.ts` and wired the four toolbar tool cards (Add Text / Add Button / Add Picture / Link a Card) to them through `store.apply` — replacing the earlier "coming soon" stubs. `addTextElement` and `addButtonElement` append a default on-canvas element and select it; `addButtonElement` adds a plain (no-`score`) button so a quiz card's invariant 4 is untouched; `addPictureElement` reads a local file as a `data:` URI (self-contained, offline), requires non-empty alt text, and caps the decoded size at `MAX_PICTURE_BYTES` (2 MB); `linkButtonToCard` checks the selected element is a button (plain message otherwise), then delegates to `setGotoTarget`. All four are exercised in the P1–P3 edit-sequence property tests (added to `tests/maker/arbitraries.ts`). 12 new unit tests in `tests/maker/operations.test.ts` and 4 new toolbar tests in `tests/maker/toolbar.test.ts`. Deliberate break: disabled `addPictureElement`'s required-alt check once — the "rejects empty alt" test went red — then restored it and it passed. Full suite 393 pass, `npx tsc --noEmit` clean.
+
+- Add four pure operations to `src/editor/operations.ts`, each
+  `(stack, args) => Stack | Rejected`, pure and copy-not-mutate:
+  - `addTextElement(stack, cardId, content?)` — append a `text` element in a
+    default on-canvas box (invariant 5).
+  - `addButtonElement(stack, cardId, label?)` — append a `button` with a default
+    label and empty `actions`; reject a blank label. No `score` action, so a
+    quiz card keeps invariant 4.
+  - `addPictureElement(stack, cardId, dataUri, alt)` — append an `image` from a
+    `data:` URI; reject a non-`data:` src, blank alt, or data over
+    `MAX_PICTURE_BYTES` (2 MB).
+  - `linkButtonToCard(stack, buttonId, targetCardId)` — check the element is a
+    button, then delegate to `setGotoTarget` (invariant 2).
+- Wire the four toolbar tool cards (`src/editor/Toolbar.tsx`) to these ops
+  through `store.apply`. Add Picture uses a hidden file input + an alt-text
+  prompt; Link a Card opens an inline card picker (plain names, never raw ids)
+  and shows a plain message when no button is selected.
+- Include all four ops in the P1–P3 edit-sequence property tests via
+  `tests/maker/arbitraries.ts`.
+- Break the new validation once on purpose and watch a test go red, then
+  restore it.
+
+**Done when:** Unit tests assert each op adds the right element / wires the
+right `goto`, keeps the stack passing `validate()`, rejects its bad inputs
+(blank label, non-`data:` src, blank alt, over-size picture, non-button link
+target) with a plain-language message and no mutation; toolbar tests assert the
+four tool cards dispatch the matching op through `store.apply` and that Link a
+Card without a button selected shows a plain message; P1–P3 still pass with the
+four ops in the operation mix; `npm test` and `npx tsc --noEmit` are both clean.
+
+---
+
 ## Phase 4 — Property-based tests (editor invariants)
 
 ### TASK-P1: Property — any edit sequence from a valid stack stays valid — Done
@@ -331,8 +367,10 @@ tasks below.
 
 ## Phase 5 — UI shell and screens (Preact)
 
-### TASK-11: App shell and screen switch (`src/main.tsx`, `src/editor/app.tsx`)
+### TASK-11: App shell and screen switch (`src/main.tsx`, `src/editor/app.tsx`) — Done
 **Refs:** REQ-MKR-02, REQ-MKR-14, design §Architecture, design-system §Maker app shell
+
+> **Done:** Added Preact (dep `preact@11.1.1`; its automatic JSX runtime is compiled by esbuild via `jsx:"automatic"`/`jsxImportSource:"preact"` in both `vite.config.ts` and `vitest.config.ts`, so no extra Vite plugin and no newer Vite major were pulled in). Built `src/main.tsx` → `<App>` (screen switch Start|Editor|Play over the `EditorStore`), the shared navy top-bar wordmark (`TopBar.tsx`), the consolidated Stamp-Pad stylesheet (`src/editor/styles.css`, fonts self-hosted at `src/assets/fonts`), `a11y.ts` aria-live announcer, and `icons.tsx`. On load `persistence.load()` opens the editor on a valid saved stack else the Start screen; a discarded corrupt save shows a gentle Start notice. Added npm scripts `dev:maker`/`build:maker`/`preview:maker`, a screenshot harness (`screens.html`, `src/screens-harness.tsx`, `scripts/shoot.sh`) and `docs/design/maker/built/`. `tests/maker/app-shell.test.ts` green (3 tests), full suite 320 pass, src/server tsc clean (pre-existing `tests/font-name.test.ts` strict-index errors are unrelated). Screenshots of `start-empty` and `editor-quiz` compared to the mockups: shell, canvas, tiles and fonts match.
 
 - Build with **Preact** (no other UI libraries). Mount `<App>`; render the
   design-system top bar (ink background, "Stackyard" wordmark) and the screen
@@ -347,8 +385,10 @@ first card; the top bar shows the "Stackyard" wordmark.
 
 ---
 
-### TASK-12: Start screen (`src/editor/StartScreen.tsx`, `src/editor/api.ts` generate)
+### TASK-12: Start screen (`src/editor/StartScreen.tsx`, `src/editor/api.ts` generate) — Done
 **Refs:** REQ-MKR-01, design §Architecture
+
+> **Done:** Built `StartScreen.tsx` matching the start-empty / start-generating / start-error mockups (sentence textarea, example tabs, peek stack, rings; Build disabled while empty/whitespace) and `api.ts` `generateStack` (POST /api/generate; network + error handling, plain-language messages). On submit it flips to the generating screen, then loads the stack and opens the editor on success (announcing an "offline" notice when `isFallback`), or shows the plain-language message and stays on Start on error/failure. `tests/maker/generate-flow.test.ts` green (6 tests: empty→no request, enable-on-input, success→editor, fallback notice, error message, network failure); full suite 326 pass, src/server tsc clean. Screenshots of all three start states compared to the mockups — match (the generating counter reads "Working…" instead of a per-card "N of 10" because the generate route returns a complete stack with no streaming progress API).
 
 - Preact component matching `start-empty/generating/error` mockups. Sentence
   input + "Build" button (Title Case per audience.md); button disabled while the
@@ -365,8 +405,10 @@ offline notice; an error response shows the message and stays on Start.
 
 ---
 
-### TASK-13: Card list (`src/editor/CardList.tsx`)
+### TASK-13: Card list (`src/editor/CardList.tsx`) — Done
 **Refs:** REQ-MKR-02, REQ-MKR-05, design-system §Accessibility
+
+> **Done:** Built `CardList.tsx` matching the mockup: one ≥44 px focusable entry per card with its position number, kind shape (quiz grid / flash book / story arrow / end flag), a two-line label (the card's most meaningful text) and a grip; the selected entry is highlighted (`aria-current`) and shows ↑/↓ move controls. Selecting sets `selectedCardId`; Add Card / move / Remove go through `store.apply(addCard|reorderCards|removeCard)`, and a rejected removal (sole end card) surfaces a plain-language message via the editor banner and changes nothing. Also added a 10-card Vikings `demoStack` for the screenshot harness. `tests/maker/card-list.test.ts` green (5 tests); full suite 331 pass, src/server tsc clean. Screenshot of the card list compared to the mockup — matches.
 
 - Preact component. Render one entry per card in stack order, each showing
   "Card N of M" and the kind, each a ≥ 44 px keyboard-focusable control.
@@ -382,8 +424,10 @@ list.
 
 ---
 
-### TASK-14: Canvas (`src/editor/Canvas.tsx`) — reuse `renderCard`
+### TASK-14: Canvas (`src/editor/Canvas.tsx`) — reuse `renderCard` — Done
 **Refs:** REQ-MKR-02, design §Canvas
+
+> **Done:** Built `Canvas.tsx` which draws the selected card into a scaled 820×640 wrapper with the REUSED `renderCard(card, root, createRuntime(stack), noopNavigate, noopPlaySound)` — no editor-specific renderer. Fit scale uses the design-system Maker rule `min((w-48)/812,(h-48)/612)` clamped to [0.9, 1.35] and recomputes on resize (guarded for jsdom, which has no ResizeObserver). A capture-phase click maps a clicked `.sy-element` wrapper (renderer DOM, index-aligned to `card.elements`) to its id and sets `selectedElementId` without touching `renderer.ts`; a navy selection overlay with a "Drag to move" tab is drawn as a sibling layer. `tests/maker/canvas.test.ts` green (3 tests: text/labels via the reused renderer, click→select, re-render on card switch); full suite 334 pass, src/server tsc clean. Canvas verified in the editor-quiz screenshot against the mockup.
 
 - Preact component that, after mount, draws the selected card into a scaled
   800 × 600 root with
@@ -398,8 +442,10 @@ the canvas DOM via the reused renderer; clicking a rendered element selects it
 
 ---
 
-### TASK-15: Inspector (`src/editor/Inspector.tsx`)
+### TASK-15: Inspector (`src/editor/Inspector.tsx`) — Done
 **Refs:** REQ-MKR-03, REQ-MKR-04, REQ-MKR-06, REQ-MKR-07
+
+> **Done:** Built `Inspector.tsx` that adapts to the selected element/card and dispatches via `store.apply`: quiz answer → label input (`editLabel`) + navy "Right answer" toggle (`markCorrect`) + card type (`changeKind`) + "when picked, go to…" picker (`setGotoTarget`); story button → button text + goto picker; flash → Front (term)/Back (explanation) fields (`editText`); end card → heading field + score-line hint (no kind change); text → content field. The goto picker lists existing cards by plain name ("Card N — …", "Last card"), never raw ids; the correct-answer indicator is a navy tag/tick, never colour alone. Also added the editor-only navy "✓ Right answer" tile overlay and story "→ Card N" branch labels in the Canvas, plus the flash Front/Back segmented control. `tests/maker/inspector.test.ts` green (5 tests: editLabel, markCorrect exactly-one, goto picker names/no-raw-ids, changeKind, rejected empty label leaves stack unchanged + plain message); full suite 339 pass, src/server tsc clean. Screenshots of quiz/flash/story/end/invalid compared to the mockups — quiz, flash and story match; two deliberate deviations: (1) the Export button is **disabled** on an invalid stack per TASK-16's "Done when" (the mockup's enabled-as-fixer idea was not adopted by the spec), and (2) the end-card canvas previews the renderer's true zero-score state ("Score 0 of N") rather than the mockup's illustrative "3 of 8" stamp collection, because the editor can't know a score before play and the renderer/player must stay unchanged; the inspector explains the stamp-per-correct behaviour.
 
 - For the selected element/card, show controls that call the matching
   operation via `store.apply`:
@@ -417,8 +463,10 @@ message and leaves the stack unchanged.
 
 ---
 
-### TASK-16: Toolbar and undo/redo UI (`src/editor/Toolbar.tsx`)
+### TASK-16: Toolbar and undo/redo UI (`src/editor/Toolbar.tsx`) — Done
 **Refs:** REQ-MKR-05, REQ-MKR-10, REQ-MKR-12, design-system §Export button
+
+> **Done:** Built `Toolbar.tsx` matching the mockup: Add Text / Add Button / Add Picture / Link a Card tool cards, Undo / Redo icon buttons, and the Export button (the single `--color-stamp` use). Undo/Redo call `store.undo()`/`store.redo()` and are disabled when `canUndo()`/`canRedo()` are false; Export is disabled unless `store.canExport()` (and while exporting). Export calls an `onExport` prop (wired in TASK-18). The four add-element tools have no backing pure operation in scope, so they match the mockup visually and give a gentle plain-language notice when pressed (editing existing cards is fully supported). `tests/maker/toolbar.test.ts` green (4 tests: undo/redo enablement tracks history, Export disabled on invalid/enabled on valid, stamp styling + label, onExport fires); full suite 343 pass, src/server tsc clean. Toolbar verified in the editor screenshots against the mockup.
 
 - Preact component. Bottom toolbar per design-system: Text / Button / Picture /
   "Go to card…" / Undo / Redo, and the Export button (the only `--color-stamp`
@@ -435,8 +483,10 @@ valid; the Export button carries the stamp styling and ≥ 44 px target.
 
 ## Phase 6 — Shared player mount, Play, export, persistence wiring
 
-### TASK-17a: Extract `mountPlayer(stack, root)` into `src/player/mount.ts`
+### TASK-17a: Extract `mountPlayer(stack, root)` into `src/player/mount.ts` — Done
 **Refs:** REQ-MKR-11, design §Play mode, §Why extract `mountPlayer`
+
+> **Done:** Moved the mount/navigation routine verbatim out of `src/player/index.ts` into `src/player/mount.ts` as `mountPlayer(stack, root): () => void` (runtime creation, `applyScaling`, `navigateTo(id, automatic)` with the auto-advance counter + 20-step fatal-error guard, `renderCard`, `playSound`), returning a teardown that stops the scaler observer and clears the root. `index.ts` is now a thin wrapper that reads `#stack-data`, validates, and calls `mountPlayer`. Pure refactor, no behaviour change. Rebuilt the IIFE (`npm run build:player`): 20.3 KB / **6.4 KB gzipped** (≤ 50 KB), the size test is green, and `scripts/check-player-fresh.sh` exits 0 against the rebuilt+committed bundle. All existing player tests still pass, and `tests/player/mount.test.ts` asserts a minimal valid stack mounts (first card rendered), teardown clears the root, and the guard stops after 20 auto-navs. Full suite 347 pass, src/server tsc clean.
 
 - Move the mount/navigation routine currently inline in `src/player/index.ts`
   into a new `src/player/mount.ts` exporting
@@ -459,8 +509,10 @@ stops at 20.
 
 ---
 
-### TASK-17: Play mode (`src/editor/PlayOverlay.tsx`) — via `mountPlayer`
+### TASK-17: Play mode (`src/editor/PlayOverlay.tsx`) — via `mountPlayer` — Done
 **Refs:** REQ-MKR-11, design §Play mode
+
+> **Done:** Built `PlayOverlay.tsx` — a full-screen overlay that mounts the current stack through the SHARED `mountPlayer(stack, root)` from `src/player/mount.js` (the exact function the exported player entry calls), keeps the teardown handle, and tears down on exit. No editing chrome is shown while playing; exiting returns to the editor with the previous `selectedCardId` and writes nothing back to `state.stack`. `tests/maker/play-overlay.test.ts` green (4 tests: first card renders with no toolbar/inspector/card-list, exit restores the same selection and an unchanged saved stack, answering the correct tile advances to the end card showing "Score 1 of 1", and both PlayOverlay and the exported `index.ts` import the same `mountPlayer`). Full suite 351 pass, src/server tsc clean. Screenshot compared to the play mockup — the card renders identically through the shared renderer; Play mode shows a "Back to Editing" exit where the exported-player mockup shows the live score, because Play needs an exit affordance and the shared `mountPlayer` owns its runtime score internally (reading it would require a player change, which is out of scope).
 
 - Preact overlay that covers the editor and calls the **shared**
   `mountPlayer(stack, root)` from `src/player/mount.ts` — the exact function the
@@ -480,8 +532,10 @@ symbol), so Play mode is literally the code the class gets.
 
 ---
 
-### TASK-18: Export download (`src/editor/api.ts` export + Toolbar)
+### TASK-18: Export download (`src/editor/api.ts` export + Toolbar) — Done
 **Refs:** REQ-MKR-12, design §Export flow (client)
+
+> **Done:** `api.ts` `exportStack` POSTs `{ stack }` to `/api/export`; on `200` it reads the body as **text** (byte-exact, no transform) and the filename from `Content-Disposition` (falling back to the shared `safeFileName(title)`); on 422/400 it returns the plain-language JSON `message` and no bytes; on network failure a plain-language message. `triggerDownload` builds a `text/html` Blob + object URL + temporary `<a download>`. Wired into `EditorScreen`/`Toolbar`: Export shows an "Exporting…" state, triggers the download, then shows the `ExportDone` overlay ("Exported ✓" stamp, filename, next-steps, Open the File / Back to Editing / Export again); errors show the plain-language banner and leave `state.stack` untouched. `tests/maker/export-download.test.ts` green (7 tests: byte-exact body + filename, Content-Disposition fallback, 422 message, network failure, Blob download, EditorScreen success→confirmation+download, 422→message+no download+unchanged stack). Verified a real round-trip against the running server (`200 text/html`, `filename="Vikings-Quiz.html"`, `<!doctype html>` body). Full suite 358 pass, request-size-limits 11/11 green, src/server tsc clean. export-done screenshot matches the mockup.
 
 - On Export: `POST /api/export` with `{ stack }`; on `200`, read the body as
   **text** and trigger a browser download (`Blob` + object URL + temporary `<a
@@ -500,8 +554,10 @@ message and triggers no download; a network failure shows a message and leaves
 
 ---
 
-### TASK-19: Wire persistence into the store lifecycle
+### TASK-19: Wire persistence into the store lifecycle — Done
 **Refs:** REQ-MKR-14, design §Persistence
+
+> **Done:** Confirmed and tested the wiring: `store.apply` saves on every committed edit and `store.setStack` saves on a successful generate (both via the debounced `persistence.save`); a failed generate never calls `setStack`, so the prior save is untouched; and `app.tsx` discards an unparseable/invalid saved stack on load and shows a gentle Start-screen notice ("…we've started fresh") without throwing. `tests/maker/persistence-wiring.test.ts` green (5 tests: committed edit saves and parses back to the current stack, successful generate saves the new stack, failed generate leaves the prior save intact, corrupted save → Start screen + notice + no throw, invalid-but-parseable save discarded with notice). Full suite 363 pass, src/server tsc clean.
 
 - Ensure every committed edit and every successful generate calls
   `persistence.save`; a failed generate does not overwrite the existing save;
@@ -516,8 +572,10 @@ thrown error.
 
 ## Phase 7 — Accessibility pass
 
-### TASK-20: Accessibility (`a11y.ts`) and audit
+### TASK-20: Accessibility (`a11y.ts`) and audit — Done
 **Refs:** REQ-MKR-15, REQ-MKR-16, design §Accessibility, design-system §Accessibility
+
+> **Done:** `a11y.ts` owns one visually-hidden `aria-live="polite"` region wired into `store.apply` (every success/failure/undo announces a plain-language message) via the `announce` hook `app.tsx` supplies. The shared focus-ring rule (3 px solid `--color-ink`, offset 2 px) is applied to every interactive element through `:focus-visible` in `styles.css`; no positive `tabindex` anywhere and the canvas is keyboard-focusable (`tabIndex={0}`). Keyboard element-move added to the Canvas: arrow nudges 1 px / Shift+arrow 10 px, each calling `store.apply(moveElement(...), { coalesceKey: "move:"+elementId })` so a rapid burst coalesces into a single undo step (clamped on-canvas). Bumped the one sub-18 px badge to 18 px so the whole editor chrome respects the floor. `tests/maker/a11y.test.ts` green (12 tests: announcer is a polite sr-only region, edits announce, arrow nudges move + clamp, a 5-nudge burst undoes in one step, no `font-size` < 18 px and no interactive target < 44 px in editor CSS, the focus-ring rule, and an audience.md string-lint over the editor + shared messages proving no "stack" wording, Irish/UK spelling, and no raw validator codes). Full suite 375 pass, src/server tsc clean, player staleness + 6.4 KB gzip budget green.
 
 - Implement the shared `aria-live="polite"` announcer used by `store.apply` and
   wire outcome messages (success/failure/undo) through it.
@@ -537,6 +595,30 @@ aria-live region; arrow-key nudges move the selected button (clamped) via
 chrome; all user-facing strings follow audience.md (no raw code, no "stack"
 wording, Irish/UK spelling) — checked by a string-lint test over the editor's
 message table.
+
+---
+
+## Phase 8 — Canvas fidelity pass (built screens vs mockups)
+
+### TASK-22: Editor canvas meta line + binder rings; re-shoot at both resolutions — Done
+**Refs:** REQ-MKR-02, design-system §Card anatomy, §Card scaling & layout
+
+> **Done:** Fixed two editor-canvas differences from the mockups, both as editor-only chrome layered over the reused `renderCard` (no change to `renderer.ts`):
+> 1. **Meta line** — a short "Card N of M" text element was rendering at 44px as part of the big question heading. `Canvas.tsx` now retags a short meta text element (`h ≤ 40` and not the tallest text on the card) from `.sy-question` to `.sy-meta` (20px), matching the mockup's small line above the question.
+> 2. **Binder rings** — the standing metal ring loops were missing/clipped (the player renderer draws only flat punched holes, and its injected `.sy-card { overflow: hidden }` clipped anything above the card). `Canvas.tsx` now appends the two standing `.sy-ring` loops to the rendered `.sy-card`, and editor-scoped CSS (`.canvas-area .sy-card { overflow: visible }` + hiding `.sy-ring-holes` under the loops) keeps them from being clipped or doubled.
+>
+> Re-shot `docs/design/maker/built/` at **1366×768** and **1920×1080** (`scripts/shoot.sh` now captures both; the unsuffixed file stays the 1366 shot, plus `_1366x768` and `_1920x1080` variants) and compared each by eye with its mockup. The editor quiz/flash/story/end/invalid screens and the two start screens and export-done now match. `npm test` (393) and `npx tsc --noEmit` both clean.
+
+**Remaining intentional deviations (built vs mockup):**
+
+- **Play mode** (`play.png`) renders through the shared `mountPlayer` — the exact code the exported file runs — so it shows the player's real output, which differs from the hand-drawn `play.html` mockup in two ways, both out of scope here because changing them means changing the shared player/renderer and the exported bundle:
+  1. the meta line "Card 1 of 10" shows as a 44px heading (the player classes every quiz/flash text element as `.sy-question`); and
+  2. the top-of-card rings are the renderer's flat punched holes, not standing loops.
+  These only appear because the screenshot harness feeds the demo stack (which carries a "Card N of M" text element) into the real player; generated/exported stacks have no such meta element, so the exported file is unaffected. The editor-canvas fix above is deliberately editor-only and does not touch `renderer.ts`.
+- **Play mode exit** shows a "Back to Editing" control where the exported-player mockup shows the live score — carried over from TASK-17 (Play needs an exit affordance; the shared `mountPlayer` owns its runtime score internally).
+- **End card** (`editor-end.png`) previews the renderer's true zero-score state ("Score 0 of N") rather than the mockup's illustrative "3 of 8" stamp collection — carried over from TASK-15 (the editor can't know a score before play, and the renderer must stay unchanged).
+- **Invalid state** (`editor-invalid.png`) shows the Export button **disabled** rather than the mockup's enabled-as-fixer idea — carried over from TASK-16's "Done when".
+- **Generating screen** (`start-generating.png`) reads "Working…" rather than a per-card "N of 10" counter — carried over from TASK-12 (the generate route returns a complete stack with no streaming progress API).
 
 ---
 

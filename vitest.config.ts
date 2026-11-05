@@ -1,15 +1,42 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Compile .tsx with esbuild's automatic JSX runtime pointed at Preact so the
+  // Maker component tests render without any extra plugin.
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "preact",
+  },
+  resolve: {
+    alias: {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+    },
+  },
   test: {
     // Most tests run in Node environment.
     environment: "node",
-    // Per-file environment override: player tests need jsdom.
+    // CSS imports in components are irrelevant to logic tests.
+    css: false,
+    // Per-file environment override: player + Maker UI tests need jsdom.
     environmentMatchGlobs: [
       ["tests/renderer.test.ts", "jsdom"],
       ["tests/scaler.test.ts", "jsdom"],
       ["tests/player.index.test.ts", "jsdom"],
       ["tests/timing-endcard.test.ts", "jsdom"],
+      // Maker UI tests (Preact components) need a DOM.
+      ["tests/maker/app-shell.test.ts", "jsdom"],
+      ["tests/maker/start-screen.test.ts", "jsdom"],
+      ["tests/maker/generate-flow.test.ts", "jsdom"],
+      ["tests/maker/card-list.test.ts", "jsdom"],
+      ["tests/maker/canvas.test.ts", "jsdom"],
+      ["tests/maker/inspector.test.ts", "jsdom"],
+      ["tests/maker/toolbar.test.ts", "jsdom"],
+      ["tests/maker/play-overlay.test.ts", "jsdom"],
+      ["tests/maker/export-download.test.ts", "jsdom"],
+      ["tests/maker/persistence-wiring.test.ts", "jsdom"],
+      ["tests/maker/a11y.test.ts", "jsdom"],
+      ["tests/player/mount.test.ts", "jsdom"],
     ],
   },
 });
