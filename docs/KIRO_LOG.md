@@ -68,3 +68,7 @@ Kept from day one for the Kiroween write-up.
 ## 4 Nov 2026: third spec, the Maker app
 - Kiro wrote `.kiro/specs/maker/` from the steering and the two earlier specs: 16 requirements in EARS form, 23 tasks, three property tests (any edit sequence stays valid, undo restores the exact stack, export after any edit round-trips). It ended with four open questions instead of guessing.
 - Our answers went back as a review round: the export is served byte-exact as text/html with a safe filename; Play mode and the exported file share one `mountPlayer`, so the preview is literally what the class gets; a burst of keyboard nudges is one undo step; Preact for the UI. We added one task Kiro hadn't planned: draw every screen state as a static mockup before any UI code (states before code). 25 tasks now.
+
+## 4 Nov 2026: Maker logic (no UI yet)
+- Kiro implemented TASK-01 to TASK-10 and the three property tests of the Maker spec: `POST /api/export` (byte-exact HTML, safe filename, plain-language JSON errors), undo/redo history with nudge coalescing, browser-only persistence with validate-on-load, the store's single `apply` chokepoint, and nine pure edit operations. 300/300 tests, `tsc` clean.
+- Each property test was broken on purpose and went red: switching off validate-before-commit (P1, any edit sequence stays valid), switching off nudge coalescing (P2, undo restores the exact stack), and making the exporter alter the title (P3, export after any edit round-trips).

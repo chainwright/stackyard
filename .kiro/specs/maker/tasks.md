@@ -23,8 +23,11 @@ Phase 7   accessibility pass              TASK-20
 
 ## Phase 1 — Server export route
 
-### TASK-01: Implement `server/routes/export.ts`
+### TASK-01: Implement `server/routes/export.ts` — Done
 **Refs:** REQ-MKR-13, design §Export flow (server)
+
+> **Done:** Added `handleExport` (405/400/422/500 paths, raw `text/html` success with `Content-Disposition`), plus shared `plainMessageFrom`/`safeFileName` in `src/shared/messages.ts`; `tests/maker/export.route.test.ts` green (6 tests), full suite 236 pass, tsc clean.
+
 
 - Create `handleExport(req, res)` modelled on `server/routes/generate.ts`
   (reuse the same `sendJson` / `readBody` helper shapes).
@@ -52,8 +55,11 @@ to a known value) appears in any response body.
 
 ---
 
-### TASK-02: Register `/api/export` in `server/index.ts`
+### TASK-02: Register `/api/export` in `server/index.ts` — Done
 **Refs:** REQ-MKR-13, design §Export flow (server)
+
+> **Done:** Wired `/api/export` into `createServer()` (dispatch any method so GET → handler's 405) with the same 500 guard as generate; `tests/maker/export.server.test.ts` green (3 tests), full suite 239 pass, tsc clean.
+
 
 - Add a `POST /api/export` branch alongside the existing `/api/generate`
   branch, with the same unhandled-error 500 guard.
@@ -67,8 +73,11 @@ plain message; a `GET /api/export` returns 405.
 
 ## Phase 2 — Editor foundation
 
-### TASK-03: Editor state types and `history.ts`
+### TASK-03: Editor state types and `history.ts` — Done
 **Refs:** REQ-MKR-10, design §Undo/redo, §The editor store
+
+> **Done:** Added `src/editor/types.ts` (EditorState, HistoryState, EditOperation, Rejected) reusing the shared schema, and `history.ts` (commit/undo/redo/canUndo/canRedo over `structuredClone` snapshots, bounded ring of 100); `tests/maker/history.test.ts` green (7 tests), full suite 246 pass, tsc clean.
+
 
 - Define `EditorState` and `HistoryState` as in the design (reusing `Stack`
   etc. from `src/shared/types.ts`; add **no** new stack-schema types).
@@ -83,8 +92,11 @@ mutated when the live stack is later changed.
 
 ---
 
-### TASK-04: Implement `persistence.ts`
+### TASK-04: Implement `persistence.ts` — Done
 **Refs:** REQ-MKR-14, design §Persistence
+
+> **Done:** Added `src/editor/persistence.ts` with trailing-debounced `save` (300 ms, injectable storage + `flush`), guarded `load` (parse then `validate`, discard on failure → null), and `clear` under `stackyard:maker:v1`; `tests/maker/persistence.test.ts` green (7 tests), full suite 253 pass, tsc clean.
+
 
 - `save(stack)` → `localStorage["stackyard:maker:v1"] = JSON.stringify(stack)`,
   trailing-debounced (~300 ms).
@@ -99,8 +111,11 @@ yields `null` without throwing; a parseable-but-invalid stack yields `null`;
 
 ---
 
-### TASK-05: Implement `store.ts` (the `apply` chokepoint)
+### TASK-05: Implement `store.ts` (the `apply` chokepoint) — Done
 **Refs:** REQ-MKR-09, REQ-MKR-10, design §Always-valid guarantee
+
+> **Done:** Added `src/editor/store.ts` (`EditorStore`): single `apply` chokepoint that runs the op, surfaces Rejected/invalid without committing, validates before commit, coalesces same-`coalesceKey` edits < 600 ms (injectable clock) into one undo step, persists on commit, and exposes `undo`/`redo`/`canExport`/`setStack`; `tests/maker/store.test.ts` green (9 tests), full suite 262 pass, tsc clean.
+
 
 - Implement `EditorStore` holding `EditorState`.
 - `apply(op, opts?)`: run the pure op; if it returns a rejection sentinel,
@@ -135,8 +150,11 @@ intervening different-key edit) produce two undo steps**.
 Every operation is `(stack, args) => Stack | Rejected`, pure, returning a new
 stack. Each task includes a unit test proving it preserves its invariants.
 
-### TASK-06: `editText`, `editLabel`
+### TASK-06: `editText`, `editLabel` — Done
 **Refs:** REQ-MKR-03
+
+> **Done:** Added `editText` and `editLabel` to `src/editor/operations.ts` (pure, copy-not-mutate; `editLabel` rejects a blank label); tests in `tests/maker/operations.test.ts` green (5 tests), full suite 267 pass, tsc clean.
+
 
 - `editText(stack, elementId, content)` returns a new stack with the text
   element's `content` replaced.
@@ -149,8 +167,11 @@ the store) still passes `validate()`.
 
 ---
 
-### TASK-07: `markCorrect`
+### TASK-07: `markCorrect` — Done
 **Refs:** REQ-MKR-04, design §markCorrect detail
+
+> **Done:** Added `markCorrect` (chosen answer → score:1 + cheer, all other answer buttons → score:0 + buzz, gotos preserved, idempotent); unit tests + a fast-check property (500 runs) assert exactly-one-correct and `validate()` pass. Full suite 272, tsc clean.
+
 
 - Set the chosen answer button's actions to include `score:1` + `cheer`; set
   every other answer button on the card to `score:0` + `buzz`; keep any `goto`
@@ -164,8 +185,11 @@ a different tile moves the single correct marking; the result passes
 
 ---
 
-### TASK-08: `addCard`, `removeCard`, `reorderCards`
+### TASK-08: `addCard`, `removeCard`, `reorderCards` — Done
 **Refs:** REQ-MKR-05, design §removeCard detail
+
+> **Done:** Added `addCard` (fresh-UUID seed per kind, quiz seed has one correct answer, rejects a 2nd end), `removeCard` (strips button + card-level gotos to the removed id, rejects sole end/sole non-end), and `reorderCards` (ids unchanged, clamped); 10 unit tests added. Full suite 282, tsc clean.
+
 
 - `addCard(stack, kind, index)`: insert a valid seed card with a fresh UUID; a
   `quiz` seed has exactly one correct answer.
@@ -181,8 +205,11 @@ reordering changes order but not ids and keeps `validate()` passing.
 
 ---
 
-### TASK-09: `changeKind`
+### TASK-09: `changeKind` — Done
 **Refs:** REQ-MKR-06
+
+> **Done:** Added `changeKind` (updates `kind`, seeds a correct/wrong answer pair when a card becomes a quiz, rejects creating a 2nd end or un-ending the sole end card); 6 unit tests added. Full suite 288, tsc clean.
+
 
 - `changeKind(stack, cardId, kind)`: update `kind`; seed quiz answers when
   becoming a quiz; reject if it would create a second end card or remove the
@@ -195,8 +222,11 @@ away from `end` is rejected.
 
 ---
 
-### TASK-10: `setGotoTarget`, `moveElement`
+### TASK-10: `setGotoTarget`, `moveElement` — Done
 **Refs:** REQ-MKR-07, REQ-MKR-08
+
+> **Done:** Added `setGotoTarget` (replaces a button's goto, rejects unknown targets) and `moveElement` (clamps to x∈[0,800-w], y∈[0,600-h], invariant 5); 7 unit tests incl. a 500-run clamp property. Full suite 295, tsc clean.
+
 
 - `setGotoTarget(stack, buttonId, targetCardId)`: set the button's `goto` to an
   existing card; reject an unknown target.
@@ -211,8 +241,11 @@ so `x+w ≤ 800` and `y+h ≤ 600` (invariant 5) for a range of inputs.
 
 ## Phase 4 — Property-based tests (editor invariants)
 
-### TASK-P1: Property — any edit sequence from a valid stack stays valid
+### TASK-P1: Property — any edit sequence from a valid stack stays valid — Done
 **Refs:** REQ-MKR-09, design §Testing strategy
+
+> **Done:** Added `tests/maker/arbitraries.ts` (valid-stack + random op-sequence arbitraries) and `tests/maker/operations.property.test.ts`: 1000 runs, `validate()` passes after every step. Deliberate break: disabled the store's validate-before-commit guard and removed `moveElement`'s clamp together — the property went red (off-canvas stack committed) — then restored both and it passed again. Full suite 296, tsc clean.
+
 
 - In `tests/maker/operations.property.test.ts`, define a fast-check arbitrary
   that produces a valid starting stack (reuse the exporter/validator valid-stack
@@ -228,8 +261,11 @@ intermediate and final stack passes `validate()`.
 
 ---
 
-### TASK-P2: Property — undo after any edit restores the exact previous stack
+### TASK-P2: Property — undo after any edit restores the exact previous stack — Done
 **Refs:** REQ-MKR-10, design §Undo/redo
+
+> **Done:** Added `tests/maker/history.property.test.ts`: (1) single edit → one undo deepEquals pre-edit, (2) 2-10 same-key nudges <600 ms → one undo to pre-burst, (3) gap-broken burst → two undos; each 1000 runs. Deliberate break: disabled the store's `shouldCoalesce` branch — the one-step-burst property went red — then restored it and all three passed. Full suite 299, tsc clean.
+
 
 - In `tests/maker/history.property.test.ts`, generate a valid stack and a
   single random valid operation. Snapshot the stack (deep copy), apply the op
@@ -248,8 +284,11 @@ pre-burst state in one step while a gap-broken burst takes two.
 
 ---
 
-### TASK-P3: Property — export after any edit round-trips
+### TASK-P3: Property — export after any edit round-trips — Done
 **Refs:** REQ-MKR-12, design §Testing strategy
+
+> **Done:** Added `tests/maker/export.property.test.ts`: generate a valid stack, apply a random edit sequence via the store, `exportStack`, extract `#stack-data`, parse, deepEqual the edited stack; 1000 runs. Deliberate break: made the exporter append `!` to the title during serialisation — the property went red (round-trip mismatch) — then restored it and it passed. Full suite 300, tsc clean.
+
 
 - In `tests/maker/export.property.test.ts`, generate a valid stack, apply a
   random valid edit sequence, then call `exportStack(state.stack)`.

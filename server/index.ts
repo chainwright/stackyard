@@ -11,6 +11,7 @@
 import { createServer as createHttpServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { handleGenerate } from "./routes/generate.js";
+import { handleExport } from "./routes/export.js";
 
 export function createServer() {
   return createHttpServer(
@@ -20,6 +21,24 @@ export function createServer() {
 
       if (method === "POST" && url === "/api/generate") {
         await handleGenerate(req, res).catch((err) => {
+          console.error("[server] unhandled error:", err);
+          if (!res.headersSent) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                ok: false,
+                message:
+                  "Something went wrong on our end. Please try again in a moment.",
+              })
+            );
+          }
+        });
+        return;
+      }
+
+      if (url === "/api/export") {
+        // Dispatch any method to handleExport; it replies 405 for non-POST.
+        await handleExport(req, res).catch((err) => {
           console.error("[server] unhandled error:", err);
           if (!res.headersSent) {
             res.writeHead(500, { "Content-Type": "application/json" });
