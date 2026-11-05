@@ -227,7 +227,7 @@ const PLAYER_STYLES = `
 }
 .sy-meta-chrome .sy-meta {
   font-size: var(--text-meta);     /* 20px — stays ≥ 18px at min scale */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -258,7 +258,7 @@ const PLAYER_STYLES = `
 /* ---- Text element — body (story / flash / generic) ---- */
 .sy-text {
   font-size: var(--text-body);       /* 22px */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -276,7 +276,7 @@ const PLAYER_STYLES = `
 /* ---- Meta text (Card N of M) ---- */
 .sy-meta {
   font-size: var(--text-meta);       /* 18px */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -285,7 +285,7 @@ const PLAYER_STYLES = `
 /* ---- Field span ---- */
 .sy-field {
   font-size: var(--text-meta);       /* 18px */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   color: var(--color-ink);
 }
@@ -307,7 +307,7 @@ const PLAYER_STYLES = `
   padding: 0 20px;
   min-height: 56px;
   font-size: var(--text-tile);       /* 32px */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 700;
   line-height: 1.3;
   cursor: pointer;
@@ -328,16 +328,26 @@ const PLAYER_STYLES = `
   align-items: center;
   justify-content: center;
 }
+/* Long labels shrink to fit the tile rather than clipping mid-word. */
+.sy-tile .sy-tile-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-/* ---- Generic button ---- */
+/* ---- Generic button (story branch / nav) — chunky paper tab with a pressed
+   bottom edge and bold label, per design-system "story buttons as paper tabs". */
 .sy-button {
   border: 2px solid var(--color-ink);
+  border-bottom-width: 3px;
   border-radius: 10px;
   background: var(--color-paper);
   color: var(--color-ink);
-  font-size: var(--text-body);       /* 22px */
-  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
-  font-weight: 400;
+  font-size: var(--text-tile);       /* 32px — reads as a chunky tab */
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-weight: 700;
   cursor: pointer;
   min-height: 44px;
   min-width: 44px;
@@ -352,29 +362,55 @@ const PLAYER_STYLES = `
 }
 
 /* ---- Stamp overlay (on tile) ---- */
-/* Anchored so its BOTTOM edge sits at tile-top + 14px
-   (bottom: calc(100% - 14px)), right-aligned 16px from the tile's right edge.
-   Reduced to ~0.75 of original size (26px font, 6px 12px padding) so at most
-   the top 25% of the tile label is obscured.
-   Real-browser overlap is verified by screenshot (docs/design/review/). */
+/* The earned ink stamp straddles the tile's TOP edge on the label side, mostly
+   over the paper above the tile (top:-24px; left:64px), rotated -8deg. It is a
+   transparent ink stamp (mix-blend-mode: multiply) — not a paper sticker — so
+   the stamp red sits on the 4.67:1 paper pairing and never over the answer word
+   (design-system Rubber stamp feedback). */
 .sy-stamp {
   position: absolute;
-  bottom: calc(100% - 14px);
-  right: 16px;
-  left: auto;
+  top: -24px;
+  left: 64px;
+  right: auto;
+  bottom: auto;
   transform: rotate(-8deg) scale(1);
   color: var(--color-stamp);
-  font-size: 26px;
+  font-size: 30px;
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 800;
   text-transform: uppercase;
-  background: var(--color-paper);
+  background: transparent;
+  mix-blend-mode: multiply;
   border: 3px solid var(--color-stamp);
   border-radius: 4px;
-  padding: 6px 12px;
+  padding: 4px 10px;
   opacity: 0.92;
   pointer-events: none;
   white-space: nowrap;
+  z-index: 20;
+}
+
+/* ---- Wrong-answer ✗ stamp ---- */
+/* After the shake, a boxed ✗ lands at FULL strength (not a faint mark) over the
+   paper at the tile's top edge — same placement as CORRECT, so it reads on the
+   4.67:1 paper pairing on a washed-out projector (design-system). */
+.sy-wrong-stamp {
+  position: absolute;
+  top: -24px;
+  left: 64px;
+  transform: rotate(-8deg);
+  color: var(--color-stamp);
+  font-size: 44px;
+  line-height: 1;
+  font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  background: transparent;
+  mix-blend-mode: multiply;
+  border: 3px solid var(--color-stamp);
+  border-radius: 4px;
+  padding: 2px 12px;
+  opacity: 1;
+  pointer-events: none;
   z-index: 20;
 }
 
@@ -405,24 +441,38 @@ const PLAYER_STYLES = `
   line-height: 1.2;
   color: var(--color-ink);
 }
+/* End-card stamp collection: one 64px slot per question. Earned slots carry a
+   red ✓ stamp (rotated a little, uneven); the rest are empty dashed ink
+   outlines. Score = stamps (design-system "the end card is a stamp
+   collection"). */
 .sy-end-stamps {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
   justify-content: center;
+  max-width: 620px;
 }
-.sy-end-stamp-pip {
-  display: inline-block;
-  font-size: 14px;
+.sy-end-slot {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.sy-end-slot-empty {
+  border: 2px dashed var(--color-ink);
+  opacity: 0.3;
+}
+.sy-end-slot-earned {
+  color: var(--color-stamp);
+  border: 3px solid var(--color-stamp);
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 800;
-  text-transform: uppercase;
-  color: var(--color-stamp);
-  border: 2px solid var(--color-stamp);
-  border-radius: 4px;
-  padding: 2px 5px;
-  opacity: 0.88;
-  line-height: 1.2;
+  font-size: 34px;
+  line-height: 1;
+  opacity: 0.92;
 }
 
 /* ---- Animations ---- */
@@ -558,17 +608,28 @@ function renderEndCard(
   scoreLine.textContent = `Score ${score} of ${total}`;
   container.appendChild(scoreLine);
 
-  // Row of mini stamps — one per correct answer
-  if (score > 0) {
+  // Stamp collection — one 64px slot per question. Earned slots (score) carry a
+  // red ✓ stamp at a slight rotation; the rest are empty dashed ink outlines.
+  if (total > 0) {
     const stampsRow = document.createElement("div");
     stampsRow.className = "sy-end-stamps";
-    stampsRow.setAttribute("aria-label", `${score} correct answer${score !== 1 ? "s" : ""}`);
-    for (let i = 0; i < score; i++) {
-      const pip = document.createElement("span");
-      pip.className = "sy-end-stamp-pip";
-      pip.textContent = "✓";
-      pip.setAttribute("aria-hidden", "true");
-      stampsRow.appendChild(pip);
+    stampsRow.setAttribute(
+      "aria-label",
+      `${score} of ${total} stamp${total !== 1 ? "s" : ""} earned`,
+    );
+    const rotations = [-8, -5, -10, -6, -9, -4, -7];
+    for (let i = 0; i < total; i++) {
+      const slot = document.createElement("span");
+      if (i < score) {
+        slot.className = "sy-end-slot sy-end-slot-earned";
+        slot.textContent = "✓";
+        const rot = rotations[i % rotations.length] ?? -8;
+        slot.style.transform = `rotate(${rot}deg)`;
+      } else {
+        slot.className = "sy-end-slot sy-end-slot-empty";
+      }
+      slot.setAttribute("aria-hidden", "true");
+      stampsRow.appendChild(slot);
     }
     container.appendChild(stampsRow);
   }
@@ -693,11 +754,20 @@ export function renderCard(
   }
 
   // ---- Regular card: render elements ----
-  const buttonElements = card.elements.filter(
-    (el): el is ButtonElement => el.type === "button",
-  );
   const isQuizCard = card.kind === "quiz";
-  let buttonIndex = 0;
+  // Answer tiles are the quiz-card buttons that DO something (have at least one
+  // action — score/sound/goto). A plain button added from the toolbar starts
+  // with no actions, so it renders as a generic button and never restyles the
+  // four coloured, shaped answer tiles (built-app review P1 "Add Button
+  // destroys the quiz"). The tile colour/shape is the button's index among the
+  // answer buttons only.
+  const answerButtons = isQuizCard
+    ? card.elements.filter(
+        (el): el is ButtonElement =>
+          el.type === "button" && el.actions.length > 0,
+      )
+    : [];
+  let answerSlotIndex = 0;
 
   for (const el of card.elements) {
     const wrapper = document.createElement("div");
@@ -715,18 +785,19 @@ export function renderCard(
       }
 
       case "button": {
+        const isAnswer = isQuizCard && el.actions.length > 0;
         const btn = buildButtonElement(
           el,
-          isQuizCard,
-          buttonElements.length,
-          buttonIndex,
+          isAnswer,
+          answerButtons.length,
+          isAnswer ? answerSlotIndex : 0,
           state,
           navigate,
           playSound,
           ariaLive,
         );
         wrapper.appendChild(btn);
-        buttonIndex++;
+        if (isAnswer) answerSlotIndex++;
         break;
       }
 
@@ -780,16 +851,15 @@ function positionElement(wrapper: HTMLElement, el: StackElement): void {
 
 function buildButtonElement(
   el: ButtonElement,
-  isQuizCard: boolean,
-  totalButtons: number,
-  buttonIndex: number,
+  isAnswerTile: boolean,
+  _answerCount: number,
+  slotIndex: number,
   state: RuntimeState,
   navigate: (id: string, automatic: boolean) => void,
   playSound: (sound: "cheer" | "buzz") => void,
   ariaLive: HTMLElement,
 ): HTMLButtonElement {
-  const isAnswerTile = isQuizCard && totalButtons >= 2 && totalButtons <= 4;
-  const slot = isAnswerTile ? TILE_SLOTS[buttonIndex % 4] : undefined;
+  const slot = isAnswerTile ? TILE_SLOTS[slotIndex % 4] : undefined;
 
   const btn = document.createElement("button");
 
@@ -806,6 +876,7 @@ function buildButtonElement(
     btn.appendChild(shapeContainer);
 
     const labelSpan = document.createElement("span");
+    labelSpan.className = "sy-tile-label";
     labelSpan.textContent = el.label;
     btn.appendChild(labelSpan);
   } else {
@@ -915,19 +986,19 @@ function triggerTileShake(tileBtn: HTMLButtonElement): void {
   void tileBtn.offsetWidth; // force reflow
   tileBtn.classList.add("sy-tile-shake");
 
-  tileBtn.addEventListener(
-    "animationend",
-    () => {
-      const mark = document.createElement("span");
-      mark.textContent = " ✗";
-      mark.style.opacity = "0.4";
-      mark.style.color = COLOR.stamp;
-      mark.style.fontSize = "0.8em";
-      mark.setAttribute("aria-hidden", "true");
-      tileBtn.appendChild(mark);
-    },
-    { once: true },
-  );
+  const landWrongStamp = (): void => {
+    if (tileBtn.querySelector(".sy-wrong-stamp")) return;
+    const mark = document.createElement("span");
+    mark.className = "sy-wrong-stamp";
+    mark.textContent = "✗";
+    mark.setAttribute("aria-hidden", "true");
+    tileBtn.appendChild(mark);
+  };
+
+  // Land the boxed ✗ after the shake settles. jsdom fires no animationend, so
+  // also land it on a short fallback timer so tests and reduced-motion see it.
+  tileBtn.addEventListener("animationend", landWrongStamp, { once: true });
+  setTimeout(landWrongStamp, 200);
 }
 
 // ---------------------------------------------------------------------------

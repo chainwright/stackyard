@@ -272,7 +272,7 @@ describe("end-card rendering", () => {
     expect(scoreLine!.textContent).toBe("Score 0 of 1");
   });
 
-  it("renders one stamp pip per correct answer", () => {
+  it("stamp collection: one slot per question, the earned ones stamped (score 1 of 1)", () => {
     const quiz = makeQuizCard(IDS.quiz, IDS.end);
     const end  = makeEndCard(IDS.end);
     const stack = makeStack([quiz, end]);
@@ -281,35 +281,41 @@ describe("end-card rendering", () => {
 
     renderCard(end, root, state, vi.fn());
 
-    const pips = root.querySelectorAll(".sy-end-stamp-pip");
-    expect(pips.length).toBe(1);
+    // One quiz → one slot, earned.
+    expect(root.querySelectorAll(".sy-end-slot").length).toBe(1);
+    expect(root.querySelectorAll(".sy-end-slot-earned").length).toBe(1);
+    expect(root.querySelectorAll(".sy-end-slot-empty").length).toBe(0);
   });
 
-  it("renders three stamp pips for a score of 3", () => {
+  it("stamp collection: two questions, one earned and one empty (score 1 of 2)", () => {
     const quiz1 = makeQuizCard(IDS.quiz, IDS.quiz2);
     const quiz2 = makeQuizCard(IDS.quiz2, IDS.end);
     const end   = makeEndCard(IDS.end);
     const stack = makeStack([quiz1, quiz2, end]);
     const state = createRuntime(stack);
-    state.variables["score"] = 3;
+    state.variables["score"] = 1;
 
     renderCard(end, root, state, vi.fn());
 
-    const pips = root.querySelectorAll(".sy-end-stamp-pip");
-    expect(pips.length).toBe(3);
+    // Two quizzes → two slots: one earned, one empty.
+    expect(root.querySelectorAll(".sy-end-slot").length).toBe(2);
+    expect(root.querySelectorAll(".sy-end-slot-earned").length).toBe(1);
+    expect(root.querySelectorAll(".sy-end-slot-empty").length).toBe(1);
   });
 
-  it("renders no stamp pips when score is 0", () => {
-    const quiz = makeQuizCard(IDS.quiz, IDS.end);
+  it("stamp collection: all slots empty when score is 0", () => {
+    const quiz1 = makeQuizCard(IDS.quiz, IDS.quiz2);
+    const quiz2 = makeQuizCard(IDS.quiz2, IDS.end);
     const end  = makeEndCard(IDS.end);
-    const stack = makeStack([quiz, end]);
+    const stack = makeStack([quiz1, quiz2, end]);
     const state = createRuntime(stack);
     // score = 0 (default)
 
     renderCard(end, root, state, vi.fn());
 
-    const pips = root.querySelectorAll(".sy-end-stamp-pip");
-    expect(pips.length).toBe(0);
+    expect(root.querySelectorAll(".sy-end-slot").length).toBe(2);
+    expect(root.querySelectorAll(".sy-end-slot-earned").length).toBe(0);
+    expect(root.querySelectorAll(".sy-end-slot-empty").length).toBe(2);
   });
 
   it("end card still renders ring holes", () => {

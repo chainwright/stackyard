@@ -14,7 +14,7 @@ import { safeFileName } from "../shared/messages.js";
 // Generate
 
 export type GenerateOutcome =
-  | { ok: true; stack: Stack; isFallback: boolean }
+  | { ok: true; stack: Stack; isFallback: boolean; isReadyMadeExample: boolean }
   | { ok: false; message: string };
 
 /** POST /api/generate with a teacher's sentence. */
@@ -50,11 +50,17 @@ export async function generateStack(
     ok?: boolean;
     stack?: Stack;
     isFallback?: boolean;
+    isReadyMadeExample?: boolean;
     message?: string;
   };
 
   if (res.ok && body.ok === true && body.stack) {
-    return { ok: true, stack: body.stack, isFallback: body.isFallback === true };
+    return {
+      ok: true,
+      stack: body.stack,
+      isFallback: body.isFallback === true,
+      isReadyMadeExample: body.isReadyMadeExample === true,
+    };
   }
   return {
     ok: false,
@@ -70,7 +76,7 @@ export async function generateStack(
 
 /** Callbacks the Start screen uses to deal cards as they stream in. */
 export interface GenerateStreamHandlers {
-  onStart?: (info: { total: number; title: string; isFallback: boolean }) => void;
+  onStart?: (info: { total: number; title: string; isFallback: boolean; isReadyMadeExample: boolean }) => void;
   onCard?: (info: { index: number; card: Card; total: number }) => void;
   /**
    * The server abandoned a partial stream (dead stream, bad card, or a stack
@@ -132,6 +138,7 @@ export async function generateStackStream(
   let buffer = "";
   let total = 0;
   let isFallback = false;
+  let isReadyMadeExample = false;
 
   // Process a single parsed NDJSON message. Returns a terminal outcome once
   // `done` or `error` is seen; otherwise undefined to keep reading.
@@ -140,7 +147,13 @@ export async function generateStackStream(
       case "start":
         total = msg.total;
         isFallback = msg.isFallback;
-        handlers.onStart?.({ total: msg.total, title: msg.title, isFallback: msg.isFallback });
+        isReadyMadeExample = msg.isReadyMadeExample === true;
+        handlers.onStart?.({
+          total: msg.total,
+          title: msg.title,
+          isFallback: msg.isFallback,
+          isReadyMadeExample,
+        });
         return undefined;
       case "card":
         handlers.onCard?.({ index: msg.index, card: msg.card, total });
@@ -150,10 +163,16 @@ export async function generateStackStream(
         // fallback flag carried from the abandoned attempt.
         total = 0;
         isFallback = false;
+        isReadyMadeExample = false;
         handlers.onReset?.();
         return undefined;
       case "done":
-        return { ok: true, stack: msg.stack, isFallback: msg.isFallback || isFallback };
+        return {
+          ok: true,
+          stack: msg.stack,
+          isFallback: msg.isFallback || isFallback,
+          isReadyMadeExample: msg.isReadyMadeExample === true || isReadyMadeExample,
+        };
       case "error":
         return { ok: false, message: msg.message };
       default:

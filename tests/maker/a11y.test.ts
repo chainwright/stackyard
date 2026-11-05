@@ -155,7 +155,7 @@ describe("TASK-20: Accessibility — audience.md string lint", () => {
     "src/editor/Inspector.tsx",
     "src/editor/Toolbar.tsx",
     "src/editor/ExportDone.tsx",
-    "src/editor/PlayOverlay.tsx",
+    "src/editor/TryItCanvas.tsx",
     "src/editor/api.ts",
     "src/editor/store.ts",
     "src/shared/messages.ts",

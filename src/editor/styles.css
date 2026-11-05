@@ -135,6 +135,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   display: inline-flex; align-items: center; gap: 8px;
 }
 .topbar .tryit svg { width: 18px; height: 18px; }
+/* Pressed (Trying It): filled paper, ink text — an editing state, not red. */
+.topbar .tryit[aria-pressed="true"] { background: var(--color-paper); border-color: var(--color-paper); color: var(--color-ink); }
 
 /* ---------------- Start screen ---------------- */
 .start-area {
@@ -274,6 +276,9 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 /* The editor draws the standing ring loops as a sibling layer; hide the
    renderer's flat punched holes underneath them so the two don't double up. */
 .canvas-area .sy-card .sy-ring-holes { display: none; }
+/* No running score while EDITING (the mockups show none). Try It (.tryit-area)
+   is real play, so it keeps the score. */
+.canvas-area:not(.tryit-area) .sy-score-chrome { display: none; }
 
 .sy-element { position: absolute; z-index: 1; }
 
@@ -348,12 +353,14 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 .export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .export-btn svg { width: 20px; height: 20px; }
 
-/* --- Play overlay --- */
-.play-root { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; background: #D4C9B0; }
-.play-topbar { flex: 0 0 auto; background: var(--color-ink); display: flex; align-items: center; gap: 20px; height: 56px; padding: 0 24px; }
-.play-topbar .score { margin-left: auto; font-family: var(--font-head); font-weight: 800; font-size: 20px; color: var(--color-paper); }
-.play-topbar .exit { min-height: 40px; background: transparent; border: 2px solid var(--shell-sub); border-radius: var(--radius-button); color: var(--color-paper); font-family: var(--font-body); font-weight: 700; font-size: 18px; padding: 6px 18px; cursor: pointer; }
-.play-stage { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 0; }
+/* --- Try It (in-editor play, editor-try.html) --- */
+/* The card plays inside the editor canvas area. `perspective` gives the
+   rotateX card flip its depth; the live player renders into `.tryit-stage`. */
+.tryit-area { perspective: 1400px; }
+.tryit-area .sy-card { overflow: visible; }
+.try-pill { flex-shrink: 0; display: inline-flex; align-items: center; gap: 10px; background: var(--color-paper); border: 2px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); font-family: var(--font-body); font-weight: 700; font-size: 18px; padding: 8px 18px; cursor: pointer; min-height: 44px; }
+.try-pill svg { width: 18px; height: 18px; }
+.tryit-stage { flex: 0 0 auto; position: relative; }
 
 /* --- Export-done overlay --- */
 .desk-overlay { position: fixed; inset: 0; z-index: 110; background: rgba(30,42,71,0.45); display: flex; align-items: center; justify-content: center; padding: 24px; }

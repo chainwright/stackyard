@@ -8,6 +8,7 @@ import { useState } from "preact/hooks";
 import type { EditorStore } from "./store.js";
 import { TopBar } from "./TopBar.js";
 import { Canvas } from "./Canvas.js";
+import { TryItCanvas } from "./TryItCanvas.js";
 import { CardList } from "./CardList.js";
 import { Inspector } from "./Inspector.js";
 import { Toolbar } from "./Toolbar.js";
@@ -29,7 +30,14 @@ export function EditorScreen({
   const state = store.getState();
   const stack = state.stack;
   // A transient plain-language banner for the most recent failed/rejected edit.
-  const [notice, setNotice] = useState<string | null>(__demoNotice ?? null);
+  // When the open stack is an offline ready-made example (no internet to build
+  // from the teacher's sentence), start with an honest note they can dismiss.
+  const [notice, setNotice] = useState<string | null>(
+    __demoNotice ??
+      (state.isReadyMadeExample
+        ? "We couldn't reach the internet, so this is a ready-made example. Edit it, or try your own sentence again."
+        : null),
+  );
   // Which side of a flash card the canvas is previewing.
   const [flashSide, setFlashSide] = useState<FlashSide>("front");
   // Export state: in-flight flag, the last downloaded HTML (to re-trigger), and
@@ -61,6 +69,7 @@ export function EditorScreen({
   const selectedCard =
     stack.cards.find((c) => c.id === state.selectedCardId) ?? stack.cards[0]!;
   const isFlash = selectedCard.kind === "flash";
+  const trying = state.screen === "play";
 
   const desc =
     stack.title.length > 0 ? stack.title : "Your set of cards";
@@ -72,11 +81,16 @@ export function EditorScreen({
         <button
           class="tryit"
           type="button"
-          aria-label="Try it: play these cards like the class will"
-          onClick={() => store.setScreen("play")}
+          aria-pressed={trying ? "true" : "false"}
+          aria-label={
+            trying
+              ? "Trying this card like the class will"
+              : "Try it: play these cards like the class will"
+          }
+          onClick={() => store.setScreen(trying ? "editor" : "play")}
         >
           <PlayIcon />
-          Try It
+          {trying ? "Trying It" : "Try It"}
         </button>
       </TopBar>
 
@@ -89,31 +103,50 @@ export function EditorScreen({
 
       <div class="workspace">
         <CardList store={store} onNotice={setNotice} />
-        <Canvas
-          store={store}
-          flashSide={flashSide}
-          flashControl={
-            isFlash ? (
-              <div class="segmented" role="group" aria-label="Show front or back">
-                <button
-                  type="button"
-                  aria-pressed={flashSide === "front" ? "true" : "false"}
-                  onClick={() => setFlashSide("front")}
-                >
-                  Front
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={flashSide === "back" ? "true" : "false"}
-                  onClick={() => setFlashSide("back")}
-                >
-                  Back
-                </button>
-              </div>
-            ) : null
-          }
-        />
-        <Inspector store={store} onNotice={setNotice} />
+        {trying ? (
+          <TryItCanvas store={store} />
+        ) : (
+          <Canvas
+            store={store}
+            flashSide={flashSide}
+            flashControl={
+              isFlash ? (
+                <div class="segmented" role="group" aria-label="Show front or back">
+                  <button
+                    type="button"
+                    aria-pressed={flashSide === "front" ? "true" : "false"}
+                    onClick={() => setFlashSide("front")}
+                  >
+                    Front
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={flashSide === "back" ? "true" : "false"}
+                    onClick={() => setFlashSide("back")}
+                  >
+                    Back
+                  </button>
+                </div>
+              ) : null
+            }
+          />
+        )}
+        {trying ? (
+          <aside class="inspector" aria-label="Try It">
+            <h2>Trying your card</h2>
+            <span class="readout">
+              You pressed <strong>Try It</strong>. The card flips over and plays
+              exactly as the class will see it.
+            </span>
+            <p class="hint">
+              Tap an answer to hear the cheer or the buzz. The right answer earns
+              a stamp. Press <strong>Back to Editing</strong> and it flips back to
+              the same card.
+            </p>
+          </aside>
+        ) : (
+          <Inspector store={store} onNotice={setNotice} />
+        )}
       </div>
 
       <Toolbar

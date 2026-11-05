@@ -726,3 +726,132 @@ All changed screens render cleanly at both sizes; the shots in
 component pass, as the verdict allowed): the editor-try Try-It toolbar
 disabled state, the editor-drag snap-tab descender overlap, play-flash-back line
 rhythm, and the <1200 px drawer layout.
+
+---
+
+## Built app verdict (judge, 2026-11-05)
+
+### Method
+- Looked at all 30 committed shots in `docs/design/maker/built/` (10 states × 1366 / 1920 / default).
+- Ran the real app (`npm run dev:server` + `vite` on 5173, no LLM key set, so the server used its offline fallback). Drove it in headless Chrome over CDP with my own scripts in scratch.
+  - Real flow: start → example tab → Build Cards → editor → Try It → answer → Back to Editing → Export File → Open the File.
+  - Harness states: `screens.html?state=…`.
+  - Exported file: opened from the blob URL the app produced. I measured computed fonts, sizes and running animations, and clicked every toolbar control.
+- Read the relevant source to name root causes: `src/player/renderer.ts`, `PlayOverlay.tsx`, `Canvas.tsx`, `demoStack.ts`, `server/html-template.ts`, `src/player/scaler.ts`.
+
+Important: the screen harness renders `EditorScreen` with a store that has no re-render callback, so **interactions in the harness do nothing visible**. All the interaction findings below come from the real app at `/`, with the demo stack injected into localStorage.
+
+### Verdict in one paragraph
+The **Maker shell** is a faithful build of the Round 3 mockups. Top bar, desk, card list with two-line rows, inspector copy, toolbar, rings, stack edges, fit scale, Bricolage headings and the export overlay all match, and the shell itself clears the 18 px floor. Editing text, marking the right answer, undo/redo, Link a Card and Export all genuinely work. Everything the *class* sees is a different story. It runs on the **Round 1 player renderer**:
+- No fonts in the exported file.
+- Body text in Arial even inside the editor canvas.
+- The old khaki desk, a paper-sticker stamp and 14 px end-card pips.
+- **No card flip anywhere.** The keyframes exist but are never applied, and Try It is a full-screen swap that starts at card 1.
+- In the demo stack **every answer jumps to the last card**, so a judge's first click ends the game: "Score 0 of 6".
+
+Without an LLM key the real Build Cards produces a 3-card placeholder stack with tiles labelled "Correct Answer" / "Wrong Answer". A judge clicking around would hit both within 30 seconds. **Built app score: 5.0 / 10** (mockup set 7.8). Not ready to show: fix P0 1–4 first.
+
+### Scores (built, same criteria)
+
+| Screen (built) | Clarity | Fidelity to R3 | Craft | WOW | Teacher | **Built** | Mockup R3 |
+|---|---|---|---|---|---|---|---|
+| start-empty | 7.5 | 7 | 6 | 5 | 8 | **6.5** | 7.5 |
+| start-generating (harness) | 7.5 | 7.5 | 7 | 6 | 8 | **6.5** | 8.0 |
+| start-generating (real flow, no key) | — | — | — | 0 | — | **never shown** | — |
+| start-error | 8 | 7.5 | 7.5 | 2 | 9 | **7.0** | 7.5 |
+| editor-quiz | 7.5 | 6.5 | 5.5 | 4 | 8 | **6.0** | 8.0 |
+| editor-flash | 7 | 6 | 4.5 | 4 | 8 | **5.5** | 7.5 |
+| editor-story | 7.5 | 6 | 5 | 4 | 8 | **5.5** | 8.0 |
+| editor-end | 7 | 4 | 4.5 | 2 | 7 | **4.5** | 8.0 |
+| editor-invalid | 8 | 6 | 5 | 2 | 8 | **5.5** | 8.0 |
+| Try It / play overlay | 6 | 3 | 3.5 | 2 | 7 | **3.5** | 8.5 |
+| export-done (real flow, over editor) | 9 | 7.5 | 7 | 7 | 9 | **7.5** | 8.0 |
+| exported player file (what the class gets) | 6 | 3 | 3 | 2 | 7 | **3.5** | 8.0 |
+| **App** | 7.5 | 5.5 | 5 | 3.5 | 8 | **5.0** | 7.8 |
+
+### Broken or fake to a judge clicking around (P0, verified by running it)
+1. **Every quiz answer goes to the last card.**
+   - `src/editor/demoStack.ts` builds every quiz with `goto: endId` (lines ~96–108), and the inspector shows "When picked, go to… Last card".
+   - In the player, clicking Romans (wrong) or Vikings (right) on card 1 lands on "Well done! Score 0/1 of 6" about 0.9 s later. The game ends after one answer.
+   - Fix: quiz answers default to **the next card** (`goto` = cards[i+1].id, end card for the last quiz) in demoStack, in the generator's normaliser and in the fallback. Add a test: "a quiz answer never targets the end card unless it is the last question".
+2. **Fonts: the class never sees the design.**
+   - (a) `src/player/renderer.ts` sets body, meta and tile text to `'Atkinson Hyperlegible', 'Arial'`. That family is not loaded, because the app ships it as `Stackyard Reading`. So the **editor canvas and the player render body text in Arial**: "Card 3 of 9", every tile label, story text, buttons. Measured with `getComputedStyle`; the Mac has no system Atkinson.
+   - (b) **The exported HTML embeds no fonts at all.** `document.fonts` is empty in the opened file, the question falls back to Arial Black, and the player bundle (23 KB) has no `@font-face`. `server/html-template.ts` says fonts are "inlined by the player", but they aren't.
+   - Fix:
+     - Replace every `'Atkinson Hyperlegible'` in renderer.ts with `'Stackyard Reading'`.
+     - Inline `bricolage.woff2`, `reading-400.woff2` and `reading-700.woff2` as base64 `@font-face` in the exported `<style>`, with the OFL notice comment that design-system.md requires.
+     - Add a test that the exported HTML contains three `font/woff2` data URIs and that `document.fonts.ready` resolves with three loaded faces offline.
+3. **Try It is not the WOW we designed, and nothing flips.**
+   - `PlayOverlay` mounts the player full-screen from **card 1** (not the card being edited), on the old `#D4C9B0` khaki, with no inspector and no explanation.
+   - `card-exit` / `card-enter` keyframes exist in renderer.ts (lines 445–452), but no code ever adds `.sy-card-exit` / `.sy-card-enter`. `document.getAnimations()` during Try It and during card advance returns nothing; the only animation that ever runs is `stamp-land`.
+   - Fix:
+     - Start play at the selected card.
+     - Run the rotateX flip (240 ms, origin top centre) on enter/exit, both for Try It and for every goto in the player.
+     - Keep the editor chrome around it as in `editor-try.html` ("Trying It" pressed, the "Back to Editing" paper pill on the desk, inspector text).
+     - Back to Editing flips back to the same card with the selection restored.
+4. **Real Build Cards without a key shows placeholder content.**
+   - With no `STACKYARD_LLM_API_KEY` the fallback returns in under 0.7 s. The deal-in never appears. The stack is 3 cards: a story card repeating the teacher's sentence with a "Start" button, "Question 1: What is the topic of this lesson?" with tiles **"Correct Answer" / "Wrong Answer"**, and the end card.
+   - That reads as fake to a judge.
+   - Fix:
+     - Make sure the Render deploy has the key and a working model, and keep it warm.
+     - Make the offline fallback a **real canned stack per example tab** (the Vikings demo stack for the Vikings sentence, real times tables, real Irish words), dealt at about 1 card / 400 ms so the deal-in still plays.
+     - For a free-text sentence with no model, show the honest error screen instead of placeholder cards.
+5. **"Drag to move" is a label without a drag.**
+   - Canvas.tsx has no pointer handlers. Mouse drag on a tile doesn't move it (measured: rect unchanged). Movement is arrow keys only.
+   - Implement pointer drag with snapping to the 32 px rules (the `editor-drag.html` state, including "Snapping to the line"). Until then, change the tab to "Use arrow keys to move".
+
+### Visible gaps between built and mockup (P1, most visible first)
+- **Add Button on a quiz card destroys the quiz.** After one click, all four coloured, shaped tiles turned into plain outline buttons (the renderer stops treating the card as a 4-answer quiz), and "New button" sits under Dublin. Fix: on a quiz card, either disable Add Button with a hint ("Quizzes have four answers — change the card type to add buttons") or add the button below the tiles without changing how they render.
+- **Add Text lands on top of the question** ("New text" overprinted on "Where did the Vikings…"). Place new elements in the first empty rule band below the lowest element, and select it with the text ready to edit.
+- **Stamp is the Round 1 sticker.** renderer.ts `.sy-stamp` has `background: var(--color-paper)`, sits right-aligned at `bottom: calc(100% - 14px)` and is 26 px. Port the R3 spec: `background: transparent; mix-blend-mode: multiply; top:-24px; left:64px; rotate(-8deg); 30px`, plus the ink mask.
+- **Wrong answer:** shake only. No boxed ✗ stamp lands (the renderer appends a text " ✗" instead). Port the 44 px boxed ✗ at 100 % on the paper edge.
+- **End card:** no stamp collection. The player still uses 14 px `.sy-end-stamp-pip` (under the floor), and the editor end card shows only "Score 0 of 6". The inspector shows a stray Bricolage heading "Score" where the mockup has a read-only preview field. Build the 64 px earned/empty slot grid from `play-end.html`.
+- **Player desk** is `#D4C9B0` with no grain (`src/player/scaler.ts:37`, and `.play-root` in styles.css). Use `#C9A47C` + the grain.
+- **Front/Back switch is clipped again** under the top bar on editor-flash (the Round 2 bug is back). Apply the sized wrapper and subtract the control height in the fit.
+- **"Score 0" on every card in the editor**, top right. The mockups show no score while editing. Hide the score chrome in the editor and keep it in the player.
+- **Card count disagrees with the list.** The card says "Card 3 of 9" while the list shows 10 rows (the end card isn't counted). The fallback stack says "Card 1 of 2" with 3 rows. Pick one rule and show it the same way in both places. The mockups count all cards.
+- **Invalid state disables Export** (pale salmon, and stamp red at low opacity reads as broken). The R2 decision was to keep it enabled and jump to the problem card.
+- **Long answers.** "Dublin (Áth Cliath)" wraps and is clipped to "Dublin (Áth", and the "✓ Right answer" tag overlaps the label. On 1366 and 1920 the tag also pokes past the tile's right edge. Shrink the label to fit (min 24 px) and put the tag in the tile's top-right corner, inside.
+- **Story buttons** render in regular weight, not the 24 px bold paper tabs. The "→ Card N" labels are left-aligned rather than centred under each button. The "When picked, go to…" select truncates ("Card 6 — Who led the firs"); shorten options to "Card 6 · Who led the first raid?" with ellipsis, or widen the inspector to 300 px.
+- **Rings show through the export scrim.** Over the editor, the editor card's rings stay bright above the 45 % ink scrim and double up with the modal's rings. Lower the rings' z-index below `.desk-overlay`.
+- **start-empty:**
+  - The textarea is empty, where the mockup pre-filled the Vikings sentence.
+  - Build Cards is disabled as white on grey (about 2.5:1) with no explanation beyond the hint. Pre-fill the sentence, or keep the button enabled with the "Type a sentence first — or pick an example" message.
+  - The peek card lost its meta line (blank band).
+- **start-generating (harness):**
+  - The counter says "Card 5 of 10" while the top card says "Card 4 of 10" (off by one).
+  - "About 20 seconds" is gone.
+- **export-done in the harness** has no top bar and sits on flat grey, while the real flow is correct (over the editor). Re-shoot the harness state over the editor so the committed images match what users see.
+
+### What landed (verified in the running app)
+- Maker shell parity:
+  - top bar with Try It;
+  - warm desk with grain in the editor;
+  - fit scale about 0.95 at 1366, so "Card 3 of 9" is 19 px;
+  - rings standing above the card;
+  - ink kind icons;
+  - two-line card rows;
+  - "Remove this card" kept separate from "+ Add Card";
+  - chunky toolbar;
+  - the export overlay with EXPORTED stamp, three steps, Open the File / Back to Editing / Export again.
+- Fonts in the shell: Bricolage and Stackyard Reading load (`document.fonts`: three faces loaded), and `rename-reading-font.py --check` reports both subsets clean of the reserved name.
+- Working controls:
+  - inspector Answer field (the canvas updates live);
+  - Right answer toggle;
+  - card list selection;
+  - Link a Card (a real "Go to…" select listing every card);
+  - Undo/Redo (enable/disable state correct, undo restores);
+  - Export File (produces a ~46 KB single HTML with no external URLs);
+  - Open the File (opens it).
+- The CORRECT stamp does land with `stamp-land` and the cheer path fires.
+
+### Remaining fixes, in priority order
+1. Quiz answers → next card (demoStack, generator normaliser, fallback) + test.
+2. Player fonts: renderer family → `Stackyard Reading`; inline the three woff2 files + OFL notice in the exported HTML + offline font test.
+3. Try It as designed: start at the selected card, in-place rotateX flip, editor chrome kept, Back to Editing flips back. Apply `card-enter/exit` on every player goto.
+4. Deploy with the LLM key; replace the placeholder fallback with real canned stacks per example and keep the dealt pacing; honest error for free text with no model.
+5. Port the R3 player visuals: ink stamp placement, boxed ✗, 64 px end-card stamp collection (remove the 14 px pips), warm desk.
+6. Real pointer drag with rule snapping (or an honest label); Add Text placement; Add Button guarded on quiz cards.
+7. Front/Back clip, editor score chrome hidden, card count rule, Export enabled on invalid, long-label fit + tag placement, story button weight/labels, inspector select width, ring z-index under the scrim, start-empty pre-fill, generating counter, harness shots matching the real flow.
+
+Expected: 1–3 bring the app to about 6.8 (no broken game, the real look, the WOW actually happens). 1–5 to about 7.8, roughly the mockup level. All seven reach the 8 bar.

@@ -33,8 +33,11 @@ export function applyScaling(root: HTMLElement): () => void {
   body.style.alignItems = "center";
   body.style.justifyContent = "center";
   body.style.overflow = "hidden";
-  // Desk-surface backdrop (#D4C9B0) as specified in design-system.md.
-  body.style.background = "#D4C9B0";
+  // Warm wood desk (#C9A47C) + a faint CSS grain, matching design-system.md
+  // (no image, so the exported file stays self-contained).
+  body.style.background = "#C9A47C";
+  body.style.backgroundImage =
+    "repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px)";
 
   // ---- Root: fixed 800×600 canvas ----
   root.style.width = "800px";

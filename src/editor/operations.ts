@@ -437,10 +437,23 @@ export function moveElement(
  */
 export const MAX_PICTURE_BYTES = 2 * 1024 * 1024;
 
-/** A default on-canvas box for a freshly added element (fits 800 × 600). */
-const NEW_TEXT_BOX = { x: 48, y: 120, w: 704, h: 64 } as const;
-const NEW_BUTTON_BOX = { x: 48, y: 440, w: 344, h: 80 } as const;
+/** Default sizes for a freshly added element (position is computed per card). */
+const NEW_TEXT_SIZE = { w: 704, h: 64 } as const;
+const NEW_BUTTON_SIZE = { w: 344, h: 80 } as const;
 const NEW_IMAGE_BOX = { x: 240, y: 160, w: 320, h: 240 } as const;
+
+/**
+ * Find a free y for a new element of height `h` on `card`: the first 32px rule
+ * band below the lowest existing element, so a new element lands in empty
+ * space (never on top of the question, built-app review P1). Clamped so the
+ * element stays on the 600px canvas (invariant 5).
+ */
+function freeY(card: Card, h: number): number {
+  const lowest = card.elements.reduce((max, el) => Math.max(max, el.y + el.h), 40);
+  // Snap to the next 32px rule band, with a little breathing room.
+  const y = Math.ceil((lowest + 16) / 32) * 32;
+  return clamp(y, 40, 600 - h);
+}
 
 /** Append an element to a card's element list, returning a new stack. */
 function addElementToCard(
@@ -469,7 +482,9 @@ export function addTextElement(
   const el: Element = {
     type: "text",
     id: newId(),
-    ...NEW_TEXT_BOX,
+    x: 48,
+    y: freeY(card, NEW_TEXT_SIZE.h),
+    ...NEW_TEXT_SIZE,
     content,
   };
   return addElementToCard(stack, cardId, el);
@@ -494,7 +509,9 @@ export function addButtonElement(
   const el: Element = {
     type: "button",
     id: newId(),
-    ...NEW_BUTTON_BOX,
+    x: 48,
+    y: freeY(card, NEW_BUTTON_SIZE.h),
+    ...NEW_BUTTON_SIZE,
     label,
     actions: [],
   };

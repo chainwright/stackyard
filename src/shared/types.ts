@@ -81,6 +81,14 @@ export type GenerateSuccess = {
   ok: true;
   stack: Stack;
   isFallback: boolean;  // true when the LLM was unavailable
+  /**
+   * True when the fallback returned a ready-made deck for a sentence that did
+   * NOT match a Start-screen example — i.e. the closest ready-made example, not
+   * cards built from the teacher's words. The UI uses this to say so honestly.
+   * Absent / false on the normal LLM path and when the sentence matched an
+   * example.
+   */
+  isReadyMadeExample?: boolean;
 };
 
 export type GenerateError = {
@@ -109,6 +117,9 @@ export type GenerateStreamStart = {
   total: number;        // number of cards that will be streamed
   title: string;        // stack title (for the shell)
   isFallback: boolean;  // true when the LLM was unavailable
+  /** True when this is the closest ready-made example for an unmatched
+   *  free-text sentence (see GenerateSuccess.isReadyMadeExample). */
+  isReadyMadeExample?: boolean;
 };
 
 export type GenerateStreamCard = {
@@ -121,6 +132,9 @@ export type GenerateStreamDone = {
   type: "done";
   stack: Stack;         // the whole stack, validated as a unit
   isFallback: boolean;
+  /** True when this is the closest ready-made example for an unmatched
+   *  free-text sentence (see GenerateSuccess.isReadyMadeExample). */
+  isReadyMadeExample?: boolean;
 };
 
 export type GenerateStreamError = {

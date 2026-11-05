@@ -20,6 +20,14 @@ export interface BuildHtmlOptions {
   title: string;
   stackJson: string;
   playerIife: string;
+  /**
+   * `@font-face` CSS (with base64 data-URI `src` and OFL notice comments) for
+   * the three design-system fonts, built by the exporter. Embedded verbatim in
+   * the page `<style>` so the class sees the real type with no internet. When
+   * omitted (e.g. a unit test that doesn't care about fonts) no font rules are
+   * emitted and the page falls back to the system sans-serif.
+   */
+  fontFaces?: string;
 }
 
 /**
@@ -39,8 +47,9 @@ function escapeHtmlText(input: string): string {
 /**
  * Minimal CSS: reset margins, give the page the paper backdrop, and centre
  * the scaled player canvas. All styling beyond this lives in the player
- * runtime (renderer.ts); this is only the page shell. No @font-face or CDN
- * links — the design-system fonts are inlined by the player, not here.
+ * runtime (renderer.ts); this is only the page shell. The design-system
+ * `@font-face` rules (base64 data URIs + OFL notices) are injected by the
+ * exporter via `fontFaces` — no external URL, so the file stays offline.
  */
 const SHELL_CSS = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,8 +74,9 @@ const SHELL_CSS = `
  * Returns the complete HTML document string for an exported stack.
  */
 export function buildHtml(options: BuildHtmlOptions): string {
-  const { title, stackJson, playerIife } = options;
+  const { title, stackJson, playerIife, fontFaces } = options;
   const safeTitle = escapeHtmlText(title);
+  const fontBlock = fontFaces && fontFaces.trim().length > 0 ? `\n${fontFaces}\n` : "";
 
   return `<!doctype html>
 <html lang="en">
@@ -76,7 +86,7 @@ export function buildHtml(options: BuildHtmlOptions): string {
   <title>${safeTitle}</title>
   <style>
 ${SHELL_CSS}
-  </style>
+${fontBlock}  </style>
 </head>
 <body>
   <div id="player-root"></div>

@@ -29,6 +29,9 @@ export interface EditorState {
   history: HistoryState;
   lastValidation: ValidationResult;
   isFallback: boolean; // from the last generate
+  /** True when the open stack is a ready-made example chosen offline for a
+   *  sentence that matched no example (so the editor can say so honestly). */
+  isReadyMadeExample: boolean;
   status: Status;
 }
 

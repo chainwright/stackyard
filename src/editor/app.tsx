@@ -48,27 +48,14 @@ export function App(): JSX.Element {
 
   const state = store.getState();
 
-  if (state.screen === "play") {
-    // Play overlay renders on top; the editor stays mounted beneath it.
-    return (
-      <>
-        <EditorScreen store={store} />
-        <PlayMount store={store} />
-      </>
-    );
-  }
-
-  if (state.screen === "editor" && state.stack !== null) {
+  // "Try It" (screen === "play") is now an in-editor mode: the editor shell
+  // stays, and the canvas area plays the live card (see EditorScreen /
+  // TryItCanvas). So both "editor" and "play" render the EditorScreen.
+  if ((state.screen === "editor" || state.screen === "play") && state.stack !== null) {
     return <EditorScreen store={store} />;
   }
 
   return (
     <StartScreen store={store} discardedNotice={discardedNotice.current} />
   );
-}
-
-// Lazy import avoids pulling the player bundle into the Start screen path.
-import { PlayOverlay } from "./PlayOverlay.js";
-function PlayMount({ store }: { store: EditorStore }): JSX.Element | null {
-  return <PlayOverlay store={store} />;
 }

@@ -221,9 +221,56 @@ function validStackWithImage(): Stack {
 // TASK-14 — No external URLs in the exported file.
 
 describe("exportStack — no external URLs (TASK-14)", () => {
-  it("produces HTML containing no http:// or https:// URLs", async () => {
+  it("loads no external resource: no url(http…), src/href=http, @import, or protocol-relative //", async () => {
     const html = await exportStack(validStackWithImage());
-    expect(html).not.toMatch(/https?:\/\//);
+    // A fetchable external URL would appear in a url(), an element src=/href=,
+    // an @import, or a protocol-relative //. The three fonts and the image are
+    // all inlined as data URIs, so none of these may contain an external URL.
+    // (The OFL notice may carry a source URL inside a CSS comment — that is not
+    //  fetched, so the file still works fully offline.)
+    expect(html).not.toMatch(/url\(\s*['"]?https?:\/\//i);
+    expect(html).not.toMatch(/url\(\s*['"]?\/\//i);
+    expect(html).not.toMatch(/\b(?:src|href)\s*=\s*['"]?https?:\/\//i);
+    expect(html).not.toMatch(/@import/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fonts inlined for offline use + OFL notice + no reserved font name.
+
+describe("exportStack — inlined fonts (built-app review P0 #2)", () => {
+  it("declares @font-face for all three design-system fonts as woff2 data URIs", async () => {
+    const html = await exportStack(validStack());
+    const fontFaceCount = (html.match(/@font-face/g) ?? []).length;
+    expect(fontFaceCount).toBe(3);
+    const dataUriCount = (html.match(/data:font\/woff2;base64,/g) ?? []).length;
+    expect(dataUriCount).toBe(3);
+    // Both design-system families are declared.
+    expect(html).toContain("'Bricolage Grotesque'");
+    expect(html).toContain("'Stackyard Reading'");
+  });
+
+  it("carries the OFL notice (copyright + licence) in a comment", async () => {
+    const html = await exportStack(validStack());
+    expect(html).toContain("SIL Open Font License 1.1");
+    expect(html).toContain("Braille Institute of America");
+    expect(html).toContain("The Bricolage Grotesque Project Authors");
+  });
+
+  it('never presents the reserved font name "Atkinson" or "Hyperlegible"', async () => {
+    const html = await exportStack(validStack());
+    // The reserved font NAME must not present to users (the subset is renamed
+    // to "Stackyard Reading"). The base64 font blob encodes bytes, so the
+    // reserved name cannot appear as readable text there either.
+    expect(html).not.toContain("Atkinson");
+    expect(html).not.toContain("Hyperlegible");
+  });
+
+  it("keeps the export fully offline (the fonts are inlined, not linked)", async () => {
+    const html = await exportStack(validStack());
+    // No external stylesheet or font link, and no fetchable font URL.
+    expect(html).not.toMatch(/<link[^>]+href\s*=\s*['"]?https?:/i);
+    expect(html).not.toMatch(/src:\s*url\(\s*['"]?https?:\/\//i);
   });
 });
 
@@ -268,8 +315,14 @@ describe("exportStack — URL escaping round-trip (TASK-15b)", () => {
 
       const html = await exportStack(stack);
 
-      // 1. No raw URL scheme survives in the HTML.
-      expect(html).not.toContain(scheme);
+      // 1. No raw URL scheme survives inside the embedded stack-data JSON (the
+      //    serialiser escapes `/` to `\u002f`). We scope this to the
+      //    #stack-data block: the OFL font notice legitimately carries a source
+      //    URL inside a CSS comment, which is not stack content and not fetched.
+      const dataBlock = html.match(
+        /<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/,
+      )![1]!;
+      expect(dataBlock).not.toContain(scheme);
 
       // 2. The JSON round-trip restores the exact original value.
       const parsed = extractStackData(html);

@@ -9,7 +9,6 @@ import { demoStack } from "./editor/demoStack.js";
 import { ensureAnnouncer } from "./editor/a11y.js";
 import { StartScreen } from "./editor/StartScreen.js";
 import { EditorScreen } from "./editor/EditorScreen.js";
-import { PlayOverlay } from "./editor/PlayOverlay.js";
 import { ExportDone } from "./editor/ExportDone.js";
 import "./editor/styles.css";
 
@@ -106,17 +105,28 @@ switch (state) {
     break;
   }
   case "play": {
-    render(<PlayOverlay store={makeStore({ card: 2 })} />, root);
+    // Try It is now an in-editor mode: the editor shell stays and the canvas
+    // area plays the live card. Open on card 3 (a quiz) in play mode.
+    const stack = demoStack();
+    const store = new EditorStore({ stack, screen: "play" }, {});
+    const card = stack.cards[2];
+    if (card) store.setSelectedCard(card.id);
+    render(<EditorScreen store={store} />, root);
     break;
   }
   case "export-done": {
+    // Shown as it is in the real flow: the confirmation overlay OVER the
+    // editor desk (the stack still visible beneath the 45% scrim).
     render(
-      <ExportDone
-        filename="Vikings-in-Ireland.html"
-        onOpen={() => {}}
-        onBack={() => {}}
-        onExportAgain={() => {}}
-      />,
+      <>
+        <EditorScreen store={makeStore({ card: 2, element: "firstAnswer" })} />
+        <ExportDone
+          filename="Vikings-in-Ireland.html"
+          onOpen={() => {}}
+          onBack={() => {}}
+          onExportAgain={() => {}}
+        />
+      </>,
       root,
     );
     break;

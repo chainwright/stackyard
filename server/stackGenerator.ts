@@ -15,8 +15,9 @@ import type {
   GenerateError,
 } from "../src/shared/types.js";
 import { validate } from "../src/shared/validator.js";
+import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { build as buildPrompt, buildRetry } from "./promptBuilder.js";
-import { build as buildFallback } from "./fallback.js";
+import { buildReadyMade } from "./fallback.js";
 import { call, LlmUnavailableError } from "./llmGateway.js";
 
 // ---------------------------------------------------------------------------
@@ -48,7 +49,11 @@ async function attempt(
 
   const result = validate(parsed);
   if (result.valid) {
-    return { ok: true, stack: result.stack };
+    // The model often points every quiz answer at the end card, which ends the
+    // game on the first click. Rewrite quiz answers to advance to the next card
+    // so the class walks the whole deck. The rewrite only retargets existing
+    // cards, so the stack stays valid (invariant 2 preserved).
+    return { ok: true, stack: linkQuizAnswersForward(result.stack) };
   }
   return { ok: false, errors: result.errors };
 }
@@ -92,13 +97,13 @@ export async function generate(
     // We treat *any* uncaught error here as "LLM unavailable" to keep the API key
     // and internal details out of the response.
     if (err instanceof LlmUnavailableError) {
-      const fallbackStack = buildFallback(request);
-      return { ok: true, stack: fallbackStack, isFallback: true };
+      const ready = buildReadyMade(request);
+      return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
     }
 
     // ConfigurationError or truly unexpected errors also fall back rather than
     // crashing — the server route layer can log the real error separately.
-    const fallbackStack = buildFallback(request);
-    return { ok: true, stack: fallbackStack, isFallback: true };
+    const ready = buildReadyMade(request);
+    return { ok: true, stack: ready.stack, isFallback: true, isReadyMadeExample: !ready.matched };
   }
 }

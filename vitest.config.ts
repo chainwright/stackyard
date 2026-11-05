@@ -24,6 +24,7 @@ export default defineConfig({
       ["tests/scaler.test.ts", "jsdom"],
       ["tests/player.index.test.ts", "jsdom"],
       ["tests/timing-endcard.test.ts", "jsdom"],
+      ["tests/play-through.test.ts", "jsdom"],
       // Maker UI tests (Preact components) need a DOM.
       ["tests/maker/app-shell.test.ts", "jsdom"],
       ["tests/maker/start-screen.test.ts", "jsdom"],

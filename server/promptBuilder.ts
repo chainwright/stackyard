@@ -53,6 +53,10 @@ Action types:
 6. **Non-empty title** — stack.title must not be blank or whitespace only.
 7. **At least one non-end card** — The stack must contain at least one card that is not kind "end".
 
+## Card flow
+
+Every quiz answer (right and wrong) should "goto" the NEXT card in the cards array, so the class works through the whole set card by card. Only the last quiz before the end card should "goto" the end card. Never make a quiz answer jump straight to the end card unless it is the last question.
+
 ## Audience writing rules — apply to all generated card text
 
 - Write for the year group specified in the prompt (default: 4th class, approximately 9–10 years old).
@@ -121,6 +125,13 @@ Action types:
 
 Because goto targets must reference card ids, decide all card ids up front so an
 earlier card can link to a later one.
+
+## Card flow
+
+Every quiz answer (right and wrong) should "goto" the NEXT card in play order,
+so the class works through the whole set card by card. Only the last quiz before
+the end card should "goto" the end card. Never make a quiz answer jump straight
+to the end card unless it is the last question.
 
 ## Audience writing rules — apply to all generated card text
 

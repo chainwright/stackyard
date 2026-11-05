@@ -1,15 +1,16 @@
 // tests/maker/play-overlay.test.ts
-// TASK-17: Play mode via the shared mountPlayer.
+// TASK-17 / TASK-R3: "Try It" — in-editor play via the shared mountPlayer.
+// The editor shell stays; the canvas area plays the live card, starting at the
+// card being edited, and flips on every card change. "Back to Editing" returns.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render, h } from "preact";
 import { App } from "../../src/editor/app.js";
-import { EditorStore } from "../../src/editor/store.js";
 import { STORAGE_KEY } from "../../src/editor/persistence.js";
 import { _resetAnnouncer } from "../../src/editor/a11y.js";
 import { quizStack } from "./fixtures.js";
 
-// jsdom has no ResizeObserver; the player scaler needs one.
+// jsdom has no ResizeObserver / MutationObserver guards needed by the scaler.
 class FakeResizeObserver {
   observe(): void {}
   unobserve(): void {}
@@ -36,14 +37,14 @@ async function flush(times = 4): Promise<void> {
 }
 
 /** Poll until `pred()` is truthy or the attempt budget runs out. */
-async function waitFor(pred: () => boolean, tries = 50): Promise<void> {
+async function waitFor(pred: () => boolean, tries = 120): Promise<void> {
   for (let i = 0; i < tries; i++) {
     if (pred()) return;
     await new Promise((r) => setTimeout(r, 5));
   }
 }
 
-describe("TASK-17: Play mode", () => {
+describe("TASK-R3: Try It (in-editor play)", () => {
   beforeEach(() => {
     localStorage.clear();
     document.body.innerHTML = "";
@@ -54,55 +55,76 @@ describe("TASK-17: Play mode", () => {
     mounted = null;
   });
 
-  it("starting Play renders the first card with no toolbar or inspector", async () => {
+  it("plays the selected card inside the editor shell, and flips to 'Trying It'", async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(quizStack()));
     const root = mountApp();
-    // Enter play via the Try It button.
     root.querySelector<HTMLButtonElement>(".tryit")!.click();
     await flush();
-    const play = root.querySelector(".play-root")!;
-    expect(play).not.toBeNull();
-    await waitFor(() => (play.textContent ?? "").includes("Where did the Vikings"));
-    // The first card is rendered inside the play stage.
-    expect(play.textContent).toContain("Where did the Vikings build a town in 841?");
-    // No editing chrome inside the play overlay.
-    expect(play.querySelector(".toolbar")).toBeNull();
-    expect(play.querySelector(".inspector")).toBeNull();
-    expect(play.querySelector(".cardlist")).toBeNull();
+
+    // The editor shell stays (top bar, card list, toolbar), and the canvas
+    // becomes the Try It area with the live player card.
+    const area = root.querySelector(".tryit-area")!;
+    expect(area).not.toBeNull();
+    expect(root.querySelector(".toolbar")).not.toBeNull();
+    expect(root.querySelector(".cardlist")).not.toBeNull();
+    // Try It is now pressed ("Trying It").
+    const tryBtn = root.querySelector<HTMLButtonElement>(".tryit")!;
+    expect(tryBtn.getAttribute("aria-pressed")).toBe("true");
+    expect(tryBtn.textContent).toContain("Trying It");
+    // The live card is rendered (the first/selected card's question).
+    await waitFor(() => (area.textContent ?? "").includes("Where did the Vikings"));
+    expect(area.textContent).toContain("Where did the Vikings build a town in 841?");
+    // There is a Back to Editing pill.
+    expect(root.querySelector(".try-pill")).not.toBeNull();
   });
 
-  it("exiting Play returns to the editor with the same selection and an unchanged stack", async () => {
+  it("starts play at the card being edited, not card 1", async () => {
+    // A two-content-card stack; select the SECOND card, then Try It.
     const stack = quizStack();
+    // Add a second quiz card before the end so there is a non-first card.
+    const second = JSON.parse(JSON.stringify(stack.cards[0])) as typeof stack.cards[0];
+    second.id = "22000000-0000-4000-8000-0000000000aa";
+    second.elements = second.elements.map((e, i) => ({ ...e, id: `2200000${i}-0000-4000-8000-0000000000bb` }));
+    const textEl = second.elements.find((e) => e.type === "text");
+    if (textEl && textEl.type === "text") textEl.content = "What is a longship?";
+    stack.cards = [stack.cards[0]!, second, stack.cards[1]!];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+
     const root = mountApp();
-    // Select the end card first so we can confirm selection is preserved.
-    // (Select via the card list.)
+    // Select the second card via the card list.
     const entries = root.querySelectorAll<HTMLButtonElement>(".card-entry");
     entries[1]!.click();
     await flush();
-    const selectedBefore = (root.querySelector(".card-entry[aria-current='true']") as HTMLElement | null);
-    // Capture the stack snapshot before playing.
+    root.querySelector<HTMLButtonElement>(".tryit")!.click();
+    await flush();
+
+    const area = root.querySelector(".tryit-area")!;
+    await waitFor(() => (area.textContent ?? "").includes("What is a longship?"));
+    // Play started on the selected (second) card, not card 1.
+    expect(area.textContent).toContain("What is a longship?");
+    expect(area.textContent).not.toContain("Where did the Vikings build a town in 841?");
+  });
+
+  it("Back to Editing returns to the editor with an unchanged stack", async () => {
+    const stack = quizStack();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
     const before = JSON.stringify(stack);
+    const root = mountApp();
 
     root.querySelector<HTMLButtonElement>(".tryit")!.click();
     await flush();
-    const playRoot = root.querySelector(".play-root")!;
-    expect(playRoot).not.toBeNull();
-    await waitFor(() => (playRoot.textContent ?? "").includes("Where did the Vikings"));
+    const area = root.querySelector(".tryit-area")!;
+    await waitFor(() => (area.textContent ?? "").includes("Where did the Vikings"));
 
-    // Exit play.
-    root.querySelector<HTMLButtonElement>(".play-root .exit")!.click();
+    root.querySelector<HTMLButtonElement>(".try-pill")!.click();
     await flush();
 
-    expect(root.querySelector(".play-root")).toBeNull();
+    expect(root.querySelector(".tryit-area")).toBeNull();
     expect(root.querySelector(".workspace")).not.toBeNull();
-    // Selection preserved (the second card is still current).
-    const current = root.querySelector(".card-entry[aria-current='true'] .num");
-    expect(current?.textContent).toBe("2");
-    expect(selectedBefore).not.toBeNull();
-    // The stack is unchanged by playing (byte-for-byte via JSON).
-    // Re-read from the store by comparing the rendered editor content.
-    // Playing writes nothing back, so the saved value equals the original.
+    // The editing canvas and inspector are back.
+    expect(root.querySelector(".canvas-scale")).not.toBeNull();
+    expect(root.querySelector(".inspector")).not.toBeNull();
+    // Playing wrote nothing back to the stack.
     const saved = localStorage.getItem(STORAGE_KEY)!;
     expect(JSON.parse(saved)).toEqual(JSON.parse(before));
   });
@@ -113,28 +135,27 @@ describe("TASK-17: Play mode", () => {
     root.querySelector<HTMLButtonElement>(".tryit")!.click();
     await flush();
 
-    const stage = root.querySelector(".play-stage")!;
-    await waitFor(() => stage.querySelectorAll(".sy-tile").length > 0);
-    const dublin = Array.from(stage.querySelectorAll<HTMLButtonElement>(".sy-tile")).find(
+    const area = root.querySelector(".tryit-area")!;
+    await waitFor(() => area.querySelectorAll(".sy-tile").length > 0);
+    const dublin = Array.from(area.querySelectorAll<HTMLButtonElement>(".sy-tile")).find(
       (b) => b.textContent?.includes("Dublin"),
     );
     expect(dublin).not.toBeUndefined();
 
-    // The renderer holds 900ms after a correct answer before the goto fires.
+    // Correct-answer hold (900ms) then the flip (240ms) before the end card.
     dublin!.click();
-    await waitFor(() => stage.querySelector('[data-testid="end-score"]') !== null, 400);
+    await waitFor(() => area.querySelector('[data-testid="end-score"]') !== null, 400);
 
-    // The end card shows "Score 1 of 1" (one quiz card, one correct).
-    const endScore = stage.querySelector('[data-testid="end-score"]');
+    const endScore = area.querySelector('[data-testid="end-score"]');
     expect(endScore?.textContent).toContain("Score 1 of 1");
   });
 
-  it("Play mode uses the same mountPlayer as the exported player entry", async () => {
+  it("Try It uses the same mountPlayer as the exported player entry", async () => {
     const { readFileSync } = await import("node:fs");
-    const playSrc = readFileSync("src/editor/PlayOverlay.tsx", "utf8");
+    const trySrc = readFileSync("src/editor/TryItCanvas.tsx", "utf8");
     const indexSrc = readFileSync("src/player/index.ts", "utf8");
-    expect(playSrc).toContain('from "../player/mount.js"');
-    expect(playSrc).toContain("mountPlayer(");
+    expect(trySrc).toContain('from "../player/mount.js"');
+    expect(trySrc).toContain("mountPlayer(");
     expect(indexSrc).toContain('from "./mount.js"');
     expect(indexSrc).toContain("mountPlayer(");
   });

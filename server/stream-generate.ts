@@ -30,6 +30,7 @@ import type {
 } from "../src/shared/types.js";
 import { generate as defaultGenerate } from "./stackGenerator.js";
 import { validate, validateCard } from "../src/shared/validator.js";
+import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { callStream as defaultCallStream } from "./llmGateway.js";
 import { buildStream as defaultBuildStream } from "./promptBuilder.js";
 
@@ -279,7 +280,10 @@ async function attemptStreamedLlm(
   if (!whole.valid) {
     return { ok: false, dealtCards };
   }
-  return { ok: true, stack: whole.stack };
+  // Quiz answers advance to the next card (not straight to the end). The final
+  // `done` stack the editor loads carries the corrected links; see
+  // linkQuizAnswersForward. Only existing cards are retargeted, so it stays valid.
+  return { ok: true, stack: linkQuizAnswersForward(whole.stack) };
 }
 
 // ---------------------------------------------------------------------------
@@ -311,12 +315,14 @@ async function streamFallback(
   }
 
   const stack = outcome.stack;
+  const isReadyMadeExample = outcome.isReadyMadeExample === true;
 
   sink.write({
     type: "start",
     total: stack.cards.length,
     title: stack.title,
     isFallback: outcome.isFallback,
+    isReadyMadeExample,
   });
 
   for (let i = 0; i < stack.cards.length; i++) {
@@ -339,7 +345,7 @@ async function streamFallback(
     return;
   }
 
-  sink.write({ type: "done", stack: whole.stack, isFallback: outcome.isFallback });
+  sink.write({ type: "done", stack: whole.stack, isFallback: outcome.isFallback, isReadyMadeExample });
   sink.end();
 }
 

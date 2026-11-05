@@ -43,10 +43,15 @@ function elementIdFromClick(
   return null;
 }
 
-/** Fit scale: fill the canvas area, clamped ≥ 0.9 in the Maker (design-system). */
-function fitScale(area: HTMLElement): number {
+/**
+ * Fit scale: fill the canvas area, clamped ≥ 0.9 in the Maker (design-system).
+ * `reservedTop` is the height of any control that sits ABOVE the card in this
+ * view (e.g. the flash Front/Back switch), subtracted so the card plus its
+ * control always fit and the control is never clipped under the top bar.
+ */
+function fitScale(area: HTMLElement, reservedTop = 0): number {
   const w = area.clientWidth;
-  const h = area.clientHeight;
+  const h = area.clientHeight - reservedTop;
   const s = Math.min((w - 48) / 812, (h - 48) / 612);
   return Math.max(0.9, Math.min(s, 1.35));
 }
@@ -98,14 +103,13 @@ export function Canvas({
         }
       : card;
 
-  // Derive the "Card N of M" chrome from the selected card's deck position
-  // (1-based among non-end content cards). Not stored in the stack — the
-  // renderer draws it from this, so the editor preview matches the player.
-  const contentCards = stack.cards.filter((c) => c.kind !== "end");
-  const contentIndex = contentCards.findIndex((c) => c.id === card.id);
+  // Derive the "Card N of M" chrome from the FULL deck position (the card list
+  // counts every card, so the meta matches it — same rule in both places). Not
+  // stored in the stack; the renderer draws it from this.
+  const deckIndex = stack.cards.findIndex((c) => c.id === card.id);
   const chrome =
-    contentIndex >= 0
-      ? { position: contentIndex + 1, total: contentCards.length }
+    deckIndex >= 0
+      ? { position: deckIndex + 1, total: stack.cards.length }
       : {};
 
   // Draw the selected card with the reused renderer after each render.
@@ -148,20 +152,22 @@ export function Canvas({
     }
   }, [stack, card, drawnCard, isFlash, flashSide, chrome.position, chrome.total]);
 
-  // Recompute the fit scale on mount and resize.
+  // Recompute the fit scale on mount and resize. When a control sits above the
+  // card (the flash Front/Back switch), reserve its height so it never clips.
+  const reservedTop = flashControl ? 64 : 0;
   useEffect(() => {
     const area = areaRef.current;
     if (!area) return;
     const recompute = () => {
       if (!area.isConnected) return;
-      setScale(fitScale(area));
+      setScale(fitScale(area, reservedTop));
     };
     recompute();
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(recompute);
     ro.observe(area);
     return () => ro.disconnect();
-  }, []);
+  }, [reservedTop]);
 
   // Capture-phase click → select element (no navigation/sound in edit mode).
   function onClickCapture(e: MouseEvent): void {
@@ -171,6 +177,51 @@ export function Canvas({
     e.preventDefault();
     e.stopPropagation();
     store.setSelectedElement(id);
+  }
+
+  // ---- Real pointer drag ("Drag to move") ----
+  // Pointerdown on an element selects it and begins a drag; pointermove moves it
+  // through the shared moveElement op (which clamps to the canvas, invariant 5);
+  // the whole drag coalesces into ONE undo step via the move:<id> coalesce key
+  // (REQ-MKR-08/10). Screen pixels are converted to canvas pixels by dividing by
+  // the current fit scale.
+  const dragState = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    elX: number;
+    elY: number;
+  } | null>(null);
+
+  function onPointerDown(e: PointerEvent): void {
+    const root = stackRef.current;
+    if (!root) return;
+    const id = elementIdFromClick(drawnCard, root, e.target);
+    if (id === null) return;
+    const el = card.elements.find((x) => x.id === id);
+    if (!el) return;
+    store.setSelectedElement(id);
+    dragState.current = { id, startX: e.clientX, startY: e.clientY, elX: el.x, elY: el.y };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onPointerMove(e: PointerEvent): void {
+    const drag = dragState.current;
+    if (drag === null) return;
+    const dx = (e.clientX - drag.startX) / scale;
+    const dy = (e.clientY - drag.startY) / scale;
+    const nextX = Math.round(drag.elX + dx);
+    const nextY = Math.round(drag.elY + dy);
+    store.apply((s) => moveElement(s, drag.id, nextX, nextY), {
+      coalesceKey: "move:" + drag.id,
+    });
+    e.preventDefault();
+  }
+
+  function endDrag(): void {
+    dragState.current = null;
   }
 
   // Keyboard element move (REQ-MKR-08): arrow nudges by 1 px, Shift+arrow by
@@ -259,6 +310,10 @@ export function Canvas({
           class="sy-card-stack"
           ref={stackRef}
           onClickCapture={onClickCapture}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
         />
         {selectedEl ? (
           <div
@@ -290,8 +345,10 @@ export function Canvas({
             class="right-tag"
             style={{
               position: "absolute",
-              left: `${(correctTile.x + correctTile.w - 150) * scale}px`,
-              top: `${(correctTile.y + correctTile.h / 2 - 15) * scale}px`,
+              // Top-right corner INSIDE the tile, so it never overlaps a long
+              // answer label or pokes past the tile's right edge.
+              left: `${(correctTile.x + correctTile.w - 158) * scale}px`,
+              top: `${(correctTile.y + 8) * scale}px`,
               zIndex: 29,
             }}
           >

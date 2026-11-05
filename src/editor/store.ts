@@ -67,6 +67,7 @@ export class EditorStore {
       history,
       lastValidation,
       isFallback: initial?.isFallback ?? false,
+      isReadyMadeExample: initial?.isReadyMadeExample ?? false,
       status: initial?.status ?? "idle",
     };
   }
@@ -183,7 +184,7 @@ export class EditorStore {
   // Stack / screen setters used by generate + play
 
   /** Load a freshly generated (or restored) stack. Resets history. */
-  setStack(stack: Stack, opts?: { isFallback?: boolean }): void {
+  setStack(stack: Stack, opts?: { isFallback?: boolean; isReadyMadeExample?: boolean }): void {
     this.state.stack = stack;
     this.state.history = createHistory();
     this.lastCommit = null;
@@ -191,6 +192,7 @@ export class EditorStore {
     this.state.selectedElementId = null;
     this.state.lastValidation = validate(stack);
     this.state.isFallback = opts?.isFallback ?? false;
+    this.state.isReadyMadeExample = opts?.isReadyMadeExample ?? false;
     this.state.screen = "editor";
     persistence.save(stack, this.hooks.storage);
     this.changed();

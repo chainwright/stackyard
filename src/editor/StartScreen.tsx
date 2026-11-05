@@ -64,7 +64,10 @@ export function StartScreen({
   const [sentence, setSentence] = useState(
     __demoError
       ? "A 10-card quiz about the Vikings in Ireland, the right answer plays a cheer"
-      : "",
+      : // Pre-fill the Vikings example as real text so one click on Build Cards
+        // gives the demo, and Build Cards starts enabled (built-app review:
+        // start-empty had an empty textarea and a disabled button).
+        EXAMPLES[0]!.sentence,
   );
   const [error, setError] = useState<string | null>(__demoError ?? null);
   // Cards dealt so far during progressive generation, and the expected total.
@@ -103,12 +106,17 @@ export function StartScreen({
     });
 
     if (outcome.ok) {
-      store.setStack(outcome.stack, { isFallback: outcome.isFallback });
+      store.setStack(outcome.stack, {
+        isFallback: outcome.isFallback,
+        isReadyMadeExample: outcome.isReadyMadeExample,
+      });
       store.setStatus("idle");
       announce(
-        outcome.isFallback
-          ? "Your cards are ready. We built them offline."
-          : "Your cards are ready.",
+        outcome.isReadyMadeExample
+          ? "We couldn't reach the internet, so here's a ready-made example you can edit."
+          : outcome.isFallback
+            ? "Your cards are ready. We built them offline."
+            : "Your cards are ready.",
       );
     } else {
       store.setStatus("idle");
@@ -244,11 +252,13 @@ function GeneratingScreen({
   // On the real LLM stream the total is not known up front (total === 0): show
   // a live count of what's been dealt instead of "N of M". On the fallback
   // path the total is known, so "N of M" / "All M ready" is used.
+  // Show the count DEALT so far so the counter matches the top card's own
+  // "Card N of M" (built-app review: they were off by one).
   const counter =
     total > 0
       ? dealtCount >= total
         ? `All ${total} cards ready`
-        : `Card ${Math.min(dealtCount + 1, total)} of ${total}`
+        : `Card ${Math.min(dealtCount, total)} of ${total}`
       : dealtCount > 0
         ? `Card ${dealtCount} ready`
         : "Working…";
@@ -261,7 +271,7 @@ function GeneratingScreen({
       <main class="build-area" aria-busy="true" aria-label="Building your cards">
         <div class="status">
           <h1>Building your cards…</h1>
-          <p>Each card appears as it's ready.</p>
+          <p>Each card appears as it's ready. About 20 seconds.</p>
           <p class="counter" aria-live="polite">{counter}</p>
         </div>
         <div class="deal" aria-hidden="true">

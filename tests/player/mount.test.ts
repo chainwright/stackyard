@@ -116,10 +116,57 @@ describe("TASK-17a: mountPlayer", () => {
   });
 });
 
+describe("mountPlayer — card flip (TASK-R3)", () => {
+  it("starts play at the requested card (startCardId)", () => {
+    const stack: Stack = {
+      id: id(1),
+      title: "Start test",
+      theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        { id: id(2), kind: "story", elements: [{ type: "text", id: id(3), x: 48, y: 104, w: 704, h: 80, content: "First card" }], actions: [] },
+        { id: id(4), kind: "story", elements: [{ type: "text", id: id(5), x: 48, y: 104, w: 704, h: 80, content: "Second card" }], actions: [] },
+        { id: id(6), kind: "end", elements: [{ type: "field", id: id(7), x: 48, y: 40, w: 704, h: 80, variable: "score" }], actions: [] },
+      ],
+    };
+    const teardown = mountPlayer(stack, root, { startCardId: id(4) });
+    expect(root.textContent).toContain("Second card");
+    expect(root.textContent).not.toContain("First card");
+    teardown();
+  });
+
+  it("applies the card-enter flip animation on the first render (motion on)", () => {
+    const teardown = mountPlayer(minimalStack(), root, { flip: true });
+    const cardEl = root.querySelector<HTMLElement>(".sy-card");
+    expect(cardEl?.style.animation).toContain("card-enter");
+    expect(cardEl?.style.transformOrigin).toBe("top center");
+    teardown();
+  });
+
+  it("applies no flip animation when flip is disabled", () => {
+    const teardown = mountPlayer(minimalStack(), root, { flip: false });
+    const cardEl = root.querySelector<HTMLElement>(".sy-card");
+    expect(cardEl?.style.animation ?? "").toBe("");
+    teardown();
+  });
+
+  it("skips the flip under prefers-reduced-motion", () => {
+    const original = window.matchMedia;
+    (window as unknown as { matchMedia: (q: string) => MediaQueryList }).matchMedia = ((q: string) =>
+      ({ matches: /reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList);
+    try {
+      const teardown = mountPlayer(minimalStack(), root, { flip: true });
+      const cardEl = root.querySelector<HTMLElement>(".sy-card");
+      expect(cardEl?.style.animation ?? "").toBe("");
+      teardown();
+    } finally {
+      (window as unknown as { matchMedia?: typeof original }).matchMedia = original;
+    }
+  });
+});
+
 describe("mountPlayer derives 'Card N of M' from the deck position", () => {
-  it("shows 'Card 1 of 2' on the first content card of a two-content-card deck", () => {
-    // minimalStack(): one story content card + one end card → total content = 1.
-    // Build a deck with two content cards so the total reads cleanly.
+  it("shows 'Card 1 of 3' on the first card of a three-card deck (counts every card)", () => {
+    // Two quizzes + an end card = three cards; the meta counts all three.
     const stack: Stack = {
       id: id(1),
       title: "Meta Test",
@@ -160,7 +207,8 @@ describe("mountPlayer derives 'Card N of M' from the deck position", () => {
 
     const teardown = mountPlayer(stack, root);
     const meta = root.querySelector(".sy-meta-chrome .sy-meta");
-    expect(meta?.textContent).toBe("Card 1 of 2");
+    // The meta counts every card in the deck (two quizzes + the end = 3).
+    expect(meta?.textContent).toBe("Card 1 of 3");
     teardown();
   });
 });
@@ -172,9 +220,9 @@ describe("TASK-17: Play mode and the exported player share one mountPlayer", () 
     // The exported player entry imports mountPlayer from ./mount.js and calls it.
     expect(indexSource).toContain('from "./mount.js"');
     expect(indexSource).toContain("mountPlayer(");
-    // And the Maker's Play overlay imports the same symbol.
-    const playSource = readFileSync("src/editor/PlayOverlay.tsx", "utf8");
-    expect(playSource).toContain("mountPlayer");
+    // And the Maker's Try It canvas imports the same symbol.
+    const trySource = readFileSync("src/editor/TryItCanvas.tsx", "utf8");
+    expect(trySource).toContain("mountPlayer");
     expect(typeof mountMod.mountPlayer).toBe("function");
   });
 });

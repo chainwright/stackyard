@@ -557,6 +557,29 @@ does nothing.
 
 ---
 
+### REQ-MKR-18 — A quiz plays through card by card
+
+**As a** teacher,
+**I want** every quiz answer to move the class on to the next card,
+**so that** the whole set is played and the last card shows the real score.
+
+#### Acceptance criteria
+
+- WHEN a stack is built (the demo deck, the LLM generator's output, or the
+  offline fallback),
+  THE SYSTEM SHALL point every quiz answer's "go to" at the next card in play
+  order, and only the last quiz before the last card SHALL target the last card.
+
+- WHEN the class answers a quiz — right or wrong —
+  THE SYSTEM SHALL advance to the next card (never jump straight to the last
+  card), so a full play-through visits every card in order and the last card
+  shows the running score.
+
+- THE SYSTEM SHALL leave non-answer buttons (story branches, a "Start" button,
+  a "Next card" button, a "Play again" button) with their own "go to" targets.
+
+---
+
 ## Out of scope for this feature
 
 - User accounts, sign-up, cloud save or sync (product.md).

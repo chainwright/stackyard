@@ -650,3 +650,197 @@ TASK-05 + ops + TASK-10M ──┬─ TASK-11 app shell (Preact) ─ TASK-12 sta
                                 └─ TASK-19 persistence wiring
                                      └─ TASK-20 accessibility pass (nudge coalescing)
 ```
+
+---
+
+## Phase 8 — Built-app review fixes (2026-11-05)
+
+An outside judge ran the built app and scored it 5.0 against the 7.8 mockup set
+(`docs/design/review/MAKER_MOCKUPS_JUDGE.md`, "Built app verdict"). The class saw
+the Round 1 player, not the Round 3 mockups. These tasks close that gap in the
+order the verdict gives.
+
+### TASK-R1: Quiz answers advance to the next card — Done
+**Refs:** REQ-MKR-18, stack-format.md invariant 2, verdict P0 #1
+
+> **Done:** Added `src/shared/linkForward.ts` (`linkQuizAnswersForward`): a pure
+> rewrite that points every quiz answer's `goto` at the NEXT card in deck order
+> (the last quiz before the end targets the end card), leaving non-answer buttons
+> — story branches, "Start", "Next Card", "Play again" — untouched. Wired it into
+> every place a stack is built: `src/editor/demoStack.ts` (now a fully playable
+> deck: quizzes link forward, flash cards carry a "Next Card" button, the story
+> branch rejoins), the LLM path in `server/stackGenerator.ts` (normalises the
+> validated stack), and the streamed path's assembled `done` stack in
+> `server/stream-generate.ts`. Both prompts (`server/promptBuilder.ts`) gained a
+> "Card flow" rule so the model emits forward links in the first place. Tests:
+> `tests/link-forward.test.ts` (unit + a fast-check property: a quiz answer never
+> targets the end card unless it is the last question) and `tests/play-through.ts`
+> (via the shared `mountPlayer`: answering walks every card in order and the end
+> card shows the real score — `Score 5 of 5`, and `Score 1 of 3` with wrong
+> answers). Full suite 450 pass, tsc clean.
+
+**Done when:** a played stack visits every card in order and the end card shows
+the real score; a property test proves no quiz answer targets the end card unless
+it is the last question. ✓
+
+### TASK-R2: Player fonts — real families + fonts inlined in the export — Done
+**Refs:** REQ-MKR-12, design-system.md "The exported HTML must carry the font notice", verdict P0 #2
+
+> **Done:** (a) `src/player/renderer.ts` now sets body / meta / tile / field text
+> to `'Stackyard Reading'` (the family the app actually loads), not the unloaded
+> `'Atkinson Hyperlegible'`, so the editor canvas and the player render body text
+> in the real face. (b) `server/exporter.ts` reads the three Latin-subset woff2
+> files (`src/assets/fonts/{bricolage,reading-400,reading-700}.woff2`) and inlines
+> them as base64 `@font-face` data URIs, each with an OFL notice comment
+> (copyright line + "SIL Open Font License 1.1" + source) above it; the reading
+> font uses only the copyright line, never the reserved-name line, so no reserved
+> font name reaches the HTML. `server/html-template.ts` gained a `fontFaces`
+> option, injected into the page `<style>`. No external URL is loaded (the fonts
+> and the image are data URIs), so the file stays offline. Tests
+> (`tests/exporter.test.ts`): the exported HTML declares three `@font-face` as
+> `data:font/woff2;base64` URIs, carries the OFL notice, contains no "Atkinson"/
+> "Hyperlegible", and loads no external resource (rewrote the TASK-14 URL check to
+> forbid fetchable URLs while allowing a source URL inside a CSS comment). The
+> 50 KB player-bundle budget is unchanged and its test now states explicitly that
+> the fonts are part of the export, not the player bundle. Full suite 454 pass,
+> tsc clean.
+
+**Done when:** the exported HTML declares `@font-face` for all three fonts as
+woff2 data URIs, no "Atkinson" name appears, and the export loads nothing over
+the network. ✓
+
+### TASK-R3: Try It flips the edited card in place and plays it — Done
+**Refs:** REQ-MKR-11, design-system.md Motion, editor-try.html, verdict P0 #3
+
+> **Done:** Try It is now an in-editor mode, not a full-screen swap. The old
+> `src/editor/PlayOverlay.tsx` is gone; `src/editor/TryItCanvas.tsx` renders the
+> SHARED `mountPlayer` inside the editor canvas area (top bar, card list,
+> inspector "Trying your card" and toolbar all stay), starting at the card being
+> edited (`store.selectedCardId`), with a "Back to Editing" paper pill that flips
+> back. `app.tsx` renders `EditorScreen` for both `editor` and `play`; the Try It
+> button shows pressed "Trying It". `mountPlayer` gained options: `startCardId`
+> (play begins at the selected card), `flip` (the design-system
+> `card-exit → card-enter` rotateX, 240 ms, top-centre origin, on every
+> user-initiated card change, skipped under `prefers-reduced-motion`), and a
+> `scaler` seam so Try It fits the card into the editor area instead of taking
+> over `document.body` (the exported player still uses the viewport scaler). Auto-
+> advance (card-level goto) stays instant so the 20-step loop guard is unchanged.
+> Tests: rewrote `tests/maker/play-overlay.test.ts` (in-editor play, starts at the
+> selected card not card 1, Back to Editing restores the editor with an unchanged
+> stack, answering reaches the end score, shares `mountPlayer`); added flip /
+> startCardId / reduced-motion cases to `tests/player/mount.test.ts`. Full suite
+> 459 pass, tsc clean.
+
+**Done when:** Try It starts on the card being edited, flips that card in place
+and plays it, "Back to Editing" flips back, the player flips on every card
+change, and `prefers-reduced-motion` is respected. ✓
+
+### TASK-R4: Offline fallback is real ready-made decks per example — Done
+**Refs:** REQ-MKR-01, REQ-MKR-18, verdict P0 #4
+
+> **Done:** The offline fallback no longer returns the three-card "Correct
+> Answer"/"Wrong Answer" stub. `src/shared/readyMadeStacks.ts` holds three
+> complete, 4th-class decks — Vikings in Ireland (quiz + flash + a story branch),
+> a times-tables game (3×4 … 12×12), and everyday Irish-words flashcards
+> (Dia duit, Slán, Go raibh maith agat … + a check quiz) — each valid and with
+> quiz answers linked forward. `pickReadyMade(prompt)` matches the Start-screen
+> example sentences by keyword and returns that deck (`matched: true`); any other
+> sentence gets the closest deck with `matched: false`. `server/fallback.ts` now
+> delegates to it (`build` / `buildReadyMade`), and `server/stackGenerator.ts`
+> sets `isReadyMadeExample` when the fallback deck was NOT a match. That flag
+> flows through the stream (`start`/`done`), the api client, and the store into
+> an honest editor banner: "We couldn't reach the internet, so this is a
+> ready-made example. Edit it, or try your own sentence again." Tests: rewrote
+> `tests/fallback.test.ts` (each example matches its deck; an unrelated sentence
+> gets the closest deck flagged not-matched; every deck is valid, carries no
+> placeholder labels, and links answers forward; a 300-run property that any
+> prompt yields a valid deck). Full suite 457 pass, tsc clean.
+>
+> Note: the live Render deploy still needs the LLM key set and warm so the real
+> deal-in plays for matched sentences; the fallback is the no-key safety net.
+
+**Done when:** each example sentence yields its matching ready-made deck; any
+other sentence yields the closest ready-made deck with an honest note; no deck
+contains placeholder content. ✓
+
+### TASK-R5: Round 3 player look + real drag + Add Button/Text fixes — Done
+**Refs:** REQ-MKR-08, design-system.md Rubber stamp / end card / desk, verdict P0 #5, P1
+
+> **Done, player visuals (`src/player/renderer.ts`, `scaler.ts`):**
+> - CORRECT ✓ stamp is now an ink stamp straddling the tile's TOP edge on the
+>   label side (`top:-24px; left:64px; rotate(-8deg); 30px; background:transparent;
+>   mix-blend-mode:multiply`), over the paper (4.67:1), never over the answer word.
+> - Wrong answer: after the shake, a boxed ✗ lands at 100% strength (44px, same
+>   top-edge placement) instead of the old faint 40% inline mark.
+> - End card: the 14px pips are gone; it's a 64px slot grid — one slot per
+>   question, earned slots a red ✓ at varied rotations, the rest empty dashed ink
+>   outlines (score = stamps).
+> - Player desk is the warm `#C9A47C` with the CSS grain (was flat `#D4C9B0`).
+>
+> **Done, editor (`Canvas.tsx`, `operations.ts`, renderer):**
+> - Real pointer drag for "Drag to move": pointerdown selects + starts a drag,
+>   pointermove moves through the shared `moveElement` (canvas-clamped), the whole
+>   drag coalescing into ONE undo step via `move:<id>`.
+> - Add Button on a quiz no longer restyles the four tiles: the renderer now
+>   treats a quiz button as an answer tile only when it HAS actions, so a toolbar
+>   button (empty actions) renders as a generic button and the tiles stay tiles.
+> - Add Text / Add Button land in the first free rule band below the lowest
+>   element (`freeY`), never on top of the question.
+>
+> Tests: `renderer.test.ts` stamp rule updated to the top-edge ink placement;
+> `timing-endcard.test.ts` updated to the slot grid (earned/empty counts);
+> `canvas.test.ts` gains: a plain button keeps the tiles as tiles, Add Text lands
+> below the lowest element, and a pointer drag moves an element in one undo step.
+> Full suite 460 pass, tsc clean. Re-shot `built/play.png`, `editor-end.png`,
+> `editor-quiz.png` and the exported player (`built/exported-player_1920x1080.png`
+> via `scripts/export-demo.ts`): warm desk, real fonts, standing rings, the
+> stamp-collection end card.
+
+**Done when:** the exported player shows the Round 3 look (ink stamp, boxed ✗,
+end-card stamp collection, warm desk); dragging moves an element; Add Button on a
+quiz keeps the tiles; Add Text lands in free space. ✓
+
+### TASK-R6: Remaining built-app polish — Done
+**Refs:** verdict P1 list + "Remaining fixes" #7
+
+> **Done:**
+> - **No score while editing**: `.canvas-area:not(.tryit-area) .sy-score-chrome`
+>   is hidden, so the editing canvas shows no "Score 0"; Try It (real play) keeps
+>   it. (styles.css)
+> - **Card count agrees**: the derived "Card N of M" now counts EVERY card (the
+>   card list already counts them all), in both `mount.ts` and `Canvas.tsx`, so
+>   the card and the list read the same ("Card 3 of 10", 10 rows). The end card
+>   still shows no meta line.
+> - **Flash Front/Back no longer clipped**: the fit reserves the control height
+>   above the card (`fitScale(area, reservedTop)`), so the Front/Back switch sits
+>   fully below the top bar at 1366×768.
+> - **Long answer labels** shrink with ellipsis (`.sy-tile-label`), and the
+>   editor "✓ Right answer" navy tag sits in the tile's top-right corner inside,
+>   never overlapping the label or poking past the edge.
+> - **Story / nav buttons** render as chunky 32px bold paper tabs with a pressed
+>   bottom edge (`.sy-button`), matching the mockup.
+> - **export-done over the editor**: the harness now shows the overlay on the
+>   editor desk (the stack visible under the 45% scrim), matching the real flow;
+>   the editor rings sit under the fixed scrim.
+> - **start-empty**: the Vikings sentence is pre-filled (one click → the demo),
+>   so Build Cards starts enabled.
+> - **start-generating**: the counter shows the count DEALT ("Card 4 of 10",
+>   matching the top card — the off-by-one is gone) and the honest
+>   "About 20 seconds." line is back.
+>
+> Deliberate deviation kept: on a (harness-forced) invalid stack the Export
+> button stays **disabled**. The real editor can never hold an invalid stack —
+> every mutation goes through `store.apply`, which validates before committing
+> (REQ-MKR-09 "never a dead export") — so the disabled state only appears in the
+> forced `editor-invalid` harness screenshot, where it honestly signals "not
+> exportable yet". Making it enabled-but-jump would weaken the guarantee for no
+> real-flow benefit.
+>
+> Full suite 460 pass, tsc clean. Re-shot every `built/` state and the exported
+> player; compared by eye against the mockups — shell, fonts, desk, rings,
+> stamp-collection end card, Try It flip, forward-linked quizzes, example tabs,
+> pre-fill, and the export overlay all match.
+
+**Done when:** the editor shows no score, card counts agree, the flash switch is
+not clipped, long labels fit, export-done sits over the editor, start-empty is
+pre-filled and start-generating's counter matches the card. ✓

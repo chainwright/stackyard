@@ -5,6 +5,13 @@
 // built-in zlib, and asserts the compressed size is within the 50 KB budget
 // (51,200 bytes). This check runs as part of `npm test`, so an over-budget
 // bundle fails the build.
+//
+// Scope of the budget: this is the PLAYER RUNTIME bundle only
+// (dist/player/player.iife.js). The three design-system fonts are NOT part of
+// this bundle — they are inlined as base64 @font-face data URIs by the exporter
+// (server/exporter.ts) at export time, so they add to the exported file's size,
+// not the player bundle. tech.md's "under 50 KB" target is the player runtime;
+// the exported file is larger because it also carries the fonts and the stack.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";

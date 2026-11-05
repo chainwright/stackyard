@@ -48,6 +48,10 @@ describe("TASK-12: Start screen generate flow", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const root = mount();
+    // The textarea is pre-filled with the Vikings example; clear it to test the
+    // empty-input case.
+    setSentence(root, "");
+    await flush();
     const btn = root.querySelector<HTMLButtonElement>(".build-btn")!;
     expect(btn.disabled).toBe(true);
     btn.click();

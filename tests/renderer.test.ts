@@ -464,18 +464,16 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
   });
 
   /**
-   * Design spec (v3, 2026-10-31):
-   *   - Stamp: bottom:calc(100% - 14px), right:16px, left:auto, position:absolute
-   *   - Reduced to ~0.75× original size (26px font, 6px 12px padding) so the
-   *     stamp's bottom edge lands at tile-top + 14px — at most the top 14px of
-   *     the tile is covered, well within the 25% label-height allowance.
-   *
-   * We verify by checking the CSS rule values from the injected <style> block.
-   * jsdom does not perform real layout so getBoundingClientRect() returns all
-   * zeroes — real pixel overlap must be confirmed in Chrome (see screenshot
-   * docs/design/review/2026-10-31_stamp_v3.png).
+   * Design spec (Round 3): the earned ink stamp straddles the tile's TOP edge
+   * on the label side, mostly over the paper above the tile:
+   *   - top:-24px; left:64px (never right-aligned, never over the answer word)
+   *   - transparent + mix-blend-mode:multiply (an ink stamp, not a paper sticker)
+   *   - rotate(-8deg), boxed in stamp red.
+   * Measuring stamp red over a tile colour fails AA; the top-edge placement puts
+   * it on the 4.67:1 paper pairing. jsdom does no layout, so we assert the CSS
+   * rule values; pixel overlap is confirmed by the built-player screenshot.
    */
-  it("stamp CSS rule has bottom:calc(100% - 14px) and right:16px (anchored at tile top + 14px)", () => {
+  it("stamp CSS rule straddles the tile top edge (top:-24px; left:64px; transparent + multiply)", () => {
     // Force styles to be injected by rendering a card.
     const card: Card = {
       id: IDS.card1,
@@ -509,21 +507,20 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
     const stampRuleMatch = css.match(/\.sy-stamp\s*\{([^}]+)\}/);
     expect(stampRuleMatch, ".sy-stamp rule must be present in injected styles").not.toBeNull();
 
-    const stampRule = stampRuleMatch![1];
+    const stampRule = stampRuleMatch![1]!;
 
-    // Stamp bottom edge anchored at tile-top + 14px (bottom: calc(100% - 14px)
-    // means the stamp's bottom is 14px below the tile's top border).
-    expect(stampRule).toMatch(/bottom\s*:\s*calc\(100%\s*-\s*14px\)/);
-    // left must be auto so it does not conflict with right-alignment.
-    expect(stampRule).toMatch(/left\s*:\s*auto/);
-    // right offset: 16px from tile's right edge.
-    expect(stampRule).toMatch(/right\s*:\s*16px/);
-    // Paper fill keeps whatever tile content is behind it readable.
-    expect(stampRule).toMatch(/background\s*:/);
+    // Straddles the tile's top edge on the label side (over the paper above).
+    expect(stampRule).toMatch(/top\s*:\s*-24px/);
+    expect(stampRule).toMatch(/left\s*:\s*64px/);
+    // An ink stamp, not a paper sticker: transparent + multiply.
+    expect(stampRule).toMatch(/background\s*:\s*transparent/);
+    expect(stampRule).toMatch(/mix-blend-mode\s*:\s*multiply/);
+    // Rotated and boxed in stamp red.
+    expect(stampRule).toMatch(/transform\s*:\s*rotate\(-8deg\)/);
+    expect(stampRule).toMatch(/border\s*:\s*3px solid var\(--color-stamp\)/);
 
-    // NOTE: jsdom does not compute layout, so we cannot verify pixel overlap here.
-    // The constraint "stamp covers at most 25% of the 54px label height (≤ 14px)"
-    // is validated by real-browser screenshot: docs/design/review/2026-10-31_stamp_v3.png.
+    // NOTE: jsdom does no layout; real pixel overlap (stamp over the paper, not
+    // the tile colour) is confirmed by the built-player screenshot.
   });
 
   it("stamp element appears after correct click and tile label remains present", () => {
