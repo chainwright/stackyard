@@ -61,6 +61,13 @@ export interface StreamGenerateDeps {
   buildStream?: typeof defaultBuildStream;
   /** Sleep used for fallback pacing; tests pass a no-op to run instantly. */
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * The client's connection signal. When the client disconnects mid-stream it
+   * aborts, which `callStream` forwards to its upstream fetch so the server
+   * stops paying for tokens nobody will read. The HTTP route passes
+   * `req`'s close signal; tests pass their own controller or omit it.
+   */
+  signal?: AbortSignal;
 }
 
 const realSleep = (ms: number): Promise<void> =>
@@ -189,6 +196,7 @@ async function attemptStreamedLlm(
   request: GenerateRequest,
   sink: LineSink,
   deps: Required<Pick<StreamGenerateDeps, "callStream" | "buildStream">>,
+  signal?: AbortSignal,
 ): Promise<StreamAttemptResult> {
   const messages = deps.buildStream(request);
   const lineBuffer = new LineBuffer();
@@ -230,7 +238,10 @@ async function attemptStreamedLlm(
   };
 
   try {
-    for await (const delta of deps.callStream(messages, { temperature: 0.7 })) {
+    const callOptions = signal === undefined
+      ? { temperature: 0.7 }
+      : { temperature: 0.7, signal };
+    for await (const delta of deps.callStream(messages, callOptions)) {
       lineBuffer.push(delta);
       for (const line of lineBuffer.takeCompleteLines()) {
         if (!handleLine(line)) {
@@ -357,15 +368,27 @@ export async function streamGenerate(
   const callStream = deps.callStream ?? defaultCallStream;
   const buildStream = deps.buildStream ?? defaultBuildStream;
   const sleep = deps.sleep ?? realSleep;
+  const signal = deps.signal;
 
   // 1. Try the real progressive LLM stream.
-  const attempt = await attemptStreamedLlm(request, sink, {
-    callStream,
-    buildStream,
-  });
+  const attempt = await attemptStreamedLlm(
+    request,
+    sink,
+    { callStream, buildStream },
+    signal,
+  );
 
   if (attempt.ok) {
     sink.write({ type: "done", stack: attempt.stack, isFallback: false });
+    sink.end();
+    return;
+  }
+
+  // 1b. If the client disconnected, don't do any more work — there is nobody
+  //     to read the fallback, and callStream has already aborted the upstream
+  //     request. Stop here so we don't spend tokens (or writes) on a dead
+  //     connection.
+  if (signal?.aborted) {
     sink.end();
     return;
   }

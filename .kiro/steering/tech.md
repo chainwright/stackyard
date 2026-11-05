@@ -44,6 +44,24 @@ Both calls share identical key handling and no-secrets guarantees: the key is
 read only from the server environment, sent only in the request header, and never
 appears in any returned value, yielded delta, streamed message, or error.
 
+Both calls carry explicit `AbortController` deadlines so a hung or slow-trickling
+LLM can never pin a request (and its tokens) open forever:
+
+- `call` — 45 s total. If the whole request outlasts it, the upstream fetch is
+  aborted.
+- `callStream` — 90 s total **and** a 20 s idle (no-chunk) cap that resets on
+  every chunk. Either firing aborts the upstream fetch.
+
+On any deadline the call throws `LlmUnavailableError` and the generator falls
+back with the usual plain-language message; the deadline path never surfaces the
+URL or key. `callStream` also accepts the client's connection signal
+(`CallOptions.signal`): `/api/generate` wires `req`'s close event to it, so when a
+client disconnects mid-stream the upstream request is aborted — the server stops
+paying for tokens nobody will read — and `streamGenerate` skips the fallback
+because there is no one left to receive it. Each deadline and both disconnect
+paths have fake-timer tests in `tests/llmGateway.test.ts` and
+`tests/stream-generate.test.ts`.
+
 ## Testing
 
 - Vitest for unit and integration tests

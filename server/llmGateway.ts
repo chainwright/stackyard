@@ -80,6 +80,24 @@ interface ChatCompletionStreamChunk {
 }
 
 // ---------------------------------------------------------------------------
+// Deadlines
+//
+// Every upstream request carries an explicit deadline so a hung or
+// slow-trickling LLM can never pin a request (and its tokens) open forever.
+// On a deadline we abort the upstream fetch and throw LlmUnavailableError; the
+// caller then falls back with the usual plain-language message. The URL and key
+// never appear in any abort path.
+
+/** Non-streaming `call`: whole request must finish within this budget. */
+export const CALL_TOTAL_DEADLINE_MS = 45_000;
+
+/** Streaming `callStream`: whole stream must finish within this budget. */
+export const STREAM_TOTAL_DEADLINE_MS = 90_000;
+
+/** Streaming `callStream`: abort if no chunk arrives for this long. */
+export const STREAM_IDLE_DEADLINE_MS = 20_000;
+
+// ---------------------------------------------------------------------------
 // Config helpers (read env vars once per call to support test overrides)
 
 function getApiKey(): string {
@@ -110,6 +128,12 @@ function getModel(): string {
 
 export interface CallOptions {
   temperature?: number;
+  /**
+   * An external abort signal (e.g. the client's connection). When it aborts,
+   * `callStream` aborts the upstream request so the server stops paying for
+   * tokens nobody will read. Ignored by the non-streaming `call`.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -140,39 +164,68 @@ export async function call(
     temperature,
   };
 
+  // Abort the upstream request if the whole call outlasts its total deadline.
+  const controller = new AbortController();
+  let timedOut = false;
+  const deadline = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, CALL_TOTAL_DEADLINE_MS);
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Use the key here but never surface the value in any error path below
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    // Network failure — do not include any detail that might contain the key
-    throw new LlmUnavailableError(
-      "We couldn't reach the AI service. Check your internet connection and try again."
-    );
-  }
+    try {
+      response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Use the key here but never surface the value in any error path below
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch {
+      // Network failure or a deadline abort — do not include any detail that
+      // might contain the key or the URL.
+      if (timedOut) {
+        throw new LlmUnavailableError(
+          "The AI service took too long to respond. Try again in a moment."
+        );
+      }
+      throw new LlmUnavailableError(
+        "We couldn't reach the AI service. Check your internet connection and try again."
+      );
+    }
 
-  if (!response.ok) {
-    // Non-2xx — redact; do not echo the key or raw response body
-    throw new LlmUnavailableError(
-      `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
-    );
-  }
+    if (!response.ok) {
+      // Non-2xx — redact; do not echo the key or raw response body
+      throw new LlmUnavailableError(
+        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
+      );
+    }
 
-  let parsed: unknown;
-  try {
-    parsed = await response.json() as unknown;
-  } catch {
-    throw new LlmMalformedError(
-      "The AI service returned a response we couldn't read. Please try again."
-    );
+    let parsed: unknown;
+    try {
+      parsed = await response.json() as unknown;
+    } catch {
+      if (timedOut) {
+        throw new LlmUnavailableError(
+          "The AI service took too long to respond. Try again in a moment."
+        );
+      }
+      throw new LlmMalformedError(
+        "The AI service returned a response we couldn't read. Please try again."
+      );
+    }
+    return extractContent(parsed);
+  } finally {
+    clearTimeout(deadline);
   }
+}
+
+/** Pull the first choice's content string from a parsed response, or throw. */
+function extractContent(parsed: unknown): string {
 
   // Extract content from the expected shape
   if (
@@ -204,13 +257,17 @@ export async function call(
  * identical: the key is read only from the environment, sent only in the
  * Authorization header, and never appears in any yielded value or thrown error.
  *
- * Timeout: this uses the same request timeout policy as {@link call} — neither
- * imposes an artificial deadline, so both inherit the platform fetch timeout.
- * If {@link call} gains an explicit timeout, mirror it here.
+ * Deadlines: the whole stream must finish within STREAM_TOTAL_DEADLINE_MS, and
+ * no more than STREAM_IDLE_DEADLINE_MS may pass between chunks. Either deadline
+ * aborts the upstream fetch and throws LlmUnavailableError. The caller may also
+ * pass `options.signal` (e.g. the client's connection): when it aborts, the
+ * upstream request is aborted too so the server stops paying for tokens nobody
+ * will read. No abort path ever surfaces the URL or key.
  *
  * @throws ConfigurationError  if STACKYARD_LLM_API_KEY is absent
- * @throws LlmUnavailableError for network failures, non-2xx responses, or a
- *                             stream that dies before any usable output
+ * @throws LlmUnavailableError for network failures, non-2xx responses, a
+ *                             deadline, a client disconnect, or a stream that
+ *                             dies before any usable output
  */
 export async function* callStream(
   messages: { system: string; user: string },
@@ -232,84 +289,152 @@ export async function* callStream(
     stream: true,
   };
 
+  // One controller drives the upstream abort. It fires on the total deadline,
+  // the idle (no-chunk) deadline, or the caller's external signal (a client
+  // disconnect). We track WHY so the thrown message is accurate; none of these
+  // reasons ever includes the URL or key.
+  const controller = new AbortController();
+  let abortReason: "total" | "idle" | "client" | null = null;
+
+  const totalTimer = setTimeout(() => {
+    if (abortReason === null) abortReason = "total";
+    controller.abort();
+  }, STREAM_TOTAL_DEADLINE_MS);
+
+  // The idle timer is reset after every chunk; if it ever fires, no chunk has
+  // arrived for STREAM_IDLE_DEADLINE_MS and we give up on the stall.
+  let idleTimer: ReturnType<typeof setTimeout>;
+  const armIdle = (): void => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (abortReason === null) abortReason = "idle";
+      controller.abort();
+    }, STREAM_IDLE_DEADLINE_MS);
+  };
+  armIdle();
+
+  const external = options.signal;
+  const onExternalAbort = (): void => {
+    if (abortReason === null) abortReason = "client";
+    controller.abort();
+  };
+  if (external) {
+    if (external.aborted) onExternalAbort();
+    else external.addEventListener("abort", onExternalAbort, { once: true });
+  }
+
+  const clearTimers = (): void => {
+    clearTimeout(totalTimer);
+    clearTimeout(idleTimer);
+    if (external) external.removeEventListener("abort", onExternalAbort);
+  };
+
+  // Map an abort reason to a plain-language message; the key/URL never appear.
+  const abortError = (): LlmUnavailableError => {
+    if (abortReason === "client") {
+      // Nobody is listening — the caller disconnected. Still surface a clean
+      // unavailable error for any logging upstream; the key never appears.
+      return new LlmUnavailableError(
+        "The request was cancelled before the AI service finished."
+      );
+    }
+    return new LlmUnavailableError(
+      "The AI service took too long to respond. Try again in a moment."
+    );
+  };
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-        // Use the key here but never surface the value in any error path below
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    // Network failure — do not include any detail that might contain the key
-    throw new LlmUnavailableError(
-      "We couldn't reach the AI service. Check your internet connection and try again."
-    );
-  }
-
-  if (!response.ok) {
-    // Non-2xx — redact; do not echo the key or raw response body
-    throw new LlmUnavailableError(
-      `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
-    );
-  }
-
-  const body$ = response.body;
-  if (body$ === null) {
-    throw new LlmUnavailableError(
-      "The AI service returned an empty response. Try again in a moment."
-    );
-  }
-
-  const reader = body$.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { value, done } = await reader.read();
-      if (value) buffer += decoder.decode(value, { stream: true });
-
-      // SSE events are separated by a blank line; each event may hold one or
-      // more `data:` lines. We process complete lines as they appear so a
-      // chunk that splits a line mid-way is held in `buffer` until finished.
-      let nl: number;
-      while ((nl = buffer.indexOf("\n")) >= 0) {
-        const rawLine = buffer.slice(0, nl);
-        buffer = buffer.slice(nl + 1);
-        const line = rawLine.replace(/\r$/, "").trim();
-        if (line.length === 0) continue;
-        if (!line.startsWith("data:")) continue;
-        const data = line.slice("data:".length).trim();
-        if (data === "[DONE]") return;
-
-        let chunk: ChatCompletionStreamChunk;
-        try {
-          chunk = JSON.parse(data) as ChatCompletionStreamChunk;
-        } catch {
-          // A malformed SSE data line is skipped — not fatal on its own.
-          continue;
-        }
-        const delta = chunk.choices?.[0]?.delta?.content;
-        if (typeof delta === "string" && delta.length > 0) {
-          yield delta;
-        }
-      }
-
-      if (done) break;
+    try {
+      response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          // Use the key here but never surface the value in any error path below
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch {
+      // Network failure or an abort — do not include any detail that might
+      // contain the key or the URL.
+      if (abortReason !== null) throw abortError();
+      throw new LlmUnavailableError(
+        "We couldn't reach the AI service. Check your internet connection and try again."
+      );
     }
-  } catch {
-    // The stream died partway through. Surface a plain-language unavailable
-    // error; the key never appears in it.
-    throw new LlmUnavailableError(
-      "The connection to the AI service dropped. Try again in a moment."
-    );
+
+    if (!response.ok) {
+      // Non-2xx — redact; do not echo the key or raw response body
+      throw new LlmUnavailableError(
+        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
+      );
+    }
+
+    const body$ = response.body;
+    if (body$ === null) {
+      throw new LlmUnavailableError(
+        "The AI service returned an empty response. Try again in a moment."
+      );
+    }
+
+    const reader = body$.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        let value: Uint8Array | undefined;
+        let done: boolean;
+        try {
+          ({ value, done } = await reader.read());
+        } catch {
+          // A deadline/client abort surfaces here as a read rejection; a true
+          // socket drop also lands here. Distinguish by abortReason.
+          if (abortReason !== null) throw abortError();
+          throw new LlmUnavailableError(
+            "The connection to the AI service dropped. Try again in a moment."
+          );
+        }
+        // A chunk (or stream end) arrived — restart the idle clock.
+        armIdle();
+        if (value) buffer += decoder.decode(value, { stream: true });
+
+        // SSE events are separated by a blank line; each event may hold one or
+        // more `data:` lines. We process complete lines as they appear so a
+        // chunk that splits a line mid-way is held in `buffer` until finished.
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+          const rawLine = buffer.slice(0, nl);
+          buffer = buffer.slice(nl + 1);
+          const line = rawLine.replace(/\r$/, "").trim();
+          if (line.length === 0) continue;
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice("data:".length).trim();
+          if (data === "[DONE]") return;
+
+          let chunk: ChatCompletionStreamChunk;
+          try {
+            chunk = JSON.parse(data) as ChatCompletionStreamChunk;
+          } catch {
+            // A malformed SSE data line is skipped — not fatal on its own.
+            continue;
+          }
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (typeof delta === "string" && delta.length > 0) {
+            yield delta;
+          }
+        }
+
+        if (done) break;
+      }
+    } finally {
+      reader.releaseLock();
+    }
   } finally {
-    reader.releaseLock();
+    clearTimers();
   }
 }

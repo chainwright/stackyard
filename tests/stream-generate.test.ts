@@ -423,3 +423,74 @@ describe("streamGenerate — streamed attempt fails → reset + fallback", () =>
     expect(err.message).not.toMatch(/Error:/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Client disconnect mid-stream
+
+describe("streamGenerate — client disconnect", () => {
+  it("forwards the client signal to callStream so the upstream request can be aborted", async () => {
+    const stack = validStack();
+    const client = new AbortController();
+    let seenSignal: AbortSignal | undefined;
+
+    // A callStream that records the signal it was given.
+    const callStream: NonNullable<StreamGenerateDeps["callStream"]> =
+      async function* (_messages, options) {
+        seenSignal = options?.signal;
+        for (const chunk of [jsonLinesFor(stack)]) yield chunk;
+      };
+
+    const { sink } = collector();
+    await streamGenerate(req(), sink, {
+      callStream,
+      generate: generateNeverCalled,
+      signal: client.signal,
+    });
+
+    expect(seenSignal).toBe(client.signal);
+  });
+
+  it("does NOT fall back when the client has disconnected mid-stream", async () => {
+    const stack = validStack();
+    const client = new AbortController();
+
+    // Stream the header + first card, then the client disconnects and the
+    // upstream stream throws (as callStream would once its fetch is aborted).
+    const header = JSON.stringify({ kind: "stack", id: stack.id, title: stack.title, theme: stack.theme }) + "\n";
+    const c0 = JSON.stringify({ kind: "card", card: stack.cards[0] }) + "\n";
+
+    const callStream: NonNullable<StreamGenerateDeps["callStream"]> =
+      async function* (_messages, options) {
+        yield header;
+        yield c0;
+        // The client goes away; its signal aborts and the stream dies.
+        client.abort();
+        void options; // signal already captured by the caller under test
+        throw new Error("aborted");
+      };
+
+    // If the fallback ran it would deal cards; assert it is NEVER called.
+    const generate = vi.fn(async () => ({
+      ok: true as const,
+      stack: validStack(),
+      isFallback: true,
+    }));
+
+    const { sink, lines, ended } = collector();
+    await streamGenerate(req(), sink, {
+      callStream,
+      generate,
+      sleep: instantSleep,
+      signal: client.signal,
+    });
+
+    // The partial stream dealt start + one card, then stopped. No reset, no
+    // fallback cards, no done — the connection is gone.
+    expect(generate).not.toHaveBeenCalled();
+    expect(lines.some((l) => l.type === "reset")).toBe(false);
+    expect(lines.some((l) => l.type === "done")).toBe(false);
+    expect(lines[0]!.type).toBe("start");
+    expect(lines.some((l) => l.type === "card")).toBe(true);
+    expect(ended()).toBe(true);
+  });
+});

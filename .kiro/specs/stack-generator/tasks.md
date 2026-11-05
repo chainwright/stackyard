@@ -283,6 +283,13 @@ The incremental parser was deliberately broken once (an off-by-one in
 `LineBuffer.takeCompleteLines`) to confirm the stream tests go red, then
 reverted.
 
+**Mutation re-check (deadlines pass):** `LineBuffer.takeCompleteLines` was broken
+again on purpose — it emitted the trailing partial line before its newline
+arrived — and 3 split-chunk tests went red (the `LineBuffer` partial-line and
+remainder test plus the "handles lines split across chunks and partial lines"
+stream test), confirming the split-chunk coverage still bites. Restored
+immediately; suite green again.
+
 **Done when:** `npm test` and `npx tsc --noEmit` are clean; the LLM path deals
 each card as the model produces it (first card before the stream ends, proven
 by test); the non-streaming JSON path is unchanged; the offline fallback still
@@ -295,3 +302,14 @@ already dealt) to the retry + offline path on any failure. Offline-only pacing i
 commented and injectable. Client handles `reset` and unknown totals. 21 new/updated
 tests across four files; the parser was broken on purpose to see red, then fixed.
 Full suite green (434 tests), typecheck clean.
+
+**Follow-up — upstream deadlines + client disconnect.** Both LLM calls now carry
+explicit `AbortController` deadlines (see tech.md §LLM integration): `call` has a
+45 s total budget; `callStream` has a 90 s total budget and a 20 s idle (no-chunk)
+cap that resets on every chunk. On any deadline the upstream fetch is aborted and
+the call throws `LlmUnavailableError` with a plain-language message that never
+leaks the URL or key. `callStream` also accepts the client's connection signal;
+`/api/generate` wires `req`'s close event to it, so a mid-stream client disconnect
+aborts the upstream request (the server stops paying for tokens nobody reads) and
+`streamGenerate` skips the fallback when the client is gone. New fake-timer tests
+cover each deadline and both disconnect cases.

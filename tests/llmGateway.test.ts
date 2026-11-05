@@ -9,6 +9,9 @@ import {
   ConfigurationError,
   LlmUnavailableError,
   LlmMalformedError,
+  CALL_TOTAL_DEADLINE_MS,
+  STREAM_TOTAL_DEADLINE_MS,
+  STREAM_IDLE_DEADLINE_MS,
 } from "../server/llmGateway.js";
 
 // ---------------------------------------------------------------------------
@@ -380,5 +383,243 @@ describe("llmGateway.callStream — errors (never leak the key)", () => {
     const first = await gen.next();
     expect(first.value).toBe("partial");
     await expect(gen.next()).rejects.toThrow(LlmUnavailableError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deadlines (fake timers) — call(), callStream(), and client disconnect
+
+/**
+ * Stub fetch so the request only settles when its AbortSignal fires. This
+ * models an upstream that honours cancellation: on abort the fetch promise
+ * rejects (as the platform fetch does), which is exactly how a deadline or a
+ * client disconnect reaches our code.
+ */
+function stubFetchHangUntilAbort(): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_url: string, init?: { signal?: AbortSignal }) => {
+      return new Promise((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal) {
+          if (signal.aborted) {
+            reject(new DOMException("Aborted", "AbortError"));
+            return;
+          }
+          signal.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }
+      });
+    }),
+  );
+}
+
+/**
+ * A streaming fetch stub whose body only ever produces chunks on command and
+ * whose `pull` otherwise waits for the request's AbortSignal (then rejects,
+ * like a real cancelled stream). `emit(text)` pushes one SSE/raw chunk. The
+ * returned `signalRef` exposes the signal the controller handed to fetch.
+ */
+function stubFetchControllableStream(): {
+  emit: (text: string) => void;
+  signalRef: () => AbortSignal | undefined;
+} {
+  const enc = new TextEncoder();
+  let push: ((chunk: Uint8Array) => void) | null = null;
+  let fail: ((reason: unknown) => void) | null = null;
+  let seenSignal: AbortSignal | undefined;
+
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (chunk) => controller.enqueue(chunk);
+      // When the upstream request is aborted, a real streamed body rejects any
+      // in-flight read. Model that: error the stream so reader.read() throws.
+      fail = (reason) => {
+        try {
+          controller.error(reason);
+        } catch {
+          /* already closed */
+        }
+      };
+    },
+  });
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_url: string, init?: { signal?: AbortSignal }) => {
+      seenSignal = init?.signal;
+      if (seenSignal) {
+        seenSignal.addEventListener(
+          "abort",
+          () => fail?.(new DOMException("Aborted", "AbortError")),
+          { once: true },
+        );
+      }
+      return Promise.resolve({ ok: true, status: 200, body });
+    }),
+  );
+
+  return {
+    emit: (text: string) => push?.(enc.encode(text)),
+    signalRef: () => seenSignal,
+  };
+}
+
+describe("llmGateway.call — total deadline (fake timers)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("aborts and throws LlmUnavailableError after the total deadline", async () => {
+    stubFetchHangUntilAbort();
+    const p = call(MESSAGES).catch((e: unknown) => e);
+    // Nothing happens before the deadline…
+    await vi.advanceTimersByTimeAsync(CALL_TOTAL_DEADLINE_MS - 1);
+    // …then the deadline fires and aborts the upstream request.
+    await vi.advanceTimersByTimeAsync(2);
+    const err = await p;
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).toMatch(/too long/i);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+    // The abort really reached fetch's signal.
+    const init = vi.mocked(fetch).mock.calls[0]?.[1] as { signal?: AbortSignal };
+    expect(init.signal?.aborted).toBe(true);
+  });
+});
+
+describe("llmGateway.callStream — total deadline (fake timers)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("aborts the stream once the total deadline passes, even while chunks keep coming", async () => {
+    const ctl = stubFetchControllableStream();
+    const gen = callStream(MESSAGES);
+
+    const collected: string[] = [];
+    const run = (async () => {
+      try {
+        for await (const d of gen) collected.push(d);
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+
+    // Keep the idle timer happy by emitting a chunk every 10 s, but never end
+    // the stream — so only the TOTAL deadline can stop it.
+    for (let elapsed = 0; elapsed < STREAM_TOTAL_DEADLINE_MS; elapsed += 10_000) {
+      ctl.emit(sse(`t${elapsed}`));
+      await vi.advanceTimersByTimeAsync(10_000);
+    }
+    // Push just past the total deadline.
+    await vi.advanceTimersByTimeAsync(1);
+
+    const err = await run;
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).toMatch(/too long/i);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+    expect(ctl.signalRef()?.aborted).toBe(true);
+  });
+});
+
+describe("llmGateway.callStream — idle deadline (fake timers)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("aborts when no chunk arrives within the idle window", async () => {
+    const ctl = stubFetchControllableStream();
+    const gen = callStream(MESSAGES);
+
+    const collected: string[] = [];
+    const run = (async () => {
+      try {
+        for await (const d of gen) collected.push(d);
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+
+    // One chunk arrives, then the stream goes quiet past the idle window.
+    ctl.emit(sse("hello"));
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_DEADLINE_MS - 1);
+    // Still alive, under the idle limit and well under the total.
+    expect(ctl.signalRef()?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(2);
+
+    const err = await run;
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).toMatch(/too long/i);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+    expect(collected.join("")).toBe("hello");
+    expect(ctl.signalRef()?.aborted).toBe(true);
+  });
+
+  it("does NOT abort while chunks keep arriving inside the idle window", async () => {
+    const ctl = stubFetchControllableStream();
+    const gen = callStream(MESSAGES);
+
+    const collected: string[] = [];
+    void (async () => {
+      try {
+        for await (const d of gen) collected.push(d);
+      } catch {
+        /* ignore */
+      }
+    })();
+
+    // A chunk every (idle − 1 s) for a few rounds: the idle timer resets each
+    // time, so the stream survives well past a single idle window.
+    for (let i = 0; i < 3; i++) {
+      ctl.emit(sse(`k${i}`));
+      await vi.advanceTimersByTimeAsync(STREAM_IDLE_DEADLINE_MS - 1_000);
+      expect(ctl.signalRef()?.aborted).toBe(false);
+    }
+  });
+});
+
+describe("llmGateway.callStream — client disconnect (fake timers)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("aborts the upstream request when the caller's signal aborts", async () => {
+    const ctl = stubFetchControllableStream();
+    const client = new AbortController();
+    const gen = callStream(MESSAGES, { signal: client.signal });
+
+    const collected: string[] = [];
+    const run = (async () => {
+      try {
+        for await (const d of gen) collected.push(d);
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+
+    // One card streams, then the client disconnects.
+    ctl.emit(sse("partial-card"));
+    await vi.advanceTimersByTimeAsync(10);
+    client.abort();
+    await vi.advanceTimersByTimeAsync(1);
+
+    const err = await run;
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
+    // The disconnect reached the upstream fetch's signal.
+    expect(ctl.signalRef()?.aborted).toBe(true);
+  });
+
+  it("aborts immediately when the caller's signal is already aborted", async () => {
+    stubFetchHangUntilAbort();
+    const client = new AbortController();
+    client.abort();
+    const err = await drain(callStream(MESSAGES, { signal: client.signal })).catch(
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(LlmUnavailableError);
+    expect((err as Error).message).not.toContain(FAKE_API_KEY);
   });
 });

@@ -113,7 +113,7 @@ export async function handleGenerate(
   // existing tests and clients keep working.
   const accept = (req.headers["accept"] ?? "").toLowerCase();
   if (accept.includes(NDJSON_MEDIA_TYPE)) {
-    await streamGenerateToResponse(res, request);
+    await streamGenerateToResponse(req, res, request);
     return;
   }
 
@@ -155,6 +155,7 @@ export async function handleGenerate(
  * single JSON object followed by a newline.
  */
 async function streamGenerateToResponse(
+  req: IncomingMessage,
   res: ServerResponse,
   request: GenerateRequest,
 ): Promise<void> {
@@ -164,14 +165,26 @@ async function streamGenerateToResponse(
     "X-Content-Type-Options": "nosniff",
   });
 
+  // When the client disconnects mid-stream, abort so the upstream LLM request
+  // is cancelled and the server stops paying for tokens nobody will read.
+  const connection = new AbortController();
+  const onClose = (): void => connection.abort();
+  req.on("close", onClose);
+
+  // A closed connection can't be written to; swallow EPIPE-style write errors.
   const sink: LineSink = {
     write(obj: GenerateStreamMessage): void {
+      if (res.writableEnded || connection.signal.aborted) return;
       res.write(JSON.stringify(obj) + "\n");
     },
     end(): void {
-      res.end();
+      if (!res.writableEnded) res.end();
     },
   };
 
-  await streamGenerate(request, sink);
+  try {
+    await streamGenerate(request, sink, { signal: connection.signal });
+  } finally {
+    req.off("close", onClose);
+  }
 }
