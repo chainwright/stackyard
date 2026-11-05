@@ -104,3 +104,54 @@ ${playerIife}
 </html>
 `;
 }
+
+// ---------------------------------------------------------------------------
+// Living-file template (TASK-24)
+
+export interface BuildLivingHtmlOptions {
+  title: string;
+  stackJson: string;
+  /** The living runtime bundle (player + in-file editor + Save a Copy). */
+  livingIife: string;
+  fontFaces?: string;
+}
+
+/**
+ * The living file plays like the class file by default and carries the offline
+ * in-file editor. It differs from {@link buildHtml} only in the embedded
+ * runtime (the living bundle, which includes the player) and a Teacher tab
+ * mount point. The `#stack-data` block uses the SAME markers so the living
+ * bundle's Save a Copy can replace it with `replaceStackData`, and the
+ * round-trip extraction is identical.
+ */
+export function buildLivingHtml(options: BuildLivingHtmlOptions): string {
+  const { title, stackJson, livingIife, fontFaces } = options;
+  const safeTitle = escapeHtmlText(title);
+  const fontBlock = fontFaces && fontFaces.trim().length > 0 ? `\n${fontFaces}\n` : "";
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${safeTitle}</title>
+  <style>
+${SHELL_CSS}
+${fontBlock}  </style>
+</head>
+<body>
+  <div id="player-root"></div>
+
+  <!-- Stack data: parsed by the living runtime at startup -->
+  <script id="stack-data" type="application/json">
+${stackJson}
+  </script>
+
+  <!-- Living runtime: player + offline in-file editor + Save a Copy, no deps -->
+  <script>
+${livingIife}
+  </script>
+</body>
+</html>
+`;
+}

@@ -71,8 +71,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **581** passing (`npm test`).
-- Player bundle: **9.7 KB** gzipped (budget 50 KB).
+- Tests: **600** passing (`npm test`).
+- Player bundle: **9.5 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 

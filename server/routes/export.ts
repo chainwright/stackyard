@@ -9,7 +9,7 @@
 //   - Success is raw text/html (byte-exact); errors are always plain-language JSON.
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { exportStack, ExportValidationError } from "../exporter.js";
+import { exportStack, exportLivingStack, ExportValidationError } from "../exporter.js";
 import { readBody } from "../readBody.js";
 import { checkExportLimits } from "../exportLimits.js";
 import { plainMessageFrom, safeFileName } from "../../src/shared/messages.js";
@@ -80,6 +80,9 @@ export async function handleExport(
   }
 
   const stack = (parsed as Record<string, unknown>)["stack"] as Stack;
+  // Export kind (TASK-24): the living file (default) carries the offline in-file
+  // editor; `living: false` asks for the smaller play-only class file.
+  const living = (parsed as Record<string, unknown>)["living"] !== false;
 
   // Resource caps the validator does not enforce: the nine invariants in
   // stack-format.md bound neither the number of cards nor the length of text
@@ -97,11 +100,11 @@ export async function handleExport(
     }
   }
 
-  // Build the file. exportStack() validates internally and throws
+  // Build the file. Both exporters validate internally and throw
   // ExportValidationError on any invariant failure.
   let html: string;
   try {
-    html = await exportStack(stack);
+    html = living ? await exportLivingStack(stack) : await exportStack(stack);
   } catch (err) {
     if (err instanceof ExportValidationError) {
       sendJson(res, 422, {

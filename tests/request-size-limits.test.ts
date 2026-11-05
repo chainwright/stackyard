@@ -25,7 +25,9 @@ vi.mock("../server/exporter.js", async () => {
   const actual = await vi.importActual<typeof import("../server/exporter.js")>(
     "../server/exporter.js"
   );
-  return { ...actual, exportStack: vi.fn() };
+  // The export route's default path is the LIVING file (TASK-24), so mock both
+  // exporters; the size-limit tests assert whichever runs for the given body.
+  return { ...actual, exportStack: vi.fn(), exportLivingStack: vi.fn() };
 });
 
 import { handleGenerate } from "../server/routes/generate.js";
@@ -36,6 +38,9 @@ import * as exporter from "../server/exporter.js";
 
 const generateMock = vi.mocked(generator.generate);
 const exportMock = vi.mocked(exporter.exportStack);
+// The default export kind is the living file, so that is the exporter the
+// under-limit body reaches (the body carries no `living: false` flag).
+const exportLivingMock = vi.mocked(exporter.exportLivingStack);
 
 // ---------------------------------------------------------------------------
 // Mock request / response
@@ -97,6 +102,7 @@ const EXPORT_LIMIT = 8 * 1024 * 1024;
 beforeEach(() => {
   generateMock.mockReset();
   exportMock.mockReset();
+  exportLivingMock.mockReset();
 });
 
 // ---------------------------------------------------------------------------
@@ -164,7 +170,8 @@ describe("POST /api/generate — body size limit", () => {
 
 describe("POST /api/export — body size limit", () => {
   it("reads a body one byte under the limit (reaches the exporter)", async () => {
-    exportMock.mockResolvedValue("<!doctype html><html></html>");
+    // No `living: false` flag in the body, so the default living exporter runs.
+    exportLivingMock.mockResolvedValue("<!doctype html><html></html>");
 
     // Body: {"stack":{"pad":"<fill>"}} with total bytes == EXPORT_LIMIT.
     const prefix = `{"stack":{"pad":"`;
@@ -178,7 +185,7 @@ describe("POST /api/export — body size limit", () => {
 
     // Body accepted (not a size-limit 413); the exporter was reached.
     expect(captured.status).not.toBe(413);
-    expect(exportMock).toHaveBeenCalledTimes(1);
+    expect(exportLivingMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns 413 with the plain-language message one byte over the limit", async () => {
@@ -206,8 +213,9 @@ describe("POST /api/export — body size limit", () => {
 
     const { res } = mockRes();
     await handleExport(mockReq("POST", body), res);
-    // The exporter must never be called for an over-limit request.
+    // No exporter (class or living) may be called for an over-limit request.
     expect(exportMock).not.toHaveBeenCalled();
+    expect(exportLivingMock).not.toHaveBeenCalled();
   });
 });
 
@@ -254,11 +262,11 @@ function textBody(contentLength: number): string {
 
 describe("POST /api/export — card-count cap", () => {
   it("accepts a stack at the card limit (reaches the exporter)", async () => {
-    exportMock.mockResolvedValue("<!doctype html><html></html>");
+    exportLivingMock.mockResolvedValue("<!doctype html><html></html>");
     const { res, captured } = mockRes();
     await handleExport(mockReq("POST", cardsBody(MAX_CARDS)), res);
     expect(captured.status).not.toBe(413);
-    expect(exportMock).toHaveBeenCalledTimes(1);
+    expect(exportLivingMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns 413 and never exports a stack over the card limit", async () => {
@@ -272,16 +280,17 @@ describe("POST /api/export — card-count cap", () => {
     );
     expect(parsed.message.toLowerCase()).not.toContain("stack");
     expect(exportMock).not.toHaveBeenCalled();
+    expect(exportLivingMock).not.toHaveBeenCalled();
   });
 });
 
 describe("POST /api/export — text-length cap", () => {
   it("accepts a text field at the length limit (reaches the exporter)", async () => {
-    exportMock.mockResolvedValue("<!doctype html><html></html>");
+    exportLivingMock.mockResolvedValue("<!doctype html><html></html>");
     const { res, captured } = mockRes();
     await handleExport(mockReq("POST", textBody(MAX_TEXT_LENGTH)), res);
     expect(captured.status).not.toBe(413);
-    expect(exportMock).toHaveBeenCalledTimes(1);
+    expect(exportLivingMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns 413 and never exports a stack with an over-length text field", async () => {
@@ -295,5 +304,6 @@ describe("POST /api/export — text-length cap", () => {
     );
     expect(parsed.message.toLowerCase()).not.toContain("stack");
     expect(exportMock).not.toHaveBeenCalled();
+    expect(exportLivingMock).not.toHaveBeenCalled();
   });
 });

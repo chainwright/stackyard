@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "npm run build:player && vitest run",
+    "test": "npm run build:player && npm run build:living && vitest run",
     "typecheck": "tsc --noEmit",
     "dev:server": "node --import tsx/esm server/index.ts",
     "start": "NODE_ENV=production node --import tsx/esm server/index.ts",
@@ -14,11 +14,13 @@
     "build:maker": "vite build",
     "preview:maker": "vite preview --port 4173",
     "build:player": "vite build --config vite.player.config.ts",
+    "build:living": "vite build --config vite.living.config.ts",
     "fonts:rename": "python3 scripts/rename-reading-font.py",
     "fonts:check": "python3 scripts/rename-reading-font.py --check",
     "check:invariants": "npm run build:player && vitest run tests/validator.property.test.ts tests/roundtrip.property.test.ts tests/shuffle-answers.test.ts tests/reachability.test.ts tests/player-size.test.ts",
     "check:decks": "node --import tsx/esm scripts/check-decks.ts",
     "check:export-opens": "node --import tsx/esm scripts/check-export-opens.ts",
+    "check:living-file": "npm run build:player && npm run build:living && node --import tsx/esm scripts/check-living-file.ts",
     "check:claims": "node --import tsx/esm scripts/check-claims.ts",
     "check:mcp": "vitest run mcp/openverse/openverse.test.ts",
     "pick:images": "node --import tsx/esm scripts/pick-deck-images.ts",

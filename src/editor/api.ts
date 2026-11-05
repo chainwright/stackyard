@@ -261,6 +261,14 @@ export type ExportOutcome =
   | { ok: true; html: string; filename: string }
   | { ok: false; message: string };
 
+/**
+ * Which kind of file to export (TASK-24):
+ *   - "living" (default) — the file the teacher can edit later without
+ *     Stackyard; a little larger because it carries the in-file editor.
+ *   - "class"            — play only, smaller; for the class laptops.
+ */
+export type ExportKind = "living" | "class";
+
 /** Read the filename from a Content-Disposition header, if present. */
 function filenameFromDisposition(res: Response): string | null {
   const cd = res.headers.get("Content-Disposition");
@@ -273,9 +281,12 @@ function filenameFromDisposition(res: Response): string | null {
  * POST /api/export with the current stack. On success returns the raw HTML
  * body (byte-exact) and a safe filename; on a validation or network failure
  * returns a plain-language message and no bytes.
+ *
+ * `kind` chooses the living file (default) or the smaller class file (TASK-24).
  */
 export async function exportStack(
   stack: Stack,
+  kind: ExportKind = "living",
   fetchImpl: typeof fetch = fetch,
 ): Promise<ExportOutcome> {
   let res: Response;
@@ -283,7 +294,7 @@ export async function exportStack(
     res = await fetchImpl("/api/export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stack }),
+      body: JSON.stringify({ stack, living: kind === "living" }),
     });
   } catch {
     return {

@@ -18,6 +18,7 @@ import { fallbackMessage } from "./fallbackMessages.js";
 import { repairFlow } from "./operations.js";
 import { PlayIcon } from "./icons.js";
 import { exportStack as exportStackApi, triggerDownload } from "./api.js";
+import type { ExportKind } from "./api.js";
 import { announce } from "./a11y.js";
 
 export type FlashSide = "front" | "back";
@@ -47,18 +48,21 @@ export function EditorScreen({
   // the filename shown on the confirmation overlay (null = overlay hidden).
   const [exporting, setExporting] = useState(false);
   const [exportedName, setExportedName] = useState<string | null>(null);
+  // Which kind of file to export (TASK-24). Defaults to the living file — the
+  // one the teacher can edit later without Stackyard.
+  const [exportKind, setExportKind] = useState<ExportKind>("living");
   // When set, play the exported stack in-app (avoids the blob CSP blank page,
   // J4 H1). We play the current stack through the shared mountPlayer.
   const [previewing, setPreviewing] = useState(false);
 
   if (stack === null) return <div class="app" />;
 
-  async function onExport(): Promise<void> {
+  async function onExport(kind: ExportKind = exportKind): Promise<void> {
     const current = store.getStack();
     if (current === null || !store.canExport()) return;
     setNotice(null);
     setExporting(true);
-    const outcome = await exportStackApi(current);
+    const outcome = await exportStackApi(current, kind);
     setExporting(false);
     if (outcome.ok) {
       triggerDownload(outcome.html, outcome.filename);
@@ -189,6 +193,8 @@ export function EditorScreen({
         store={store}
         onNotice={setNotice}
         onExport={() => void onExport()}
+        exportKind={exportKind}
+        onExportKind={setExportKind}
         exporting={exporting}
         disabled={trying}
       />

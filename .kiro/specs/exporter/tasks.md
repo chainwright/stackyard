@@ -551,3 +551,87 @@ TASK-01 (extend shared foundation: invariant 9 + ExportValidationError)
             ├─ TASK-16 (round-trip property test)
             └─ TASK-18 (staleness check)
 ```
+
+
+---
+
+## Phase 6 — The living file (TASK-24)
+
+### TASK-24: the exported HTML can edit itself, offline
+**Refs:** `judge_2026-11-05/J3_wow_design.md` §5 ("make the exported file edit itself, offline… HyperCard's defining trait brought back, and it removes the dependence on the server"); REQ-EXP-01 (self-contained, zero network); stack-format.md invariants 1–9.
+
+**What it is.** A second export shape — the *living file* — that still plays
+exactly as the class file does (default view = **Play**), but also carries a
+small, offline, in-file **card editor** and a **Save a Copy** that writes a new
+self-contained living file. HyperCard's trait: the stack IS its own authoring
+tool, with no server and no network.
+
+**Sub-items and acceptance criteria.**
+
+**a) Living runtime bundle** `src/living/` → `dist/living/living.iife.js` (IIFE,
+ES2018, built by `vite.living.config.ts`). It reuses the shared validator,
+`src/editor/operations.ts`, `src/shared/reachability.ts`, the player renderer
+and `mountPlayer` — no server, no `fetch`, no new runtime dependency. It mounts
+on an exported living file and provides:
+  - **Play** (default on every open) — the exact current player (`mountPlayer`).
+  - A small, unobtrusive **"Teacher"** tab in a corner. Clicking it shows a
+    simple confirm ("Are you the teacher?") — a guard, not security — then opens
+    the editor. Play is the default each time the file opens (the tab state is
+    never persisted).
+  - **Editor**: edit text, edit button labels, set a button's "go to card…",
+    add a card, remove a card, and **Try It** (play the current card in place),
+    all through the shared pure `operations.ts` so every edit stays valid.
+  - **Save a Copy**: writes a NEW self-contained HTML file via a Blob download
+    (no network); the original file is never modified; the copy is itself a
+    living file.
+  - **Done when:** opening an exported living file shows Play by default; the
+    Teacher tab + confirm opens the editor; text/buttons/goto/add/remove/Try It
+    all work offline; Save a Copy downloads a new file without any network call.
+
+**b) Living template + exporter.** `exportLivingStack(stack)` produces the living
+HTML: the `#stack-data` block (escape-safe, same guarantees as today), the
+inlined fonts, and the living bundle. Save a Copy regenerates the file by taking
+the current document's HTML and replacing ONLY the `#stack-data` content with
+the newly escaped stack JSON — so a copy is byte-identical except the stack and
+is therefore trivially also a living file.
+  - **Done when:** `exportLivingStack` returns a self-contained HTML string;
+    Save a Copy's regenerated HTML parses back to the edited stack via the same
+    `#stack-data` extraction the round-trip test uses.
+
+**c) Invariants it must keep.**
+  - **Lossless round trip:** stack → living file → (edit nothing) → Save a Copy →
+    the extracted stack JSON is identical to the input (property test). Edit →
+    Save → reopen → the edit is present.
+  - **The 9 stack invariants** (stack-format.md) hold for anything Save a Copy
+    writes: Save a Copy runs `validate()` and refuses to write an invalid stack.
+  - **"Before you share"** reachability check (`checkReachability`) runs before
+    Save a Copy; if cards are unreachable or an answer dead-ends, the teacher is
+    warned (and offered the repair) before the copy is written.
+  - **Zero network requests** in the living file, in Play AND in Edit (verified
+    in headless Chromium with networking blocked).
+  - **Escaping:** user text from the edited stack is embedded with the same
+    guarantees as today's exporter (no `</script>` breakout, no inline event
+    handlers); add hostile-text tests for the Save-a-Copy path.
+
+**d) Size budget.** The living file is ≤ **500 KB** with fonts. Report the actual
+size. The play-only export stays available as **"Export for class (smaller)"**.
+  - **Done when:** a test asserts the living file for a representative deck is
+    ≤ 500 KB; the size is reported.
+
+**e) Maker export choice.** When exporting, the Maker shows the choice, with
+**"Living file (you can edit it later without Stackyard)"** as the default, and
+"Export for class (smaller)" as the alternative.
+  - **Done when:** the export flow offers both, defaulting to the living file.
+
+**Gate:** `npm test` and `npx tsc --noEmit` exit 0; a headless-Chromium check
+with network blocked opens an exported living file from disk, switches to
+Teacher, changes card 1's question, Saves a Copy, opens the copy, and sees the
+change in Play.
+
+> **Design note (why not bundle the whole Maker):** the Maker's `EditorScreen`
+> is coupled to the store, persistence and the generate/export API (server
+> calls). The living file must be server-free and small, so `src/living/` is a
+> lean vanilla-TS editor built on the SHARED pure pieces (validator, operations,
+> reachability, renderer, mountPlayer). Save a Copy re-emits the current
+> document rather than re-templating from scratch, which keeps the copy a living
+> file with zero duplication of the template.

@@ -153,3 +153,66 @@ The AI review panel (J1, J4) flagged that hooks, MCP, custom agents and powers w
 - **MCP server `mcp/openverse` (local stdio, item d).** Two tools: `search_images(query, license=cc0|pdm)` → Openverse API (title/creator/licence/source/thumbnail), and `fetch_image_as_data_uri(url, maxKB)` with a host **allowlist** (Openverse/Wikimedia + subdomains), **manual redirect following that re-checks every hop's host** (an off-list redirect is refused), a streaming **size cap**, and a **timeout**. Registered in `.kiro/settings/mcp.json`; driven end-to-end over JSON-RPC (initialize / tools/list / tools/call) and its 14 own tests pass (allowlist, off-list redirect refusal, declared- and streamed-size caps, timeout, non-image refusal, search mapping). Each ready-made deck's first quiz/story card now carries one inlined public-domain image with a credit line (licence + creator + source), proven to render in an exported file.
   - **Honest provenance note (for the claims hound):** this sandbox has no outbound network, so `scripts/pick-deck-images.ts` could not reach the live Openverse API. Rather than fabricate a third-party credit I didn't earn, the committed images are small vectors drawn for Stackyard and released to the public domain (CC0), credited as "Stackyard — CC0". Re-running `npm run pick:images` on a networked machine replaces them with live Openverse picks and their real credit lines (the script only overwrites when it actually fetched a live image).
 - 581 tests (14 new MCP + deck/content tests), `tsc` clean, player bundle 9.7 KB gzipped. Nothing committed.
+
+## 5 Nov 2026: the living file — the export edits itself, offline (TASK-24)
+
+The wow panel (J3 §5) wanted the exported file to be able to edit itself with no
+internet. Kiro built it spec first (TASK-24 a–e in `.kiro/specs/exporter/tasks.md`),
+kept every existing test green, and gated it with a headless-Chromium check that
+runs with the network fully blocked.
+
+- **A dedicated living bundle, not the whole Maker.** The living runtime lives in
+  `src/living/` and builds (via `vite.living.config.ts`) to a single IIFE,
+  `dist/living/living.iife.js`, inlined into the exported file by a new
+  `exportLivingStack` + `buildLivingHtml`. It is vanilla TypeScript (no Preact) so
+  it stays small — 50 KB raw / ~15 KB gzipped — and it reuses the SHARED pure
+  pieces rather than forking them: the validator, the editor `operations`, the
+  reachability check, and the player renderer + `mountPlayer`. So an edit in the
+  living file is the same validated operation as in the Maker, and the file plays
+  through the same renderer the class file uses.
+- **Plays by default; a Teacher tab opens the editor.** The file opens in Play
+  every time (the Teacher state is never persisted). A small navy "Teacher" tab
+  (never stamp red) opens, behind a plain confirm ("Are you the teacher?"), an
+  offline editor: edit the words, button labels and "go to card…", add or remove a
+  card, Try It. The guard is a gentle gate so the class can't stumble in — not
+  security, and we say so in the code.
+- **Save a Copy regenerates the current document.** Rather than re-templating from
+  scratch, Save a Copy takes the current document's HTML and replaces only the
+  `#stack-data` block (`replaceStackData`), so the copy is itself a living file and
+  an unedited save round-trips byte-for-byte. The escaping is shared with the
+  server exporter (`src/shared/escapeStackJson.ts`: `<`, `>`, `/` → `\uXXXX`), so a
+  hostile card title like `</script><script>alert(1)` cannot break out — a new
+  exporter test proves the hostile export adds zero `<script>` tags over a benign
+  one and the data block carries no raw `<`, `>` or `/`, yet round-trips exactly.
+  Before writing, Save a Copy runs the same "before you share" reachability check
+  the Maker does.
+- **The Maker shows the choice, defaulting to the living file.** The export toolbar
+  now offers two radio options — "Living file (you can edit it later without
+  Stackyard)" (default) and "Export for class (smaller)" — in ink on paper, with
+  stamp red still reserved for the Export button alone. `/api/export` takes a
+  `living` flag (default true) and routes to the right exporter; the size-limit and
+  download tests were updated to the new default and stay green.
+- **Lossless round trip, property-tested.** `tests/living-roundtrip.property.test.ts`
+  generates arbitrary valid stacks and asserts stack → living file → (edit nothing)
+  → Save a Copy → extract → deep-equals the original, plus a size-budget test.
+  `tests/living.test.ts` drives the real living app in jsdom: Play default, the
+  Teacher confirm, an edit through the shared operations, and a captured Save a Copy
+  that reopens with the edit in Play.
+- **Offline, proven in a real browser.** `scripts/check-living-file.ts`
+  (`npm run check:living-file`) exports a living deck, opens it from disk in
+  headless Chrome with the network blocked (`--host-resolver-rules=MAP * ~NOTFOUND`
+  plus a dead proxy), drives Teacher → edit card 1's question → Save a Copy entirely
+  in-page (the Blob is captured, nothing is fetched), then opens the saved copy —
+  still offline — and asserts Play shows the edited question and not the original.
+  It also reports both file sizes.
+- **Sizes.** Class file 127.8 KB, living file 145.3 KB — both well under the 500 KB
+  budget (the living file carries the extra editor; the class export stays the
+  smaller "for class" option).
+- **Honest note on the browser driver.** The check injects its own `<script>` into
+  the exported file to drive the UI. Writing that driver re-taught the very lesson
+  the exporter's escaping exists for: a literal `</script>` (and `</html>`) in the
+  driver's own comments/strings closed the injected tag early and silently killed
+  the driver, which first looked like the feature failing. The driver now carries
+  no literal `</…>`, and the gate passes deterministically across repeated runs.
+- 600 tests (19 new across living, round-trip and exporter), `tsc` clean, living
+  bundle 50 KB raw. Nothing committed.

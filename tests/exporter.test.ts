@@ -9,7 +9,11 @@
 
 import { describe, it, expect } from "vitest";
 
-import { exportStack, ExportValidationError } from "../server/exporter.js";
+import {
+  exportStack,
+  exportLivingStack,
+  ExportValidationError,
+} from "../server/exporter.js";
 import type { Stack } from "../src/shared/types.js";
 
 // ---------------------------------------------------------------------------
@@ -331,4 +335,111 @@ describe("exportStack — URL escaping round-trip (TASK-15b)", () => {
       expect(parsedText.content).toBe(original);
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// TASK-24 — The living file (exportLivingStack).
+//
+// The living export plays exactly like the class file but also carries the
+// offline in-file editor and "Save a Copy". It shares the same validation,
+// self-containment and escaping guarantees as exportStack; the differences are
+// the embedded runtime (the living bundle) and the Teacher tab.
+
+describe("exportLivingStack — valid stack (TASK-24)", () => {
+  it("returns a non-empty HTML document starting with the doctype", async () => {
+    const html = await exportLivingStack(validStack());
+    expect(typeof html).toBe("string");
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain("<!doctype html>");
+  });
+
+  it("embeds the stack title and an inert #stack-data block", async () => {
+    const html = await exportLivingStack(validStack());
+    expect(html).toContain("<title>Vikings Quiz</title>");
+    expect(html).toContain('id="stack-data"');
+    expect(html).toContain('type="application/json"');
+  });
+
+  it("carries the Teacher tab marker (it is a living file, not a class file)", async () => {
+    const html = await exportLivingStack(validStack());
+    // The living CSS always carries the .sy-teacher-tab class. Minification
+    // keeps the string literal inside the injected stylesheet, so it is a
+    // reliable "this is a living file" marker that survives the build.
+    expect(html).toContain("sy-teacher-tab");
+  });
+
+  it("is still fully self-contained — no external resource URLs", async () => {
+    const html = await exportLivingStack(validStackWithImage());
+    expect(html).not.toMatch(/url\(\s*['"]?https?:\/\//i);
+    expect(html).not.toMatch(/url\(\s*['"]?\/\//i);
+    expect(html).not.toMatch(/\b(?:src|href)\s*=\s*['"]?https?:\/\//i);
+    expect(html).not.toMatch(/@import/i);
+  });
+
+  it("round-trips the stack through the embedded #stack-data block", async () => {
+    const html = await exportLivingStack(validStack());
+    const parsed = extractStackData(html);
+    expect(parsed.id).toBe(ID.stack);
+    expect(parsed.title).toBe("Vikings Quiz");
+  });
+});
+
+describe("exportLivingStack — validation failures (TASK-24)", () => {
+  it("throws ExportValidationError (not a plain Error) on an invalid stack", async () => {
+    const stack = validStack();
+    stack.cards[1]!.kind = "story"; // zero end cards
+    await expect(exportLivingStack(stack)).rejects.toBeInstanceOf(
+      ExportValidationError,
+    );
+  });
+
+  it('propagates the "end-card-count" error code', async () => {
+    const stack = validStack();
+    stack.cards[1]!.kind = "story";
+    await expect(exportLivingStack(stack)).rejects.toSatisfy(
+      (err: unknown) =>
+        err instanceof ExportValidationError &&
+        err.errors.includes("end-card-count"),
+    );
+  });
+});
+
+describe("exportLivingStack — hostile text cannot break out of <script> (TASK-24)", () => {
+  it("escapes a </script> payload in card text — no raw breakout, exactly two script tags", async () => {
+    const stack = validStack();
+    // A hostile title and card text both try to close the data script early
+    // and inject markup. The escape-safe serialiser must neutralise both.
+    stack.title = "Pwn</script><script>alert(1)</script>";
+    const text = stack.cards[0]!.elements[0]!;
+    if (text.type !== "text") throw new Error("expected a text element");
+    text.content = "answer</script><img src=x onerror=alert(1)>";
+
+    const html = await exportLivingStack(stack);
+    // Baseline: the same living export with benign text. Any <script> tags it
+    // contains (the two template tags plus a "<script" marker literal that the
+    // living bundle carries for its own Save a Copy) are inherent to the file,
+    // not a breakout. The hostile export must add exactly zero extra tags.
+    const benign = await exportLivingStack(validStack());
+
+    const countOpen = (s: string) => (s.match(/<script\b/gi) ?? []).length;
+    const countClose = (s: string) => (s.match(/<\/script\s*>/gi) ?? []).length;
+
+    // The hostile payload's "<script>" / "</script>" must be escaped inside the
+    // JSON (to \uXXXX), so it introduces no new script tags over the baseline.
+    expect(countOpen(html)).toBe(countOpen(benign));
+    expect(countClose(html)).toBe(countClose(benign));
+
+    // The embedded data block carries no raw <, > or / (all escaped), yet the
+    // hostile strings round-trip byte-for-byte after JSON.parse.
+    const dataBlock = html.match(
+      /<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/,
+    )![1]!;
+    expect(dataBlock).not.toMatch(/[<>/]/);
+
+    const parsed = extractStackData(html);
+    expect(parsed.title).toBe("Pwn</script><script>alert(1)</script>");
+    const parsedText = parsed.cards[0]!.elements[0]!;
+    if (parsedText.type !== "text") throw new Error("expected a text element");
+    expect(parsedText.content).toBe("answer</script><img src=x onerror=alert(1)>");
+  });
 });

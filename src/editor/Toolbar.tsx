@@ -19,6 +19,7 @@ import type { ComponentChildren, JSX } from "preact";
 import { useRef, useState } from "preact/hooks";
 import type { Card, Stack } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
+import type { ExportKind } from "./api.js";
 import {
   addTextElement,
   addButtonElement,
@@ -62,6 +63,8 @@ export function Toolbar({
   store,
   onNotice,
   onExport,
+  exportKind = "living",
+  onExportKind,
   exporting = false,
   disabled = false,
 }: {
@@ -69,6 +72,10 @@ export function Toolbar({
   onNotice?: Notice;
   /** Called when Export is pressed (wired in TASK-18). */
   onExport?: () => void;
+  /** Which file the Export button makes (TASK-24). Defaults to "living". */
+  exportKind?: ExportKind;
+  /** Change the export kind from the toolbar's choice control (TASK-24). */
+  onExportKind?: (kind: ExportKind) => void;
   exporting?: boolean;
   /**
    * Dim and inert the whole toolbar — used while the teacher is Trying the
@@ -256,6 +263,35 @@ export function Toolbar({
       </button>
 
       <span class="spacer"></span>
+
+      {/* Export choice (TASK-24): the living file (default) can be edited later
+          without Stackyard; the class file is play-only and smaller. */}
+      <fieldset
+        class="export-choice"
+        disabled={disabled}
+        aria-label="What kind of file to export"
+      >
+        <label class="export-choice-opt">
+          <input
+            type="radio"
+            name="export-kind"
+            value="living"
+            checked={exportKind === "living"}
+            onChange={() => onExportKind?.("living")}
+          />
+          <span>Living file <span class="export-choice-hint">you can edit it later without Stackyard</span></span>
+        </label>
+        <label class="export-choice-opt">
+          <input
+            type="radio"
+            name="export-kind"
+            value="class"
+            checked={exportKind === "class"}
+            onChange={() => onExportKind?.("class")}
+          />
+          <span>Export for class <span class="export-choice-hint">smaller</span></span>
+        </label>
+      </fieldset>
 
       <button
         class="export-btn"

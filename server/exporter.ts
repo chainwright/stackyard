@@ -13,7 +13,8 @@ import { fileURLToPath } from "node:url";
 
 import { validate } from "../src/shared/validator.js";
 import { inlineImages } from "./inline-assets.js";
-import { buildHtml } from "./html-template.js";
+import { buildHtml, buildLivingHtml } from "./html-template.js";
+import { toEscapedStackJson } from "../src/shared/escapeStackJson.js";
 import type { Stack } from "../src/shared/types.js";
 
 // ---------------------------------------------------------------------------
@@ -47,6 +48,14 @@ const PLAYER_IIFE_PATH = path.join(
   "dist",
   "player",
   "player.iife.js",
+);
+// The living-file runtime: the player PLUS the in-file editor and Save a Copy
+// (TASK-24). Built by vite.living.config.ts into dist/living/living.iife.js.
+const LIVING_IIFE_PATH = path.join(
+  PROJECT_ROOT,
+  "dist",
+  "living",
+  "living.iife.js",
 );
 
 // The three Latin-subset woff2 fonts the design system loads. They are inlined
@@ -136,34 +145,38 @@ async function buildFontFacesCss(fontsDir: string = FONTS_DIR): Promise<string> 
 }
 
 // ---------------------------------------------------------------------------
-// Escape-safe JSON serialisation
+// Export pipeline
+//
+// Escape-safe JSON serialisation lives in src/shared/escapeStackJson.ts
+// (toEscapedStackJson) so the server exporter and the living file's Save a Copy
+// escape user text identically.
 
 /**
- * Serialise `value` to JSON, then escape `<`, `>` and `/` to their `\uXXXX`
- * forms. JSON structural syntax uses none of these three characters, so they
- * only ever occur inside string values — escaping them in the output string
- * is safe and is restored exactly by `JSON.parse`.
- *
- * Effects:
- *   - `</script>` inside any string can never close the embedding
- *     `<script type="application/json">` block.
- *   - A URL such as `https://example.com` is serialised as
- *     `https:\u002f\u002fexample.com`, so no raw `https://` appears in the
- *     output (REQ-EXP-01), while the parsed value is byte-for-byte identical.
+ * Validate + inline-images + escape a stack, returning the parts both the
+ * class export and the living export need. Throws ExportValidationError on a
+ * validation or path failure (never a plain Error).
  */
-function toEscapedJson(value: unknown): string {
-  return JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/\//g, "\\u002f");
+async function prepare(
+  stack: Stack,
+  assetsDir: string,
+): Promise<{ stackJson: string; fontFaces: string }> {
+  const result = validate(stack);
+  if (!result.valid) {
+    throw new ExportValidationError(result.errors);
+  }
+  // Inline image assets. Any ExportValidationError ("path-traversal") from
+  // inlineImages propagates unchanged.
+  const inlinedStack = await inlineImages(stack, assetsDir);
+  const stackJson = toEscapedStackJson(inlinedStack);
+  // Inline the design-system fonts as base64 @font-face rules (OFL notices
+  // included) so the file shows the real type offline.
+  const fontFaces = await buildFontFacesCss();
+  return { stackJson, fontFaces };
 }
 
-// ---------------------------------------------------------------------------
-// Export pipeline
-
 /**
- * Validates a stack and returns the exported, fully self-contained HTML
- * string.
+ * Validates a stack and returns the exported, fully self-contained HTML string
+ * — the CLASS file (play only, smaller).
  *
  * @param stack      The stack to export.
  * @param assetsDir  Directory relative image `src` values resolve against.
@@ -174,26 +187,25 @@ export async function exportStack(
   stack: Stack,
   assetsDir: string = DEFAULT_ASSETS_DIR,
 ): Promise<string> {
-  // 1. Validate — wrap any failure in ExportValidationError (never a plain Error).
-  const result = validate(stack);
-  if (!result.valid) {
-    throw new ExportValidationError(result.errors);
-  }
-
-  // 2. Inline image assets. Any ExportValidationError ("path-traversal")
-  //    from inlineImages propagates unchanged.
-  const inlinedStack = await inlineImages(stack, assetsDir);
-
-  // 3. Serialise the inlined stack as an escape-safe JSON blob.
-  const stackJson = toEscapedJson(inlinedStack);
-
-  // 4. Read the pre-built player IIFE from disk.
+  const { stackJson, fontFaces } = await prepare(stack, assetsDir);
   const playerIife = await fs.readFile(PLAYER_IIFE_PATH, "utf8");
-
-  // 5. Inline the design-system fonts as base64 @font-face rules (with their
-  //    OFL notices) so the exported file shows the real type offline.
-  const fontFaces = await buildFontFacesCss();
-
-  // 6. Assemble and return the final HTML document.
   return buildHtml({ title: stack.title, stackJson, playerIife, fontFaces });
+}
+
+/**
+ * Validates a stack and returns a LIVING-FILE HTML string (TASK-24): it plays
+ * exactly like the class file, and also carries the offline in-file editor and
+ * "Save a Copy". Same self-containment and escaping guarantees as
+ * {@link exportStack}; the only difference is the embedded runtime (the living
+ * bundle, which includes the player) and a Teacher tab.
+ *
+ * @throws ExportValidationError on validation failure or an unsafe asset path.
+ */
+export async function exportLivingStack(
+  stack: Stack,
+  assetsDir: string = DEFAULT_ASSETS_DIR,
+): Promise<string> {
+  const { stackJson, fontFaces } = await prepare(stack, assetsDir);
+  const livingIife = await fs.readFile(LIVING_IIFE_PATH, "utf8");
+  return buildLivingHtml({ title: stack.title, stackJson, livingIife, fontFaces });
 }
