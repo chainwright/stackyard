@@ -148,6 +148,11 @@ export function Inspector({
 
   // ---- End card ----
   if (card.kind === "end") {
+    // The score denominator is the number of quiz cards in THIS deck — the same
+    // rule the player uses (countQuizCards). Preview the real total so the
+    // inspector agrees with the card above and the exported file, instead of a
+    // hard-coded "Score 3 of 8" (built-app review round 3, P2 #4).
+    const quizTotal = stack.cards.filter((c) => c.kind === "quiz").length;
     const heading = card.elements.find(
       (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
     );
@@ -176,7 +181,7 @@ export function Inspector({
             id="score-preview"
             class="score-preview-field"
             type="text"
-            value="Score 3 of 8"
+            value={`Score __ of ${quizTotal}`}
             readonly
             aria-readonly="true"
             tabIndex={-1}

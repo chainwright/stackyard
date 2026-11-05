@@ -40,7 +40,7 @@ const EXAMPLES: ReadonlyArray<{ label: string; sentence: string }> = [
   {
     label: "Vikings in Ireland quiz",
     sentence:
-      "A 10-card quiz about the Vikings in Ireland, the right answer plays a cheer",
+      "A lesson about the Vikings in Ireland with quiz questions and a story choice, the right answer plays a cheer",
   },
   { label: "Times tables game", sentence: "A quiz game for the times tables up to 12" },
   { label: "Irish words flashcards", sentence: "Flashcards for ten everyday words in Irish" },
@@ -66,7 +66,7 @@ export function StartScreen({
 }): JSX.Element {
   const [sentence, setSentence] = useState(
     __demoError
-      ? "A 10-card quiz about the Vikings in Ireland, the right answer plays a cheer"
+      ? EXAMPLES[0]!.sentence
       : // Pre-fill the Vikings example as real text so one click on Build Cards
         // gives the demo, and Build Cards starts enabled (built-app review:
         // start-empty had an empty textarea and a disabled button).

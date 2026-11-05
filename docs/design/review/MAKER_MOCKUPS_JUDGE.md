@@ -970,3 +970,95 @@ A judge clicking around still hits one thing that looks broken and one that look
 6. Add-element placement on full cards; story label centring and select width; end-card inspector preview; Try It inspector spacing; Try It score scope; right-answer reveal after a wrong pick.
 
 Expected: 1–2 bring the app to about 7.5, 1–5 to about 8.0 (the bar), and all six to about 8.3. Re-shoot `built/` and the exported player afterwards, including **one flash card front and back** and **one story choice**, because those are the two screens a judge is most likely to click into next.
+
+---
+
+## Built app verdict, round 3 (judge, 2026-11-05)
+
+### Method
+- Read TASK-R7…R12 (commit 26802b6).
+- Ran the real app offline (`dev:server` + `vite`, no LLM key) and drove it over CDP in headless Chrome. Scratch scripts and shots are in `mkjudge/k/`.
+- **Start:** cleared storage, then built all three example tabs plus a free sentence ("A short quiz about the water cycle for 3rd class"). Recorded the deal-in, the deck and the banner.
+- **Editor:**
+  - Add Text + Add Button on the full quiz card;
+  - story card 5 with its branch labels;
+  - end-card inspector;
+  - 1920 and 1024 widths.
+- **Try It:**
+  - from story card 5: choose "Build a longphort" → consequence card → Continue → quiz;
+  - a wrong pick (reveal + ✗);
+  - toolbar/inspector state;
+  - Back to Editing (sampled `getAnimations()`);
+  - the "Trying It" toggle;
+  - Irish card 1 front → back.
+- **Exported file (blob):**
+  - fonts;
+  - full Vikings play-through: quiz ×3 → flash front, tap, back, Next Card → story "Raid the monastery" → consequence → Continue → quizzes → flash → end;
+  - shots at 1366 and 1920.
+
+### Verdict in one paragraph
+The two blockers from round 2 are fixed, and both work in the exported file.
+- **Flash cards flip.** The front shows only the term (centred, 44 px, "Tap the card to see the answer"). A tap runs `card-enter` and shows the back with a small term heading, the explanation in 26 px body type and "Next Card" clear of the text.
+- **The story really branches.** The editor shows "→ Card 6 / → Card 7", and each choice leads to its own consequence card that rejoins at card 8.
+
+Also fixed:
+- **Offline deal:** paced, about 3.5–4.5 s for 9–12 cards, and the honest line has no time estimate.
+- **Card list:** flash rows show the Irish word / "Longphort".
+- **Try It:** the whole toolbar and Export are disabled. Back to Editing plays `card-exit`, and the "Trying It" button also toggles back.
+- **Wrong pick:** the right tile gets an ink outline and the boxed ✗ lands.
+- **Full card:** a full card refuses another element with a plain message.
+
+A full play-through of the exported Vikings file reached "Score 6 of 6" with six stamped slots, the real fonts (3 faces loaded) and the warm desk, with nothing broken along the way.
+
+What's left is small but visible: a notice banner that never goes away (it can hide the Back to Editing pill), a text overlap on the Irish flash backs, and a few consistency nits. **Built app score: 7.8 / 10** (round 2: 6.5). Not quite at the bar. **Fix items 1–2 below (under an hour) and it's at 8.0.**
+
+### Scores (built, round 3)
+
+| Screen / flow | Clarity | Fidelity | Craft | WOW | Teacher | **R3** | R2 |
+|---|---|---|---|---|---|---|---|
+| start-empty | 8 | 8 | 7.5 | 5 | 9 | **7.5** | 7.5 |
+| start-generating, offline (paced, honest) | 8 | 7.5 | 7 | 7 | 8.5 | **7.5** | 6.5 |
+| free sentence → ready-made deck + banner | 8 | 7 | 7.5 | 3 | 9 | **7.5** | 7.5 |
+| editor-quiz (drag, adds, full-card guard) | 8.5 | 8 | 7.5 | 6 | 8.5 | **7.5** | 7.5 |
+| editor-flash (Front/Back, list shows term) | 8.5 | 8 | 7.5 | 5 | 8.5 | **7.5** | 6.5 |
+| editor-story (→ Card 6 / → Card 7, centred) | 8.5 | 8 | 7.5 | 6 | 8.5 | **8.0** | 6.0 |
+| editor-end (stamp slots; preview field) | 8 | 8 | 7 | 5 | 8 | **7.0** | 6.5 |
+| Try It (flip in/out, toolbar locked, reveal, scope note) | 9 | 8.5 | 7.5 | 8.5 | 9 | **8.5** | 7.5 |
+| exported player: quiz | 9 | 8.5 | 8.5 | 8 | 9 | **8.5** | 8.0 |
+| exported player: flash (Vikings layout) | 9 | 8.5 | 8 | 7 | 9 | **8.0** | 3.0 |
+| exported / Try It: flash (Irish layout) | 8 | 7 | 5.5 | 6 | 8.5 | **6.5** | 3.0 |
+| exported player: story branch + consequence | 8.5 | 8 | 7.5 | 6.5 | 9 | **7.5** | fake |
+| exported end card (6/6 stamps, 1920) | 9 | 9 | 8.5 | 7.5 | 9 | **8.5** | 8.0 |
+| export-done | 9 | 8 | 7.5 | 7 | 9 | **7.5** | 7.5 |
+| **App** | 8.5 | 8 | 7.5 | 7 | 8.5 | **7.8** | 6.5 |
+
+### What's left (most visible first)
+1. **The "card full" notice is sticky and can trap Try It (P1).**
+   - After Add Text was refused on a full card, the banner "This card is full…" stayed through card changes (cards 5 and 12) and into Try It.
+   - In Try It it pushes the canvas down so the **"Back to Editing" pill sits under the banner**. My click on it did nothing; I had to use the top-bar "Trying It" toggle.
+   - Fix: clear notices on the next successful action, on card change and on entering/leaving Try It, or auto-dismiss after about 6 s with a close (×) button. Keep the pill above any notice (`z-index`), or reserve its space in the fit.
+2. **Irish flash backs: "Next Card" covers the hint (P1).**
+   - On the Irish deck (shot `f_irish_back.png`) the back shows the explanation **centred mid-card** rather than left-aligned under the term, and "Next Card" sits over "Tap the card to flip back" (only "Tap the card" is visible).
+   - The Vikings card 4 back is laid out correctly. The Irish deck's element positions differ, and the renderer keeps them.
+   - Fix: in `renderFlashCard` position the back layout from the design (term top-left, body below, hint bottom-left, Next Card bottom-right) and ignore the authored x/y of the back elements. Or normalise the Irish deck in `readyMadeStacks.ts` to the Vikings positions. Add a layout test that the hint and the button rects don't intersect.
+3. **The deck doesn't match the sentence (P2).** The pre-filled sentence asks for "A **10-card quiz**", but the Vikings deck is 12 cards with two flash, three story and one end card ("Card 1 of 12"). A judge reads the sentence and then the counter. Either make the Vikings ready-made deck exactly 10 cards (8 questions-or-content + story pair folded into one choice + end), or change the example sentence to "A short Vikings in Ireland lesson with a quiz and a story choice — the right answer plays a cheer".
+4. **The end-card inspector preview says "Score 3 of 8"** while the card above reads "Score 0 of 6" (P2). Preview the deck's real total ("Score 0 of 6", or "Score __ of 6").
+5. **No way to play again in the exported file (P2).** The end card has no button. A class that wants a second go must reload the file, which most pupils won't know to do. Add a "Play Again" paper tab under the stamp grid that resets score and goes to card 1, with the flip.
+6. **Small items (P2):**
+   - **Offline deal static shots** catch the 240 ms land animation as a translucent double card. Shoot the README/Devpost frames with animations settled (`--virtual-time-budget` or reduced motion). Live, it reads fine.
+   - **1024×768:** the editor still clips the card on both sides (known, outside the 1366 target). A card-list drawer below 1200 px is still worth it before judging.
+   - **Free sentence:** any sentence offline gets the Vikings deck, even "water cycle". That's honest with the banner. A neutral fallback (e.g. a 3-card "Your sentence → edit me" starter that keeps the teacher's words) would read less odd. Optional.
+
+### At the 8 bar?
+**Not yet: 7.8.** Every flow a judge is likely to try now works end to end, offline, in the real exported file:
+- quiz with stamp, ✗ and reveal;
+- flash flip;
+- story branch;
+- end-card stamp collection;
+- Try It in place with flip in and out.
+
+The two remaining P1s are both one-sitting fixes:
+- the sticky notice that can hide the Try It exit;
+- the overlap on the Irish flash backs, which is the example most likely to be opened second.
+
+With 1–2 done the app is at **8.0**. With 1–5 it's about **8.3**. Re-shoot the Irish back and Try It after the fix.

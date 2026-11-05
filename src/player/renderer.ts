@@ -15,7 +15,7 @@
 
 import type { Card, Stack, Element as StackElement, ButtonElement } from "../shared/types.js";
 import type { RuntimeState } from "./runtime.js";
-import { dispatch } from "./runtime.js";
+import { dispatch, resetRuntime } from "./runtime.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -325,18 +325,25 @@ const PLAYER_STYLES = `
   line-height: 40px;
   color: var(--color-ink);
 }
-/* The "tap to flip" hint, bottom-left on both sides. */
+/* The "tap to flip" hint, bottom-LEFT on both sides. Width is capped to the
+   left column (ends at x=392) so the bottom-right "Next Card" button (which
+   starts at x=408) can never cover it — the Irish-deck overlap where "Next
+   Card" sat on top of "Tap the card to flip back" (built-app review round 3,
+   P1 #2). Left-aligned, never centred. */
 .sy-flash-hint {
   position: absolute;
   left: 48px;
-  top: 520px;
-  width: 704px;
+  top: 524px;
+  width: 344px;
+  text-align: left;
   font-size: var(--text-meta);       /* 20px */
   font-family: 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
+  line-height: 1.3;
   color: #4a5878;
 }
-/* "Next Card" shown on the BACK only, bottom-right, clear of the text. */
+/* "Next Card" shown on the BACK only, bottom-RIGHT, clear of the hint on its
+   left (x 408..752) and below the explanation (which ends by y 480). */
 .sy-flash-next {
   position: absolute;
   left: 408px;
@@ -546,6 +553,23 @@ const PLAYER_STYLES = `
   line-height: 1;
   opacity: 0.92;
 }
+/* "Play Again" paper tab under the stamp grid. A normal navy button — never
+   stamp red (earned-stamp colour only). */
+.sy-end-again {
+  margin-top: 8px;
+}
+.sy-end-again-btn {
+  width: auto;
+  height: auto;
+  min-height: 56px;
+  padding: 12px 32px;
+  border: 2px solid var(--color-ink);
+  border-bottom-width: 4px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 24px;
+  font-weight: 700;
+}
 
 /* ---- Animations ---- */
 @keyframes stamp-land {
@@ -717,7 +741,27 @@ function renderEndCard(
   // Announce to screen readers
   ariaLive.textContent = `${headingText}. Score ${score} of ${total}.`;
 
-  // If the end card has any button elements, render them (e.g. "Play again")
+  // "Play Again" — a paper tab under the stamp grid that restarts the whole
+  // deck from card 1 with the score reset (built-app review round 3, P2 #5). A
+  // class that wants a second go shouldn't have to reload the file. This is a
+  // normal navy button, never stamp red (that stays for earned stamps only).
+  const firstCardId = state.stack.cards[0]?.id;
+  if (firstCardId !== undefined) {
+    const againWrap = document.createElement("div");
+    againWrap.className = "sy-end-again";
+    const again = document.createElement("button");
+    again.className = "sy-button sy-end-again-btn";
+    again.setAttribute("data-testid", "play-again");
+    again.textContent = "Play Again";
+    again.addEventListener("click", () => {
+      resetRuntime(state);
+      navigate(firstCardId, false);
+    });
+    againWrap.appendChild(again);
+    container.appendChild(againWrap);
+  }
+
+  // If the end card has any button elements, render them (e.g. a custom link)
   for (const el of card.elements) {
     if (el.type !== "button") continue;
     const wrapper = document.createElement("div");

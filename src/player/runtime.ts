@@ -39,6 +39,17 @@ export function createRuntime(stack: Stack): RuntimeState {
   };
 }
 
+/**
+ * Reset runtime state for a fresh play-through: score back to zero, every other
+ * variable cleared, and the auto-navigation guard reset. Used by the end card's
+ * "Play Again" button so a class can go again from the start with a clean score
+ * (built-app review round 3, P2 #5). The stack itself is unchanged.
+ */
+export function resetRuntime(state: RuntimeState): void {
+  state.variables = { score: 0 };
+  state.autoNavCount = 0;
+}
+
 // ---------------------------------------------------------------------------
 // Dispatcher
 

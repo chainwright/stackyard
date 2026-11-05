@@ -52,6 +52,10 @@ export function CardList({
   const n = stack.cards.length;
 
   function select(cardId: string): void {
+    // A transient notice (e.g. "This card is full") belongs to the card it was
+    // raised on; clear it when the teacher moves to another card so a stale
+    // banner can't linger or cover later chrome (built-app review round 3, P1 #1).
+    onNotice?.(null);
     store.setSelectedCard(cardId);
   }
 

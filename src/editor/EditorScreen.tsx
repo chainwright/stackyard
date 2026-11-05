@@ -92,14 +92,21 @@ export function EditorScreen({
               ? "Trying this card like the class will"
               : "Try it: play these cards like the class will"
           }
-          onClick={() => store.setScreen(trying ? "editor" : "play")}
+          onClick={() => {
+            // Entering or leaving Try It clears any transient notice: it was
+            // raised while editing a specific card and must not carry into the
+            // play view, where it would push the canvas down and sit over the
+            // "Back to Editing" pill (built-app review round 3, P1 #1).
+            setNotice(null);
+            store.setScreen(trying ? "editor" : "play");
+          }}
         >
           <PlayIcon />
           {trying ? "Trying It" : "Try It"}
         </button>
       </TopBar>
 
-      {notice !== null ? (
+      {notice !== null && !trying ? (
         <div class="notice" role="status">
           <span class="mark" aria-hidden="true">!</span>
           <span>{notice}</span>
