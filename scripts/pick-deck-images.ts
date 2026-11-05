@@ -22,8 +22,8 @@ const OUT = path.join(ROOT, "src", "shared", "readyMadeImages.ts");
 
 const QUERIES: Record<string, string> = {
   vikings: "viking longship",
-  "times-tables": "arithmetic blackboard",
-  "irish-words": "shamrock ireland",
+  "times-tables": "abacus",
+  "irish-words": "Cliffs of Moher",
 };
 
 const MAX_KB = 40;
@@ -38,9 +38,12 @@ async function pickOne(deckKey: string, query: string): Promise<{
   for (const license of ["pdm", "cc0"] as const) {
     const results = await searchImages(query, license, 10).catch(() => []);
     for (const r of results) {
-      if (!r.url) continue;
+      // Openverse's own thumbnail proxy (api.openverse.org/.../thumb/) is on the
+      // allowlist even when the original sits on Flickr etc., so try it first.
+      const candidates = [r.thumbnail, r.url].filter((u) => typeof u === "string" && u.length > 0);
+      for (const imgUrl of candidates) {
       try {
-        const dataUri = await fetchImageAsDataUri(r.url, MAX_KB);
+        const dataUri = await fetchImageAsDataUri(imgUrl, MAX_KB);
         return {
           dataUri,
           creditLicense: r.license.toUpperCase(),
@@ -48,7 +51,8 @@ async function pickOne(deckKey: string, query: string): Promise<{
           creditSource: r.source || r.url,
         };
       } catch {
-        // off-list / over-cap / timeout — try the next result
+        // off-list / over-cap / timeout — try the next candidate / result
+      }
       }
     }
   }

@@ -131,12 +131,20 @@ describe("TASK-25b: image credits are truthful", () => {
     );
   });
 
-  it("the three ready-made images are our CC0 illustrations with no Openverse link", () => {
+  it("every ready-made image credit is truthful: our illustrations cite no source; found images cite a real one", () => {
     for (const [key, img] of Object.entries(READY_MADE_IMAGES)) {
       const line = creditLine(img);
-      expect(line, key).toMatch(/^Illustration: Stackyard, CC0$/);
-      expect(line.toLowerCase(), key).not.toContain("openverse");
-      expect(img.creditSource, key).toBeUndefined();
+      expect(["CC0", "PDM"], key).toContain(img.creditLicense);
+      if (img.creditKind === "illustration") {
+        // drawn for Stackyard: no third-party source, no Openverse claim
+        expect(line, key).toMatch(/^Illustration: Stackyard, CC0$/);
+        expect(img.creditSource, key).toBeUndefined();
+      } else {
+        // found via Openverse: a named creator and a real https source page
+        expect(img.creditCreator, key).toBeTruthy();
+        expect(img.creditSource ?? "", key).toMatch(/^https:\/\//);
+        expect(line, key).toContain(img.creditCreator);
+      }
     }
   });
 });
@@ -145,7 +153,7 @@ describe("TASK-25b: image credits are truthful", () => {
 // (b) check-decks provenance rule: a credit naming Openverse needs a real URL
 
 describe("TASK-25b: check-decks rejects an Openverse claim without a real URL", () => {
-  it("passes the committed CC0 illustrations (no Openverse claim)", () => {
+  it("passes the committed ready-made image credits", () => {
     expect(checkImageCredits(READY_MADE_IMAGES)).toEqual([]);
   });
 
