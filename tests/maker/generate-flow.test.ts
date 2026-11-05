@@ -112,6 +112,29 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(announcer?.textContent ?? "").toContain("offline");
   });
 
+  it("the building screen is honest offline: no time estimate on the fallback path", async () => {
+    const { StartScreen } = await import("../../src/editor/StartScreen.js");
+    const { EditorStore } = await import("../../src/editor/store.js");
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    mounted = root;
+
+    // Online (live model) path: the generating screen shows "About 20 seconds".
+    const onlineStore = new EditorStore({ status: "generating" });
+    render(h(StartScreen, { store: onlineStore, __demoDealt: [], __demoTotal: 0 }), root);
+    await flush(1);
+    expect(root.textContent).toContain("About 20 seconds");
+
+    render(null, root);
+
+    // Offline fallback path: no "20 seconds"; just "appears as it's ready".
+    const offlineStore = new EditorStore({ status: "generating" });
+    render(h(StartScreen, { store: offlineStore, __demoOffline: true, __demoDealt: [], __demoTotal: 0 }), root);
+    await flush(1);
+    expect(root.textContent).toContain("Each card appears as it's ready");
+    expect(root.textContent).not.toContain("About 20 seconds");
+  });
+
   it("shows the plain-language message and stays on Start on an error line", async () => {
     vi.stubGlobal(
       "fetch",

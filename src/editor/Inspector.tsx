@@ -37,6 +37,21 @@ function gotoTargetOf(el: ButtonElement): string | null {
   return g && g.type === "goto" ? g.cardId : null;
 }
 
+/**
+ * True when a story card has two or more choice buttons that all lead to the
+ * same card — a fake branch the teacher probably didn't intend (built-app
+ * review round 2, P0 #2). Mirrors `warnStack`'s `story-single-target` rule.
+ */
+function storyChoicesShareTarget(card: Card): boolean {
+  if (card.kind !== "story") return false;
+  const targets = card.elements
+    .filter((e): e is ButtonElement => e.type === "button")
+    .map((b) => gotoTargetOf(b))
+    .filter((t): t is string => t !== null);
+  if (targets.length < 2) return false;
+  return new Set(targets).size === 1;
+}
+
 /** A plain name for a card in the goto picker (never a raw id). */
 function cardName(stack: Stack, card: Card, index: number): string {
   if (card.kind === "end") return "Last card";
@@ -114,10 +129,18 @@ export function Inspector({
             })}
         </select>
         {card.kind === "story" ? (
-          <p class="hint">
-            Each button sends the class to a different card, so the story can
-            branch.
-          </p>
+          storyChoicesShareTarget(card) ? (
+            <p class="hint hint-warn" role="status">
+              Both choices go to the same card, so the class ends up in the same
+              place whatever they pick. Send each choice to a different card to
+              make the story branch.
+            </p>
+          ) : (
+            <p class="hint">
+              Each button sends the class to a different card, so the story can
+              branch.
+            </p>
+          )
         ) : null}
       </div>
     );
@@ -148,8 +171,16 @@ export function Inspector({
           </p>
         </div>
         <div class="field-group">
-          <label>Score line (shown to the class)</label>
-          <span class="score-preview">Score</span>
+          <label for="score-preview">Score line (shown to the class)</label>
+          <input
+            id="score-preview"
+            class="score-preview-field"
+            type="text"
+            value="Score 3 of 8"
+            readonly
+            aria-readonly="true"
+            tabIndex={-1}
+          />
           <p class="hint">
             Stackyard fills this in from how many questions the class gets
             right. One stamp lands for each right answer.

@@ -105,6 +105,28 @@ describe("TASK-R3: Try It (in-editor play)", () => {
     expect(area.textContent).not.toContain("Where did the Vikings build a town in 841?");
   });
 
+  it("disables the toolbar (visually and for keyboard) while Trying the card", async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(quizStack()));
+    const root = mountApp();
+
+    // Before Try It, the toolbar tools are live (Add Text is enabled).
+    const addTextBefore = Array.from(root.querySelectorAll<HTMLButtonElement>(".tool-card")).find(
+      (b) => b.textContent?.includes("Add Text"),
+    )!;
+    expect(addTextBefore.disabled).toBe(false);
+
+    root.querySelector<HTMLButtonElement>(".tryit")!.click();
+    await flush();
+
+    // While trying, the toolbar is dimmed and every control is disabled (so it
+    // also leaves the tab order for keyboard).
+    const toolbar = root.querySelector(".toolbar")!;
+    expect(toolbar.classList.contains("toolbar-disabled")).toBe(true);
+    const controls = toolbar.querySelectorAll<HTMLButtonElement>("button");
+    expect(controls.length).toBeGreaterThan(0);
+    controls.forEach((b) => expect(b.disabled).toBe(true));
+  });
+
   it("Back to Editing returns to the editor with an unchanged stack", async () => {
     const stack = quizStack();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
@@ -117,6 +139,8 @@ describe("TASK-R3: Try It (in-editor play)", () => {
     await waitFor(() => (area.textContent ?? "").includes("Where did the Vikings"));
 
     root.querySelector<HTMLButtonElement>(".try-pill")!.click();
+    // Back to Editing flips the card out (240ms) before switching to the editor.
+    await waitFor(() => root.querySelector(".tryit-area") === null, 200);
     await flush();
 
     expect(root.querySelector(".tryit-area")).toBeNull();

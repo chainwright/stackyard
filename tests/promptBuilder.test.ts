@@ -37,6 +37,13 @@ describe("promptBuilder.build", () => {
     expect(system).toContain("4th class");
   });
 
+  it("system prompt tells the model to give each story choice its own card", () => {
+    const { system } = build(req);
+    expect(system).toContain("Story cards");
+    expect(system).toContain("DIFFERENT card");
+    expect(system).toMatch(/Never\s+point two choices at the same card/);
+  });
+
   it("user message contains the prompt text", () => {
     const { user } = build(req);
     expect(user).toContain(req.prompt);
@@ -113,6 +120,13 @@ describe("promptBuilder.buildStream (JSON Lines path)", () => {
     expect(system).toContain("Irish/UK English");
     expect(system).toContain("pupils");
     expect(system).toContain("4th class");
+  });
+
+  it("carries the story-branch rule (each choice its own card)", () => {
+    const { system } = buildStream(req);
+    expect(system).toContain("Story cards");
+    expect(system).toContain("DIFFERENT card");
+    expect(system).toMatch(/Never\s+point two choices at the same card/);
   });
 
   it("reuses the same user message (prompt + card-count clamp) as build()", () => {

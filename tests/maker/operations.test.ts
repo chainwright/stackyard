@@ -539,6 +539,40 @@ describe("addButtonElement", () => {
     const stack = quizStack();
     expect(isRejected(addButtonElement(stack, "99999999-9999-4999-8999-999999999999"))).toBe(true);
   });
+
+  it("rejects (card is full) rather than dropping a new element on top of an existing one", () => {
+    // A quiz card whose tiles reach y=520 (424+96), like the demo deck: there
+    // is no 32px band left below for a new 80px button, so adding one is
+    // rejected with a plain-language message instead of overlapping (built-app
+    // review round 2, P2 #7).
+    const full = {
+      id: "1b000000-0000-4000-8000-000000000001",
+      title: "Full card",
+      theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        {
+          id: "2b000000-0000-4000-8000-000000000002",
+          kind: "quiz" as const,
+          elements: [
+            { type: "text" as const, id: "4b000000-0000-4000-8000-000000000004", x: 48, y: 104, w: 704, h: 128, content: "A full question?" },
+            { type: "button" as const, id: "5b000000-0000-4000-8000-000000000005", x: 48, y: 296, w: 344, h: 96, label: "A", actions: [{ type: "score" as const, delta: 1 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+            { type: "button" as const, id: "6b000000-0000-4000-8000-000000000006", x: 408, y: 296, w: 344, h: 96, label: "B", actions: [{ type: "score" as const, delta: 0 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+            { type: "button" as const, id: "7b000000-0000-4000-8000-000000000007", x: 48, y: 424, w: 344, h: 96, label: "C", actions: [{ type: "score" as const, delta: 0 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+            { type: "button" as const, id: "8b000000-0000-4000-8000-000000000008", x: 408, y: 424, w: 344, h: 96, label: "D", actions: [{ type: "score" as const, delta: 0 }, { type: "goto" as const, cardId: "3b000000-0000-4000-8000-000000000003" }] },
+          ],
+          actions: [],
+        },
+        { id: "3b000000-0000-4000-8000-000000000003", kind: "end" as const, elements: [{ type: "field" as const, id: "9b000000-0000-4000-8000-000000000009", x: 48, y: 420, w: 704, h: 60, variable: "score" }], actions: [] },
+      ],
+    };
+    const res = addButtonElement(full, "2b000000-0000-4000-8000-000000000002", "New button");
+    expect(isRejected(res)).toBe(true);
+    if (isRejected(res)) {
+      expect(res.message.toLowerCase()).toContain("full");
+    }
+    // addText on the same full card is rejected too.
+    expect(isRejected(addTextElement(full, "2b000000-0000-4000-8000-000000000002"))).toBe(true);
+  });
 });
 
 describe("addPictureElement", () => {

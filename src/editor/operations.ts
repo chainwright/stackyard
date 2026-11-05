@@ -445,15 +445,22 @@ const NEW_IMAGE_BOX = { x: 240, y: 160, w: 320, h: 240 } as const;
 /**
  * Find a free y for a new element of height `h` on `card`: the first 32px rule
  * band below the lowest existing element, so a new element lands in empty
- * space (never on top of the question, built-app review P1). Clamped so the
- * element stays on the 600px canvas (invariant 5).
+ * space (never on top of the question, built-app review P1). Returns `null`
+ * when there is no room left on the 600px canvas below the lowest element — so
+ * the caller can say "this card is full" rather than dropping the new element
+ * on top of an existing one (built-app review round 2, P2 #7).
  */
-function freeY(card: Card, h: number): number {
+function freeY(card: Card, h: number): number | null {
   const lowest = card.elements.reduce((max, el) => Math.max(max, el.y + el.h), 40);
   // Snap to the next 32px rule band, with a little breathing room.
   const y = Math.ceil((lowest + 16) / 32) * 32;
+  if (y + h > 600) return null; // no free band below the lowest element
   return clamp(y, 40, 600 - h);
 }
+
+/** The plain-language message when a card has no room for a new element. */
+const CARD_FULL_MESSAGE =
+  "This card is full. Make room, or add a new card for more.";
 
 /** Append an element to a card's element list, returning a new stack. */
 function addElementToCard(
@@ -479,11 +486,13 @@ export function addTextElement(
 ): Stack | Rejected {
   const card = stack.cards.find((c) => c.id === cardId);
   if (card === undefined) return reject("That card isn't here any more.");
+  const y = freeY(card, NEW_TEXT_SIZE.h);
+  if (y === null) return reject(CARD_FULL_MESSAGE);
   const el: Element = {
     type: "text",
     id: newId(),
     x: 48,
-    y: freeY(card, NEW_TEXT_SIZE.h),
+    y,
     ...NEW_TEXT_SIZE,
     content,
   };
@@ -506,11 +515,13 @@ export function addButtonElement(
   if (label.trim().length === 0) {
     return reject("A button needs some words on it. Type a label.");
   }
+  const y = freeY(card, NEW_BUTTON_SIZE.h);
+  if (y === null) return reject(CARD_FULL_MESSAGE);
   const el: Element = {
     type: "button",
     id: newId(),
     x: 48,
-    y: freeY(card, NEW_BUTTON_SIZE.h),
+    y,
     ...NEW_BUTTON_SIZE,
     label,
     actions: [],

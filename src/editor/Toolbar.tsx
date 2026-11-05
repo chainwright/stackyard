@@ -63,12 +63,20 @@ export function Toolbar({
   onNotice,
   onExport,
   exporting = false,
+  disabled = false,
 }: {
   store: EditorStore;
   onNotice?: Notice;
   /** Called when Export is pressed (wired in TASK-18). */
   onExport?: () => void;
   exporting?: boolean;
+  /**
+   * Dim and inert the whole toolbar — used while the teacher is Trying the
+   * card, so an edit tool can't silently change the card they're playing
+   * (built-app review round 2, P1 #5). Disabled visually AND for keyboard
+   * (every control gets `disabled`, so it leaves the tab order).
+   */
+  disabled?: boolean;
 }): JSX.Element {
   const canUndo = store.canUndo();
   const canRedo = store.canRedo();
@@ -171,6 +179,8 @@ export function Toolbar({
     <button
       class="tool-card"
       type="button"
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
       aria-pressed={extra?.pressed === undefined ? undefined : extra.pressed ? "true" : "false"}
       onClick={onClick}
     >
@@ -180,7 +190,7 @@ export function Toolbar({
   );
 
   return (
-    <footer class="toolbar">
+    <footer class={disabled ? "toolbar toolbar-disabled" : "toolbar"} aria-disabled={disabled ? "true" : undefined}>
       {tool("Add Text", <TextIcon />, addText)}
       {tool("Add Button", <ButtonIcon />, addButton)}
       {tool("Add Picture", <PictureIcon />, addPicture)}
@@ -222,7 +232,8 @@ export function Toolbar({
         class="tool-icon-btn"
         type="button"
         aria-label="Undo"
-        disabled={!canUndo}
+        disabled={disabled || !canUndo}
+        aria-disabled={disabled ? "true" : undefined}
         onClick={() => {
           onNotice?.(null);
           store.undo();
@@ -234,7 +245,8 @@ export function Toolbar({
         class="tool-icon-btn"
         type="button"
         aria-label="Redo"
-        disabled={!canRedo}
+        disabled={disabled || !canRedo}
+        aria-disabled={disabled ? "true" : undefined}
         onClick={() => {
           onNotice?.(null);
           store.redo();
@@ -248,7 +260,8 @@ export function Toolbar({
       <button
         class="export-btn"
         type="button"
-        disabled={!canExport || exporting}
+        disabled={disabled || !canExport || exporting}
+        aria-disabled={disabled ? "true" : undefined}
         onClick={() => onExport?.()}
       >
         <ExportIcon />

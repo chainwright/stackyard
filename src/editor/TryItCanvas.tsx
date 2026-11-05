@@ -82,7 +82,24 @@ export function TryItCanvas({ store }: { store: EditorStore }): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * "Back to Editing" flips the live card up from the ring edge (the same
+   * card-exit rotateX the class sees on a card advance), then switches to the
+   * editor — so the card visibly flips back instead of snapping (built-app
+   * review round 2, P2 #6). Under prefers-reduced-motion it switches at once.
+   */
   function backToEditing(): void {
+    const reduce =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cardEl = rootRef.current?.querySelector<HTMLElement>(".sy-card");
+    if (!reduce && cardEl) {
+      cardEl.style.transformOrigin = "top center";
+      cardEl.style.animation = "card-exit 240ms ease-out forwards";
+      window.setTimeout(() => store.setScreen("editor"), 240);
+      return;
+    }
     store.setScreen("editor");
   }
 

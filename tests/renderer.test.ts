@@ -431,6 +431,32 @@ describe("renderCard() — quiz answer tiles", () => {
     expect(firstTile?.style.backgroundColor).toMatch(/rgb\(242,\s*115,\s*95\)|#[Ff]2735[Ff]|#f2735f/i);
   });
 
+  it("a wrong pick reveals the correct tile with an ink outline during the hold", () => {
+    vi.useFakeTimers();
+    const card = makeQuizCard();
+    const stack = makeStack([card, makeCard({ id: IDS.card2, kind: "end" })]);
+    const state = createRuntime(stack);
+
+    renderCard(card, root, state, navigate);
+
+    const tiles = Array.from(root.querySelectorAll<HTMLButtonElement>(".sy-tile"));
+    const correct = tiles.find((t) => t.getAttribute("data-correct") === "true")!;
+    const wrong = tiles.find((t) => t.getAttribute("data-correct") !== "true")!;
+    expect(correct.textContent).toContain("Dublin");
+
+    // Pick a wrong tile: the correct tile gets the reveal outline class.
+    wrong.click();
+    expect(correct.classList.contains("sy-tile-reveal")).toBe(true);
+
+    // The reveal uses an ink outline (not stamp red).
+    const css = document.head.querySelector("style")?.textContent ?? "";
+    const revealRule = css.match(/\.sy-tile-reveal\s*\{([^}]+)\}/)?.[1] ?? "";
+    expect(revealRule).toMatch(/outline\s*:\s*3px solid var\(--color-ink\)/);
+
+    vi.advanceTimersByTime(600);
+    vi.useRealTimers();
+  });
+
   it("clicking correct tile calls navigate with automatic=false after 900ms hold", () => {
     vi.useFakeTimers();
     const card = makeQuizCard();

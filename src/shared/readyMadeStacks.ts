@@ -85,6 +85,29 @@ function flashCard(
   };
 }
 
+/**
+ * A story "consequence" card: a short panel of what happened after a choice,
+ * with a single "Continue" button that rejoins the deck. Used so each branch of
+ * a story goes to its OWN card before the two paths meet again.
+ */
+function storyConsequence(uuid: () => string, body: string, gotoId: string): Card {
+  return {
+    id: uuid(),
+    kind: "story",
+    elements: [
+      { type: "text", id: uuid(), x: 48, y: 104, w: 704, h: 300, content: body },
+      {
+        type: "button",
+        id: uuid(),
+        x: 408, y: 440, w: 344, h: 80,
+        label: "Continue",
+        actions: [{ type: "goto", cardId: gotoId }],
+      },
+    ],
+    actions: [],
+  };
+}
+
 function endCard(uuid: () => string, id: string): Card {
   return {
     id,
@@ -113,18 +136,32 @@ export function vikingsStack(): Stack {
   const c1 = quizCard(uuid, "Who sailed to Ireland first?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0);
   const c2 = quizCard(uuid, "What is a longship?", ["A fast boat", "A house", "A sword", "A town"], 0);
   const c3 = quizCard(uuid, "Where did the Vikings build a town in 841?", ["Dublin", "Cork", "Galway", "Sligo"], 0);
-  const c6 = quizCard(uuid, "Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0);
-  const c7 = quizCard(uuid, "What did the Vikings trade in Dublin?", ["Silver", "Cars", "Phones", "Plastic"], 0);
-  const c8 = quizCard(uuid, "Which Irish king fought the Vikings at Clontarf?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
+  const c8 = quizCard(uuid, "Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0);
+  const c9 = quizCard(uuid, "What did the Vikings trade in Dublin?", ["Silver", "Cars", "Phones", "Plastic"], 0);
+  const c10 = quizCard(uuid, "Which Irish king fought the Vikings at Clontarf?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
   // Flash + story reference later ids; build them after the ids exist.
-  const c9 = flashCard(uuid, "Thingmote", "A raised mound where the Norse of Dublin held their meetings.", endId);
+  const c11 = flashCard(uuid, "Thingmote", "A raised mound where the Norse of Dublin held their meetings.", endId);
+
+  // The two story choices each lead to their OWN consequence card, and both
+  // consequences rejoin the deck at c8 (visibly AFTER the choice) — a real
+  // branch, not two buttons pointing at one card (built-app review P0 #2).
+  const c6 = storyConsequence(
+    uuid,
+    "The crew raids the monastery. The monks hide the silver, but the Vikings carry off a golden cross and sail away before dawn.",
+    c8.id,
+  );
+  const c7 = storyConsequence(
+    uuid,
+    "The crew stays and builds a longphort by the water. Over the years the camp grows into the town of Dublin.",
+    c8.id,
+  );
   const c5 = {
     id: uuid(),
     kind: "story" as const,
     elements: [
       { type: "text" as const, id: uuid(), x: 48, y: 104, w: 704, h: 224, content: "The longship lands on the River Liffey at dawn. The crew can raid the monastery for its silver, or stay and build a longphort by the water. What should they do?" },
       { type: "button" as const, id: uuid(), x: 48, y: 360, w: 344, h: 80, label: "Raid the monastery", actions: [{ type: "goto" as const, cardId: c6.id }] },
-      { type: "button" as const, id: uuid(), x: 408, y: 360, w: 344, h: 80, label: "Build a longphort", actions: [{ type: "goto" as const, cardId: c6.id }] },
+      { type: "button" as const, id: uuid(), x: 408, y: 360, w: 344, h: 80, label: "Build a longphort", actions: [{ type: "goto" as const, cardId: c7.id }] },
     ],
     actions: [],
   };
@@ -135,7 +172,7 @@ export function vikingsStack(): Stack {
     id: uuid(),
     title: "Vikings in Ireland",
     theme: THEME,
-    cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, end],
+    cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, end],
   };
   return linkQuizAnswersForward(stack);
 }

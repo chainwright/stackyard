@@ -49,14 +49,16 @@ switch (state) {
   case "start-generating": {
     const store = new EditorStore({ screen: "start", status: "generating" }, {});
     // Seed a few dealt cards so the screenshot shows the WOW moment: cards
-    // dealt one by one with real questions while the stack is built.
+    // dealt one by one with real questions while the stack is built. The built
+    // app (no LLM key) uses the offline fallback, so the honest offline wording
+    // is shown — no "About 20 seconds" for a ready-made deck.
     const demoDealt = [
-      { index: 0, total: 10, kind: "quiz" as const, question: "Who sailed to Ireland first?", answers: ["Vikings", "Romans", "Greeks", "Egyptians"] },
-      { index: 1, total: 10, kind: "quiz" as const, question: "What is a longship?", answers: ["A fast boat", "A house", "A sword", "A town"] },
-      { index: 2, total: 10, kind: "quiz" as const, question: "Where did the Vikings build a town in 841?", answers: ["Dublin", "Cork", "Galway", "Sligo"] },
-      { index: 3, total: 10, kind: "quiz" as const, question: "Who led the first Viking raid?", answers: ["A chieftain", "A monk", "A king", "A farmer"] },
+      { index: 0, total: 12, kind: "quiz" as const, question: "Who sailed to Ireland first?", answers: ["Vikings", "Romans", "Greeks", "Egyptians"] },
+      { index: 1, total: 12, kind: "quiz" as const, question: "What is a longship?", answers: ["A fast boat", "A house", "A sword", "A town"] },
+      { index: 2, total: 12, kind: "quiz" as const, question: "Where did the Vikings build a town in 841?", answers: ["Dublin", "Cork", "Galway", "Sligo"] },
+      { index: 3, total: 12, kind: "quiz" as const, question: "Who led the first Viking raid?", answers: ["A chieftain", "A monk", "A king", "A farmer"] },
     ];
-    render(<StartScreen store={store} __demoDealt={demoDealt} __demoTotal={10} />, root);
+    render(<StartScreen store={store} __demoDealt={demoDealt} __demoTotal={12} __demoOffline />, root);
     break;
   }
   case "start-error": {
@@ -77,7 +79,11 @@ switch (state) {
     break;
   }
   case "editor-end": {
-    render(<EditorScreen store={makeStore({ card: 9 })} />, root);
+    // The end card is the last card in the (now 12-card) Vikings deck.
+    const stack = demoStack();
+    const store = new EditorStore({ stack, screen: "editor" }, {});
+    store.setSelectedCard(stack.cards[stack.cards.length - 1]!.id);
+    render(<EditorScreen store={store} />, root);
     break;
   }
   case "editor-invalid": {
@@ -111,6 +117,48 @@ switch (state) {
     const store = new EditorStore({ stack, screen: "play" }, {});
     const card = stack.cards[2];
     if (card) store.setSelectedCard(card.id);
+    render(<EditorScreen store={store} />, root);
+    break;
+  }
+  case "play-flash": {
+    // Try It on the Longphort flash card — the FRONT (the term only).
+    const stack = demoStack();
+    const store = new EditorStore({ stack, screen: "play" }, {});
+    store.setSelectedCard(stack.cards[3]!.id); // the Longphort flash card
+    render(<EditorScreen store={store} />, root);
+    break;
+  }
+  case "play-flash-back": {
+    // Try It on the Longphort flash card, flipped to the BACK. The real player
+    // runs inside Try It, so after it mounts we tap the flash surface to flip.
+    const stack = demoStack();
+    const store = new EditorStore({ stack, screen: "play" }, {});
+    store.setSelectedCard(stack.cards[3]!.id);
+    render(<EditorScreen store={store} />, root);
+    // Flip to the back once the live card has mounted (screenshot only), then
+    // settle the flip animation so the capture isn't a mid-rotation frame.
+    let tries = 0;
+    const flipToBack = (): void => {
+      const surface = document.querySelector<HTMLElement>(".tryit-area .sy-flash");
+      if (surface && surface.querySelector(".sy-flash-term")) {
+        surface.click();
+        // Clear the flip animation so the captured frame shows the settled back.
+        setTimeout(() => {
+          const cardEl = document.querySelector<HTMLElement>(".tryit-area .sy-card");
+          if (cardEl) cardEl.style.animation = "none";
+        }, 60);
+      } else if (tries++ < 60) {
+        setTimeout(flipToBack, 50);
+      }
+    };
+    setTimeout(flipToBack, 300);
+    break;
+  }
+  case "play-story": {
+    // Try It on the branching story card — the class sees the two choices.
+    const stack = demoStack();
+    const store = new EditorStore({ stack, screen: "play" }, {});
+    store.setSelectedCard(stack.cards[4]!.id); // the story card
     render(<EditorScreen store={store} />, root);
     break;
   }

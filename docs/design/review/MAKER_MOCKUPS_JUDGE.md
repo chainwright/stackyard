@@ -855,3 +855,118 @@ Without an LLM key the real Build Cards produces a 3-card placeholder stack with
 7. Front/Back clip, editor score chrome hidden, card count rule, Export enabled on invalid, long-label fit + tag placement, story button weight/labels, inspector select width, ring z-index under the scrim, start-empty pre-fill, generating counter, harness shots matching the real flow.
 
 Expected: 1–3 bring the app to about 6.8 (no broken game, the real look, the WOW actually happens). 1–5 to about 7.8, roughly the mockup level. All seven reach the 8 bar.
+
+---
+
+## Built app verdict, round 2 (judge, 2026-11-05)
+
+### Method
+- Read TASK-R1…R6 in `.kiro/specs/maker/tasks.md`.
+- Ran the real app at `/` (`npm run dev:server` + `vite`, **no LLM key**, so the offline fallback was used) and drove it over CDP in headless Chrome. Scratch scripts and shots are in `mkjudge/j/`.
+- **Start:** cleared storage, then built each of the three example tabs plus one free-text sentence. Recorded the deal-in, the deck contents and the banner.
+- **Editor:**
+  - mouse drag + undo;
+  - Add Text and Add Button on a full quiz card;
+  - a long answer label;
+  - Front/Back on a flash card.
+- **Try It:** from card 3. Sampled `document.getAnimations()` at 20/60/120/200 ms. Played a wrong answer, then a right one, played on to the end, then pressed Back to Editing.
+- **Exported file:** Export File → Open the File. Checked `document.fonts`, computed families, background and external URLs. Played quiz, wrong, flash, and shot it at 1366/1920/1024.
+- **Source checked for root causes:** `renderer.ts` (flash rendering), `readyMadeStacks.ts` (story branches).
+
+### Verdict in one paragraph
+Round 2 fixed every P0 from the last verdict.
+- **Fonts:** the exported file now carries three loaded faces (Bricolage + Stackyard Reading), with no "Atkinson" and no external URL. The player sits on the warm desk with grain.
+- **Quiz play:** quiz answers walk forward card by card. The ink CORRECT stamp lands on the paper edge without covering the word, the boxed ✗ lands after the shake, and the end card shows the 64 px stamp grid.
+- **Try It** starts on the edited card, inside the editor, with a real `card-enter` rotateX flip, and the player flips on every advance.
+- **Fallback decks:** the three examples produce real ready-made decks, and free text gets an honest banner.
+- **Editor:** mouse drag works and undoes in one step.
+
+A judge clicking around still hits one thing that looks broken and one that looks fake:
+- **Broken: flash cards don't flip.** In the player and the export, a flash card shows the term *and* the answer at once, with the answer set in 44 px Bricolage. On the Longphort card the answer overflows under the "Next Card" button, and tapping the card does nothing. The **Irish words example is ten flash cards**, so that whole example demonstrates the bug.
+- **Fake: the Vikings story choice** ("Raid the monastery" / "Build a longphort") sends both buttons to the same card, and the editor says "→ Card 6 / → Card 6".
+
+**Built app score: 6.5 / 10** (round 1: 5.0). Quiz play and the export are at mockup level (about 8). Flash cards and the story branch hold the app back. Fix those two and the app is at about 7.5–8.
+
+### Scores (built, round 2)
+
+| Screen / flow | Clarity | Fidelity | Craft | WOW | Teacher | **R2** | R1 |
+|---|---|---|---|---|---|---|---|
+| start-empty (pre-filled, examples, peek) | 8 | 8 | 7.5 | 5 | 9 | **7.5** | 6.5 |
+| start-generating, real flow (fallback) | 7.5 | 7 | 6 | 6 | 7 | **6.5** | never shown |
+| free-text fallback + banner | 8 | 7 | 7.5 | 3 | 9 | **7.5** | placeholder deck |
+| editor-quiz (drag, add, long label) | 8 | 8 | 7.5 | 6 | 8 | **7.5** | 6.0 |
+| editor-flash | 7.5 | 7.5 | 6 | 4 | 7.5 | **6.5** | 5.5 |
+| editor-story | 7.5 | 7.5 | 6.5 | 4 | 7 | **6.0** | 5.5 |
+| editor-end | 8 | 8 | 7 | 5 | 7.5 | **6.5** | 4.5 |
+| editor-invalid (harness only, Export disabled kept) | 8 | 6 | 5.5 | 2 | 8 | **5.5** | 5.5 |
+| Try It (in-editor, flip, stamp, ✗, end grid) | 8.5 | 8 | 7 | 8 | 8.5 | **7.5** | 3.5 |
+| exported player: quiz path | 9 | 8.5 | 8 | 7.5 | 9 | **8.0** | 3.5 |
+| exported player / Try It: flash cards | 4 | 3 | 2.5 | 1 | 5 | **3.0** | — |
+| export-done (over editor) | 9 | 8 | 7.5 | 7 | 9 | **7.5** | 7.5 |
+| **App** | 8 | 7 | 6.5 | 5.5 | 8 | **6.5** | 5.0 |
+
+### What landed (verified by running it)
+- **R1 forward links.** Vikings: right → card 2 (Score 1). Wrong → ✗ stays on the card; the right answer then advances with no point. The end card reads "Score 3 of 6" with three earned stamps and three empty slots. Nothing jumps to the end early.
+- **R2 fonts.**
+  - In the exported file `document.fonts` = Bricolage 700–800, Stackyard Reading 400 and 700, all *loaded*.
+  - Computed: meta/tiles `Stackyard Reading`, question `Bricolage Grotesque`.
+  - 0 "Atkinson"/"Hyperlegible" strings, 0 external `src/href`, ~138 KB.
+  - The editor canvas also uses the real face (slashed-zero "10").
+- **R3 Try It.**
+  - Starts at the selected card (3 of 10).
+  - Top bar "Trying It" pressed, paper "Back to Editing" pill, inspector "Trying your card".
+  - `card-enter` runs for about 240 ms on entry; `card-exit` → `card-enter` on every advance; `stamp-land` and `tile-shake` fire.
+  - Back to Editing returns to card 3 with the row still selected.
+- **R4 fallback decks.**
+  - Vikings: 10 cards. Times tables: 9 cards (3×4 … 12×12). Irish: 12 cards.
+  - The deal-in now plays ("Card 7 of 10", "Card N · ready").
+  - Free text ("water cycle") gives the Vikings deck plus the banner "We couldn't reach the internet, so this is a ready-made example. Edit it, or try your own sentence again."
+  - No "Correct Answer/Wrong Answer" anywhere.
+- **R5 player look.** Warm `#C9A47C` desk + grain in the export; ink stamp on the top edge; boxed ✗ at 100 %; 64 px end-card grid.
+- **R5 editor.**
+  - Mouse drag moved Galway by (+72, +60) and a single Undo put it back.
+  - Add Text lands below the tiles, not over the question.
+  - Add Button on a quiz keeps all four tiles coloured and shaped.
+- **R6 polish.**
+  - No score while editing.
+  - "Card 3 of 10" agrees with the 10 rows.
+  - Front/Back switch is fully visible at 1366.
+  - Long labels end in an ellipsis inside the tile, and the "✓ Right answer" tag sits in the corner.
+  - Story buttons are chunky bold tabs.
+  - export-done sits over the editor.
+  - start-empty is pre-filled.
+  - The generating counter matches the top card.
+
+### Still broken or fake-looking (most severe first)
+1. **Flash cards don't work as flash cards (P0).**
+   - `renderer.ts:780-781` gives *every* text element on a flash card the `.sy-question` class, and the player has no front/back state. The class sees term and answer together, the answer in 44 px heading type.
+   - On Vikings card 4 the four-line answer runs under "Next Card" ("Dublin beg… longphort in 841" is hidden). On every Irish card the English meaning sits under the Irish word, so there is nothing to guess.
+   - Tapping the card does nothing (no animation, no change). The editor's own hint, "The class taps the card to flip from the term to the explanation", is therefore untrue.
+   - Fix: render the front only (term as `.sy-question`, centred). On tap, run the rotateX flip and show the back (explanation as `.sy-text` 26/32 px, ink, left-aligned as in `play-flash-back.html`). Show "Next Card" on the back only. Add a play-through test: tap → back visible → Next Card.
+2. **The story branch is fake (P0 for a judge).**
+   - In `readyMadeStacks.ts:126-127` (and the harness demo) both "Raid the monastery" and "Build a longphort" go to `c6`, and the editor shows "→ Card 6 / → Card 6".
+   - Give each choice its own card: the raid → a short consequence card ("The monks hid the silver…") → card 7; the longphort → "Dublin begins…" → card 7. Then the branch rejoins, but visibly *after* the choice. Add a validator warning when a story card's buttons all share one target.
+3. **The deal-in tells a fib in the offline path (P1).** It says "About 20 seconds" but deals 10 cards in about 1.2–1.7 s, so cards flash past mid-animation as translucent overprints (shot `a1_gen.png`). Pace the fallback at about 350–400 ms per card (about 4 s total) and change the line to "Each card appears as it's ready." without a time when offline. Keep "About 20 seconds" only for the live model.
+4. **Card list shows the answer for flash cards (P1).** Rows show the *back* text ("Hello (literally, God be with you).", "Goodbye.", "Cat.", "A longphort was a fortified…"). In the Irish deck that's 6 of 10 rows, while the others show the Irish word. Use the front term for flash rows ("Dia duit", "Longphort").
+5. **The toolbar stays live during Try It (P1).**
+   - Add Text pressed while trying silently added a "New text" to the edited card: undo became enabled and the canvas stayed in play.
+   - Dim Add Text / Button / Picture / Link a Card and Undo/Redo with `aria-disabled` while trying. Or make any toolbar press first flip back to editing.
+6. **Back to Editing doesn't flip back (P2).** No animation runs on exit; the card snaps. Play `card-exit` → editor in reverse, as the inspector text promises ("it flips back to the same card").
+7. **Second added element overlaps the first on a full card (P2).** Add Text then Add Button on the quiz card puts "New button" on top of "New text" and over the lower edge of Galway. When no free band is left, place the element at the next free band on the *next* rule beyond the last added element, or add a hint "This card is full — make room or add a new card."
+8. **Smaller items (P2):**
+   - **Story editor:** the "→ Card N" labels are still left-aligned rather than centred under each button. The "When picked, go to…" select still truncates ("Card 6 — Who led the firs").
+   - **End-card inspector:** still shows a stray Bricolage heading "Score" under "Score line (shown to the class)" instead of a read-only preview field.
+   - **Try It inspector:** the two paragraphs run together with no gap, and the paper box around the first one (mockup) is missing.
+   - **Try It score:** starting from card 3, the end card reads "Score 3 of 6", although cards 1–2 were skipped. Show "of 4" (questions actually played), or add a note: "Trying from card 3 — the class starts at card 1."
+   - **After a wrong answer** the right tile gives no cheer or stamp and no sign of which answer was right before advancing. A faint ink outline on the right tile for about 600 ms would help pupils learn. This is a design choice, but judges will notice.
+   - **editor-invalid** keeps Export disabled. Kiro's reasoning holds (real stacks can't become invalid), so I accept it. Drop the harness state from the README/Devpost images so nobody sees a pale-salmon disabled Export.
+
+### Remaining fixes, in order
+1. Flash cards: front only, tap-to-flip (rotateX) to the back in body type, Next Card on the back, play-through test (Vikings card 4 + the whole Irish deck).
+2. Story branch: two distinct consequence cards that rejoin; validator warning for single-target story cards.
+3. Fallback deal-in pacing (~4 s) and an honest line offline.
+4. Flash rows in the card list show the term.
+5. Toolbar disabled during Try It; Back to Editing flips back.
+6. Add-element placement on full cards; story label centring and select width; end-card inspector preview; Try It inspector spacing; Try It score scope; right-answer reveal after a wrong pick.
+
+Expected: 1–2 bring the app to about 7.5, 1–5 to about 8.0 (the bar), and all six to about 8.3. Re-shoot `built/` and the exported player afterwards, including **one flash card front and back** and **one story choice**, because those are the two screens a judge is most likely to click into next.

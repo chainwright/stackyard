@@ -20,6 +20,15 @@ function cardLabel(card: Card): string {
   const texts = card.elements.filter(
     (e): e is Extract<typeof e, { type: "text" }> => e.type === "text",
   );
+  // A flash card is identified by its FRONT (the term), not its back
+  // explanation. Show the first text element — the term the class guesses —
+  // so a flash row reads "Dia duit", not "Hello (literally, God be with
+  // you)." (built-app review round 2, P1 #4).
+  if (card.kind === "flash") {
+    const front = texts[0]?.content.trim() ?? "";
+    if (front.length > 0) return front;
+    return "Flash card";
+  }
   let best = "";
   for (const t of texts) {
     const content = t.content.trim();

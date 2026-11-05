@@ -70,6 +70,11 @@ export function EditorScreen({
     stack.cards.find((c) => c.id === state.selectedCardId) ?? stack.cards[0]!;
   const isFlash = selectedCard.kind === "flash";
   const trying = state.screen === "play";
+  // Try It starts on the card being edited. When that is not the first card,
+  // the end-card score counts every question in the set, but the teacher only
+  // played from here — so say so plainly (built-app review round 2, P2 #8).
+  const tryStartIndex = stack.cards.findIndex((c) => c.id === selectedCard.id);
+  const tryingFromMidDeck = trying && tryStartIndex > 0;
 
   const desc =
     stack.title.length > 0 ? stack.title : "Your set of cards";
@@ -132,17 +137,23 @@ export function EditorScreen({
           />
         )}
         {trying ? (
-          <aside class="inspector" aria-label="Try It">
+          <aside class="inspector inspector-trying" aria-label="Try It">
             <h2>Trying your card</h2>
-            <span class="readout">
+            <p class="readout readout-box">
               You pressed <strong>Try It</strong>. The card flips over and plays
               exactly as the class will see it.
-            </span>
+            </p>
             <p class="hint">
               Tap an answer to hear the cheer or the buzz. The right answer earns
               a stamp. Press <strong>Back to Editing</strong> and it flips back to
               the same card.
             </p>
+            {tryingFromMidDeck ? (
+              <p class="hint hint-warn" role="status">
+                You started on card {tryStartIndex + 1}. The class begins at card
+                one, so the final score here only counts the cards you played.
+              </p>
+            ) : null}
           </aside>
         ) : (
           <Inspector store={store} onNotice={setNotice} />
@@ -154,6 +165,7 @@ export function EditorScreen({
         onNotice={setNotice}
         onExport={() => void onExport()}
         exporting={exporting}
+        disabled={trying}
       />
 
       {exportedName !== null ? (

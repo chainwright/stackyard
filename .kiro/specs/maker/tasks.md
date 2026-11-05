@@ -844,3 +844,137 @@ quiz keeps the tiles; Add Text lands in free space. ✓
 **Done when:** the editor shows no score, card counts agree, the flash switch is
 not clipped, long labels fit, export-done sits over the editor, start-empty is
 pre-filled and start-generating's counter matches the card. ✓
+
+---
+
+## Phase 9 — Second built-app review fixes (2026-11-05)
+
+The judge ran the app again and scored it 6.5 (up from 5.0) against the ~8 bar
+(`docs/design/review/MAKER_MOCKUPS_JUDGE.md`, "Built app verdict, round 2").
+Quiz play and the export were at mockup level; flash cards and the story branch
+held the app back, plus a polish list. These tasks close that gap in the order
+the verdict gives.
+
+### TASK-R7: Flash cards flip (front only → tap → back in body type) — Done
+**Refs:** REQ-MKR-11, design-system.md Motion, play-flash-back.html, verdict round 2 P0 #1
+
+> **Done:** `src/player/renderer.ts` now renders a playable flash card (two text
+> elements and/or a Next Card button) through a dedicated `renderFlashCard`: the
+> FRONT shows the term only as `.sy-flash-term` (44px, centred) with a "Tap the
+> card to see the answer" hint and no Next Card; a tap, or Enter/Space on the
+> focusable card, flips to the BACK — the term small (`.sy-flash-term-small`,
+> 32px) plus the explanation in body type (`.sy-flash-back`, 26px / 40px
+> line-height, left-aligned) and "Next Card" bottom-right clear of the text —
+> replaying the design-system rotateX card flip (skipped under
+> prefers-reduced-motion); a tap flips back. A Next Card click advances and does
+> not also flip. The editor's single-side flash preview (one text element, no
+> button) still falls through to the regular element path so click-selection
+> keeps working, and the editor back preview is retagged to body type. New
+> `tests/flash-play.test.ts`: front shows term only, tap flips to the back in
+> body type, tap flips back, Enter flips, Next Card advances without flipping,
+> and the whole Irish-words example plays end to end to `Score 1 of 1`. Full
+> suite 465, `tsc` clean.
+
+**Done when:** the player and the export show the flash front only; a tap or
+Enter flips to the back (explanation, body size); a tap flips back; Next Card
+never overlaps text; the Irish example plays end to end; tests include a played
+flash deck. ✓
+
+### TASK-R8: Story branches — each choice its own card; branch warning — Done
+**Refs:** REQ-MKR-07, stack-format.md invariant 2, verdict round 2 P0 #2
+
+> **Done:** The ready-made Vikings deck (`src/shared/readyMadeStacks.ts`) and the
+> editor demo deck (`src/editor/demoStack.ts`) now send the story's two choices
+> to two distinct consequence cards (the raid; the longphort), each a short
+> `story` card with a "Continue" button that rejoins the deck at the same later
+> card — a real split-then-rejoin branch, not two buttons at one target. Both
+> generator prompts (`server/promptBuilder.ts` `build` and `buildStream`) gained
+> a "Story cards" rule: give every choice its own `goto`, never point two choices
+> at one card, make each a consequence card, rejoin after. A new non-blocking
+> `warnStack(stack)` in `src/shared/validator.ts` returns a `story-single-target`
+> warning for any story card whose two-plus choices all share a target (a warning,
+> not an invariant — the teacher may mean it); the inspector shows a gentle note
+> when a selected story card trips it. Tests: `tests/story-branch.test.ts` (both
+> built decks branch and rejoin, trip no warning; `warnStack` flags a shared
+> target and clears when the choices differ or there is one button) and new
+> prompt-builder assertions. Full suite grew; `tsc` clean.
+
+**Done when:** each choice goes to its own card; the Vikings deck is fixed; the
+generator prompt and the fallback produce real branches; a validator warning (or
+test) flags two choices on one story card unless the teacher set it. ✓
+
+### TASK-R9: Offline deal pacing + honest building wording — Done
+**Refs:** REQ-MKR-01, verdict round 2 P1 #3
+
+> **Done:** The offline fallback pace in `server/stream-generate.ts` is raised
+> 140 → 400 ms a card, so a ten-card deck deals over about four seconds and each
+> card visibly lands instead of flashing past as translucent overprints (the pace
+> is still fallback-only; the live path uses the model's real output rate). The
+> building screen's line is now honest per path: the `start` message's
+> `isFallback` / `isReadyMadeExample` flow into the Start screen, and
+> `GeneratingScreen` shows "Each card appears as it's ready." offline and
+> "…About 20 seconds." only for the live model. A `generate-flow` test renders the
+> generating screen on both paths and asserts the time estimate appears only
+> online. `tsc` clean.
+
+**Done when:** the fallback paces so the cards visibly land (~4 s for 10) and the
+building wording is honest offline (no "About 20 seconds" for a ready-made deck).
+✓
+
+### TASK-R10: Card list flash rows show the term — Done
+**Refs:** REQ-MKR-02, verdict round 2 P1 #4
+
+> **Done:** `CardList.tsx`'s `cardLabel` now uses a flash card's FIRST text (the
+> front term) rather than its longest text (the back), so a flash row reads
+> "Dia duit" / "Longphort", not the English meaning. A `card-list` test builds a
+> flash card whose back is longer than the front and asserts the row shows the
+> front. `tsc` clean.
+
+**Done when:** flash cards in the card list show the word (front), not the
+answer. ✓
+
+### TASK-R11: Toolbar disabled during Try It; Back to Editing flips back — Done
+**Refs:** REQ-MKR-11, verdict round 2 P1 #5 / P2 #6
+
+> **Done:** `Toolbar.tsx` gained a `disabled` prop; `EditorScreen` passes it while
+> trying, dimming the whole toolbar (`.toolbar-disabled`) and setting `disabled`
+> (plus `aria-disabled`) on every tool / Undo / Redo / Export, so an edit tool can
+> no longer change the card being played and the controls leave the keyboard tab
+> order. `TryItCanvas`'s "Back to Editing" now plays the card-exit rotateX on the
+> live card (respecting reduced motion) before switching to the editor, so the
+> card flips back instead of snapping. A `play-overlay` test asserts the toolbar
+> is dimmed and every control disabled while trying; the Back-to-Editing test
+> waits for the flip. `tsc` clean.
+
+**Done when:** during Try It the toolbar is disabled visually and for keyboard,
+and Back to Editing flips the card back with the same animation. ✓
+
+### TASK-R12: Remaining polish items — Done
+**Refs:** verdict round 2 P2 #7, #8
+
+> **Done:**
+> - **Full card:** `freeY` returns `null` when no 32px band is left below the
+>   lowest element, and `addTextElement` / `addButtonElement` reject with "This
+>   card is full. Make room, or add a new card for more." instead of dropping the
+>   element on top of an existing one. An `operations` test adds to a full quiz
+>   card and asserts the rejection.
+> - **Story branch labels** are centred under each button (`.branch-label`).
+> - **End-card inspector** shows a read-only "Score 3 of 8" preview field, not a
+>   stray Bricolage "Score" heading.
+> - **Try It inspector** has a paper box around the first line and clear spacing;
+>   starting mid-deck adds a note that the final score only counts the cards
+>   played.
+> - **Right-answer reveal:** after a wrong pick the renderer marks the correct
+>   tile (`data-correct`) and shows a faint INK outline (`.sy-tile-reveal`, never
+>   red) during the 600 ms hold, so pupils learn which answer was right. A
+>   `renderer` test asserts the reveal class and its ink outline.
+>
+> Full suite 478 pass, `tsc` clean. Re-shot every `built/` state plus new
+> `play-flash`, `play-flash-back`, `play-story` and exported-player flash/story
+> shots; compared by eye against the mockups — the flash flip, the real story
+> branch, the honest deal-in, the disabled Try-It toolbar, the end-card preview
+> and the right-answer reveal all match.
+
+**Done when:** the small polish items in the verdict (full-card placement,
+centred branch labels, end-card preview, Try It inspector spacing + score scope,
+right-answer reveal) are addressed. ✓

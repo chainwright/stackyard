@@ -97,6 +97,37 @@ describe("TASK-13: Card list", () => {
     expect([...after].sort()).toEqual([...ids].sort());
   });
 
+  it("a flash card row shows the front term, not the back explanation", () => {
+    // A flash card whose back is longer than the front — the row must still
+    // show the FRONT (built-app review round 2, P1 #4).
+    const stack = {
+      id: "1a000000-0000-4000-8000-000000000001",
+      title: "Irish words",
+      theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        {
+          id: "2a000000-0000-4000-8000-000000000002",
+          kind: "flash" as const,
+          elements: [
+            { type: "text" as const, id: "4a000000-0000-4000-8000-000000000004", x: 48, y: 264, w: 704, h: 72, content: "Dia duit" },
+            { type: "text" as const, id: "5a000000-0000-4000-8000-000000000005", x: 48, y: 360, w: 704, h: 120, content: "Hello (literally, God be with you)." },
+            { type: "button" as const, id: "6a000000-0000-4000-8000-000000000006", x: 408, y: 496, w: 344, h: 72, label: "Next Card", actions: [{ type: "goto" as const, cardId: "3a000000-0000-4000-8000-000000000003" }] },
+          ],
+          actions: [],
+        },
+        { id: "3a000000-0000-4000-8000-000000000003", kind: "end" as const, elements: [{ type: "field" as const, id: "7a000000-0000-4000-8000-000000000007", x: 48, y: 420, w: 704, h: 60, variable: "score" }], actions: [] },
+      ],
+    };
+    const store = new EditorStore(
+      { stack, screen: "editor" },
+      { storage: makeStorage(), onChange: () => rerenderRef.current() },
+    );
+    const root = mount(store);
+    const firstRow = root.querySelectorAll(".card-entry")[0]!;
+    expect(firstRow.querySelector(".label")?.textContent).toBe("Dia duit");
+    expect(firstRow.textContent).not.toContain("God be with you");
+  });
+
   it("a rejected removal (sole end card) shows a plain message and does not change the list", async () => {
     const store = freshStore();
     const endId = store.getStack()!.cards.find((c) => c.kind === "end")!.id;

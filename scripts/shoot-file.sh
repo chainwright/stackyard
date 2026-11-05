@@ -12,7 +12,7 @@ OUT="docs/design/maker/built"
 BASE="file://$(pwd)/dist/maker/screens.html"
 mkdir -p "$OUT"
 
-ALL=(start-empty start-generating start-error editor-quiz editor-flash editor-story editor-end editor-invalid play export-done)
+ALL=(start-empty start-generating start-error editor-quiz editor-flash editor-story editor-end editor-invalid play play-flash play-flash-back play-story export-done)
 STATES=(${@:-$ALL})
 
 shoot_one() {

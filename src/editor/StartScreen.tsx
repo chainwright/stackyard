@@ -52,6 +52,7 @@ export function StartScreen({
   __demoError,
   __demoDealt,
   __demoTotal,
+  __demoOffline,
 }: {
   store: EditorStore;
   discardedNotice?: string | null;
@@ -60,6 +61,8 @@ export function StartScreen({
   /** Harness-only: seed the generating screen's dealt pile for screenshots. */
   __demoDealt?: DealtCard[];
   __demoTotal?: number;
+  /** Harness-only: show the generating screen's honest offline wording. */
+  __demoOffline?: boolean;
 }): JSX.Element {
   const [sentence, setSentence] = useState(
     __demoError
@@ -73,6 +76,11 @@ export function StartScreen({
   // Cards dealt so far during progressive generation, and the expected total.
   const [dealt, setDealt] = useState<DealtCard[]>(__demoDealt ?? []);
   const [total, setTotal] = useState<number>(__demoTotal ?? 0);
+  // True once the server tells us this run is the offline fallback (a
+  // ready-made deck, no live model). The building line is honest for each path:
+  // "About 20 seconds." only for the live model; offline just says each card
+  // appears as it's ready, with no time (built-app review round 2, P1 #3).
+  const [offline, setOffline] = useState<boolean>(__demoOffline ?? false);
 
   const status = store.getState().status;
   const generating = status === "generating";
@@ -83,10 +91,15 @@ export function StartScreen({
     setError(null);
     setDealt([]);
     setTotal(0);
+    setOffline(false);
     store.setStatus("generating");
 
     const outcome = await generateStackStream(sentence.trim(), {
-      onStart: ({ total: t }) => setTotal(t),
+      onStart: ({ total: t, isFallback, isReadyMadeExample }) => {
+        setTotal(t);
+        // The fallback (and any ready-made example) is the offline path.
+        setOffline(isFallback || isReadyMadeExample);
+      },
       onCard: ({ index, card, total: t }) => {
         setTotal(t);
         // Deal this card onto the pile with its real question. We append in
@@ -99,9 +112,10 @@ export function StartScreen({
       onReset: () => {
         // The server abandoned a partial stream and is restarting from a
         // fallback. Clear the cards dealt so far so the pile matches the
-        // replacement stack.
+        // replacement stack. The replacement's own `start` sets `offline`.
         setDealt([]);
         setTotal(0);
+        setOffline(false);
       },
     });
 
@@ -128,7 +142,7 @@ export function StartScreen({
   }
 
   if (generating) {
-    return <GeneratingScreen dealt={dealt} total={total} />;
+    return <GeneratingScreen dealt={dealt} total={total} offline={offline || (__demoOffline ?? false)} />;
   }
 
   return (
@@ -238,9 +252,12 @@ export function StartScreen({
 function GeneratingScreen({
   dealt,
   total,
+  offline,
 }: {
   dealt: DealtCard[];
   total: number;
+  /** True on the offline fallback path (a ready-made deck, no live model). */
+  offline: boolean;
 }): JSX.Element {
   const dealtCount = dealt.length;
   // The three most recently dealt cards form the fanned pile; the newest lands
@@ -271,7 +288,11 @@ function GeneratingScreen({
       <main class="build-area" aria-busy="true" aria-label="Building your cards">
         <div class="status">
           <h1>Building your cards…</h1>
-          <p>Each card appears as it's ready. About 20 seconds.</p>
+          <p>
+            {offline
+              ? "Each card appears as it's ready."
+              : "Each card appears as it's ready. About 20 seconds."}
+          </p>
           <p class="counter" aria-live="polite">{counter}</p>
         </div>
         <div class="deal" aria-hidden="true">

@@ -131,7 +131,17 @@ export function Canvas({
     if (isFlash) {
       const text = root.querySelector<HTMLElement>(".sy-card .sy-question");
       if (text) {
-        text.style.textAlign = "center";
+        if (flashSide === "back") {
+          // The back is the explanation — body type, left-aligned (mockup
+          // play-flash-back.html), not the 44px heading the front uses.
+          text.classList.remove("sy-question");
+          text.classList.add("sy-text");
+          text.style.fontSize = "26px";
+          text.style.lineHeight = "40px";
+          text.style.textAlign = "left";
+        } else {
+          text.style.textAlign = "center";
+        }
       }
       if (flashSide === "front") {
         const cardEl = root.querySelector<HTMLElement>(".sy-card");

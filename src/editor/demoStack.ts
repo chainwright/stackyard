@@ -96,6 +96,24 @@ export function demoStack(): Stack {
     actions: [],
   });
 
+  // A story "consequence" card: what happened after a choice, with a single
+  // Continue button that rejoins the deck (each branch gets its own card).
+  const consequence = (body: string, gotoId: string) => ({
+    id: uuid(),
+    kind: "story" as const,
+    elements: [
+      { type: "text" as const, id: uuid(), x: 48, y: 104, w: 704, h: 300, content: body },
+      {
+        type: "button" as const,
+        id: uuid(),
+        x: 408, y: 440, w: 344, h: 80,
+        label: "Continue",
+        actions: [{ type: "goto" as const, cardId: gotoId }],
+      },
+    ],
+    actions: [],
+  });
+
   const end = {
     id: endId,
     kind: "end" as const,
@@ -108,14 +126,23 @@ export function demoStack(): Stack {
 
   // Build the cards. We need the later cards' ids to wire the flash "Next"
   // buttons and the story branches, so build from the back where needed.
-  const c9 = flash("Thingmote", "A raised mound where the Norse of Dublin held their assembly.", endId);
-  const c8 = quiz("Which king fought back?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
-  const c7 = quiz("What did they trade?", ["Silver", "Cars", "Phones", "Plastic"], 0);
-  const c6 = quiz("Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0);
+  const c11 = flash("Thingmote", "A raised mound where the Norse of Dublin held their assembly.", endId);
+  const c10 = quiz("Which king fought back?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0);
+  const c9 = quiz("What did they trade?", ["Silver", "Cars", "Phones", "Plastic"], 0);
+  const c8 = quiz("Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0);
+  // Each story choice leads to its OWN consequence card; both rejoin at c8.
+  const c6 = consequence(
+    "The crew raids the monastery. The monks hide the silver, but the Vikings carry off a golden cross and sail away before dawn.",
+    c8.id,
+  );
+  const c7 = consequence(
+    "The crew stays and builds a longphort by the water. Over the years the camp grows into the town of Dublin.",
+    c8.id,
+  );
   const c5 = story(
     "The longship lands on the River Liffey at dawn. The crew can raid the monastery for its silver, or they can stay and build a longphort by the water. What should they do?",
     "Raid the monastery", c6.id,
-    "Build a longphort", c6.id,
+    "Build a longphort", c7.id,
   );
   const c4 = flash(
     "Longphort",
@@ -130,7 +157,7 @@ export function demoStack(): Stack {
     id: uuid(),
     title: "Vikings in Ireland",
     theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "'Stackyard Reading', sans-serif" },
-    cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, end],
+    cards: [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, end],
   };
 
   // Quiz answers advance to the next card in deck order (the last quiz, c8,

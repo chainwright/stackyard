@@ -57,6 +57,10 @@ Action types:
 
 Every quiz answer (right and wrong) should "goto" the NEXT card in the cards array, so the class works through the whole set card by card. Only the last quiz before the end card should "goto" the end card. Never make a quiz answer jump straight to the end card unless it is the last question.
 
+## Story cards
+
+A "story" card offers the class a choice between two or more buttons. Each choice MUST lead to a DIFFERENT card — give every button its own "goto" target. Never point two choices at the same card: that makes the choice meaningless. Make each choice go to a short consequence card (one text element describing what happened plus one "Continue" button), and let the two consequence cards rejoin the set at the same later card AFTER the choice. In short: the branch must split first, then rejoin.
+
 ## Audience writing rules — apply to all generated card text
 
 - Write for the year group specified in the prompt (default: 4th class, approximately 9–10 years old).
@@ -132,6 +136,16 @@ Every quiz answer (right and wrong) should "goto" the NEXT card in play order,
 so the class works through the whole set card by card. Only the last quiz before
 the end card should "goto" the end card. Never make a quiz answer jump straight
 to the end card unless it is the last question.
+
+## Story cards
+
+A "story" card offers the class a choice between two or more buttons. Each choice
+MUST lead to a DIFFERENT card — give every button its own "goto" target. Never
+point two choices at the same card: that makes the choice meaningless. Make each
+choice go to a short consequence card (one text element describing what happened
+plus one "Continue" button), and let the two consequence cards rejoin the set at
+the same later card AFTER the choice. In short: the branch must split first, then
+rejoin.
 
 ## Audience writing rules — apply to all generated card text
 

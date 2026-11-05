@@ -46,12 +46,14 @@ const GENERIC_FAILURE =
 
 /**
  * Pacing between fallback cards, OFFLINE FALLBACK ONLY. The deterministic
- * offline fallback has no real model latency, so without a small delay every
- * card would land in the same tick and the "dealing" animation would not show
- * in a demo. This pause is purely cosmetic and is used NOWHERE on the real LLM
+ * offline fallback has no real model latency, so without a delay every card
+ * would land in the same tick and the cards would flash past mid-animation as
+ * translucent overprints (built-app review round 2, P1 #3). At ~400 ms a card
+ * the ten-card decks deal out over about four seconds, so each card visibly
+ * lands. This pause is purely cosmetic and is used NOWHERE on the real LLM
  * path, where the gap between cards is the model's genuine output rate.
  */
-const FALLBACK_DEAL_PACING_MS = 140;
+const FALLBACK_DEAL_PACING_MS = 400;
 
 // ---------------------------------------------------------------------------
 // Dependency seam (tests stub these)

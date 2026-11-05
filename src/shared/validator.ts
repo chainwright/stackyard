@@ -371,3 +371,47 @@ export function validateCard(input: unknown): CardValidationResult {
   }
   return { valid: true, card };
 }
+
+// ---------------------------------------------------------------------------
+// Non-blocking warnings
+//
+// Warnings are NOT invariants: a stack with warnings is still valid and
+// exportable (the nine invariants in stack-format.md bound none of them). They
+// flag likely mistakes the teacher can fix — here, a story card whose choices
+// all lead to the same card, which makes the "branch" a fake: whatever the
+// class picks, they land in the same place (built-app review round 2, P0 #2).
+// A teacher may genuinely want two choices to rejoin immediately, so this is a
+// warning, not an error.
+
+export interface StackWarning {
+  /** A stable machine code for the warning kind. */
+  code: "story-single-target";
+  /** The card the warning is about. */
+  cardId: string;
+}
+
+/**
+ * Collect non-blocking warnings for a valid stack.
+ *
+ * `story-single-target`: a story card with two or more buttons that all point
+ * at the same `goto` target (so every choice goes to the same next card). A
+ * story card with a single button, or buttons that lead to different cards, is
+ * not warned.
+ */
+export function warnStack(stack: Stack): StackWarning[] {
+  const warnings: StackWarning[] = [];
+  for (const card of stack.cards) {
+    if (card.kind !== "story") continue;
+    const gotoTargets = buttons(card)
+      .map((b) => b.actions.find((a): a is Extract<Action, { type: "goto" }> => a.type === "goto"))
+      .filter((a): a is Extract<Action, { type: "goto" }> => a !== undefined)
+      .map((a) => a.cardId);
+    if (gotoTargets.length >= 2) {
+      const unique = new Set(gotoTargets);
+      if (unique.size === 1) {
+        warnings.push({ code: "story-single-target", cardId: card.id });
+      }
+    }
+  }
+  return warnings;
+}

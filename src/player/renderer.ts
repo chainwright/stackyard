@@ -273,6 +273,78 @@ const PLAYER_STYLES = `
   color: var(--color-ink);
 }
 
+/* ---- Flash card (play) — front shows the term only; a tap flips to the back
+   (the explanation in body type), a tap flips back. Matches
+   docs/design/maker/play-flash-back.html. ---- */
+.sy-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+.sy-flash:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: -3px;
+  border-radius: var(--radius-card);
+}
+/* Front: the term, large and centred. */
+.sy-flash-term {
+  position: absolute;
+  left: 48px;
+  top: 232px;
+  width: 704px;
+  text-align: center;
+  font-size: var(--text-question);   /* 44px */
+  font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+/* Back: the term, small, at the top. */
+.sy-flash-term-small {
+  position: absolute;
+  left: 48px;
+  top: 104px;
+  width: 704px;
+  font-size: 32px;
+  font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+/* Back: the explanation, in body type (NOT heading type). */
+.sy-flash-back {
+  position: absolute;
+  left: 48px;
+  top: 200px;
+  width: 704px;
+  height: 280px;
+  font-size: 26px;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-weight: 400;
+  line-height: 40px;
+  color: var(--color-ink);
+}
+/* The "tap to flip" hint, bottom-left on both sides. */
+.sy-flash-hint {
+  position: absolute;
+  left: 48px;
+  top: 520px;
+  width: 704px;
+  font-size: var(--text-meta);       /* 20px */
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-weight: 400;
+  color: #4a5878;
+}
+/* "Next Card" shown on the BACK only, bottom-right, clear of the text. */
+.sy-flash-next {
+  position: absolute;
+  left: 408px;
+  top: 496px;
+  width: 344px;
+  height: 56px;
+}
+
 /* ---- Meta text (Card N of M) ---- */
 .sy-meta {
   font-size: var(--text-meta);       /* 18px */
@@ -510,6 +582,14 @@ const PLAYER_STYLES = `
   animation: tile-shake 180ms ease-in-out 1;
 }
 
+/* After a wrong pick, the right answer is revealed with a faint INK outline
+   (not stamp red — this is not an earned stamp) so pupils learn which one it
+   was before the card advances. */
+.sy-tile-reveal {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
 /* Reduced-motion: replace animations with instant opacity cross-fade */
 @media (prefers-reduced-motion: reduce) {
   .sy-stamp-animate { animation: none; opacity: 0.92; }
@@ -658,6 +738,151 @@ function renderEndCard(
 }
 
 // ---------------------------------------------------------------------------
+// Flash-card renderer
+//
+// A flash card shows the TERM on the front. Tapping it (or pressing
+// Enter/Space when focused) flips the card over to the BACK — the explanation
+// in body type — with the same rotateX flip the class sees on a card advance.
+// Tapping again flips back. "Next Card" appears on the BACK only, bottom-right,
+// so it never overlaps the term or the explanation (built-app review P0 #1).
+// Matches docs/design/maker/play-flash-back.html.
+//
+// Convention (matches demoStack / readyMadeStacks and the generator prompt):
+//   - the FIRST text element is the term (front),
+//   - the SECOND text element, if any, is the explanation (back),
+//   - button elements ("Next Card") are shown on the back only.
+// A flash card with a single text element simply shows that term with no back.
+
+function flipDurationOk(): boolean {
+  try {
+    return !(
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  } catch {
+    return true;
+  }
+}
+
+function renderFlashCard(
+  card: Card,
+  cardEl: HTMLElement,
+  state: RuntimeState,
+  navigate: (id: string, automatic: boolean) => void,
+  playSound: (sound: "cheer" | "buzz") => void,
+  ariaLive: HTMLElement,
+): void {
+  const texts = card.elements.filter(
+    (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
+  );
+  const termText = texts[0]?.content ?? "";
+  const backText = texts[1]?.content ?? "";
+  const buttons = card.elements.filter(
+    (e): e is ButtonElement => e.type === "button",
+  );
+  const hasBack = backText.trim().length > 0;
+
+  // A single tappable surface over the whole card (except the Next Card button)
+  // that flips front ↔ back. Keyboard-focusable so a pupil on a laptop can flip
+  // with Enter/Space.
+  const surface = document.createElement("div");
+  surface.className = "sy-flash";
+  if (hasBack) {
+    surface.setAttribute("role", "button");
+    surface.setAttribute("tabindex", "0");
+    surface.setAttribute(
+      "aria-label",
+      "Flash card. Tap to flip between the word and its explanation.",
+    );
+  }
+  cardEl.appendChild(surface);
+
+  let side: "front" | "back" = "front";
+
+  const paint = (): void => {
+    surface.innerHTML = "";
+
+    if (side === "front") {
+      const term = document.createElement("p");
+      term.className = "sy-flash-term";
+      term.textContent = termText;
+      surface.appendChild(term);
+
+      if (hasBack) {
+        const hint = document.createElement("p");
+        hint.className = "sy-flash-hint";
+        hint.textContent = "Tap the card to see the answer";
+        surface.appendChild(hint);
+      }
+      ariaLive.textContent = termText;
+    } else {
+      const term = document.createElement("p");
+      term.className = "sy-flash-term-small";
+      term.textContent = termText;
+      surface.appendChild(term);
+
+      const back = document.createElement("p");
+      back.className = "sy-flash-back";
+      back.textContent = backText;
+      surface.appendChild(back);
+
+      const hint = document.createElement("p");
+      hint.className = "sy-flash-hint";
+      hint.textContent = "Tap the card to flip back";
+      surface.appendChild(hint);
+
+      ariaLive.textContent = backText
+        ? `${termText}: ${backText}`
+        : termText;
+    }
+
+    // "Next Card" on the back only, bottom-right, clear of the text.
+    if (side === "back") {
+      for (const el of buttons) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "sy-flash-next";
+        const btn = document.createElement("button");
+        btn.className = "sy-button";
+        btn.textContent = el.label;
+        // Stop a Next Card click from also flipping the card.
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dispatch(el.actions, state, (id) => navigate(id, false), playSound);
+        });
+        wrapper.appendChild(btn);
+        surface.appendChild(wrapper);
+      }
+    }
+  };
+
+  const flip = (): void => {
+    if (!hasBack) return;
+    side = side === "front" ? "back" : "front";
+    paint();
+    // Replay the card flip (rotateX from the ring edge) on the card itself,
+    // the same motion the class sees on a card advance — unless reduced motion.
+    if (flipDurationOk()) {
+      cardEl.style.transformOrigin = "top center";
+      // Restart the animation reliably.
+      cardEl.style.animation = "none";
+      void cardEl.offsetWidth;
+      cardEl.style.animation = "card-enter 240ms ease-out";
+    }
+  };
+
+  surface.addEventListener("click", flip);
+  surface.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      flip();
+    }
+  });
+
+  paint();
+}
+
+// ---------------------------------------------------------------------------
 // Main renderer
 
 /**
@@ -751,6 +976,25 @@ export function renderCard(
     scoreWrap.setAttribute("aria-label", `Score ${liveScore}`);
     scoreWrap.textContent = `Score ${liveScore}`;
     cardEl.appendChild(scoreWrap);
+  }
+
+  // ---- Flash card: front/back flip (special rendering) ----
+  // A real, playable flash card has a back explanation and/or a "Next Card"
+  // button — flip it front↔back. The editor previews ONE side at a time by
+  // passing a derived flash card with a single text element and no button; that
+  // falls through to the regular element path below so the editor keeps its
+  // per-element `.sy-element` wrappers for click-selection.
+  if (card.kind === "flash") {
+    const flashTexts = card.elements.filter((e) => e.type === "text");
+    const flashButtons = card.elements.filter((e) => e.type === "button");
+    const isPlayableFlash = flashTexts.length >= 2 || flashButtons.length >= 1;
+    if (isPlayableFlash) {
+      renderFlashCard(card, cardEl, state, navigate, playSound, ariaLive);
+      stackWrapper.appendChild(cardEl);
+      stackWrapper.appendChild(rings);
+      root.appendChild(stackWrapper);
+      return;
+    }
   }
 
   // ---- Regular card: render elements ----
@@ -868,6 +1112,12 @@ function buildButtonElement(
     btn.className = "sy-tile";
     btn.style.backgroundColor = slot.color;
     btn.style.color = slot.textColor;
+    // Mark the correct tile so a wrong pick can reveal it before advancing
+    // (built-app review round 2, P2 #8). An editing/runtime state, not an
+    // earned stamp — shown as a faint ink outline, never red.
+    if (el.actions.some((a) => a.type === "score" && a.delta > 0)) {
+      btn.setAttribute("data-correct", "true");
+    }
 
     const shapeContainer = document.createElement("span");
     shapeContainer.className = "sy-tile-shape";
@@ -945,6 +1195,19 @@ function handleButtonClick(
       triggerTileShake(btn);
       const hasSoundAction = el.actions.some((a) => a.type === "sound");
       if (!hasSoundAction) playSound("buzz");
+
+      // Reveal the right answer with a faint ink outline during the hold, so a
+      // pupil learns which one it was before the card advances (built-app
+      // review round 2, P2 #8). Ink, not stamp red — this is not an earned
+      // stamp.
+      if (cardEl) {
+        const correct = cardEl.querySelector<HTMLElement>(
+          '.sy-tile[data-correct="true"]',
+        );
+        if (correct && correct !== btn) {
+          correct.classList.add("sy-tile-reveal");
+        }
+      }
 
       // Hold 600 ms, then fire goto.
       setTimeout(() => {
