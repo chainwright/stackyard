@@ -159,3 +159,61 @@ Each test must also assert that a conforming stack (all invariants satisfied) re
   - `isFallback` is `false`.
 - Add a second scenario where the stub returns an invalid stack on attempt 1 and a valid stack on attempt 2. Assert `isFallback === false` and `valid === true`.
 - Add a third scenario where the stub always throws `LlmUnavailableError`. Assert `isFallback === true` and the returned stack passes `validate()`.
+
+---
+
+## Phase 7 — Progressive delivery (streaming)
+
+### Task 10 — [x] Stream generated cards to the client (REQ-8)
+
+Stream the finished stack to the Start screen card-by-card so cards are dealt
+one at a time with their real questions, while keeping the non-streaming path
+for existing tests and clients.
+
+- **`src/shared/types.ts`** — add the NDJSON line types `GenerateStreamStart`,
+  `GenerateStreamCard`, `GenerateStreamDone`, `GenerateStreamError`, and the
+  `GenerateStreamMessage` union.
+- **`src/shared/validator.ts`** — export `validateCard(input)` for per-card
+  shape validation (whole-stack invariants stay in `validate()`).
+- **`server/stream-generate.ts`** — `streamGenerate(request, sink, deps?)`:
+  call `generate()`; on `ok:false` or a throw, write one plain-language `error`
+  line; otherwise write `start`, then each card (shape-validated; a bad card
+  stops with `error`), then `validate()` the whole stack and write `done`
+  (or `error`). `deps.generate` is injectable for tests.
+- **`server/routes/generate.ts`** — when `Accept: application/x-ndjson`, after
+  the same prompt validation + 16 KB `readBody`, respond `200` with
+  `Content-Type: application/x-ndjson` and stream via `streamGenerate`. The
+  default JSON path is unchanged.
+- **`src/editor/api.ts`** — `generateStackStream(prompt, handlers, fetch?)`:
+  request NDJSON, read the body with a `ReadableStream` reader, fire
+  `onStart`/`onCard`, and resolve with the same `GenerateOutcome` shape. A
+  broken stream (no `done`/`error`) or an unparseable line resolves to a plain
+  `{ ok:false }`.
+- **`src/editor/StartScreen.tsx`** — generate via `generateStackStream`; deal
+  each streamed card onto the pile with an "N of M" label and its real question.
+
+**Tests**
+
+- `tests/stream-generate.test.ts` — start/card/done order; every card streamed
+  in deck order; fallback flag carried; `ok:false` → one error line; a throw →
+  clean error (no stack trace); a malformed card mid-stream → error, no done;
+  a two-end assembled stack → error, no done (broken-stream coverage).
+- `tests/generate.route.test.ts` — NDJSON Accept streams start/cards/done;
+  `ok:false` → single error line (HTTP still 200); empty prompt still 400 under
+  NDJSON; the default JSON path still returns one JSON body.
+- `tests/maker/generate-flow.test.ts` — Start screen over NDJSON: success →
+  editor; fallback → offline notice; error line → stays on Start; a broken
+  stream (no done) → stays on Start with a plain message.
+
+**Done when:** `npm test` and `npx tsc --noEmit` are clean; the streamed path
+deals cards one by one with "N of M" and real questions; the non-streaming JSON
+path is unchanged; a broken stream is covered by tests and falls back cleanly.
+
+✅ **Done** — NDJSON line types + `validateCard` added; `server/stream-generate.ts`
+streams start → cards (shape-validated) → done, with clean plain-language `error`
+fallback for any failure (generator error, throw, malformed card, or whole-stack
+validation failure). The route streams on `Accept: application/x-ndjson` and keeps
+the JSON path for the default Accept. `generateStackStream` on the client deals
+cards as they arrive; `StartScreen` shows "Card N of M" with the real question on
+the dealt pile. New/updated tests across the three files, including a broken
+stream. Full suite green (413 tests), typecheck clean.

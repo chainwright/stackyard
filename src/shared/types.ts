@@ -87,3 +87,49 @@ export type GenerateError = {
   ok: false;
   message: string;  // plain language; never a stack trace or raw error code
 };
+
+// ---------------------------------------------------------------------------
+// Progressive (streaming) generate protocol — NDJSON
+//
+// When a client asks for `Accept: application/x-ndjson`, POST /api/generate
+// streams one JSON object per line so the Start screen can "deal" each card
+// onto the stack as it arrives. The non-streaming JSON path (GenerateSuccess /
+// GenerateError) is unchanged and still the default.
+//
+// Line order:
+//   1. exactly one `start`
+//   2. zero or more `card` (in deck order), each already shape-validated
+//   3. exactly one terminator: `done` (full validated stack) or `error`
+//
+// A mid-stream failure emits `error` and stops; the client shows the
+// plain-language message and returns to the Start screen.
+
+export type GenerateStreamStart = {
+  type: "start";
+  total: number;        // number of cards that will be streamed
+  title: string;        // stack title (for the shell)
+  isFallback: boolean;  // true when the LLM was unavailable
+};
+
+export type GenerateStreamCard = {
+  type: "card";
+  index: number;        // 0-based position in the deck
+  card: Card;           // one card, already shape-validated server-side
+};
+
+export type GenerateStreamDone = {
+  type: "done";
+  stack: Stack;         // the whole stack, validated as a unit
+  isFallback: boolean;
+};
+
+export type GenerateStreamError = {
+  type: "error";
+  message: string;      // plain language; never a stack trace or raw error code
+};
+
+export type GenerateStreamMessage =
+  | GenerateStreamStart
+  | GenerateStreamCard
+  | GenerateStreamDone
+  | GenerateStreamError;

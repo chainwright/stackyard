@@ -17,63 +17,6 @@ import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { moveElement } from "./operations.js";
 
-// The standing metal ring-loop SVG (design-system.md), matching icons.tsx
-// Ring / the mockups. Built as a string so it can be appended to the renderer's
-// DOM as editor-only chrome without touching renderer.ts.
-const RING_SVG =
-  '<svg width="26" height="52" viewBox="0 0 26 52">' +
-  '<ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/>' +
-  '<ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/>' +
-  '<ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/>' +
-  "</svg>";
-
-/**
- * Append the two standing binder-ring loops to the rendered card as a sibling
- * layer that stands ~22px above the card's top edge (design-system "Rings sit
- * outside the card's clip"). The player renderer only draws the flat punched
- * holes; the editor adds the loops so the canvas matches the mockups. Editor
- * chrome only — never written into the stack or the renderer's source.
- */
-function addRings(cardRoot: HTMLElement): void {
-  const cardEl = cardRoot.querySelector<HTMLElement>(".sy-card");
-  if (!cardEl) return;
-  if (cardEl.querySelector(".sy-rings")) return; // already added
-  const rings = document.createElement("div");
-  rings.className = "sy-rings";
-  rings.setAttribute("aria-hidden", "true");
-  rings.innerHTML = `<span class="sy-ring">${RING_SVG}</span><span class="sy-ring">${RING_SVG}</span>`;
-  cardEl.appendChild(rings);
-}
-
-/**
- * Re-style short "meta" text elements (e.g. "Card 3 of 10") as the small meta
- * line above the question, matching the mockups. The player renderer classes
- * every text element on a quiz/flash card as `.sy-question` (44px heading); in
- * the editor a short meta line should read as `.sy-meta` (20px). We only
- * retag a text element that is clearly a meta line — a small box (≤ 40px tall)
- * that is NOT the tallest text on the card — so the real question keeps its
- * heading. Element wrappers are index-aligned to card.elements. Editor-only.
- */
-function restyleMetaText(card: Card, cardRoot: HTMLElement): void {
-  if (card.kind !== "quiz" && card.kind !== "flash" && card.kind !== "story") return;
-  const texts = card.elements.filter(
-    (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
-  );
-  if (texts.length < 2) return; // nothing to distinguish a meta line from
-  const tallest = texts.reduce((m, t) => Math.max(m, t.h), 0);
-  const wrappers = Array.from(cardRoot.querySelectorAll<HTMLElement>(".sy-element"));
-  card.elements.forEach((el, i) => {
-    if (el.type !== "text") return;
-    const isMeta = el.h <= 40 && el.h < tallest;
-    if (!isMeta) return;
-    const p = wrappers[i]?.querySelector<HTMLElement>("p.sy-question");
-    if (p) {
-      p.classList.remove("sy-question");
-      p.classList.add("sy-meta");
-    }
-  });
-}
-
 /** Map a clicked DOM node up to the card element id it belongs to. */
 function elementIdFromClick(
   card: Card,
@@ -155,6 +98,16 @@ export function Canvas({
         }
       : card;
 
+  // Derive the "Card N of M" chrome from the selected card's deck position
+  // (1-based among non-end content cards). Not stored in the stack — the
+  // renderer draws it from this, so the editor preview matches the player.
+  const contentCards = stack.cards.filter((c) => c.kind !== "end");
+  const contentIndex = contentCards.findIndex((c) => c.id === card.id);
+  const chrome =
+    contentIndex >= 0
+      ? { position: contentIndex + 1, total: contentCards.length }
+      : {};
+
   // Draw the selected card with the reused renderer after each render.
   useLayoutEffect(() => {
     const root = stackRef.current;
@@ -167,13 +120,8 @@ export function Canvas({
       runtime,
       () => {}, // navigate: no-op in edit mode
       () => {}, // playSound: silent in edit mode
+      chrome, // derived "Card N of M" — drawn by the renderer, not stored
     );
-    // Editor-only chrome layered over the reused renderer (no renderer change):
-    //   - the standing binder-ring loops above the card (the renderer draws
-    //     only the flat punched holes), and
-    //   - a small meta line ("Card 3 of 10") instead of a 44px heading.
-    addRings(root);
-    restyleMetaText(drawnCard, root);
     // On a flash front, centre the term and append the "tap to flip" hint
     // so the preview matches the mockup (editor-only chrome).
     if (isFlash) {
@@ -198,7 +146,7 @@ export function Canvas({
         }
       }
     }
-  }, [stack, card, drawnCard, isFlash, flashSide]);
+  }, [stack, card, drawnCard, isFlash, flashSide, chrome.position, chrome.total]);
 
   // Recompute the fit scale on mount and resize.
   useEffect(() => {

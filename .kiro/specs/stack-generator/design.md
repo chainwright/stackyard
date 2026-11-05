@@ -189,9 +189,54 @@ The fallback stack's title is derived from the prompt (truncated to 120 chars, t
 
 ---
 
+## Progressive delivery (NDJSON)
+
+The generator produces a whole `Stack` in one step (the LLM returns full JSON;
+the fallback builds every card). Progressive delivery does not change that — it
+streams the finished stack to the client card-by-card so the Start screen can
+deal each card onto the pile with its real question, instead of showing a
+spinner. The LLM contract, the 16 KB request limit, and all validation are
+unchanged.
+
+Opt-in by `Accept: application/x-ndjson` on `POST /api/generate`. The default
+path (single JSON body) is untouched, so existing clients and tests keep
+working.
+
+```
+Client ──POST /api/generate, Accept: application/x-ndjson──▶ route handler
+  (same prompt validation + 16 KB readBody as the JSON path)
+        │
+        ▼
+server/stream-generate.ts  streamGenerate(request, sink)
+  ├─ generate(request)                    → GenerateSuccess | GenerateError
+  ├─ if ok:false  → write { type:"error", message } ; end
+  ├─ write { type:"start", total, title, isFallback }
+  ├─ for each card:
+  │     validateCard(card)   (shape only; whole-stack invariants need the deck)
+  │       fail → write { type:"error", message } ; end
+  │       ok   → write { type:"card", index, card }
+  ├─ validate(stack)         (whole-stack invariants, the single source of truth)
+  │     fail → write { type:"error", message } ; end
+  └─ write { type:"done", stack, isFallback } ; end
+```
+
+Line types (`src/shared/types.ts`): `GenerateStreamStart`, `GenerateStreamCard`,
+`GenerateStreamDone`, `GenerateStreamError`. A `validateCard(input)` export in
+`src/shared/validator.ts` checks one card's structural shape; `validate()`
+remains the whole-stack check. The HTTP response is always 200 — the stream's
+final line carries success or failure — so the body can flush before generation
+finishes.
+
+Client (`src/editor/api.ts` `generateStackStream`): reads the NDJSON body with a
+`ReadableStream` reader, invokes `onStart` / `onCard` callbacks as lines arrive,
+and resolves with the same `GenerateOutcome` shape as the non-streaming
+`generateStack`. A transport failure, an unparseable line, or a stream that ends
+without a `done`/`error` line all resolve to a plain-language `{ ok:false }`.
+
+---
+
 ## Not in scope for this feature
 
-- Streaming the generation response.
 - Support for more than one LLM provider (OpenAI-compatible API only).
 - Caching or deduplication of identical prompts.
 - Rate limiting or quota management.

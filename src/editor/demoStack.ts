@@ -18,7 +18,6 @@ export function demoStack(): Stack {
   void next;
 
   const quiz = (
-    meta: string,
     question: string,
     answers: [string, string, string, string],
     correctIndex: number,
@@ -28,7 +27,9 @@ export function demoStack(): Stack {
       id: uuid(),
       kind: "quiz" as const,
       elements: [
-        { type: "text" as const, id: uuid(), x: 48, y: 48, w: 400, h: 32, content: meta },
+        // The "Card N of M" meta line is DERIVED chrome drawn by the renderer
+        // from the deck position — not a stored element. Only the question text
+        // lives in the stack.
         { type: "text" as const, id: uuid(), x: 48, y: 104, w: 704, h: 128, content: question },
         ...answers.map((label, i) => ({
           type: "button" as const,
@@ -92,18 +93,18 @@ export function demoStack(): Stack {
     actions: [],
   };
 
-  const c1 = quiz("Card 1 of 10", "Who sailed to Ireland first?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0, endId);
-  const c2 = quiz("Card 2 of 10", "What is a longship?", ["A fast boat", "A house", "A sword", "A town"], 0, endId);
-  const c3 = quiz("Card 3 of 10", "Where did the Vikings build a town in 841?", ["Dublin", "Cork", "Galway", "Sligo"], 0, endId);
+  const c1 = quiz("Who sailed to Ireland first?", ["Vikings", "Romans", "Greeks", "Egyptians"], 0, endId);
+  const c2 = quiz("What is a longship?", ["A fast boat", "A house", "A sword", "A town"], 0, endId);
+  const c3 = quiz("Where did the Vikings build a town in 841?", ["Dublin", "Cork", "Galway", "Sligo"], 0, endId);
   const c4 = flash("Longphort", "A longphort was a fortified ship harbour the Vikings built on the coast. They used it to raid and to trade. Dublin began as a longphort in 841.");
-  const c6 = quiz("Card 6 of 10", "Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0, endId);
-  const c7 = quiz("Card 7 of 10", "What did they trade?", ["Silver", "Cars", "Phones", "Plastic"], 0, endId);
+  const c6 = quiz("Who led the first raid?", ["A chieftain", "A monk", "A king", "A farmer"], 0, endId);
+  const c7 = quiz("What did they trade?", ["Silver", "Cars", "Phones", "Plastic"], 0, endId);
   const c5 = story(
     "The longship lands on the River Liffey at dawn. The crew can raid the monastery for its silver, or they can stay and build a longphort by the water. What should they do?",
     "Raid the monastery", c6.id,
     "Build a longphort", c7.id,
   );
-  const c8 = quiz("Card 8 of 10", "Which king fought back?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0, endId);
+  const c8 = quiz("Which king fought back?", ["Brian Boru", "Niall", "Conor", "Diarmuid"], 0, endId);
   const c9 = flash("Thingmote", "A raised mound where the Norse of Dublin held their assembly.");
 
   return {

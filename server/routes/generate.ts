@@ -9,7 +9,15 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { generate } from "../stackGenerator.js";
 import { readBody } from "../readBody.js";
-import type { GenerateRequest } from "../../src/shared/types.js";
+import { streamGenerate } from "../stream-generate.js";
+import type { LineSink } from "../stream-generate.js";
+import type {
+  GenerateRequest,
+  GenerateStreamMessage,
+} from "../../src/shared/types.js";
+
+/** NDJSON media type the client sends in Accept to request progressive delivery. */
+const NDJSON_MEDIA_TYPE = "application/x-ndjson";
 
 // A generate request body is a single sentence plus a little JSON wrapping;
 // 16 KB is far more than that and refuses anything that could exhaust memory.
@@ -99,6 +107,16 @@ export async function handleGenerate(
   // Call the generator.
   const request: GenerateRequest = { prompt: prompt.trim() };
 
+  // Progressive (NDJSON) delivery when the client asks for it. The request
+  // limit (16 KB) and prompt validation above are identical for both paths;
+  // only the response encoding differs. The default JSON path is unchanged so
+  // existing tests and clients keep working.
+  const accept = (req.headers["accept"] ?? "").toLowerCase();
+  if (accept.includes(NDJSON_MEDIA_TYPE)) {
+    await streamGenerateToResponse(res, request);
+    return;
+  }
+
   let result: Awaited<ReturnType<typeof generate>>;
   try {
     result = await generate(request);
@@ -125,4 +143,35 @@ export async function handleGenerate(
       message: result.message,
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Streaming (NDJSON) response
+
+/**
+ * Stream the generated stack to `res` as NDJSON. The response is always 200 at
+ * the HTTP level (the stream itself carries success/error as its final line),
+ * so the body can begin flushing before generation finishes. Each message is a
+ * single JSON object followed by a newline.
+ */
+async function streamGenerateToResponse(
+  res: ServerResponse,
+  request: GenerateRequest,
+): Promise<void> {
+  res.writeHead(200, {
+    "Content-Type": NDJSON_MEDIA_TYPE,
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  });
+
+  const sink: LineSink = {
+    write(obj: GenerateStreamMessage): void {
+      res.write(JSON.stringify(obj) + "\n");
+    },
+    end(): void {
+      res.end();
+    },
+  };
+
+  await streamGenerate(request, sink);
 }

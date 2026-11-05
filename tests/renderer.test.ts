@@ -246,6 +246,111 @@ describe("renderCard() — element types", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Derived card chrome — "Card N of M" meta, standing rings, score pill.
+// These are derived from the deck position / runtime state and passed by the
+// caller; they are NOT stored in the stack (so the stack format and round-trip
+// are unchanged).
+
+describe("renderCard() — derived chrome (meta / rings / score)", () => {
+  let root: HTMLElement;
+  let navigate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    navigate = vi.fn();
+  });
+
+  it("renders the derived 'Card N of M' meta line when chrome is passed", () => {
+    const card = makeCard({ kind: "quiz" });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+
+    renderCard(card, root, state, navigate, undefined, { position: 3, total: 10 });
+
+    const meta = root.querySelector(".sy-meta-chrome .sy-meta");
+    expect(meta).not.toBeNull();
+    expect(meta?.textContent).toBe("Card 3 of 10");
+  });
+
+  it("does NOT render a meta line when no chrome is passed", () => {
+    const card = makeCard({ kind: "quiz" });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+
+    renderCard(card, root, state, navigate);
+
+    expect(root.querySelector(".sy-meta-chrome")).toBeNull();
+  });
+
+  it("the meta line is derived chrome, not an element stored in the card", () => {
+    // A quiz card with only a question text element — no meta element at all.
+    const card = makeCard({
+      kind: "quiz",
+      elements: [
+        { type: "text", id: IDS.textEl, x: 48, y: 104, w: 704, h: 128, content: "Q?" },
+      ],
+    });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+
+    renderCard(card, root, state, navigate, undefined, { position: 1, total: 5 });
+
+    // The card still has exactly one stored element wrapper (the question);
+    // the meta line lives outside .sy-element so click-mapping stays aligned.
+    expect(root.querySelectorAll(".sy-element").length).toBe(1);
+    expect(root.querySelector(".sy-meta-chrome")?.textContent).toBe("Card 1 of 5");
+  });
+
+  it("renders two standing binder rings as a sibling of the card", () => {
+    const card = makeCard({ kind: "quiz" });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+
+    renderCard(card, root, state, navigate, undefined, { position: 1, total: 3 });
+
+    const ringsLayer = root.querySelector(".sy-card-stack > .sy-rings");
+    expect(ringsLayer).not.toBeNull();
+    expect(ringsLayer?.querySelectorAll(".sy-ring").length).toBe(2);
+  });
+
+  it("the end card shows no 'Card N of M' meta line even if chrome is passed", () => {
+    const endCard = makeCard({ id: IDS.end, kind: "end" });
+    const stack = makeStack([makeCard({ kind: "quiz" }), endCard]);
+    const state = createRuntime(stack);
+
+    renderCard(endCard, root, state, navigate, undefined, { position: 1, total: 1 });
+
+    expect(root.querySelector(".sy-meta-chrome")).toBeNull();
+    // but the standing rings are still drawn on the end card
+    expect(root.querySelector(".sy-card-stack > .sy-rings")).not.toBeNull();
+  });
+
+  it("renders the live running score as derived chrome on a content card", () => {
+    const card = makeCard({ kind: "quiz" });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+    state.variables["score"] = 3;
+
+    renderCard(card, root, state, navigate, undefined, { position: 2, total: 4 });
+
+    const score = root.querySelector(".sy-score-chrome");
+    expect(score).not.toBeNull();
+    expect(score?.textContent).toBe("Score 3");
+  });
+
+  it("--text-meta is 20px so meta stays ≥ 18px at the 0.9 minimum scale", () => {
+    const card = makeCard({ kind: "quiz" });
+    const stack = makeStack([card, makeCard({ id: IDS.end, kind: "end" })]);
+    const state = createRuntime(stack);
+    renderCard(card, root, state, navigate, undefined, { position: 1, total: 2 });
+
+    const css = document.head.querySelector("style")?.textContent ?? "";
+    expect(css).toMatch(/--text-meta:\s*20px/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Quiz-card answer tiles
 
 describe("renderCard() — quiz answer tiles", () => {

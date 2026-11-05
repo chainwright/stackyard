@@ -63,17 +63,30 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(btn.disabled).toBe(false);
   });
 
-  it("switches to the editor with the returned stack on success", async () => {
+  /** Build an NDJSON streaming Response from a list of stream messages. */
+  function ndjsonResponse(lines: unknown[], status = 200): Response {
+    const body = lines.map((l) => JSON.stringify(l)).join("\n") + "\n";
+    return new Response(body, {
+      status,
+      headers: { "Content-Type": "application/x-ndjson" },
+    });
+  }
+
+  /** The stream messages for a full, successful generation of `stack`. */
+  function streamFor(stack: ReturnType<typeof quizStack>, isFallback = false): unknown[] {
+    const msgs: unknown[] = [
+      { type: "start", total: stack.cards.length, title: stack.title, isFallback },
+    ];
+    stack.cards.forEach((card, index) => {
+      msgs.push({ type: "card", index, card });
+    });
+    msgs.push({ type: "done", stack, isFallback });
+    return msgs;
+  }
+
+  it("switches to the editor with the returned stack on success (streamed)", async () => {
     const stack = quizStack();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ok: true, stack, isFallback: false }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      ),
-    );
+    vi.stubGlobal("fetch", vi.fn(async () => ndjsonResponse(streamFor(stack))));
     const root = mount();
     setSentence(root, "A quiz about the Vikings");
     await flush();
@@ -83,17 +96,9 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(root.textContent).toContain("Where did the Vikings build a town in 841?");
   });
 
-  it("shows the offline notice when isFallback is true", async () => {
+  it("shows the offline notice when isFallback is true (streamed)", async () => {
     const stack = quizStack();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ok: true, stack, isFallback: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      ),
-    );
+    vi.stubGlobal("fetch", vi.fn(async () => ndjsonResponse(streamFor(stack, true))));
     const root = mount();
     setSentence(root, "A quiz about the Vikings");
     await flush();
@@ -103,14 +108,17 @@ describe("TASK-12: Start screen generate flow", () => {
     expect(announcer?.textContent ?? "").toContain("offline");
   });
 
-  it("shows the plain-language message and stays on Start on an error response", async () => {
+  it("shows the plain-language message and stays on Start on an error line", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
-        new Response(
-          JSON.stringify({ ok: false, message: "We couldn't build your cards. Check your internet and press Build Cards again." }),
-          { status: 422, headers: { "Content-Type": "application/json" } },
-        ),
+        ndjsonResponse([
+          {
+            type: "error",
+            message:
+              "We couldn't build your cards. Check your internet and press Build Cards again.",
+          },
+        ]),
       ),
     );
     const root = mount();
@@ -120,6 +128,27 @@ describe("TASK-12: Start screen generate flow", () => {
     await flush();
     expect(root.querySelector(".start-area")).not.toBeNull();
     expect(root.querySelector(".error-notice")?.textContent ?? "").toContain("couldn't build your cards");
+  });
+
+  it("stays on Start with a plain message on a broken stream (no done line)", async () => {
+    // Start + one card, then the stream ends abruptly — no done/error line.
+    const stack = quizStack();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ndjsonResponse([
+          { type: "start", total: stack.cards.length, title: stack.title, isFallback: false },
+          { type: "card", index: 0, card: stack.cards[0] },
+        ]),
+      ),
+    );
+    const root = mount();
+    setSentence(root, "A quiz about the Vikings");
+    await flush();
+    root.querySelector<HTMLButtonElement>(".build-btn")!.click();
+    await flush();
+    expect(root.querySelector(".start-area")).not.toBeNull();
+    expect(root.querySelector(".error-notice")).not.toBeNull();
   });
 
   it("shows a plain message and stays on Start on a network failure", async () => {

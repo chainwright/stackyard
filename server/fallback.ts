@@ -111,6 +111,11 @@ export function build(request: GenerateRequest): Stack {
     string, string, string
   ];
 
+  // Content starts below y≈96 so it never collides with the player's derived
+  // top chrome (the "Card N of M" meta line at y=48 and the running score at
+  // the top-right). The player draws that chrome itself; the stack only holds
+  // the card content, matching the mockup layout (question at y≈104, answer
+  // tiles at y≈296/424).
   const introCard: Card = {
     id: introId,
     kind: "story",
@@ -118,10 +123,10 @@ export function build(request: GenerateRequest): Stack {
       {
         type: "text",
         id: introTextId,
-        x: 40,
-        y: 40,
-        w: 720,
-        h: 80,
+        x: 48,
+        y: 104,
+        w: 704,
+        h: 224,
         content: title,
       },
       {
@@ -145,19 +150,19 @@ export function build(request: GenerateRequest): Stack {
       {
         type: "text",
         id: quizTextId,
-        x: 40,
-        y: 40,
-        w: 720,
-        h: 80,
+        x: 48,
+        y: 104,
+        w: 704,
+        h: 128,
         content: "Question 1: What is the topic of this lesson?",
       },
       {
         type: "button",
         id: correctBtnId,
-        x: 40,
-        y: 200,
-        w: 320,
-        h: 60,
+        x: 48,
+        y: 296,
+        w: 344,
+        h: 96,
         label: "Correct Answer",
         actions: [
           { type: "score", delta: 1 },
@@ -168,10 +173,10 @@ export function build(request: GenerateRequest): Stack {
       {
         type: "button",
         id: incorrectBtnId,
-        x: 440,
-        y: 200,
-        w: 320,
-        h: 60,
+        x: 408,
+        y: 296,
+        w: 344,
+        h: 96,
         label: "Wrong Answer",
         actions: [
           { type: "score", delta: 0 },

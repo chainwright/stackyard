@@ -57,12 +57,21 @@ describe("TASK-19: persistence wiring", () => {
 
   it("a successful generate saves the new stack", async () => {
     const stack = quizStack();
+    // The Start screen generates over the progressive (NDJSON) path.
+    const ndjson =
+      [
+        { type: "start", total: stack.cards.length, title: stack.title, isFallback: false },
+        ...stack.cards.map((card, index) => ({ type: "card", index, card })),
+        { type: "done", stack, isFallback: false },
+      ]
+        .map((l) => JSON.stringify(l))
+        .join("\n") + "\n";
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
-        new Response(JSON.stringify({ ok: true, stack, isFallback: false }), {
+        new Response(ndjson, {
           status: 200,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/x-ndjson" },
         }),
       ),
     );

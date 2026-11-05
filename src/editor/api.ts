@@ -3,7 +3,11 @@
 // /api/export. Both return plain-language outcomes; neither ever surfaces a
 // raw error code or stack trace (audience.md, REQ-MKR-16).
 
-import type { Stack } from "../shared/types.js";
+import type {
+  Stack,
+  Card,
+  GenerateStreamMessage,
+} from "../shared/types.js";
 import { safeFileName } from "../shared/messages.js";
 
 // ---------------------------------------------------------------------------
@@ -59,6 +63,138 @@ export async function generateStack(
         ? body.message
         : "We couldn't build your cards. Check your internet and press Build Cards again.",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Generate (progressive / streaming)
+
+/** Callbacks the Start screen uses to deal cards as they stream in. */
+export interface GenerateStreamHandlers {
+  onStart?: (info: { total: number; title: string; isFallback: boolean }) => void;
+  onCard?: (info: { index: number; card: Card; total: number }) => void;
+}
+
+/**
+ * POST /api/generate asking for NDJSON progressive delivery. Invokes the
+ * handlers as cards arrive, then resolves with the same GenerateOutcome shape
+ * as generateStack() so callers can branch identically.
+ *
+ * On any transport failure, a malformed line, or an `error` line, resolves
+ * with { ok: false, message } — a plain-language message, never a raw error.
+ */
+export async function generateStackStream(
+  prompt: string,
+  handlers: GenerateStreamHandlers = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<GenerateOutcome> {
+  let res: Response;
+  try {
+    res = await fetchImpl("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/x-ndjson",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+  } catch {
+    return {
+      ok: false,
+      message:
+        "We couldn't reach Stackyard. Check your internet and press Build Cards again.",
+    };
+  }
+
+  // A non-OK HTTP status means the request was rejected before streaming
+  // (e.g. 400 for a bad prompt); read the JSON message if present.
+  if (!res.ok || res.body === null) {
+    let message =
+      "We couldn't build your cards. Check your internet and press Build Cards again.";
+    try {
+      const data = (await res.json()) as { message?: string };
+      if (typeof data.message === "string" && data.message.length > 0) {
+        message = data.message;
+      }
+    } catch {
+      // keep the generic message
+    }
+    return { ok: false, message };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let total = 0;
+  let isFallback = false;
+
+  // Process a single parsed NDJSON message. Returns a terminal outcome once
+  // `done` or `error` is seen; otherwise undefined to keep reading.
+  function handle(msg: GenerateStreamMessage): GenerateOutcome | undefined {
+    switch (msg.type) {
+      case "start":
+        total = msg.total;
+        isFallback = msg.isFallback;
+        handlers.onStart?.({ total: msg.total, title: msg.title, isFallback: msg.isFallback });
+        return undefined;
+      case "card":
+        handlers.onCard?.({ index: msg.index, card: msg.card, total });
+        return undefined;
+      case "done":
+        return { ok: true, stack: msg.stack, isFallback: msg.isFallback || isFallback };
+      case "error":
+        return { ok: false, message: msg.message };
+      default:
+        return undefined;
+    }
+  }
+
+  function parseLine(line: string): GenerateStreamMessage | null {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) return null;
+    try {
+      return JSON.parse(trimmed) as GenerateStreamMessage;
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { value, done } = await reader.read();
+      if (value) buffer += decoder.decode(value, { stream: true });
+
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        const msg = parseLine(line);
+        if (msg === null) {
+          // A line we couldn't parse mid-stream: treat as a broken stream.
+          if (line.trim().length > 0) {
+            return { ok: false, message: "Something went wrong. Please try again." };
+          }
+          continue;
+        }
+        const outcome = handle(msg);
+        if (outcome) return outcome;
+      }
+
+      if (done) break;
+    }
+
+    // Flush any trailing line without a newline.
+    const tail = parseLine(buffer);
+    if (tail) {
+      const outcome = handle(tail);
+      if (outcome) return outcome;
+    }
+  } catch {
+    return { ok: false, message: "Something went wrong. Please try again." };
+  }
+
+  // Stream ended without a `done` or `error` line — a broken stream.
+  return { ok: false, message: "Something went wrong. Please try again." };
 }
 
 // ---------------------------------------------------------------------------

@@ -349,3 +349,25 @@ export function validate(input: unknown): ValidationResult {
   }
   return { valid: true, stack };
 }
+
+/**
+ * Structural validation of a single card, used while a stack is streamed to the
+ * client card-by-card (progressive delivery). Whole-stack invariants — unique
+ * IDs across the document, goto targets, exactly-one-end — cannot be judged
+ * from one card in isolation; those are enforced by `validate()` on the final
+ * assembled stack. This check guards each streamed card's shape so a malformed
+ * card is caught the moment it arrives, not only at the end.
+ *
+ * Returns the parsed `Card` or `{ errors: ["invalid-shape"] }`.
+ */
+export type CardValidationResult =
+  | { valid: true; card: Card }
+  | { valid: false; errors: string[] };
+
+export function validateCard(input: unknown): CardValidationResult {
+  const card = parseCard(input);
+  if (card === null) {
+    return { valid: false, errors: ["invalid-shape"] };
+  }
+  return { valid: true, card };
+}

@@ -18,6 +18,38 @@ import type { RuntimeState } from "./runtime.js";
 import { dispatch } from "./runtime.js";
 
 // ---------------------------------------------------------------------------
+// Derived card chrome
+//
+// "Card N of M" and the running score are DERIVED from the deck position and
+// runtime state — they are NOT stored in the stack. The stack format and its
+// round-trip are therefore unchanged. `renderCard` computes nothing itself; the
+// caller (mountPlayer / the editor Canvas) passes the deck position, because
+// only the caller knows where this card sits in the whole deck.
+
+/**
+ * Derived chrome for a card. Passed by the caller; never read from or written
+ * to the stack.
+ *   - `position` / `total` — this content card's 1-based place among the
+ *     non-end cards and the count of non-end cards ("Card 3 of 10"). Omit for
+ *     a card that should show no meta line (the renderer also omits it on the
+ *     end card).
+ */
+export interface CardChrome {
+  position?: number;
+  total?: number;
+}
+
+// The standing metal binder-ring loop (design-system.md "Rings sit outside the
+// card's clip"). Built as a string so it can be injected with innerHTML — it is
+// a hardcoded constant, never stack-derived content.
+const RING_SVG =
+  '<svg width="26" height="52" viewBox="0 0 26 52" aria-hidden="true">' +
+  '<ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#1E2A47" stroke-opacity="0.55" stroke-width="3.5"/>' +
+  '<ellipse cx="13" cy="26" rx="8" ry="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1"/>' +
+  '<ellipse cx="13" cy="40" rx="7" ry="6" fill="#FFFFFF" stroke="#C9D3E3" stroke-width="1"/>' +
+  "</svg>";
+
+// ---------------------------------------------------------------------------
 // Design-system constants
 
 const COLOR = {
@@ -88,7 +120,7 @@ const PLAYER_STYLES = `
   --text-question: 44px;
   --text-tile:     32px;
   --text-body:     22px;
-  --text-meta:     18px;
+  --text-meta:     20px;
 }
 
 /* Reset */
@@ -146,24 +178,75 @@ const PLAYER_STYLES = `
   background-size: 100% calc(100% - 40px);
 }
 
-/* ---- Ring holes ---- */
+/* ---- Ring holes (the punched hole beneath each standing ring loop). Aligned
+   to the same x and gap as .sy-rings so a hole sits under each loop. ---- */
 .sy-ring-holes {
   position: absolute;
-  top: 0; left: 0;
+  top: 14px; left: 0;
   width: 800px;
   display: flex;
-  justify-content: space-around;
-  padding: 0 200px;
+  justify-content: center;
+  gap: 240px;
   pointer-events: none;
   z-index: 10;
 }
 .sy-ring-hole {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--color-white);
   border: 1px solid var(--color-rule);
-  margin-top: 6px;
+}
+
+/* ---- Standing binder rings (design-system "Rings sit outside the card's clip").
+   A sibling of .sy-card, standing ~22px above the card's top edge. The card is
+   overflow:hidden so the loops are drawn here, not inside the card. ---- */
+.sy-rings {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  width: 800px;
+  height: 52px;
+  display: flex;
+  justify-content: center;
+  gap: 240px;
+  pointer-events: none;
+  z-index: 12;
+}
+.sy-ring svg { display: block; }
+
+/* ---- Derived meta line ("Card N of M"), drawn by the renderer, not stored
+   in the stack. Small 20px line in the top-left, above the question. ---- */
+.sy-meta-chrome {
+  position: absolute;
+  left: 48px;
+  top: 48px;
+  width: 400px;
+  height: 32px;
+  z-index: 1;
+}
+.sy-meta-chrome .sy-meta {
+  font-size: var(--text-meta);     /* 20px — stays ≥ 18px at min scale */
+  font-family: 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+/* ---- Derived running-score pill, top-right of the card, read from runtime
+   state. Matches the mockup's "Score N" (navy on paper). Derived chrome, never
+   stored in the stack. ---- */
+.sy-score-chrome {
+  position: absolute;
+  top: 44px;
+  right: 40px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--color-ink);
 }
 
 /* ---- Element positioning ---- */
@@ -533,6 +616,7 @@ export function renderCard(
   state: RuntimeState,
   navigate: (id: string, automatic: boolean) => void,
   playSound: (sound: "cheer" | "buzz") => void = _noop,
+  chrome: CardChrome = {},
 ): void {
   ensureStyles();
   const ariaLive = ensureAriaLive();
@@ -555,7 +639,7 @@ export function renderCard(
   const cardEl = document.createElement("div");
   cardEl.className = "sy-card";
 
-  // Ring holes
+  // Ring holes (the punched hole beneath each standing ring loop).
   const ringHoles = document.createElement("div");
   ringHoles.className = "sy-ring-holes";
   ringHoles.setAttribute("aria-hidden", "true");
@@ -566,12 +650,46 @@ export function renderCard(
   }
   cardEl.appendChild(ringHoles);
 
+  // Standing binder rings — a sibling of the card, standing above its top edge.
+  const rings = document.createElement("div");
+  rings.className = "sy-rings";
+  rings.setAttribute("aria-hidden", "true");
+  rings.innerHTML = `<span class="sy-ring">${RING_SVG}</span><span class="sy-ring">${RING_SVG}</span>`;
+
   // ---- End card: special rendering ----
   if (card.kind === "end") {
     renderEndCard(card, cardEl, state, navigate, playSound, ariaLive);
     stackWrapper.appendChild(cardEl);
+    stackWrapper.appendChild(rings);
     root.appendChild(stackWrapper);
     return;
+  }
+
+  // ---- Derived chrome (not stored in the stack) ----
+  // "Card N of M" meta line above the question, for content cards only.
+  if (
+    typeof chrome.position === "number" &&
+    typeof chrome.total === "number" &&
+    chrome.total > 0
+  ) {
+    const metaWrap = document.createElement("div");
+    metaWrap.className = "sy-meta-chrome";
+    const metaP = document.createElement("p");
+    metaP.className = "sy-meta";
+    metaP.textContent = `Card ${chrome.position} of ${chrome.total}`;
+    metaWrap.appendChild(metaP);
+    cardEl.appendChild(metaWrap);
+  }
+
+  // Running score, top-right, read from runtime state. Quiz cards keep score;
+  // show it wherever a score is being tracked (any content card).
+  const liveScore = state.variables["score"];
+  if (typeof liveScore === "number") {
+    const scoreWrap = document.createElement("div");
+    scoreWrap.className = "sy-score-chrome";
+    scoreWrap.setAttribute("aria-label", `Score ${liveScore}`);
+    scoreWrap.textContent = `Score ${liveScore}`;
+    cardEl.appendChild(scoreWrap);
   }
 
   // ---- Regular card: render elements ----
@@ -643,6 +761,7 @@ export function renderCard(
   }
 
   stackWrapper.appendChild(cardEl);
+  stackWrapper.appendChild(rings);
   root.appendChild(stackWrapper);
 }
 

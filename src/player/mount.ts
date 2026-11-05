@@ -57,8 +57,18 @@ export function mountPlayer(stack: Stack, root: HTMLElement): () => void {
     // Update runtime state.
     state.currentCardId = cardId;
 
+    // Derive the "Card N of M" chrome from the deck position (not stored in the
+    // stack): position is 1-based among the non-end content cards; total is the
+    // count of content cards. The end card gets no meta line.
+    const contentCards = stack.cards.filter((c) => c.kind !== "end");
+    const contentIndex = contentCards.findIndex((c) => c.id === cardId);
+    const chrome =
+      contentIndex >= 0
+        ? { position: contentIndex + 1, total: contentCards.length }
+        : {};
+
     // Render the card — button click handlers call navigate with automatic=false.
-    renderCard(card, root, state, navigateTo, playSound);
+    renderCard(card, root, state, navigateTo, playSound, chrome);
 
     // Fire card-level actions (e.g., auto-advance goto).
     // These pass automatic=true so they count towards the loop guard.

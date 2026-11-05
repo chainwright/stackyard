@@ -149,6 +149,43 @@ The stack generator takes a single sentence from the teacher and returns a compl
 
 ---
 
+### REQ-8: Progressive delivery of generated cards
+
+**As a** teacher,
+**I want** to watch the cards appear one by one while my set is built,
+**so that** the wait feels alive and I can see the real questions taking shape instead of a spinner.
+
+#### Acceptance Criteria
+
+- WHEN the client requests `POST /api/generate` with `Accept: application/x-ndjson`,
+  THE SYSTEM SHALL stream the result as newline-delimited JSON: exactly one
+  `start` message, then one `card` message per card in deck order, then exactly
+  one terminator (`done` with the whole stack, or `error`).
+
+- WHEN the client does not request NDJSON,
+  THE SYSTEM SHALL keep the existing single-response JSON behaviour unchanged
+  (`GenerateSuccess` / `GenerateError`).
+
+- WHEN a card is streamed,
+  THE SYSTEM SHALL shape-validate that card before writing it, and SHALL
+  validate the whole assembled stack before the `done` message.
+
+- WHEN a streamed card fails shape validation, or the assembled stack fails
+  whole-stack validation, or generation fails,
+  THE SYSTEM SHALL emit a single `error` message with a plain-language string
+  (never a stack trace or raw error code) and stop — a clean fallback.
+
+- WHEN NDJSON is requested but the prompt is empty, whitespace-only, or longer
+  than 500 characters,
+  THE SYSTEM SHALL still reject it with a 400 before streaming (REQ-7), applying
+  the same 16 KB request-body limit as the JSON path.
+
+- WHEN cards stream in,
+  THE CLIENT SHALL deal each card onto the pile as it arrives, labelled "N of M"
+  with the card's real question.
+
+---
+
 ### REQ-7: Input validation
 
 **As a** teacher,  

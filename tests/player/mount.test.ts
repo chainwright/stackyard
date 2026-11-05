@@ -116,6 +116,55 @@ describe("TASK-17a: mountPlayer", () => {
   });
 });
 
+describe("mountPlayer derives 'Card N of M' from the deck position", () => {
+  it("shows 'Card 1 of 2' on the first content card of a two-content-card deck", () => {
+    // minimalStack(): one story content card + one end card → total content = 1.
+    // Build a deck with two content cards so the total reads cleanly.
+    const stack: Stack = {
+      id: id(1),
+      title: "Meta Test",
+      theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        {
+          id: id(2),
+          kind: "quiz",
+          elements: [
+            { type: "text", id: id(3), x: 48, y: 104, w: 704, h: 128, content: "Q one?" },
+            { type: "button", id: id(4), x: 48, y: 296, w: 344, h: 96, label: "Right",
+              actions: [{ type: "score", delta: 1 }, { type: "goto", cardId: id(6) }] },
+            { type: "button", id: id(5), x: 408, y: 296, w: 344, h: 96, label: "Wrong",
+              actions: [{ type: "goto", cardId: id(6) }] },
+          ],
+          actions: [],
+        },
+        {
+          id: id(6),
+          kind: "quiz",
+          elements: [
+            { type: "text", id: id(7), x: 48, y: 104, w: 704, h: 128, content: "Q two?" },
+            { type: "button", id: id(8), x: 48, y: 296, w: 344, h: 96, label: "Right",
+              actions: [{ type: "score", delta: 1 }, { type: "goto", cardId: id(9) }] },
+            { type: "button", id: id(10), x: 408, y: 296, w: 344, h: 96, label: "Wrong",
+              actions: [{ type: "goto", cardId: id(9) }] },
+          ],
+          actions: [],
+        },
+        {
+          id: id(9),
+          kind: "end",
+          elements: [{ type: "field", id: id(11), x: 48, y: 40, w: 704, h: 80, variable: "score" }],
+          actions: [],
+        },
+      ],
+    };
+
+    const teardown = mountPlayer(stack, root);
+    const meta = root.querySelector(".sy-meta-chrome .sy-meta");
+    expect(meta?.textContent).toBe("Card 1 of 2");
+    teardown();
+  });
+});
+
 describe("TASK-17: Play mode and the exported player share one mountPlayer", () => {
   it("src/player/index.ts imports the same mountPlayer symbol the Maker uses", async () => {
     const mountMod = await import("../../src/player/mount.js");

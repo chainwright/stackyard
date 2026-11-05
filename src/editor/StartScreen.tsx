@@ -4,11 +4,35 @@
 
 import { useState } from "preact/hooks";
 import type { JSX } from "preact";
+import type { Card } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
-import { generateStack } from "./api.js";
+import { generateStackStream } from "./api.js";
 import { announce } from "./a11y.js";
 import { TopBar } from "./TopBar.js";
 import { Ring, TileShape } from "./icons.js";
+
+/** A card dealt onto the pile during progressive generation. */
+interface DealtCard {
+  index: number;
+  total: number;
+  kind: Card["kind"];
+  /** The card's first question/term text, if any (shown on the dealt card). */
+  question: string | null;
+  /** Answer labels for a quiz card (up to four), for the tile preview. */
+  answers: string[];
+}
+
+/** Pull a human-facing question/term and answer labels out of a streamed card. */
+function summariseCard(card: Card, index: number, total: number): DealtCard {
+  const firstText = card.elements.find((e) => e.type === "text");
+  const question =
+    firstText && firstText.type === "text" ? firstText.content : null;
+  const answers = card.elements
+    .filter((e): e is Extract<Card["elements"][number], { type: "button" }> => e.type === "button")
+    .map((b) => b.label)
+    .slice(0, 4);
+  return { index, total, kind: card.kind, question, answers };
+}
 
 const PROMISE = "Make a clickable lesson from one sentence. Works offline.";
 
@@ -26,11 +50,16 @@ export function StartScreen({
   store,
   discardedNotice,
   __demoError,
+  __demoDealt,
+  __demoTotal,
 }: {
   store: EditorStore;
   discardedNotice?: string | null;
   /** Harness-only: force the error state for screenshots. */
   __demoError?: string;
+  /** Harness-only: seed the generating screen's dealt pile for screenshots. */
+  __demoDealt?: DealtCard[];
+  __demoTotal?: number;
 }): JSX.Element {
   const [sentence, setSentence] = useState(
     __demoError
@@ -38,6 +67,9 @@ export function StartScreen({
       : "",
   );
   const [error, setError] = useState<string | null>(__demoError ?? null);
+  // Cards dealt so far during progressive generation, and the expected total.
+  const [dealt, setDealt] = useState<DealtCard[]>(__demoDealt ?? []);
+  const [total, setTotal] = useState<number>(__demoTotal ?? 0);
 
   const status = store.getState().status;
   const generating = status === "generating";
@@ -46,8 +78,21 @@ export function StartScreen({
   async function build(): Promise<void> {
     if (sentence.trim().length === 0) return;
     setError(null);
+    setDealt([]);
+    setTotal(0);
     store.setStatus("generating");
-    const outcome = await generateStack(sentence.trim());
+
+    const outcome = await generateStackStream(sentence.trim(), {
+      onStart: ({ total: t }) => setTotal(t),
+      onCard: ({ index, card, total: t }) => {
+        setTotal(t);
+        // Deal this card onto the pile with its real question. We append in
+        // arrival order; the GeneratingScreen shows the latest on top.
+        setDealt((prev) => [...prev, summariseCard(card, index, t)]);
+        announce(`Card ${index + 1} of ${t} ready.`);
+      },
+    });
+
     if (outcome.ok) {
       store.setStack(outcome.stack, { isFallback: outcome.isFallback });
       store.setStatus("idle");
@@ -58,13 +103,15 @@ export function StartScreen({
       );
     } else {
       store.setStatus("idle");
+      setDealt([]);
+      setTotal(0);
       setError(outcome.message);
       announce(outcome.message);
     }
   }
 
   if (generating) {
-    return <GeneratingScreen />;
+    return <GeneratingScreen dealt={dealt} total={total} />;
   }
 
   return (
@@ -165,8 +212,33 @@ export function StartScreen({
   );
 }
 
-/** The "building your cards…" state (start-generating mockup). */
-function GeneratingScreen(): JSX.Element {
+/**
+ * The "building your cards…" state (start-generating mockup). Cards are dealt
+ * onto the pile one by one as they stream in from POST /api/generate, each with
+ * its real question and an "N of M" label. Until the first card arrives it
+ * shows the preparing state; the mockup look is preserved for both.
+ */
+function GeneratingScreen({
+  dealt,
+  total,
+}: {
+  dealt: DealtCard[];
+  total: number;
+}): JSX.Element {
+  const dealtCount = dealt.length;
+  // The three most recently dealt cards form the fanned pile; the newest lands
+  // on top (c4) with its question and tiles, matching the mockup.
+  const recent = dealt.slice(-4);
+  const top = recent.length > 0 ? recent[recent.length - 1]! : null;
+  const behind = recent.slice(0, -1); // up to three cards behind the top one
+
+  const counter =
+    total > 0
+      ? dealtCount >= total
+        ? `All ${total} cards ready`
+        : `Card ${Math.min(dealtCount + 1, total)} of ${total}`
+      : "Working…";
+
   return (
     <div class="app">
       <TopBar>
@@ -175,26 +247,40 @@ function GeneratingScreen(): JSX.Element {
       <main class="build-area" aria-busy="true" aria-label="Building your cards">
         <div class="status">
           <h1>Building your cards…</h1>
-          <p>About 20 seconds. Each card appears as it's ready.</p>
-          <p class="counter" aria-live="polite">Working…</p>
+          <p>Each card appears as it's ready.</p>
+          <p class="counter" aria-live="polite">{counter}</p>
         </div>
         <div class="deal" aria-hidden="true">
-          <div class="deal-card c1"><p class="deal-num">Card 1 · ready</p></div>
-          <div class="deal-card c2"><p class="deal-num">Card 2 · ready</p></div>
-          <div class="deal-card c3"><p class="deal-num">Card 3 · ready</p></div>
-          <div class="deal-card c4">
+          {/* Cards behind the top one, fanned. We always render three slots so
+              the pile has depth even early on. */}
+          {[0, 1, 2].map((slot) => {
+            const card = behind[behind.length - 3 + slot];
+            const label =
+              card != null ? `Card ${card.index + 1} · ready` : "";
+            return (
+              <div class={`deal-card c${slot + 1}`} key={`behind-${slot}`}>
+                {label ? <p class="deal-num">{label}</p> : null}
+              </div>
+            );
+          })}
+          {/* The newest card, landed on top. */}
+          <div class="deal-card c4" key={top ? `top-${top.index}` : "top-empty"}>
             <div class="deal-rings">
               <Ring />
               <Ring />
             </div>
-            <p class="deal-num">Card 4</p>
-            <p class="deal-q">Who led the first Viking raid?</p>
-            <div class="deal-tiles">
-              <span class="deal-tile" style="background:var(--color-tile-a);"></span>
-              <span class="deal-tile" style="background:var(--color-tile-b);"></span>
-              <span class="deal-tile" style="background:var(--color-tile-c);"></span>
-              <span class="deal-tile" style="background:var(--color-tile-d);"></span>
-            </div>
+            <p class="deal-num">
+              {top ? `Card ${top.index + 1} of ${top.total}` : "Preparing…"}
+            </p>
+            {top?.question ? <p class="deal-q">{top.question}</p> : null}
+            {top && top.kind === "quiz" ? (
+              <div class="deal-tiles">
+                <span class="deal-tile" style="background:var(--color-tile-a);"></span>
+                <span class="deal-tile" style="background:var(--color-tile-b);"></span>
+                <span class="deal-tile" style="background:var(--color-tile-c);"></span>
+                <span class="deal-tile" style="background:var(--color-tile-d);"></span>
+              </div>
+            ) : null}
           </div>
         </div>
       </main>

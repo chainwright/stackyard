@@ -145,6 +145,32 @@ async function post(
   return { status: res.status, body: json };
 }
 
+/** POST asking for NDJSON; return the status, content-type, and parsed lines. */
+async function postStream(
+  baseUrl: string,
+  path: string,
+  body: unknown
+): Promise<{ status: number; contentType: string; lines: unknown[] }> {
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/x-ndjson",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  const lines = text
+    .split("\n")
+    .filter((l) => l.trim().length > 0)
+    .map((l) => JSON.parse(l) as unknown);
+  return {
+    status: res.status,
+    contentType: res.headers.get("Content-Type") ?? "",
+    lines,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Server lifecycle
 
@@ -306,6 +332,70 @@ describe("POST /api/generate — unexpected errors", () => {
     expect(b.ok).toBe(false);
     // Must NOT expose internal error
     expect(b.message).not.toContain("Totally unexpected");
+  });
+});
+
+describe("POST /api/generate — progressive (NDJSON) delivery", () => {
+  it("streams start, one card per card, then done when Accept is NDJSON", async () => {
+    const stack = validStack();
+    generateMock.mockResolvedValue({
+      ok: true,
+      stack: stack as unknown as import("../src/shared/types.js").Stack,
+      isFallback: false,
+    });
+
+    const { status, contentType, lines } = await postStream(baseUrl, "/api/generate", {
+      prompt: "a quiz about Irish rivers",
+    });
+
+    expect(status).toBe(200);
+    expect(contentType).toContain("application/x-ndjson");
+    expect((lines[0] as { type: string }).type).toBe("start");
+    const cardLines = lines.filter((l) => (l as { type: string }).type === "card");
+    expect(cardLines.length).toBe(stack.cards.length);
+    expect((lines[lines.length - 1] as { type: string }).type).toBe("done");
+  });
+
+  it("streams a single error line when the generator returns ok:false", async () => {
+    generateMock.mockResolvedValue({
+      ok: false,
+      message: "We couldn't build your set of cards. Try rephrasing and have another go.",
+    });
+
+    const { status, lines } = await postStream(baseUrl, "/api/generate", {
+      prompt: "a quiz about nothing",
+    });
+
+    expect(status).toBe(200); // HTTP 200; the stream carries the failure
+    expect(lines).toHaveLength(1);
+    expect((lines[0] as { type: string }).type).toBe("error");
+  });
+
+  it("still rejects an empty prompt with 400 even when NDJSON is requested", async () => {
+    const res = await fetch(`${baseUrl}/api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/x-ndjson",
+      },
+      body: JSON.stringify({ prompt: "" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("the default (no NDJSON Accept) path still returns a single JSON body", async () => {
+    const stack = validStack();
+    generateMock.mockResolvedValue({
+      ok: true,
+      stack: stack as unknown as import("../src/shared/types.js").Stack,
+      isFallback: false,
+    });
+    const { status, body } = await post(baseUrl, "/api/generate", {
+      prompt: "a quiz about Irish rivers",
+    });
+    expect(status).toBe(200);
+    expect((body as { ok: boolean }).ok).toBe(true);
+    expect((body as { stack: unknown }).stack).toBeDefined();
   });
 });
 

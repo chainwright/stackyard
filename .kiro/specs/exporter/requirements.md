@@ -204,6 +204,44 @@ if the variable is not yet set, the field shall display an empty string.
 
 ---
 
+### REQ-PLY-11 — Derived card chrome (meta line, standing rings, running score)
+
+**When** the player displays a content card (any card whose `kind` is not
+`end`),
+**the system shall** draw, as chrome derived at render time and never stored in
+the stack, a small "Card N of M" meta line above the question, the two standing
+binder-ring loops above the card's top edge, and the running score — so the
+exported player and the Maker's Play mode match the play mockups in
+`docs/design/maker/` (`play.html`, `play-wrong.html`, `play-flash-back.html`,
+`play-end.html`).
+
+The meta line's `N` is the card's 1-based position among the non-end content
+cards and `M` is the count of non-end content cards. Because this chrome is
+derived from the deck position and runtime state — not read from or written to
+the stack — the stack format (`stack-format.md`) and the Stack → HTML → Stack
+round-trip (REQ-EXP-03) are unchanged.
+
+**Acceptance criteria**
+
+- WHEN the player renders the first non-end card of a deck with three non-end
+  cards, THEN a meta line reading `"Card 1 of 3"` appears and it is not an
+  element of the stored stack.
+- WHEN the player renders the `end` card, THEN no "Card N of M" meta line is
+  shown (the end card shows the final score, per REQ-PLY-07).
+- WHEN the player renders any card, THEN two standing binder-ring loops are
+  drawn as a sibling of the card so they are not clipped by the card's
+  `overflow`.
+- WHEN a stack produced by the fallback generator (no meta elements) is
+  exported and opened from a `file://` URL, THEN the "Card N of M" meta line,
+  the standing rings, and the running score are all visible on the first card.
+- WHEN the player bundle is rebuilt after this change, THEN its gzipped size
+  remains ≤ 51,200 bytes (REQ-EXP-02) and the staleness check
+  (`scripts/check-player-fresh.sh`) passes.
+- WHEN the exporter round-trip property test runs, THEN every stack still
+  round-trips with zero loss (the derived chrome adds no element to the stack).
+
+---
+
 ### REQ-PLY-07 — End card shows final score
 
 **When** the player navigates to the `end` card,  

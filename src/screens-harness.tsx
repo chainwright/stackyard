@@ -49,7 +49,15 @@ switch (state) {
   }
   case "start-generating": {
     const store = new EditorStore({ screen: "start", status: "generating" }, {});
-    render(<StartScreen store={store} />, root);
+    // Seed a few dealt cards so the screenshot shows the WOW moment: cards
+    // dealt one by one with real questions while the stack is built.
+    const demoDealt = [
+      { index: 0, total: 10, kind: "quiz" as const, question: "Who sailed to Ireland first?", answers: ["Vikings", "Romans", "Greeks", "Egyptians"] },
+      { index: 1, total: 10, kind: "quiz" as const, question: "What is a longship?", answers: ["A fast boat", "A house", "A sword", "A town"] },
+      { index: 2, total: 10, kind: "quiz" as const, question: "Where did the Vikings build a town in 841?", answers: ["Dublin", "Cork", "Galway", "Sligo"] },
+      { index: 3, total: 10, kind: "quiz" as const, question: "Who led the first Viking raid?", answers: ["A chieftain", "A monk", "A king", "A farmer"] },
+    ];
+    render(<StartScreen store={store} __demoDealt={demoDealt} __demoTotal={10} />, root);
     break;
   }
   case "start-error": {

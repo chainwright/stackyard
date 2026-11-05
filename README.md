@@ -35,6 +35,27 @@ committed file:
 
 It exits `0` when the committed bundle matches a fresh build and `1` when they
 differ (i.e. the source changed but the bundle was not rebuilt).
+
+### Screenshotting the Maker screens
+
+`screens.html` + `src/screens-harness.tsx` render one Maker screen state at a
+time (`?state=<name>`) so headless Chrome can capture them for comparison with
+the mockups in `docs/design/maker/`. Two ways to shoot into
+`docs/design/maker/built/`:
+
+```sh
+# With the dev server running (npm run dev:maker):
+zsh scripts/shoot.sh [state ...]
+
+# Without a server — build once, then shoot over file://:
+npx vite build --base=./
+zsh scripts/shoot-file.sh [state ...]
+```
+
+Each state is captured at 1366×768 (the target laptop) and 1920×1080 (a
+classroom projector). `shoot-file.sh` passes Chrome `--allow-file-access-from-files`
+so the built ES modules load from a `file://` URL.
+
 ## Third-party assets
 
 Stackyard ships two open-source typefaces. Both are self-hosted (no CDN) as
