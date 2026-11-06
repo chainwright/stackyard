@@ -1,8 +1,10 @@
 name: CI
 
-# Runs the full test suite, strict type-check, and the player-bundle freshness
-# check on every push and pull request (TASK-22 l — the README's CI claim is now
-# real, not aspirational).
+# Runs the full test suite, strict type-check, the player-bundle freshness check
+# and the README claim checker on every push and pull request (TASK-22 l — the
+# README's CI claim is real, not aspirational; TASK-26l — the claim checker runs
+# here too, because a README that says 600 tests while the suite has 619 was
+# exactly the drift it exists to catch, and nothing ran it).
 
 on:
   push:
@@ -25,3 +27,5 @@ jobs:
         run: npm test
       - name: Player bundle is fresh
         run: ./scripts/check-player-fresh.sh
+      - name: README numbers match the code (tests, bundle size, invariants, build command)
+        run: npm run check:claims
