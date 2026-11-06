@@ -83,8 +83,10 @@ describe("TASK-26m: the README is honest for judges", () => {
     expect(README).toContain("Public Domain Mark 1.0");
   });
 
-  it("is honest that one picture is a cartoon, not a photograph", () => {
-    expect(README).toMatch(/cartoon of a pupil with an abacus/);
+  it("lists every deck picture with its creator, licence and source (CC0 photos, no people)", () => {
+    expect(README).toMatch(/D Coetzee \| CC0 1\.0/);
+    expect(README).toMatch(/m\.jan\.adamczyk \| CC0 1\.0/);
+    expect(README).not.toMatch(/cartoon of a pupil/);
   });
 
   it("has a screenshot/GIF placeholder section", () => {

@@ -260,8 +260,8 @@ the work is free of known copyright; it is a marker, not a licence we granted.
 | Deck | Picture | Creator | Licence | Source |
 |---|---|---|---|---|
 | Vikings in Ireland | A photograph of a model Viking ship | Gary Lee Todd, Ph.D. | Public Domain Mark 1.0 | https://www.flickr.com/photos/101561334@N08/54663235921 |
-| Times Tables Game | A cartoon of a pupil with an abacus (an illustration, not a photograph) | nunecoe | Public Domain Mark 1.0 | https://www.flickr.com/photos/141481059@N03/26041276381 |
-| Everyday Words in Irish | A photograph of sea cliffs (the Cliffs of Moher) | dougsnider72 | Public Domain Mark 1.0 | https://www.flickr.com/photos/97462521@N08/42075789872 |
+| Times Tables Game | A photograph of a large wooden abacus (Soda Hall, UC Berkeley), no people | D Coetzee | CC0 1.0 | https://www.flickr.com/photos/29507259@N02/6773900929 |
+| Everyday Words in Irish | A photograph of the Cliffs of Moher, no people | m.jan.adamczyk | CC0 1.0 | https://www.flickr.com/photos/182827575@N08/48339221481 |
 
 The on-card credit shows only the domain (`Image: Gary Lee Todd, Ph.D., PDM —
 flickr.com`) so it fits the card; selecting the credit in the Maker shows the

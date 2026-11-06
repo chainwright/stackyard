@@ -28,12 +28,43 @@ const QUERIES: Record<string, string> = {
 
 const MAX_KB = 40;
 
+/**
+ * Picks chosen by eye and pinned by Openverse id (5 Nov, round-2 hound): the
+ * first search results were a photographer's own Public Domain Mark photos
+ * (PDM is a statement, not a licence) and one showed a child. These are CC0
+ * and show no people. The Viking ship model (PDM, museum object) stays.
+ */
+const PINNED: Record<string, string> = {
+  "times-tables": "eb35d11f-2214-49b5-b12c-8eced36125b9",
+  "irish-words": "40761ee4-97c8-4ed6-b5f3-ffca56c76574",
+};
+
+async function pickPinned(id: string) {
+  const res = await fetch(`https://api.openverse.org/v1/images/${id}/`);
+  if (!res.ok) return null;
+  const r = (await res.json()) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  if (str(r["license"]) !== "cc0") return null;
+  const dataUri = await fetchImageAsDataUri(`https://api.openverse.org/v1/images/${id}/thumb/`, 50);
+  return {
+    dataUri,
+    creditLicense: "CC0",
+    creditCreator: str(r["creator"]),
+    creditSource: str(r["foreign_landing_url"]) || str(r["url"]),
+  };
+}
+
 async function pickOne(deckKey: string, query: string): Promise<{
   dataUri: string;
   creditLicense: string;
   creditCreator: string;
   creditSource: string;
 } | null> {
+  const pinned = PINNED[deckKey];
+  if (pinned) {
+    const p = await pickPinned(pinned).catch((e: unknown) => { console.error(`pinned ${deckKey}: ${(e as Error).message}`); return null; });
+    if (p) return p;
+  }
   // Prefer public-domain mark, fall back to CC0.
   for (const license of ["pdm", "cc0"] as const) {
     const results = await searchImages(query, license, 10).catch(() => []);
