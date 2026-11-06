@@ -27,5 +27,7 @@ jobs:
         run: npm test
       - name: Player bundle is fresh
         run: ./scripts/check-player-fresh.sh
+      - name: Sample lessons are fresh (samples/ matches a fresh export)
+        run: npm run check:samples
       - name: README numbers match the code (tests, bundle size, invariants, build command)
         run: npm run check:claims
