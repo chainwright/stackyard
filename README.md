@@ -12,8 +12,9 @@ A teacher types one sentence — "a 10-card quiz about the Vikings in Ireland, t
 right answer plays a cheer" — and Stackyard builds a set of interactive lesson
 cards (quiz, flashcards, a branching story, a score card). The teacher can edit
 any card (move a button, change an answer, link a card to another) and then
-**export the whole lesson as one self-contained HTML file**. That file plays on
-any laptop from 2018 onward with no internet, no account and no install.
+**export the whole lesson as one self-contained HTML file**. That file plays in
+any current browser on a school laptop (built for ES2018) with no internet, no account
+and no install.
 
 Two halves:
 
@@ -53,6 +54,29 @@ the play-only alternative.
   - [`samples/irish-words.html`](samples/irish-words.html) — flashcards and a quiz
 
   They are generated from the ready-made decks by `npm run samples`.
+
+## Built with Kiro
+
+Stackyard was planned and built in Kiro. The pieces, and where to look:
+
+- **Steering** — five always-on files describe the product, audience, tech,
+  stack format and design system: [`.kiro/steering/`](.kiro/steering/).
+- **Specs** — requirements, design and tasks for three features (the Maker, the
+  stack generator and the exporter), each written by Kiro from a chat request
+  and then reviewed: [`.kiro/specs/`](.kiro/specs/). Task ids appear in test
+  names, so a task can be traced to the test that proves it.
+- **Hooks** — five hooks (invariants on save, living-file gate, export check,
+  ready-made content check, and a manual `pre-submit` gate):
+  [`.kiro/hooks/`](.kiro/hooks/).
+- **Custom agent** — the lesson checker that reads a generated set of cards for
+  factual errors and reading level: [`.kiro/agents/`](.kiro/agents/).
+- **MCP server** — `mcp/openverse` finds public-domain pictures for the
+  ready-made decks.
+- **Property-based tests** — every stack invariant has a `fast-check` property.
+- **Excerpts** from real Kiro sessions (the TASK-26 prompt, hook firings, the
+  lesson-checker run): [`docs/kiro-sessions/`](docs/kiro-sessions/). The running
+  log of what Kiro did and what we did outside it is
+  [`docs/KIRO_LOG.md`](docs/KIRO_LOG.md).
 
 ## Why HyperCard
 
@@ -101,8 +125,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **810** passing (`npm test`).
-- Player bundle: **10.5 KB** gzipped (budget 50 KB).
+- Tests: **883** passing (`npm test`).
+- Player bundle: **11.4 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 
@@ -127,8 +151,9 @@ changing anything under `src/player/`, rebuild and commit the bundle:
 npm run build:player
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs `npm test`, `npx tsc --noEmit`
-and `scripts/check-player-fresh.sh` on every push and pull request. The
+GitHub Actions (`.github/workflows/ci.yml`) runs `npm test`, `npx tsc --noEmit`,
+`scripts/check-player-fresh.sh`, `npm run check:samples` and `npm run check:claims`
+on every push and pull request. The
 freshness script rebuilds the player into a temporary directory and compares it
 with the committed file:
 
@@ -219,7 +244,7 @@ makes no model call).
 
 ## Third-party assets
 
-Stackyard ships two open-source typefaces and three public-domain-marked pictures. Both are self-hosted (no CDN) as
+Stackyard ships two open-source typefaces and three public-domain pictures (one Public Domain Mark, two CC0). The fonts are self-hosted (no CDN) as
 Latin-subset `woff2` files and, in exported stacks, inlined as base64 inside
 the single HTML file. The SIL Open Font License 1.1 lets us embed and
 redistribute these fonts, but requires that the copyright notice and licence
@@ -251,16 +276,17 @@ Both fonts are also disclosed in the Devpost "libraries / assets" list.
 
 ### Pictures
 
-Each ready-made deck carries one picture (two photographs and one cartoon), inlined as a data URI and credited
-on the card (creator, licence, source domain). They were picked through the
-Openverse API (`mcp/openverse`, `npm run pick:images`) as **Public Domain Mark
-1.0** and come from Flickr. Public Domain Mark is the uploader's statement that
-the work is free of known copyright; it is a marker, not a licence we granted.
+Each ready-made deck carries one picture (three photographs, none showing people), inlined as a data URI and credited
+on the card (creator, licence, source domain). We found them on
+Openverse (`mcp/openverse`, `npm run pick:images`) and fetched them through
+Openverse's thumbnail proxy. The Viking ship is marked Public Domain Mark 1.0 by
+its Flickr uploader, which is a statement, not a licence. The abacus and the
+Cliffs of Moher are dedicated CC0 1.0 by their photographers.
 
 | Deck | Picture | Creator | Licence | Source |
 |---|---|---|---|---|
 | Vikings in Ireland | A photograph of a model Viking ship | Gary Lee Todd, Ph.D. | Public Domain Mark 1.0 | https://www.flickr.com/photos/101561334@N08/54663235921 |
-| Times Tables Game | A photograph of a large wooden abacus (Soda Hall, UC Berkeley), no people | D Coetzee | CC0 1.0 | https://www.flickr.com/photos/29507259@N02/6773900929 |
+| Times Tables Game | A photograph of a large wooden abacus (Soda Hall, UC Berkeley), no people | Chiara Coetzee | CC0 1.0 | https://www.flickr.com/photos/29507259@N02/6773900929 |
 | Everyday Words in Irish | A photograph of the Cliffs of Moher, no people | m.jan.adamczyk | CC0 1.0 | https://www.flickr.com/photos/182827575@N08/48339221481 |
 
 The on-card credit shows only the domain (`Image: Gary Lee Todd, Ph.D., PDM —
@@ -279,8 +305,7 @@ it. The PNG carries its generator's provenance metadata. See also
 
 Every answer tile pairs its colour with a permanent shape (coral ▲, sun ◆,
 teal ●, navy ■), so a colour-blind pupil can say "the triangle" and a washed-out
-projector can't make two answers look alike. The shape order will look familiar
-from other quiz tools: that is deliberate (a pattern pupils already know, and a
-common accessibility convention), not copied styling. Our colours, type and
-rubber-stamp feedback are our own. Answers also meet the 4.5:1 contrast rule and
+projector can't make two answers look alike. Shape-plus-colour coding is a
+common accessibility pattern; our palette, type and rubber-stamp feedback are
+our own. Answers also meet the 4.5:1 contrast rule and
 a 56 px minimum height; see `.kiro/steering/design-system.md`.

@@ -371,8 +371,9 @@ describe("POST /api/generate — progressive (NDJSON) delivery", () => {
     });
 
     expect(status).toBe(200); // HTTP 200; the stream carries the failure
-    expect(lines).toHaveLength(1);
-    expect((lines[0] as { type: string }).type).toBe("error");
+    expect((lines[0] as { type: string }).type).toBe("start"); // early, never silent
+    expect(lines).toHaveLength(2);
+    expect((lines[1] as { type: string }).type).toBe("error");
   });
 
   it("still rejects an empty prompt with 400 even when NDJSON is requested", async () => {

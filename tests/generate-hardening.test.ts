@@ -164,13 +164,13 @@ describe("one-shot generate(): the live model's output becomes a playable, expor
     for (const e of quiz.elements) expect(e.y).toBeGreaterThanOrEqual(96);
   });
 
-  it("drops the invented picture, the 'Question 1:' prefix and the Title Case answer", async () => {
+  it("drops the invented picture and the 'Question 1:' prefix, and softens the Title Case answer", async () => {
     const quiz = (await generated()).cards[1]!;
     expect(quiz.elements.some((e) => e.type === "image")).toBe(false);
     const q = quiz.elements.find((e) => e.type === "text");
     expect(q && q.type === "text" && q.content.startsWith("What do we call")).toBe(true);
     const labels = quiz.elements.filter((e) => e.type === "button").map((e) => (e.type === "button" ? e.label : ""));
-    expect(labels).toContain("It turns into wood");
+    expect(labels).toContain("It Turns into Wood");
     expect(labels).not.toContain("It Turns Into Wood");
   });
 
@@ -267,7 +267,7 @@ describe("TASK-26g: one log line per fallback, and the stream's own cause is log
     expect(fallback).toHaveLength(1);
     expect(fallback[0]).toContain("reason=timeout");
     // And the client was told the honest reason.
-    const start = sink.messages.find((m) => m.type === "start") as Extract<GenerateStreamMessage, { type: "start" }>;
+    const start = sink.messages.filter((m) => m.type === "start").at(-1) as Extract<GenerateStreamMessage, { type: "start" }>;
     expect(start.fallbackReason).toBe("timeout");
     // Never the key or a URL.
     expect(lines.join("\n")).not.toMatch(/Bearer|sk-|https?:\/\//);

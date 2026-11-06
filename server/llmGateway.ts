@@ -178,7 +178,7 @@ export interface CallOptions {
   /**
    * An external abort signal (e.g. the client's connection). When it aborts,
    * `callStream` aborts the upstream request so the server stops paying for
-   * tokens nobody will read. Ignored by the non-streaming `call`.
+   * tokens nobody will read. Honoured by both `call` and `callStream`.
    */
   signal?: AbortSignal;
 }
@@ -218,6 +218,13 @@ export async function call(
     timedOut = true;
     controller.abort();
   }, CALL_TOTAL_DEADLINE_MS);
+  // The client's connection (TASK-27 z5): when it goes away, stop paying.
+  const external = options.signal;
+  const onExternalAbort = (): void => controller.abort();
+  if (external !== undefined) {
+    if (external.aborted) controller.abort();
+    else external.addEventListener("abort", onExternalAbort, { once: true });
+  }
 
   let response: Response;
   try {
@@ -272,6 +279,7 @@ export async function call(
     return extractContent(parsed);
   } finally {
     clearTimeout(deadline);
+    external?.removeEventListener("abort", onExternalAbort);
   }
 }
 

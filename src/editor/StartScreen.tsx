@@ -44,6 +44,14 @@ function summariseCard(card: Card, index: number, total: number): DealtCard {
 
 const PROMISE = "Make a clickable lesson from one sentence. Works offline.";
 
+/** True when the teacher's sentence asks for pictures, which the builder does not add. */
+export function asksForPictures(sentence: string): boolean {
+  return /\b(pictures?|photos?|photographs?|images?|illustrations?|drawings?|diagrams?)\b/i.test(sentence);
+}
+
+/** The plain note shown when pictures were asked for and were not added. */
+export const PICTURES_NOTE = "Pictures aren't added automatically yet. Use Add Picture.";
+
 const EXAMPLES: ReadonlyArray<{ label: string; sentence: string }> = [
   {
     label: "Vikings in Ireland quiz",
@@ -155,6 +163,9 @@ export function StartScreen({
         isReadyMadeExample: outcome.isReadyMadeExample,
         ...(outcome.fallbackReason ? { fallbackReason: outcome.fallbackReason } : {}),
         fallbackOnline: online,
+        // A teacher who asked for pictures and got a deck without any should be
+        // told, in one line, instead of wondering where they went (TASK-27t).
+        ...(!outcome.isFallback && asksForPictures(sentence) ? { note: PICTURES_NOTE } : {}),
       });
       store.setStatus("idle");
       announce(
@@ -178,6 +189,7 @@ export function StartScreen({
         total={total}
         offline={offline || (__demoOffline ?? false)}
         title={startTitle}
+        sentence={sentence.trim()}
       />
     );
   }
@@ -274,25 +286,30 @@ export function StartScreen({
                 </span>
               </div>
 
-              {/* Always-available ways to start without the AI: ready-made
+              {/* Always-available ways to start without the AI: ONE line of ready-made
                   decks (built locally) and a quick type-your-own form. On the
-                  429/failure screen these are the only way forward (J1/J3/J2
-                  items e + q). */}
+                  429/failure screen these are the only way forward. They are plain
+                  text links, visibly different from the example chips above, so the
+                  same names no longer do two different things (TASK-27d). */}
               <div class="ready-made" aria-label="Start without the AI">
-                <p class="ready-made-lede">Or open a ready-made deck you can edit:</p>
-                <div class="ready-made-buttons">
-                  {READY_MADE_DECKS.map((d) => (
-                    <button
-                      class="example-tab"
-                      type="button"
-                      onClick={() => openReadyMade(d.key)}
-                    >
-                      {d.label}
-                    </button>
+                <p class="ready-made-row">
+                  <span class="ready-made-lede">Or open a ready-made deck:</span>
+                  {READY_MADE_DECKS.map((d, i) => (
+                    <span class="ready-made-item">
+                      <button
+                        class="ready-made-link"
+                        type="button"
+                        title={d.label}
+                        onClick={() => openReadyMade(d.key)}
+                      >
+                        {d.name}
+                      </button>
+                      {i < READY_MADE_DECKS.length - 1 ? <span aria-hidden="true"> · </span> : null}
+                    </span>
                   ))}
-                </div>
+                </p>
                 <button
-                  class="link-btn"
+                  class="link-btn type-own-toggle"
                   type="button"
                   onClick={() => setTyping((v) => !v)}
                   aria-expanded={typing ? "true" : "false"}
@@ -408,12 +425,19 @@ function TypeYourOwn({ onBuilt }: { onBuilt: (stack: import("../shared/types.js"
  * its real question and an "N of M" label. Until the first card arrives it
  * shows the preparing state; the mockup look is preserved for both.
  */
-function GeneratingScreen({
+export function GeneratingScreen({
   dealt,
   total,
   offline,
   title,
+  sentence = "",
 }: {
+  /**
+   * The teacher's own sentence. It is written on the top card from the first
+   * frame, so the wait starts with her words instead of an empty "Preparing…"
+   * card for 20 s (TASK-27k).
+   */
+  sentence?: string;
   dealt: DealtCard[];
   total: number;
   /** True on the offline fallback path (a ready-made deck, no live model). */
@@ -428,6 +452,16 @@ function GeneratingScreen({
   useEffect(() => {
     const id = setInterval(() => setElapsed((n) => n + 1), 1000);
     return () => clearInterval(id);
+  }, []);
+  // The dealt stack scales with the viewport, like the player's card does; at a
+  // fixed pixel size it was ~520 px wide in a 1920 desk and clipped on a small
+  // laptop (TASK-27k). 1 is the designed size (a 1366×768 laptop); up to 1.5 on a
+  // projector, down to 0.7 on a tablet.
+  const [dealScale, setDealScale] = useState(() => dealScaleFor(viewport()));
+  useEffect(() => {
+    const onResize = (): void => setDealScale(dealScaleFor(viewport()));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
   const dealtCount = dealt.length;
   // The three most recently dealt cards form the fanned pile; the newest lands
@@ -464,14 +498,14 @@ function GeneratingScreen({
           <p>
             {offline
               ? "Each card appears as it's ready."
-              : "Each card appears as it's ready. About 30–45 seconds."}
+              : "Each card appears as it's ready. Usually 30–60 seconds."}
           </p>
           <p class="counter" aria-live="polite">
             {counter}
             {seconds !== "" ? <span class="elapsed"> ·{seconds}</span> : null}
           </p>
         </div>
-        <div class="deal" aria-hidden="true">
+        <div class="deal" aria-hidden="true" style={{ ["--deal-scale" as string]: String(dealScale) }}>
           {/* Cards behind the top one, fanned. We always render three slots so
               the pile has depth even early on. */}
           {[0, 1, 2].map((slot) => {
@@ -497,9 +531,10 @@ function GeneratingScreen({
                   : `Card ${top.index + 1}`
                 : title !== null
                   ? title
-                  : "Preparing…"}
+                  : "Your sentence"}
             </p>
             {top?.question ? <p class="deal-q">{top.question}</p> : null}
+            {!top && sentence.length > 0 ? <p class="deal-q deal-sentence">{sentence}</p> : null}
             {top && top.kind === "quiz" ? (
               <div class="deal-tiles">
                 <span class="deal-tile" style="background:var(--color-tile-a);"></span>
@@ -513,4 +548,20 @@ function GeneratingScreen({
       </main>
     </div>
   );
+}
+
+
+/** The size of the window the Maker is in (guarded for tests/SSR). */
+function viewport(): { w: number; h: number } {
+  if (typeof window === "undefined") return { w: 1366, h: 768 };
+  return { w: window.innerWidth || 1366, h: window.innerHeight || 768 };
+}
+
+/**
+ * Scale for the dealt pile: relative to the 1366×768 design size, taking the
+ * tighter of the two axes, clamped to 0.7–1.5.
+ */
+export function dealScaleFor(v: { w: number; h: number }): number {
+  const s = Math.min(v.w / 1366, v.h / 768);
+  return Math.round(Math.min(1.5, Math.max(0.7, s)) * 100) / 100;
 }

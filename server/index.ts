@@ -20,7 +20,7 @@
 
 import { createServer as createHttpServer } from "node:http";
 import type { IncomingMessage, ServerResponse, Server } from "node:http";
-import { handleGenerate } from "./routes/generate.js";
+import { handleGenerate, preflightGenerate } from "./routes/generate.js";
 import { handleExport } from "./routes/export.js";
 import { applySecurityHeaders } from "./securityHeaders.js";
 import { serveStatic } from "./staticFiles.js";
@@ -176,6 +176,16 @@ export function createServer(config: ServerConfig = {}): Server {
         );
       }
 
+      // Read and validate the body BEFORE counting any rate/budget slot: a
+      // truncated or empty request is the client's mistake and costs nothing
+      // (J4 P2-3). readBody/validation answer 400/413 themselves.
+      applySecurityHeaders(res);
+      const goodBody = await preflightGenerate(req, res).catch((err) => {
+        onUnhandled(res, err);
+        return null;
+      });
+      if (goodBody === null) return;
+
       // Global daily budget first: when it is exhausted, the request is served
       // from the ready-made decks with NO model call — so it must NOT cost the
       // paid key AND must NOT consume a per-visitor rate-limit slot (J4 M2 /
@@ -203,8 +213,8 @@ export function createServer(config: ServerConfig = {}): Server {
       const forceFallback = !canSpend;
       const onModelCall = (): void => budget.record();
 
-      applySecurityHeaders(res);
       await handleGenerate(req, res, {
+        body: goodBody,
         forceFallback,
         ...(canSpend ? { onModelCall } : {}),
       }).catch((err) => onUnhandled(res, err));

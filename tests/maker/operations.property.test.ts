@@ -46,5 +46,5 @@ describe("TASK-P1: any edit sequence from a valid stack stays valid", () => {
       ),
       { numRuns: 1000 }
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 });

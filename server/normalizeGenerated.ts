@@ -13,6 +13,11 @@
 //   j) answers came back in Title Case, and questions with "Question 3:" labels
 //      that go wrong the moment a card is inserted.
 //
+//   m) a mistyped id ("…0100 01", with a space) withdrew a whole correct deck,
+//      because the model's ids were trusted — so ids are ours now (re-minted);
+//   b) text was cut in the middle of a word ("Now tell a p…");
+//   e) wrong answers a child could defend reached the class.
+//
 // Two stages, both pure:
 //   1. sanitizeRawCard / sanitizeRawStack — run on the parsed JSON BEFORE
 //      validation: drop pictures that are not embedded data URIs and clamp
@@ -24,6 +29,7 @@
 
 import type { Stack, Card, Element, TextElement, ButtonElement, Action } from "../src/shared/types.js";
 import { validate } from "../src/shared/validator.js";
+import { fitBody, STORY_BODY_MAX } from "../src/shared/fitText.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
@@ -59,6 +65,11 @@ function sanitizeRawElement(el: unknown): unknown | null {
   // exported. Only an embedded data: URI survives.
   if (el["type"] === "image" && !isDataUri(el["src"])) return null;
 
+  // (m) Element ids are ours: always a fresh v4, whatever the model wrote
+  // (spaces, duplicates, numbers, nothing at all). Nothing refers to an element
+  // by id, so there is nothing to remap.
+  const withId: Record<string, unknown> = { ...el, id: mintId() };
+
   const { x, y, w, h } = el;
   if (
     typeof x === "number" && typeof y === "number" &&
@@ -66,24 +77,85 @@ function sanitizeRawElement(el: unknown): unknown | null {
     Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h)
   ) {
     const c = clampToCanvas({ x, y, w, h });
-    return { ...el, x: c.x, y: c.y, w: c.w, h: c.h };
+    return { ...withId, x: c.x, y: c.y, w: c.w, h: c.h };
   }
-  return el;
+  return withId;
 }
 
-/** Sanitise one parsed card (a raw JSON value) before validateCard. */
+/**
+ * Sanitise one parsed card (a raw JSON value) before validateCard: strip
+ * un-exportable pictures, clamp coordinates, give every element a fresh id, and
+ * make sure the card has SOME string id (the stack-level pass below re-mints
+ * card ids once every goto can be resolved).
+ */
 export function sanitizeRawCard(input: unknown): unknown {
   if (!isRecord(input) || !Array.isArray(input["elements"])) return input;
   const elements = (input["elements"] as unknown[])
     .map(sanitizeRawElement)
     .filter((e) => e !== null);
-  return { ...input, elements };
+  const id = typeof input["id"] === "string" && input["id"].length > 0 ? input["id"] : mintId();
+  return { ...input, id, elements };
+}
+
+/** A fresh RFC 4122 v4 id. Ids belong to us, not to the model. */
+function mintId(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * (m) Re-mint every card id (and the stack id), and rewrite every goto to match.
+ *
+ * The map is built from the model's card ids as it wrote them; a goto whose
+ * target matches no card (a typo, a made-up id) goes to the NEXT card in deck
+ * order instead — or is dropped from the last card, which has no next. A
+ * duplicated model id maps to its first card; every card still gets a distinct
+ * fresh id. So one mistyped character can never withdraw a correct deck.
+ */
+function remintCardIds(cards: unknown[]): unknown[] {
+  const fresh = cards.map(() => mintId());
+  const byOld = new Map<string, string>();
+  cards.forEach((c, i) => {
+    if (isRecord(c) && typeof c["id"] === "string" && !byOld.has(c["id"])) {
+      byOld.set(c["id"], fresh[i]!);
+    }
+  });
+
+  const rewrite = (actions: unknown, index: number): unknown => {
+    if (!Array.isArray(actions)) return actions;
+    const out: unknown[] = [];
+    for (const a of actions) {
+      if (!isRecord(a) || a["type"] !== "goto") {
+        out.push(a);
+        continue;
+      }
+      const target = typeof a["cardId"] === "string" ? byOld.get(a["cardId"]) : undefined;
+      if (target !== undefined) {
+        out.push({ ...a, cardId: target });
+      } else if (index + 1 < fresh.length) {
+        out.push({ ...a, cardId: fresh[index + 1]! });
+      } // else: nowhere sensible to go from the last card — drop the goto
+    }
+    return out;
+  };
+
+  return cards.map((c, i) => {
+    if (!isRecord(c)) return c;
+    const elements = Array.isArray(c["elements"])
+      ? (c["elements"] as unknown[]).map((el) =>
+          isRecord(el) && el["type"] === "button"
+            ? { ...el, actions: rewrite(el["actions"], i) }
+            : el,
+        )
+      : c["elements"];
+    return { ...c, id: fresh[i]!, elements, actions: rewrite(c["actions"], i) };
+  });
 }
 
 /** Sanitise a whole parsed stack (a raw JSON value) before validate(). */
 export function sanitizeRawStack(input: unknown): unknown {
   if (!isRecord(input) || !Array.isArray(input["cards"])) return input;
-  return { ...input, cards: (input["cards"] as unknown[]).map(sanitizeRawCard) };
+  const cards = remintCardIds((input["cards"] as unknown[]).map(sanitizeRawCard));
+  return { ...input, id: mintId(), cards };
 }
 
 // ---------------------------------------------------------------------------
@@ -94,10 +166,41 @@ const MAX_BODY = 600;
 const MAX_TERM = 80;
 const MAX_BACK = 500;
 const MAX_LABEL = 90;
+const MAX_END = 100;
 
-function cap(text: string, max: number): string {
+/**
+ * Shorten `text` to at most `max` characters WITHOUT cutting a word in half
+ * (b). Whole sentences are kept if enough of them fit; otherwise the cut is at
+ * the last word boundary. "…" is added only when the cut falls inside a
+ * sentence; a cut that lands on a sentence end needs none. A single word longer
+ * than the limit is hard-cut (nothing better exists).
+ *
+ * This used to be `slice(0, max - 1) + "…"`, which printed "Now tell a p…" on
+ * the last card of a live Viking deck.
+ */
+export function cap(text: string, max: number): string {
   const t = text.trim();
-  return t.length <= max ? t : t.slice(0, max - 1).trimEnd() + "…";
+  if (t.length <= max) return t;
+
+  const window = t.slice(0, max);
+
+  // 1. Whole sentences: the last sentence end inside the window, if it keeps a
+  //    worthwhile share of the allowance (not just "Hi.").
+  let lastEnd = -1;
+  for (const m of window.matchAll(/[.!?]["')\]]?(?=\s|$)/g)) {
+    lastEnd = m.index! + m[0].length;
+  }
+  if (lastEnd >= Math.ceil(max * 0.4)) return window.slice(0, lastEnd).trim();
+
+  // 2. A word boundary: either the window already ends on one, or back up to
+  //    the last space.
+  const nextIsBreak = /\s/.test(t.charAt(max));
+  let cut = nextIsBreak ? window : window.slice(0, window.lastIndexOf(" ") + 1 || 0);
+  cut = cut.replace(/[\s,;:\-–—]+$/, "");
+  if (cut.length >= Math.ceil(max * 0.25)) return cut + "…";
+
+  // 3. One very long word: hard cut.
+  return window.slice(0, Math.max(1, max - 1)).trimEnd() + "…";
 }
 
 /**
@@ -125,11 +228,17 @@ const SMALL_WORDS = new Set([
 ]);
 
 /**
- * Turn an unmistakable Title Case answer ("Along Edges Of Tectonic Plates")
- * into sentence case ("Along edges of tectonic plates"). "Unmistakable" means
- * three or more words, every one capitalised, AND a small function word
- * capitalised mid-label — a real name like "Mount Vesuvius" or "Brian Boru" has
- * no such word and is left alone. Acronyms (DNA) and "I" are kept.
+ * Soften an unmistakable Title Case answer ("Along Edges Of Tectonic Plates")
+ * by lowercasing only its small FUNCTION words ("Along Edges of Tectonic
+ * Plates"). "Unmistakable" means three or more words, every one capitalised,
+ * AND a small function word capitalised mid-label.
+ *
+ * It never lowercases a content word. The first version lowercased everything
+ * after the first word, which turned "The Battle Of Hastings" into "The battle
+ * of hastings" and "Isle Of Man" into "Isle of man" (J4 P1-2): a name cannot be
+ * told from a title-cased phrase without a dictionary, so the safe rewrite is the
+ * one that cannot corrupt a name. The prompt asks the model for sentence case in
+ * the first place; this only tidies a model that ignored it.
  */
 export function sentenceCaseLabel(label: string): string {
   const words = label.trim().split(/\s+/);
@@ -141,11 +250,7 @@ export function sentenceCaseLabel(label: string): string {
     .some((w) => SMALL_WORDS.has(w.toLowerCase()) && /^[A-Z]/.test(w));
   if (!smallCapitalised) return label;
   return words
-    .map((w, i) => {
-      if (i === 0) return w;
-      if (w === "I" || /^[A-Z]{2,}[.,!?]?$/.test(w)) return w;
-      return w.toLowerCase();
-    })
+    .map((w, i) => (i > 0 && SMALL_WORDS.has(w.toLowerCase()) ? w.toLowerCase() : w))
     .join(" ");
 }
 
@@ -156,6 +261,17 @@ function cleanLabel(label: string): string {
 
 // ---------------------------------------------------------------------------
 // Flash repair (b)
+
+const PRONOUN_SUBJECTS = new Set([
+  "this", "that", "these", "those", "it", "its", "there", "here", "they", "he",
+  "she", "we", "you", "i", "what", "which", "who", "one",
+]);
+
+/** True when `term` is only a pronoun / expletive, or starts with one. */
+function isPronounTerm(term: string): boolean {
+  const first = term.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z']/g, "") ?? "";
+  return PRONOUN_SUBJECTS.has(first);
+}
 
 /** Split one block of flash text into a term and an explanation, if it cleanly can. */
 export function splitTermAndExplanation(text: string): { term: string; back: string } | null {
@@ -180,10 +296,12 @@ export function splitTermAndExplanation(text: string): { term: string; back: str
 
   // 3. "Evaporation is when …" / "A tributary means …": the subject is the term
   //    and the whole sentence is the explanation.
+  //    A pronoun or "there" is not a term: "This is the process where…" must not
+  //    become a card whose front says "This" (J4 P2-1).
   const verb = /^(.{1,40}?)\s+(?:is|are|means|refers to)\s+\S/i.exec(t);
   if (verb !== null) {
     const term = verb[1]!.trim();
-    if (term.split(/\s+/).length <= 4) return { term, back: t };
+    if (term.split(/\s+/).length <= 4 && !isPronounTerm(term)) return { term, back: t };
   }
   return null;
 }
@@ -246,7 +364,21 @@ function normalizeQuiz(card: Card, ctx: Ctx): Card {
   if (right !== undefined && !kept.includes(right)) {
     kept = [...kept.slice(0, MAX_QUIZ_ANSWERS - 1), right];
   }
-  const answers: Element[] = kept.map((b, i) => ({
+  // (e) A wrong answer that repeats the right one, or another wrong one, can only
+  // confuse (and is trivially "defensible"): drop it while at least one wrong
+  // answer remains. Labels are compared after tidying, case-insensitively.
+  const norm = (l: string): string => cleanLabel(l).trim().toLowerCase();
+  const seen = new Set<string>(right !== undefined ? [norm(right.label)] : []);
+  const distinct = kept.filter((b) => {
+    if (b === right) return true;
+    const key = norm(b.label);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const hasWrong = distinct.some((b) => !isCorrect(b));
+  const answerSet = hasWrong ? distinct : kept;
+  const answers: Element[] = answerSet.map((b, i) => ({
     ...b,
     ...QUIZ_TILES[i]!,
     label: cleanLabel(b.label),
@@ -261,6 +393,19 @@ function normalizeStory(card: Card, ctx: Ctx): Card {
   const body = texts.map((t) => stripQuestionPrefix(t.content).trim()).filter((t) => t.length > 0);
   const buttons = buttonsOf(card).slice(0, MAX_STORY_CHOICES);
   const layout = storyLayout(buttons.length);
+
+  // A one-choice "Continue" card: shrink the body box to its (fitted) text and pull
+  // the button up under it, instead of leaving a 300 px box with ~250 px of blank
+  // ruled paper between the words and the button (TASK-27i, J3 P2-4).
+  if (buttons.length === 1 && body.length > 0) {
+    const fit = fitBody(cap(body.join("\n\n"), MAX_BODY), layout.body.w, layout.body.h, STORY_BODY_MAX);
+    const bodyH = Math.min(layout.body.h, Math.max(120, fit.lines * fit.lineHeight + 40));
+    layout.body = { ...layout.body, h: bodyH };
+    layout.buttons[0] = {
+      ...layout.buttons[0]!,
+      y: Math.min(layout.body.y + bodyH + 32, 480),
+    };
+  }
 
   const bodyEl: Element[] =
     body.length > 0
@@ -377,7 +522,7 @@ function normalizeEnd(card: Card): Card {
   const texts = textsOf(card);
   const fields = card.elements.filter((e) => e.type === "field");
   const elements: Element[] = [];
-  if (texts[0]) elements.push({ ...texts[0], ...END_HEADING, content: cap(texts[0].content, MAX_TERM) });
+  if (texts[0]) elements.push({ ...texts[0], ...END_HEADING, content: cap(texts[0].content, MAX_END) });
   for (const f of fields) elements.push({ ...f, ...END_SCORE });
   for (const e of card.elements) {
     if (e.type === "button" || e.type === "image") elements.push(clampToCanvas(e));

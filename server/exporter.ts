@@ -141,6 +141,12 @@ async function buildFontFacesCss(fontsDir: string = FONTS_DIR): Promise<string> 
         "  }",
     );
   }
+  // The licence text itself, once, so the file carries the full OFL 1.1 the
+  // notices point at (TASK-27r). Same text in both OFL files from the marker on.
+  const ofl = await fs.readFile(path.join(fontsDir, "OFL-BricolageGrotesque.txt"), "utf8");
+  const start = ofl.indexOf("SIL OPEN FONT LICENSE Version 1.1");
+  const licence = (start >= 0 ? ofl.slice(start) : ofl).replace(/\*\//g, "* /").trimEnd();
+  blocks.unshift("  /*\n" + licence.split("\n").map((l) => `     ${l}`.trimEnd()).join("\n") + "\n  */");
   return blocks.join("\n");
 }
 

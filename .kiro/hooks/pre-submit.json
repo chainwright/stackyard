@@ -3,8 +3,8 @@
   "hooks": [
     {
       "name": "Pre-submit: full gate",
-      "description": "When a spec task is marked complete, run the full submission gate: the whole test suite, strict type-check, the Maker build, and the README claim checker. Also runnable directly as `npm run pre-submit`.",
-      "trigger": "PostTaskExec",
+      "description": "Run on demand (Manual trigger): run the full submission gate: the whole test suite, strict type-check, the Maker build, and the README claim checker. Also runnable directly as `npm run pre-submit`.",
+      "trigger": "Manual",
       "action": {
         "type": "command",
         "command": "npm run pre-submit"

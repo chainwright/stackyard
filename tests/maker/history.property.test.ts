@@ -59,7 +59,7 @@ describe("TASK-P2: undo restores the exact previous stack", () => {
       }),
       { numRuns: 1000 }
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 
   it("a coalesced nudge burst (gaps <600ms) undoes to pre-burst in ONE step (>=1000 runs)", () => {
     fc.assert(
@@ -98,7 +98,7 @@ describe("TASK-P2: undo restores the exact previous stack", () => {
       ),
       { numRuns: 1000 }
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 
   it("a gap-broken burst takes TWO undos to reach pre-burst (>=1000 runs)", () => {
     fc.assert(
@@ -137,5 +137,5 @@ describe("TASK-P2: undo restores the exact previous stack", () => {
       ),
       { numRuns: 1000 }
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 });

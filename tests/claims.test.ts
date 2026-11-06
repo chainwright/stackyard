@@ -132,3 +132,20 @@ describe("scripts/chrome: a launch is judged by the page it printed", () => {
     expect(isCompleteDom("<html><head></head><body>x")).toBe(false);
   });
 });
+
+describe("parseTestTotal (TASK-27v)", () => {
+  it("reads a plain summary line", async () => {
+    const { parseTestTotal } = await import("../scripts/claims-lib.js");
+    expect(parseTestTotal("  Tests  812 passed (812)\n")).toBe(812);
+  });
+  it("reads a coloured summary line (CI prints ANSI)", async () => {
+    const { parseTestTotal } = await import("../scripts/claims-lib.js");
+    const coloured = "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m812 passed\u001b[39m\u001b[22m\u001b[90m (812)\u001b[39m\n";
+    expect(parseTestTotal(coloured)).toBe(812);
+  });
+  it("counts failures too, and returns null (never -1) when it cannot parse", async () => {
+    const { parseTestTotal } = await import("../scripts/claims-lib.js");
+    expect(parseTestTotal("      Tests  2 failed | 810 passed (812)")).toBe(812);
+    expect(parseTestTotal("nothing useful here")).toBeNull();
+  });
+});

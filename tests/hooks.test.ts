@@ -16,7 +16,7 @@ const HOOKS_DIR = path.join(process.cwd(), ".kiro", "hooks");
 
 const VALID_TRIGGERS = [
   "PreToolUse", "PostToolUse", "SessionStart", "Stop", "UserPromptSubmit",
-  "PreTaskExec", "PostTaskExec", "PostFileCreate", "PostFileSave", "PostFileDelete",
+  "PreTaskExec", "PostTaskExec", "PostFileCreate", "PostFileSave", "PostFileDelete", "Manual",
 ];
 
 interface Hook {
@@ -52,7 +52,6 @@ describe("TASK-26k: .kiro/hooks files match the Kiro 1.x hook schema", () => {
           expect(typeof hook.name).toBe("string");
           expect((hook.name as string).length).toBeGreaterThan(0);
           expect(VALID_TRIGGERS).toContain(hook.trigger);
-          expect(hook.trigger).not.toBe("Manual"); // not a Kiro 1.x trigger
           const action = hook.action!;
           expect(["command", "agent"]).toContain(action.type);
           if (action.type === "command") expect(typeof action.command).toBe("string");
@@ -99,9 +98,9 @@ describe("TASK-26k: .kiro/hooks files match the Kiro 1.x hook schema", () => {
     });
   }
 
-  it("the full gate is wired to a spec-task completion, not the legacy Manual trigger", () => {
+  it("the full gate is a Manual hook — a run-on-demand button, not tied to task completion", () => {
     const pre = JSON.parse(readFileSync(path.join(HOOKS_DIR, "pre-submit.json"), "utf8")) as { hooks: Hook[] };
-    expect(pre.hooks[0]!.trigger).toBe("PostTaskExec");
+    expect(pre.hooks[0]!.trigger).toBe("Manual");
   });
 
   it("the living-file gate fires on edits under src/living", () => {

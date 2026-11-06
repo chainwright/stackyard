@@ -19,7 +19,7 @@ export const READY_MADE_IMAGES: Record<string, DeckImage> = {
     // (TASK-25 b — a credit that names a source must carry a real one).
     creditKind: "image",
     creditLicense: "CC0",
-    creditCreator: "D Coetzee",
+    creditCreator: "Chiara Coetzee",
     creditSource: "https://www.flickr.com/photos/29507259@N02/6773900929",
   },
   "irish-words": {

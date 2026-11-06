@@ -36,6 +36,12 @@ export interface EditorState {
   fallbackReason?: FallbackReason;
   /** Whether the browser was online at the last generate (honest offline copy). */
   fallbackOnline: boolean;
+  /**
+   * A one-line plain note to show when the editor opens on a freshly built deck
+   * (e.g. "Pictures aren't added automatically yet. Use Add Picture." — TASK-27t).
+   * Cleared the next time a stack is loaded.
+   */
+  startNote?: string;
   status: Status;
 }
 

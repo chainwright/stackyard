@@ -68,6 +68,30 @@ export function fixBuildCommands(readme: string, command: string): string {
   return readme.replace(BUILD_CHAIN_RE, command);
 }
 
+/** Strip ANSI colour/cursor escapes (Vitest colours its output in CI). */
+export function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, "");
+}
+
+/**
+ * Pull the total test count out of a Vitest run, coloured or not. Counts
+ * "passed" + "failed" + "skipped" from the "Tests  N failed | M passed (T)"
+ * line and prefers the parenthesised total. Returns null when the line is
+ * missing — "could not parse" is NOT the same thing as drift (TASK-27v).
+ */
+export function parseTestTotal(output: string): number | null {
+  const line = stripAnsi(output)
+    .split(/\r?\n/)
+    .find((l) => /^\s*Tests\s+\d+/.test(l));
+  if (line === undefined) return null;
+  const total = /\((\d+)\)\s*$/.exec(line.trim());
+  if (total) return Number(total[1]);
+  let sum = 0;
+  for (const m of line.matchAll(/(\d+)\s+(passed|failed|skipped|todo)/g)) sum += Number(m[1]);
+  return sum > 0 ? sum : null;
+}
+
 export interface Check {
   name: string;
   claimed: number | string;

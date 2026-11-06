@@ -37,6 +37,7 @@ import {
   readmeBuildCommandsMatch,
   fixBuildCommands,
   type Numbers,
+  parseTestTotal,
 } from "./claims-lib.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -46,22 +47,22 @@ const VALIDATOR = path.join(ROOT, "src", "shared", "validator.ts");
 const ROUNDTRIP = path.join(ROOT, "tests", "roundtrip.property.test.ts");
 const RENDER_YAML = path.join(ROOT, "render.yaml");
 
-/** Real test total from a single `vitest run`. */
-function actualTestTotal(): number {
-  // Parse the summary line "Tests  N passed (N)".
+/** Real test total from a single `vitest run` (null = could not parse). */
+function actualTestTotal(): number | null {
   let out: string;
+  const env = { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" };
   try {
-    out = execFileSync("npx", ["vitest", "run", "--reporter=basic"], {
+    out = execFileSync("npx", ["vitest", "run", "--reporter=basic", "--no-color"], {
       cwd: ROOT,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      env,
     });
   } catch (err) {
     // vitest exits non-zero on test failure; still parse its output.
     out = String((err as { stdout?: string }).stdout ?? "");
   }
-  const m = /Tests\s+(\d+)\s+passed/.exec(out);
-  return m ? Number(m[1]) : -1;
+  return parseTestTotal(out);
 }
 
 /** Real player gzipped size in KB (2 dp). */
@@ -95,8 +96,16 @@ function main(): void {
     process.exit(1);
   }
 
+  const measuredTests = actualTestTotal();
+  if (measuredTests === null) {
+    console.error(
+      "check-claims: could not parse the test total from Vitest's output. " +
+        "That is a tooling problem, not README drift — run `npx vitest run` and look at the summary line.",
+    );
+    process.exit(1);
+  }
   const actual: Numbers = {
-    tests: actualTestTotal(),
+    tests: measuredTests,
     kb: actualPlayerKb(),
     invariants: actualInvariants(),
     runs: actualRoundtripRuns(),

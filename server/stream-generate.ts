@@ -32,6 +32,7 @@ import { generate as defaultGenerate } from "./stackGenerator.js";
 import { validate, validateCard } from "../src/shared/validator.js";
 import {
   sanitizeRawCard,
+  sanitizeRawStack,
   normalizeGeneratedCard,
   finaliseGeneratedStack,
 } from "./normalizeGenerated.js";
@@ -154,8 +155,9 @@ function parseHeaderLine(line: string): StackHeaderLine | null {
   }
   const r = raw as Record<string, unknown>;
   const theme = r["theme"];
+  // The header id is the model's, and is replaced by a fresh one when the stack
+  // is assembled (TASK-27m), so a missing or odd id is not a reason to give up.
   if (
-    typeof r["id"] !== "string" ||
     typeof r["title"] !== "string" ||
     typeof theme !== "object" ||
     theme === null
@@ -172,7 +174,7 @@ function parseHeaderLine(line: string): StackHeaderLine | null {
   }
   return {
     kind: "stack",
-    id: r["id"],
+    id: typeof r["id"] === "string" ? r["id"] : "",
     title: r["title"],
     theme: {
       background: t["background"],
@@ -311,7 +313,10 @@ async function attemptStreamedLlm(
     theme: finalHeader.theme,
     cards,
   };
-  const whole = validate(assembled);
+  // Ids are ours (TASK-27m): re-mint every id and rewrite every goto BEFORE
+  // validating, so a model that mistypes one character of one id no longer
+  // withdraws eleven correct cards (J5 P0-2, the README's own example).
+  const whole = validate(sanitizeRawStack(assembled));
   if (!whole.valid) {
     logStreamFailure(`the assembled stack failed validation (${whole.errors.join(", ")})`);
     return { ok: false, dealtCards };
@@ -348,15 +353,30 @@ async function streamFallback(
   deps: Required<Pick<StreamGenerateDeps, "generate" | "sleep">>,
   forceFallback: boolean,
   onModelCall?: () => void,
+  signal?: AbortSignal,
 ): Promise<void> {
+  // The retry path can take a minute (a retry call, then the fallback). Say
+  // something at once so the client's screen is never silent: an early `start`
+  // with no total or title yet; the real one follows. Skipped when the budget
+  // is exhausted (forceFallback is instant, no wait to cover).
+  if (!forceFallback) {
+    sink.write({ type: "start", total: 0, title: "", isFallback: false });
+  }
   let outcome: Awaited<ReturnType<typeof defaultGenerate>>;
   try {
     outcome = await deps.generate(request, {
       forceFallback,
       ...(onModelCall ? { onModelCall } : {}),
+      ...(signal ? { signal } : {}),
     });
   } catch {
     sink.write({ type: "error", message: GENERIC_FAILURE });
+    sink.end();
+    return;
+  }
+
+  // The client left while we were working: stop, write nothing, spend nothing.
+  if (signal?.aborted) {
     sink.end();
     return;
   }
@@ -392,6 +412,10 @@ async function streamFallback(
     const check = validateCard(card);
     if (!check.valid) {
       sink.write({ type: "error", message: GENERIC_FAILURE });
+      sink.end();
+      return;
+    }
+    if (signal?.aborted) {
       sink.end();
       return;
     }
@@ -484,5 +508,5 @@ export async function streamGenerate(
   }
 
   // 3. Fall back to the non-streaming retry + deterministic fallback path.
-  await streamFallback(request, sink, { generate, sleep }, false, onModelCall);
+  await streamFallback(request, sink, { generate, sleep }, false, onModelCall, signal);
 }

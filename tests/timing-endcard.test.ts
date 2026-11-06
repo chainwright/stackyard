@@ -237,6 +237,7 @@ describe("end-card rendering", () => {
     };
     const stack = makeStack([quiz, end]);
     const state = createRuntime(stack);
+    state.variables["score"] = 1; // a teacher's own heading is kept when there IS a score
 
     renderCard(end, root, state, vi.fn());
 
@@ -371,7 +372,7 @@ describe("typography tokens", () => {
     expect(questionEl!.textContent).toBe("What is 2+2?");
   });
 
-  it("story card text elements use .sy-text class (22px body)", () => {
+  it("story card body uses the .sy-story class (bigger, centred)", () => {
     const story: Card = {
       id: IDS.quiz,
       kind: "story",
@@ -385,7 +386,8 @@ describe("typography tokens", () => {
 
     renderCard(story, root, state, vi.fn());
 
-    const bodyEl = root.querySelector("p.sy-text");
+    // The story body is p.sy-story (30px, centred — TASK-27i); other text stays .sy-text.
+    const bodyEl = root.querySelector("p.sy-story");
     expect(bodyEl).not.toBeNull();
     expect(bodyEl!.textContent).toBe("Once upon a time");
   });

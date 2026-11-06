@@ -17,7 +17,7 @@ import { mountLivingApp } from "../src/living/livingApp.js";
 import { saveCopy } from "../src/living/saveCopy.js";
 import { snapshotPristine } from "../src/living/pristine.js";
 import { buildLivingHtml } from "../server/html-template.js";
-import { toEscapedStackJson, replaceStackData } from "../src/shared/escapeStackJson.js";
+import { toEscapedStackJson, replaceStackData, readCopyCount, withCopyCount } from "../src/shared/escapeStackJson.js";
 import { copyFileName } from "../src/shared/messages.js";
 import { validate } from "../src/shared/validator.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
@@ -163,6 +163,9 @@ async function bootAndSave(
 
 const count = (s: string, re: RegExp): number => (s.match(re) ?? []).length;
 
+/** A saved file with its copy counter blanked, to compare two copies' CONTENT. */
+const withoutCounter = (s: string): string => withCopyCount(s, 0);
+
 // ---------------------------------------------------------------------------
 
 describe("living file: Play by default + Teacher guard", () => {
@@ -257,8 +260,10 @@ describe("TASK-26a: Save a Copy writes the pristine file, not the live DOM", () 
     // The old implementation grew ~17% per save. The copy differs from the
     // original only by the stack JSON (and the edit's few characters).
     expect(Math.abs(copy1.length - original.length)).toBeLessThan(400);
-    // And it is byte-identical, not merely the same length.
-    expect(copy3).toBe(copy1);
+    // And it is byte-identical apart from the copy counter (1, 2, 3…), not
+    // merely the same length.
+    expect(withoutCounter(copy3)).toBe(withoutCounter(copy1));
+    expect(withoutCounter(copy2)).toBe(withoutCounter(copy1));
   });
 
   it("a copy of a copy is still a living file and keeps the edit", async () => {
@@ -281,6 +286,27 @@ describe("TASK-26a: Save a Copy writes the pristine file, not the live DOM", () 
     expect(copyFileName("")).toBe("lesson (copy).html");
   });
 
+  it("TASK-27g: a copy of a copy is '(copy 2)', then '(copy 3)' — never '(copy)' again", async () => {
+    const cap = captureDownloads();
+    const copy1 = await bootAndSave(exportedFile(twoCardStack()), cap, "First edit");
+    const copy2 = await bootAndSave(copy1, cap, "Second edit");
+    await bootAndSave(copy2, cap, "Third edit");
+    expect(cap.names).toEqual(["Living-Test (copy).html", "Living-Test (copy 2).html", "Living-Test (copy 3).html"]);
+    expect(readCopyCount(copy1)).toBe(1);
+    expect(readCopyCount(copy2)).toBe(2);
+  });
+
+  it("TASK-27g: copyFileName numbers copies and withCopyCount/readCopyCount round-trip", () => {
+    expect(copyFileName("Water cycle", 1)).toBe("Water-cycle (copy).html");
+    expect(copyFileName("Water cycle", 2)).toBe("Water-cycle (copy 2).html");
+    expect(copyFileName("Water cycle", 12)).toBe("Water-cycle (copy 12).html");
+    expect(copyFileName("Water cycle", 0)).toBe("Water-cycle (copy).html");
+    expect(readCopyCount("<html><head></head></html>")).toBe(0); // a legacy file
+    const legacy = "<html><head><title>x</title></head><body></body></html>";
+    expect(readCopyCount(withCopyCount(legacy, 3))).toBe(3);
+    expect(withCopyCount(withCopyCount(legacy, 3), 4)).toBe(withCopyCount(legacy, 4)); // replace, not append
+  });
+
   it("saveCopy has no default that reads the live document", () => {
     // Without a pristine snapshot there is nothing safe to copy from.
     const result = saveCopy(twoCardStack(), {
@@ -299,8 +325,9 @@ describe("TASK-26a: Save a Copy writes the pristine file, not the live DOM", () 
     tab().click();
     barButton("Save a Copy").click();
     const saved = await blobText(cap.blobs[0]!);
-    // Replace the stack in the same pristine snapshot: nothing else differs.
-    expect(saved).toBe(replaceStackData(before, twoCardStack())!);
+    // Replace the stack in the same pristine snapshot: nothing else differs
+    // (apart from the copy counter, which this save bumps from 0 to 1).
+    expect(saved).toBe(withCopyCount(replaceStackData(before, twoCardStack())!, 1));
   });
 });
 
@@ -388,7 +415,7 @@ describe("TASK-26e: living editor selection and right answer", () => {
     wrongWrapper.querySelector<HTMLElement>(".sy-tile")!.click();
     // It was selected: the inspector now shows the answer fields…
     const labels = Array.from(document.querySelectorAll(".sy-living-inspector label")).map((l) => l.textContent);
-    expect(labels.some((t) => (t ?? "").includes("Button text"))).toBe(true);
+    expect(labels.some((t) => (t ?? "").includes("Answer"))).toBe(true);
     // …and it was NOT played: no stamp, no wrong-answer shake, still on card 1.
     expect(document.querySelector(".sy-living-canvas .sy-wrong-stamp")).toBeNull();
     expect(document.querySelector(".sy-living-canvas .sy-tile-shake")).toBeNull();
@@ -423,5 +450,58 @@ describe("TASK-26e: living editor selection and right answer", () => {
     editFirstQuestion("Brand new wording");
     const first = document.querySelector(".sy-living-list button");
     expect(first!.textContent).toContain("Brand new wording");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-27x/j — flash preview refresh, wording, add-an-answer, list labels
+
+describe("TASK-27: living editor round-3 fixes", () => {
+  beforeEach(() => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  it("x: editing a flash card's front refreshes the card preview", async () => {
+    const { irishWordsStack } = await import("../src/shared/readyMadeStacks.js");
+    openFile(exportedFile(irishWordsStack()));
+    teardown = bootLivingFile();
+    tab().click();
+    const ta = document.querySelector<HTMLTextAreaElement>(".sy-living-inspector textarea")!;
+    expect(ta).not.toBeNull();
+    ta.value = "Zebra crossing";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(document.querySelector(".sy-living-canvas")!.textContent).toContain("Zebra crossing");
+    expect(document.querySelector(".sy-living-list")!.textContent).toContain("Zebra");
+  });
+
+  it("j: wording matches the website; list labels are 'Card N — …' on one ellipsis line", async () => {
+    openFile(exportedFile(vikingsStack()));
+    teardown = bootLivingFile();
+    tab().click();
+    const first = document.querySelector<HTMLElement>(".sy-living-list button")!;
+    expect(first.querySelector(".num")!.textContent).toBe("Card 1");
+    expect(first.querySelector(".txt")!.textContent!.startsWith("— ")).toBe(true);
+    // Flash wording.
+    const { irishWordsStack } = await import("../src/shared/readyMadeStacks.js");
+    teardown?.();
+    openFile(exportedFile(irishWordsStack()));
+    teardown = bootLivingFile();
+    tab().click();
+    const labels = Array.from(document.querySelectorAll(".sy-living-inspector label")).map((l) => l.textContent);
+    expect(labels).toContain("Front (the term)");
+  });
+
+  it("j: '+ Add an answer' on a quiz card adds a tile and stays valid", () => {
+    openFile(exportedFile(twoCardStack()));
+    teardown = bootLivingFile();
+    tab().click();
+    const btn = Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button")).find((b) =>
+      (b.textContent ?? "").includes("Add an answer"),
+    );
+    expect(btn).toBeDefined();
+    const before = document.querySelectorAll(".sy-living-canvas .sy-tile").length;
+    btn!.click();
+    const after = document.querySelectorAll(".sy-living-canvas .sy-tile").length;
+    expect(after).toBe(before + 1);
   });
 });

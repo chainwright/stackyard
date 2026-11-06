@@ -157,13 +157,16 @@ function validStackJson(): string {
   });
 }
 
-/** A stack JSON that fails validation (duplicate id). */
+/**
+ * A stack JSON that fails validation: it has NO end card (invariant 3).
+ *
+ * It used to be a duplicated card id. Ids are the server's business now
+ * (TASK-27m: every id is re-minted before validation, so a duplicate or a
+ * mistyped id can no longer sink a deck), so that is no longer a way to fail.
+ */
 function invalidStackJson(): string {
-  const stack = JSON.parse(validStackJson()) as { id: string; cards: Array<{ id: string }> };
-  // Force duplicate card ID
-  if (stack.cards[1]) {
-    stack.cards[1].id = stack.cards[0]!.id;
-  }
+  const stack = JSON.parse(validStackJson()) as { cards: Array<{ kind: string }> };
+  stack.cards[stack.cards.length - 1]!.kind = "story";
   return JSON.stringify(stack);
 }
 

@@ -18,6 +18,7 @@ import { linkQuizAnswersForward } from "./linkForward.js";
 import { shuffleQuizAnswers } from "./shuffleAnswers.js";
 import { READY_MADE_IMAGES } from "./readyMadeImages.js";
 import { creditLine } from "./deckImageTypes.js";
+import { QUIZ_QUESTION, QUIZ_TILES } from "./layout.js";
 
 /** Link quiz answers forward, then shuffle which tile the correct answer sits
  *  on (deterministic per stack id), so the right answer is not always tile A
@@ -51,7 +52,7 @@ function withDeckImage(uuid: () => string, stack: Stack, deckKey: string): Stack
   const imageEl: Element = {
     type: "image",
     id: uuid(),
-    x: 504, y: 8, w: 150, h: 90,
+    x: 325, y: 10, w: 150, h: 88,
     src: img.dataUri,
     alt: `${deckKey} illustration`,
   };
@@ -92,14 +93,11 @@ function quizCard(
     id: uuid(),
     kind: "quiz",
     elements: [
-      { type: "text", id: uuid(), x: 48, y: 104, w: 704, h: 128, content: question },
+      { type: "text", id: uuid(), ...QUIZ_QUESTION, content: question },
       ...answers.map((label, i) => ({
         type: "button" as const,
         id: uuid(),
-        x: i % 2 === 0 ? 48 : 408,
-        y: i < 2 ? 296 : 424,
-        w: 344,
-        h: 96,
+        ...QUIZ_TILES[i]!,
         label,
         actions: [
           { type: "score" as const, delta: i === correctIndex ? 1 : 0 },

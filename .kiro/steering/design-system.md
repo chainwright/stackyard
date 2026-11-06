@@ -65,11 +65,9 @@ rule exists precisely to avoid that.
 > **Accessibility note (why the shapes exist).** Shape is a *second channel*, not
 > decoration: a colour-blind pupil can say "the triangle", and a washed-out
 > projector can't make coral and sun-yellow look alike. Neither the colour nor
-> the shape alone identifies an answer. The ▲ ◆ ● ■ order will look familiar from
-> other quiz tools; that is deliberate (a pattern pupils already know and a
-> common accessibility convention), not copied styling: our palette, type,
-> paper look and rubber-stamp feedback are our own. Do not reorder or drop the
-> shapes to look different.
+> the shape alone identifies an answer. Shape-plus-colour coding is a common
+> accessibility pattern; our palette, type, paper look and rubber-stamp feedback
+> are our own. Do not drop the shapes.
 
 
 Shape icons are inline SVG, not emoji or icon fonts.
@@ -284,12 +282,12 @@ Triggered on answer selection; renders as an SVG overlay on the chosen tile.
 **Correct answer:**
 - Text: `CORRECT ✓`
 - Colour: `--color-stamp` (#CE3926)
-- Font: Bricolage Grotesque 800, ~28px, all caps
-- Transform: `rotate(-8deg)`
+- Font: Bricolage Grotesque 800, 24px, all caps (TASK-27a: smaller so it fits the gutter)
+- Transform: `rotate(-4deg)`
 - Border: 3px solid `--color-stamp`, border-radius 4px, padding 4px 8px
 - Appearance: stamped-ink look — slightly uneven opacity (0.92), no drop shadow
 - Placement: straddles the tile's **top edge on the label side**, mostly over the
-  paper above the tile (`top: -24px; left: 64px`). Never over the answer word,
+  paper above the tile (`top: -38px; left: 64px`; the card template leaves a 48 px gutter above each answer tile, so a rotated stamp sits fully in it). Never over the answer word,
   never crossing the gutter into the next tile.
 
 **Wrong answer:**
@@ -391,10 +389,10 @@ When reduced motion is active, replace all animations with an instant opacity cr
 
 ```css
 @keyframes stamp-land {
-  0%   { transform: rotate(-8deg) scale(1.4); opacity: 0; }
-  60%  { transform: rotate(-8deg) scale(0.92); opacity: 1; }
-  80%  { transform: rotate(-8deg) scale(1.04); }
-  100% { transform: rotate(-8deg) scale(1.0);  opacity: 1; }
+  0%   { transform: rotate(-4deg) scale(1.4); opacity: 0; }
+  60%  { transform: rotate(-4deg) scale(0.92); opacity: 1; }
+  80%  { transform: rotate(-4deg) scale(1.04); }
+  100% { transform: rotate(-4deg) scale(1.0);  opacity: 1; }
 }
 ```
 

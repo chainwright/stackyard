@@ -15,7 +15,7 @@ import type {
 import { reject, type Rejected } from "./types.js";
 import { linkQuizAnswersForward } from "../shared/linkForward.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../shared/flow.js";
-import { FLASH_TERM, FLASH_BACK, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
+import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -158,13 +158,13 @@ function seedCard(kind: Card["kind"]): Card {
           {
             type: "text",
             id: newId(),
-            x: 48, y: 104, w: 704, h: 120,
+            ...QUIZ_QUESTION,
             content: "Your question?",
           },
           {
             type: "button",
             id: newId(),
-            x: 48, y: 296, w: 344, h: 96,
+            ...QUIZ_TILES[0]!,
             label: "Right answer",
             actions: [
               { type: "score", delta: 1 },
@@ -174,7 +174,7 @@ function seedCard(kind: Card["kind"]): Card {
           {
             type: "button",
             id: newId(),
-            x: 408, y: 296, w: 344, h: 96,
+            ...QUIZ_TILES[1]!,
             label: "Wrong answer",
             actions: [
               { type: "score", delta: 0 },

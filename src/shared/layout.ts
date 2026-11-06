@@ -13,11 +13,19 @@
 //
 //   y   0 –  96  chrome band: "Card N of M" (left) and the running score
 //                (right), plus the ring holes. NOTHING of ours goes here.
-//   y 104 – 264  question / story text (fit-text shrinks long text to fit)
-//   y 264 – 296  stamp gutter: the CORRECT ✓ / ✗ stamp straddles the tile's top
-//                edge, so this strip stays clear of text
-//   y 296 – 520  answer tiles (2 × 2) / story choices
+//   y 104 – 248  question / story text (fit-text shrinks long text to fit)
+//   y 248 – 296  stamp gutter (48 px): the CORRECT ✓ / ✗ stamp sits here with its
+//                bottom edge on the tile's top edge, so it never reaches the
+//                answer text (TASK-27a)
+//   y 296 – 384  answer tiles, row 1 (88 px tall)
+//   y 384 – 432  stamp gutter for row 2 (48 px)
+//   y 432 – 520  answer tiles, row 2
 //   y 566 – 594  caption / picture credit line
+//
+// The 48 px gutters are the point. Round 3 found the CORRECT stamp struck through
+// the first line of every answer that wrapped to two or three lines, because the
+// old template left 32 px and the stamp was ~50 px tall: it reached ~18 px into the
+// tile, and a wrapped label starts ~10 px below the tile's top.
 
 export interface Rect { x: number; y: number; w: number; h: number }
 
@@ -27,15 +35,15 @@ export const TOP_BAND = 96;
 export const CANVAS_W = 800;
 export const CANVAS_H = 600;
 
-/** The question on a quiz card. Ends at y=264 so the stamp gutter stays clear. */
-export const QUIZ_QUESTION: Rect = { x: 48, y: 104, w: 704, h: 160 };
+/** The question on a quiz card. Ends at y=248 so the 48 px stamp gutter stays clear. */
+export const QUIZ_QUESTION: Rect = { x: 48, y: 104, w: 704, h: 144 };
 
 /** The four answer tiles, in tile order (A B / C D). */
 export const QUIZ_TILES: readonly Rect[] = [
-  { x: 48, y: 296, w: 344, h: 96 },
-  { x: 408, y: 296, w: 344, h: 96 },
-  { x: 48, y: 424, w: 344, h: 96 },
-  { x: 408, y: 424, w: 344, h: 96 },
+  { x: 48, y: 296, w: 344, h: 88 },
+  { x: 408, y: 296, w: 344, h: 88 },
+  { x: 48, y: 432, w: 344, h: 88 },
+  { x: 408, y: 432, w: 344, h: 88 },
 ];
 
 /** Flash card: the term, the explanation, and the Next Card button. */
@@ -66,7 +74,9 @@ export function storyLayout(n: number): { body: Rect; buttons: Rect[] } {
     return { body: STORY_BODY_SINGLE, buttons: n === 1 ? [STORY_CONTINUE] : [] };
   }
   const count = Math.min(n, MAX_STORY_CHOICES);
-  const gap = 12;
+  // 32 px between choices: the editor draws a ~20 px "→ Card N" label under each
+  // one, and with a 12 px gap that label sat on the next choice (TASK-27w).
+  const gap = 32;
   const bottom = 560;
   const minBodyBottom = 104 + 112; // keep at least 112 px for the story text
   const room = bottom - (minBodyBottom + 16);

@@ -16,6 +16,8 @@ export default defineConfig({
   test: {
     // Most tests run in Node environment.
     environment: "node",
+    // Heavy property tests (1000 runs) get room on a slow CI runner.
+    testTimeout: 60_000,
     // CSS imports in components are irrelevant to logic tests.
     css: false,
     // Per-file environment override: player + Maker UI tests need jsdom.

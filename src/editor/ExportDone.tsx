@@ -7,17 +7,13 @@ import type { JSX } from "preact";
 import type { Stack } from "../shared/types.js";
 import { Ring } from "./icons.js";
 import { checkReachability, describeProblems } from "../shared/reachability.js";
-import { primaryText, truncateLabel } from "../shared/cardTitle.js";
+import { cardRefLabel } from "../shared/cardTitle.js";
 
 /** The content line of a card, for naming it in the check ("Card 5 — …").
  *  Uses the question/front/story text, never a caption or image credit. */
 function cardLabel(stack: Stack, cardId: string): string {
-  const index = stack.cards.findIndex((c) => c.id === cardId);
-  const card = stack.cards[index];
-  if (!card) return "a card";
-  if (card.kind === "end") return "the last card";
-  const short = truncateLabel(primaryText(card), 24);
-  return short.length > 0 ? `Card ${index + 1} — ${short}` : `Card ${index + 1}`;
+  const card = stack.cards.find((c) => c.id === cardId);
+  return card ? cardRefLabel(stack, card) : "a card";
 }
 
 export function ExportDone({
@@ -28,7 +24,14 @@ export function ExportDone({
   onExportAgain,
   onFixFlow,
   living = false,
+  showCheck = true,
 }: {
+  /**
+   * Show the "Before you share" box here. The Maker runs that check BEFORE the
+   * download (ShareCheck) and passes false; this stays for a standalone
+   * ExportDone (and its tests).
+   */
+  showCheck?: boolean;
   /** True when the file just exported is a living file (has the Teacher tab). */
   living?: boolean;
   filename: string;
@@ -57,7 +60,7 @@ export function ExportDone({
 
           {/* "Before you share" check (J2 item 3): warn about cards the class
               can't reach or answers that dead-end, with a one-click fix. */}
-          {!report.ok ? (
+          {showCheck && !report.ok ? (
             <div class="share-check" role="alert">
               <h2>Before you share</h2>
               <ul>

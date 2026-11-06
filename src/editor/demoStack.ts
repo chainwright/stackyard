@@ -7,6 +7,7 @@
 
 import type { Stack } from "../shared/types.js";
 import { linkQuizAnswersForward } from "../shared/linkForward.js";
+import { QUIZ_QUESTION, QUIZ_TILES } from "../shared/layout.js";
 
 let n = 0;
 function uuid(): string {
@@ -34,14 +35,11 @@ export function demoStack(): Stack {
         // The "Card N of M" meta line is DERIVED chrome drawn by the renderer
         // from the deck position — not a stored element. Only the question text
         // lives in the stack.
-        { type: "text" as const, id: uuid(), x: 48, y: 104, w: 704, h: 128, content: question },
+        { type: "text" as const, id: uuid(), ...QUIZ_QUESTION, content: question },
         ...answers.map((label, i) => ({
           type: "button" as const,
           id: uuid(),
-          x: i % 2 === 0 ? 48 : 408,
-          y: i < 2 ? 296 : 424,
-          w: 344,
-          h: 96,
+          ...QUIZ_TILES[i]!,
           label,
           actions: [
             { type: "score" as const, delta: i === correctIndex ? 1 : 0 },

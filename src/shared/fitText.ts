@@ -120,9 +120,12 @@ export function fitQuestion(text: string, w: number, h: number): FitResult {
   return fitText(text, { w, h, maxSize: 44, minSize: 24, lineHeight: questionLineHeight });
 }
 
+/** The biggest a story body goes (TASK-27i): it read as a 22 px note on blank paper. */
+export const STORY_BODY_MAX = 30;
+
 /** Fit body text (story, captions) into its element box. */
-export function fitBody(text: string, w: number, h: number): FitResult {
-  return fitText(text, { w, h, maxSize: 22, minSize: MIN_FONT, lineHeight: (s) => Math.round(s * 1.5) });
+export function fitBody(text: string, w: number, h: number, maxSize = 22): FitResult {
+  return fitText(text, { w, h, maxSize, minSize: MIN_FONT, lineHeight: (s) => Math.round(s * 1.5) });
 }
 
 /**

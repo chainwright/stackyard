@@ -9,7 +9,7 @@ import type {
   FallbackReason,
   GenerateStreamMessage,
 } from "../shared/types.js";
-import { safeFileName } from "../shared/messages.js";
+import { safeFileName, classFileName } from "../shared/messages.js";
 
 // ---------------------------------------------------------------------------
 // Generate
@@ -305,7 +305,8 @@ export async function exportStack(
 
   if (res.ok) {
     const html = await res.text();
-    const filename = filenameFromDisposition(res) ?? safeFileName(stack.title);
+    const filename =
+      filenameFromDisposition(res) ?? (kind === "class" ? classFileName(stack.title) : safeFileName(stack.title));
     return { ok: true, html, filename };
   }
 

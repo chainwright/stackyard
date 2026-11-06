@@ -16,7 +16,7 @@
 import type { Card, Stack, Element as StackElement, ButtonElement } from "../shared/types.js";
 import type { RuntimeState } from "./runtime.js";
 import { dispatch, resetRuntime } from "./runtime.js";
-import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT } from "../shared/fitText.js";
+import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT, STORY_BODY_MAX } from "../shared/fitText.js";
 import { gotoOf } from "../shared/flow.js";
 
 // ---------------------------------------------------------------------------
@@ -293,6 +293,20 @@ const PLAYER_STYLES = `
   color: var(--color-ink);
 }
 
+/* ---- Story body: bigger, and vertically centred in its box (TASK-27i). A story
+   card is the most impressive thing the generator writes, and at 22 px in a tall
+   box it read as a two-line note on a blank page. ---- */
+.sy-story {
+  font-size: 30px;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-ink);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
 /* ---- Question text — quiz / flash heading ---- */
 /* line-height is 64px = two 32px rule bands, so the text baseline lands ON a
    ruled line (the copybook look) instead of a rule striking through the glyph
@@ -480,20 +494,28 @@ const PLAYER_STYLES = `
 }
 
 /* ---- Stamp overlay (on tile) ---- */
-/* The earned ink stamp straddles the tile's TOP edge on the label side, mostly
-   over the paper above the tile (top:-24px; left:64px), rotated -8deg. It is a
-   transparent ink stamp (mix-blend-mode: multiply) — not a paper sticker — so
-   the stamp red sits on the 4.67:1 paper pairing and never over the answer word
-   (design-system Rubber stamp feedback). */
+/* The earned ink stamp sits in the GUTTER above the tile, its bottom edge on the
+   tile's top edge, over the paper — never over the answer text (design-system
+   Rubber stamp feedback; TASK-27a). The old stamp (30 px type, top -34px, ~50 px
+   tall, -8deg) reached ~18 px into the tile, and a label that wraps to two or
+   three lines starts only ~10 px below the tile's top, so CORRECT struck through
+   the first line of every wrapped right answer. This one is ~0.85 scale (24 px
+   type, line-height 1 => 36 px tall) and the quiz template leaves a 48 px gutter
+   above each row of tiles (src/shared/layout.ts), so it fits with room to spare.
+   scripts/check-text-fit.ts clicks right and wrong tiles on a card with four long
+   answers and asserts the stamp's rectangle never meets the label text. It is a
+   transparent ink stamp (mix-blend-mode: multiply), not a paper sticker, so the
+   stamp red sits on the 4.67:1 paper pairing. */
 .sy-stamp {
   position: absolute;
-  top: -34px;
+  top: -38px;
   left: 64px;
   right: auto;
   bottom: auto;
-  transform: rotate(-8deg) scale(1);
+  transform: rotate(-4deg) scale(1);
   color: var(--color-stamp);
-  font-size: 30px;
+  font-size: 24px;
+  line-height: 1;
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 800;
   text-transform: uppercase;
@@ -501,7 +523,7 @@ const PLAYER_STYLES = `
   mix-blend-mode: multiply;
   border: 3px solid var(--color-stamp);
   border-radius: 4px;
-  padding: 4px 10px;
+  padding: 3px 9px;
   opacity: 0.92;
   pointer-events: none;
   white-space: nowrap;
@@ -509,16 +531,16 @@ const PLAYER_STYLES = `
 }
 
 /* ---- Wrong-answer ✗ stamp ---- */
-/* After the shake, a boxed ✗ lands at FULL strength (not a faint mark) over the
-   paper at the tile's top edge — same placement as CORRECT, so it reads on the
-   4.67:1 paper pairing on a washed-out projector (design-system). */
+/* After the shake, a boxed ✗ lands at FULL strength (not a faint mark) in the same
+   gutter, same placement as CORRECT, so it reads on the 4.67:1 paper pairing on a
+   washed-out projector (design-system). */
 .sy-wrong-stamp {
   position: absolute;
-  top: -24px;
+  top: -36px;
   left: 64px;
-  transform: rotate(-8deg);
+  transform: rotate(-4deg);
   color: var(--color-stamp);
-  font-size: 44px;
+  font-size: 28px;
   line-height: 1;
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 800;
@@ -526,7 +548,7 @@ const PLAYER_STYLES = `
   mix-blend-mode: multiply;
   border: 3px solid var(--color-stamp);
   border-radius: 4px;
-  padding: 2px 12px;
+  padding: 2px 10px;
   opacity: 1;
   pointer-events: none;
   z-index: 20;
@@ -612,10 +634,10 @@ const PLAYER_STYLES = `
 
 /* ---- Animations ---- */
 @keyframes stamp-land {
-  0%   { transform: rotate(-8deg) scale(1.4); opacity: 0; }
-  60%  { transform: rotate(-8deg) scale(0.92); opacity: 1; }
-  80%  { transform: rotate(-8deg) scale(1.04); opacity: 1; }
-  100% { transform: rotate(-8deg) scale(1.0);  opacity: 1; }
+  0%   { transform: rotate(-4deg) scale(1.4); opacity: 0; }
+  60%  { transform: rotate(-4deg) scale(0.92); opacity: 1; }
+  80%  { transform: rotate(-4deg) scale(1.04); opacity: 1; }
+  100% { transform: rotate(-4deg) scale(1.0);  opacity: 1; }
 }
 
 @keyframes tile-shake {
@@ -649,8 +671,27 @@ const PLAYER_STYLES = `
    (not stamp red — this is not an earned stamp) so pupils learn which one it
    was before the card advances. */
 .sy-tile-reveal {
-  outline: 3px solid var(--color-ink);
-  outline-offset: 2px;
+  /* A CLEAR highlight for the back of a projected room (J2 #13): a thick ink
+     frame plus a "Right answer" tab in the gutter above the tile, not a 3 px
+     outline nobody can see. Still ink, never stamp red. */
+  outline: 6px solid var(--color-ink);
+  outline-offset: -2px;
+}
+.sy-reveal-mark {
+  position: absolute;
+  top: -32px;
+  right: 12px;
+  background: var(--color-ink);
+  color: var(--color-white);
+  font-size: 20px;
+  line-height: 1;
+  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 19;
 }
 
 /* Reduced-motion: replace animations with instant opacity cross-fade */
@@ -720,6 +761,9 @@ function countQuizCards(stack: Stack): number {
 // ---------------------------------------------------------------------------
 // End-card renderer
 
+/** Headings that celebrate: swapped for a neutral line over a score of zero. */
+const CELEBRATORY = /\b(well done|great|brilliant|fantastic|amazing|excellent|congrat|superb|top marks|hooray|bravo|wow)\b/i;
+
 function renderEndCard(
   card: Card,
   cardEl: HTMLElement,
@@ -736,20 +780,27 @@ function renderEndCard(
   const container = document.createElement("div");
   container.className = "sy-end-card";
 
-  // Heading — use the card's own text element if present, otherwise "Well done!"
+  // Heading — use the card's own text element if present, otherwise "Well done!".
+  // A celebratory line over a score of 0 reads as mockery ("Well done!" above
+  // "Score 0 of 3", J1 round 3), so at 0 a CELEBRATORY heading is swapped for a
+  // neutral one; a teacher's own heading is left alone.
   const textEl = card.elements.find((e) => e.type === "text");
-  const headingText = textEl && textEl.type === "text" ? textEl.content : "Well done!";
+  let headingText = textEl && textEl.type === "text" ? textEl.content : "Well done!";
+  if (total > 0 && score === 0 && CELEBRATORY.test(headingText)) headingText = "You finished!";
   const heading = document.createElement("h1");
   heading.className = "sy-end-heading";
   heading.textContent = headingText;
   container.appendChild(heading);
 
-  // Score line "Score N of M"
-  const scoreLine = document.createElement("p");
-  scoreLine.className = "sy-end-score";
-  scoreLine.setAttribute("data-testid", "end-score");
-  scoreLine.textContent = `Score ${score} of ${total}`;
-  container.appendChild(scoreLine);
+  // Score line "Score N of M" — only when the deck HAS questions. A story-only
+  // deck has nothing to score, and "Score 0 of 0" is just noise (TASK-27l/y).
+  if (total > 0) {
+    const scoreLine = document.createElement("p");
+    scoreLine.className = "sy-end-score";
+    scoreLine.setAttribute("data-testid", "end-score");
+    scoreLine.textContent = `Score ${score} of ${total}`;
+    container.appendChild(scoreLine);
+  }
 
   // Stamp collection — one 64px slot per question. Earned slots (score) carry a
   // red ✓ stamp at a slight rotation; the rest are empty dashed ink outlines.
@@ -777,8 +828,11 @@ function renderEndCard(
     container.appendChild(stampsRow);
   }
 
-  // Announce to screen readers
-  ariaLive.textContent = `${headingText}. Score ${score} of ${total}.`;
+  // Announce to screen readers. The heading usually ends in its own punctuation
+  // ("…journey." / "Well done!"), so strip it before joining, or the announcement
+  // reads "journey.. Score" (TASK-27l).
+  const spoken = headingText.trim().replace(/[.!?…]+$/, "");
+  ariaLive.textContent = total > 0 ? `${spoken}. Score ${score} of ${total}.` : `${spoken}.`;
 
   // "Play Again" — a paper tab under the stamp grid that restarts the whole
   // deck from card 1 with the score reset (built-app review round 3, P2 #5). A
@@ -1080,8 +1134,17 @@ export function renderCard(
 
   // Running score, top-right, read from runtime state. Quiz cards keep score;
   // show it wherever a score is being tracked (any content card).
+  // Hidden until there is something to score: a deck with no quiz card never
+  // shows it, and a story-first deck does not show "Score 0" on card 1 before any
+  // question has been played (TASK-27l). It appears once a question has been
+  // answered, or the score is above zero.
   const liveScore = state.variables["score"];
-  if (typeof liveScore === "number") {
+  const answered = state.variables["_answered"];
+  const hasQuiz = countQuizCards(state.stack) > 0;
+  const scoreStarted =
+    (typeof answered === "number" && answered > 0) ||
+    (typeof liveScore === "number" && liveScore > 0);
+  if (typeof liveScore === "number" && hasQuiz && scoreStarted) {
     const scoreWrap = document.createElement("div");
     scoreWrap.className = "sy-score-chrome";
     scoreWrap.setAttribute("aria-label", `Score ${liveScore}`);
@@ -1127,6 +1190,7 @@ export function renderCard(
   // any later text (e.g. an image credit line) renders as small body text, so a
   // credit doesn't shout in 44px (TASK-23 d).
   let questionTextPlaced = false;
+  let storyTextPlaced = false;
 
   for (const el of card.elements) {
     const wrapper = document.createElement("div");
@@ -1138,12 +1202,17 @@ export function renderCard(
         const p = document.createElement("p");
         // Quiz and flash cards use the question token for their FIRST text.
         const isQuestion = (isQuizCard || card.kind === "flash") && !questionTextPlaced;
-        p.className = isQuestion ? "sy-question" : "sy-text";
+        // The FIRST text on a story card is the story: big and centred. Any
+        // later text (a caption, an image credit) stays small body text.
+        const isStory = card.kind === "story" && !storyTextPlaced;
+        p.className = isQuestion ? "sy-question" : isStory ? "sy-story" : "sy-text";
         if (isQuestion) questionTextPlaced = true;
+        if (isStory) storyTextPlaced = true;
         p.textContent = el.content;
         // Fit the text to its box so a long question can't run into the answer
         // tiles (TASK-26c). Steps the font down from the token size.
         if (isQuestion) applyFit(p, fitQuestion(el.content, el.w, el.h), 44);
+        else if (isStory) applyFit(p, fitBody(el.content, el.w, el.h, STORY_BODY_MAX), STORY_BODY_MAX);
         else applyFit(p, fitBody(el.content, el.w, el.h), 22);
         wrapper.appendChild(p);
         break;
@@ -1336,6 +1405,13 @@ function handleButtonClick(
   const gotoAction = el.actions.find((a) => a.type === "goto");
   const preActions = el.actions.filter((a) => a.type !== "goto");
 
+  // Remember that a question has been answered, so the running score appears
+  // (even at 0) once there is something to show (TASK-27l).
+  if (el.actions.some((a) => a.type === "score")) {
+    const n = state.variables["_answered"];
+    state.variables["_answered"] = (typeof n === "number" ? n : 0) + 1;
+  }
+
   // Fire score/sound/set actions now (no navigation yet).
   dispatch(preActions, state, _noNav, playSound);
 
@@ -1371,6 +1447,15 @@ function handleButtonClick(
         );
         if (correct && correct !== btn) {
           correct.classList.add("sy-tile-reveal");
+          // A tab in the gutter above the right tile, so the room can see which
+          // one it was (a thin outline is invisible from the back of a class).
+          if (!correct.querySelector(".sy-reveal-mark")) {
+            const mark = document.createElement("span");
+            mark.className = "sy-reveal-mark";
+            mark.textContent = "✓ Right answer";
+            mark.setAttribute("aria-hidden", "true");
+            correct.appendChild(mark);
+          }
         }
       }
 

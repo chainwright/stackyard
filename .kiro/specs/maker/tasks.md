@@ -1047,7 +1047,7 @@ score reset. `npm test` (489) and `tsc` green. ✓
 
 ---
 
-## Phase 8 — Public deployment (one web service)
+## Phase 8b — Public deployment (one web service)
 
 ### TASK-21: Deployable as ONE public web service (Render free web, Node 24)
 **Refs:** tech.md (Node 24; "All LLM calls … server-side only"; "The API key never reaches the browser"); product.md ("works the first time"); the live-Maker ask so judges can open the running app.
@@ -1207,7 +1207,7 @@ per request and get a fresh bucket every time, bypassing the per-visitor limit.
 
 ---
 
-## Phase 9 — 5 Nov judge-panel fixes (live app)
+## Phase 9b — 5 Nov judge-panel fixes (live app)
 
 ### TASK-22: fixes from the 5 Nov AI review panel (J1 official, J2 teacher, J3 wow/design, J4 engineering, J5 hound)
 **Refs:** `judge_2026-11-05/J1_official.md`, `J2_teacher.md`, `J3_wow_design.md`, `J4_engineering.md`, `J5_hound.md`. Related specs: exporter (a, k), stack-generator (d), maker (the rest).
@@ -1379,3 +1379,86 @@ Schemas follow the current kiro.dev docs: hooks are JSON in `.kiro/hooks/<id>.js
   - **Acceptance.** Tests: Back text is kept on a card with no back; the share check flags both dead ends; Add an answer adds a linked answer and stops at four; a played-through deck never greys out and stops.
 
 **Gate (TASK-26):** `npm test`, `npx tsc --noEmit` and `npm run pre-submit` exit 0; `npm run check:living-file` passes with the new click-through.
+
+
+---
+
+## Phase 13 — Round-3 review fixes (TASK-27)
+
+**Refs:** `judge_2026-11-05_r3/J1–J5` (live app, 5 Nov night). Round 3 found no P0 in the core promise. What was left: the money frame (the CORRECT stamp strikes through a wrapped answer), a red CI, stale samples, one mistyped id withdrawing a whole deck, and a long tail of editor/start-screen layout.
+
+**Where each item lives:**
+
+| Item | Spec file |
+|---|---|
+| b, e, m, t, A, B (generation) | `stack-generator/tasks.md` (Round-3 phase) |
+| x, j, f (living half), g, r | `exporter/tasks.md` Phase 8 |
+| a, c, d, f, h, i, k, l, v, w, y, n, o, p, q, s, u | this file, below |
+
+### TASK-27a: the stamp never touches the answer  *(P1, the money frame)*
+  - **Bug.** `.sy-stamp` (top −34 px, ~50 px tall, rotated) reached 16–20 px into the tile; labels wrap to up to three lines and start ~10 px below the tile's top, so the CORRECT stamp struck through the first line of every wrapped right answer, and ✗ sat on the first letters of a wrong one. The text-fit gate never fired a stamp.
+  - **Fix.** One quiz template (`src/shared/layout.ts`) with a real stamp gutter: question box 104–248, answer tiles 88 px tall at y 296 and 432 (48 px above each row). The stamp is smaller (~0.85 scale: 24 px type) and seated in the gutter with its bottom edge on the tile's top edge; ✗ likewise. The hand-laid ready-made decks and the editor's seed card use the same constants.
+  - **Acceptance criteria.** Real Chrome (`scripts/check-text-fit.ts`): on a card with four long answers, click the right tile and a wrong tile (one in each row) and assert `stampRect ∩ labelTextRect == 0`, `stampRect ∩ questionTextRect == 0` and `stampRect ∩ otherTileRects == 0` at scale 0.9 and scale 1.4. Mutation: restore the old stamp offset and the gate fails.
+
+### TASK-27c: the "✓ Right answer" tag does not cover the answer  *(P2)*
+  - **Fix.** The editor tag hangs as a tab above the tile's top-right edge (inside the stamp gutter), never over the label.
+  - **Acceptance criteria.** Tag rectangle ∩ label text rectangle = 0 for a 3-line answer, in jsdom by geometry and in real Chrome in the Maker gate.
+
+### TASK-27d: the start screen fits and scrolls  *(P1)*
+  - **Bug.** `.start-area` centred with `overflow:hidden`, so at 1366×768 the heading sat under the bar and "Type your own questions" was cut off with no way to scroll (also a phone). Two rows repeated the same three names with different behaviour.
+  - **Fix.** `justify-content: safe center` plus `overflow-y: auto` (and `margin: auto` on the card). ONE row of example chips; "open a ready-made deck" becomes a single text link row that is visibly different ("Open a ready-made deck: Vikings · Times tables · Irish words"). The peek tiles are clipped inside their card at 1920.
+  - **Acceptance criteria.** Real Chrome at 1366×768: h1 top ≥ the bar's bottom and "Type your own questions" fully inside the viewport with no scrolling; at 1366×657 and 390×844 the h1 is reachable and every control can be scrolled into view; the three example names appear once on the page.
+
+### TASK-27f (Maker half): "Before you share" runs BEFORE the download
+  - **Bug.** The warning appeared on the "Your file is ready" screen after the file had already downloaded.
+  - **Fix.** Export runs the check first. If anything is wrong, a dialog lists it with **"Export anyway"** and **"Take me to the card"** (selects the first offending card); nothing is downloaded until the teacher chooses. A card still holding placeholder text ("Your question?" / "Right answer" / "Wrong answer"; flash "Term"/"Explanation"; story "Your text") counts as a problem (`placeholderCards` in `src/shared/reachability.ts`, shared with the living file).
+  - **Acceptance criteria.** Pressing Export on a deck with a dead-end answer triggers no download; "Export anyway" downloads; "Take me to the card" selects the card; a healthy deck exports in one click; a placeholder card is flagged.
+
+### TASK-27h: one way to add an answer; icons that do not collapse
+  - **Fix.** On a quiz card the toolbar's plain "Add Button" is hidden (a plain button there is the dead end J2 hit; its "This card is full" message contradicted "+ Add an answer"); the one "Add Answer" stays. `.tool-card svg { flex-shrink: 0 }` and a fixed size so icons never shrink to 24×2 px at 1366; the toolbar wraps its label rather than the icon; "Export File" stays on one line (`white-space: nowrap`).
+  - **Acceptance criteria.** Toolbar test: no "Add Button" tool on a quiz card, present on story/flash; real Chrome at 1366×768 on a quiz card: every `.tool-card svg` is ≥ 20×20 px and the Export button's height ≤ 60 px (one line).
+
+### TASK-27i: story cards have presence  *(P2)*
+  - **Fix.** `fitBody` for a story body goes up to 30 px (still fitted); the body is vertically centred in its box; a one-choice "Continue" card shrinks the body box to the text.
+  - **Acceptance criteria.** A short story body renders at 30 px; a long one still fits (text-fit gate on the story card passes at 1366 and 1920).
+
+### TASK-27k: the wait screen is personal from t = 0  *(P2)*
+  - **Fix.** The teacher's own sentence is written on the top card from the first frame; the card's text is inset below the rings (≥ 48 px); the dealt stack scales with the viewport.
+  - **Acceptance criteria.** Before the first card, the top card shows the sentence; its text container's top padding ≥ 48 px; the stack uses a viewport-based scale.
+
+### TASK-27l: small copy and feedback
+  - **Fix.** The end card's live-region text no longer doubles punctuation ("journey.. Score"); the running score and the end-card score/stamps are hidden until the deck has a quiz card (and, on the running score, until one has been played); a score of 0 reads "Score 0 of 3" under a neutral line, not "Well done!". A wrong pick gives the right tile a clear highlight (thick ink border and a "✓" tab) for the hold, not a thin outline.
+  - **Acceptance criteria.** Tests for each: no `..` / `!.` in the announcement; story-only decks show no score chrome and no "Score 0 of 0"; score 0 uses the neutral heading; the revealed right tile carries the highlight class and a ✓ marker.
+
+### TASK-27v: CI is green  *(P0, J1)*
+  - **Bug.** On GitHub Actions `CI` is set, Vitest colours its output even in a pipe, and `check-claims`'s regex never matched `Tests  810 passed`: "[DRIFT] tests: README 810 vs actual -1". It also hid a real test failure behind the same `-1`. The 1000-run property tests also exceeded Vitest's 5 s default under load (CI red, local `pre-submit` flaky).
+  - **Fix.** Run the child with `NO_COLOR=1 FORCE_COLOR=0` and strip ANSI before parsing; a failing run reports "N tests failing" and an unparseable one "could not parse the test total", never `-1` as drift. The heavy property tests get an explicit 60 s timeout, and Vitest's `testTimeout` is 30 s.
+  - **Acceptance criteria.** `claims-lib` parses a coloured summary line, a "1 failed | 809 passed" line, and refuses to guess; the 1000-run tests carry explicit timeouts (asserted by reading the test sources).
+
+### TASK-27w: story branch tags do not overprint the next choice
+  - **Bug.** `storyLayout` left a 12 px gap; the editor draws a ~20 px "→ Card N" label under each button.
+  - **Fix.** The gap between story choices grows from 12 px to 32 px so the editor's "→ Card N" label (about 20 px) fits under each choice; the story body box shrinks to compensate.
+  - **Acceptance criteria.** Geometry test over 2, 3 and 4 choices; real Chrome (Maker gate): no `.branch-label` rectangle intersects any button or the card edge.
+
+### TASK-27y: README for a judge, and the score on story-only decks
+  - **Fix.** README gains "Built with Kiro" (steering, specs, hooks, agent, MCP, property tests, mutation script) linking `.kiro/` and `docs/kiro-sessions/`. The ready-made deck photo is inset so it does not cover the ring.
+  - **Acceptance criteria.** README has the section and the links resolve to files that exist; the picture element on a ready-made first card does not intersect the ring holes' rectangle.
+
+### TASK-27n: samples are fresh
+  - **Bug.** `samples/*.html` still carried the pictures the code had replaced; the test only compared titles.
+  - **Fix.** Regenerate; the test deep-equals the whole embedded stack against the ready-made deck; `npm run check:samples` regenerates into a temp dir and compares bytes with `samples/`; it runs in `pre-submit` and CI (local edit to `ci.yml`; pushed separately by the maintainers).
+
+### TASK-27o: `pre-submit` is a Manual hook again
+  - **Evidence.** Kiro IDE 1.4.62 and kiro-cli 3.0 both ship a `Manual` trigger (J5 read the shipped code). Round 2 changed it to `PostTaskExec` on a wrong belief.
+  - **Fix.** `"trigger": "Manual"`; `tests/hooks.test.ts` allows it; fire it once from this Kiro session and record the firing only if it truly fired.
+
+### TASK-27p/q/s/u: docs honesty (`J5`)
+  - README picture prose matches `readyMadeImages.ts` (credits, licences, "Chiara Coetzee"); `KIRO_LOG` superseded markers, "I" → "we", no "Nothing committed.", attribution of the post-TASK-26 commit; duplicate Phase 8/9 headings in this file renumbered; the tile-shape note drops "deliberate"; README says "plays in any current browser on a school laptop (built for ES2018)" and its CI sentence includes `check:claims` and the samples check; `docs/kiro-sessions/` holds short excerpts (the TASK-26 prompt, the hook-firing lines, the lesson-checker run) with no secrets.
+  - **Acceptance criteria.** Tests read the README, the log, the credits and the directory.
+
+**Gate (TASK-27):** `npm test`, `npx tsc --noEmit` and `npm run pre-submit` exit 0; `npm run check:living-file` and `npm run check:text-fit` pass (the latter with the new stamp, story-tag, start-screen and toolbar assertions).
+
+### TASK-27 z3: every card can still reach the end  *(J4 P2-2)*
+  - **Bug.** `checkReachability` only walked forward from card 1, so a branch whose only button points to itself passed ("1→{2,3}, 2→end, 3→3"). A J4 mutant that ignored card-level (auto-advance) gotos also survived.
+  - **Fix.** A reverse pass from the end card(s) over every goto, card-level and button-level. Reachable non-end cards that cannot get to an end are `report.trapped`, counted in `ok`, listed in the share check ("… loops back on itself and never reaches the last card") and offered by "Take me to the card". Cards already reported as dead ends or stuck are not repeated.
+  - **Acceptance criteria.** A trap-loop fixture and a two-card loop are reported; a card reachable only by a card-level goto is reachable and not trapped; a property test (random small graphs) checks `ok` ⇒ every reachable card reaches the end, against an independent depth-first oracle.

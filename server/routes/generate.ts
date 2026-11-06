@@ -55,6 +55,61 @@ export interface HandleGenerateOptions {
    * against the daily budget (J4 M2). Not called on the forced-fallback path.
    */
   onModelCall?: () => void;
+  /**
+   * The request body, when the caller has already read it (the server reads and
+   * validates it before counting a rate-limit slot). Omit to read it here.
+   */
+  body?: string;
+}
+
+/**
+ * Validate a raw /api/generate body: JSON, an object with a non-blank string
+ * `prompt` of at most 500 characters. Pure and cheap — no tokens, no slot.
+ */
+export function validateGenerateBody(
+  body: string,
+): { ok: true; prompt: string } | { ok: false; status: number; message: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return { ok: false, status: 400, message: "We couldn't understand your request. Please try again." };
+  }
+  const blank = "Please describe what you'd like Stackyard to build.";
+  if (typeof parsed !== "object" || parsed === null || !("prompt" in parsed)) {
+    return { ok: false, status: 400, message: blank };
+  }
+  const { prompt } = parsed as Record<string, unknown>;
+  if (typeof prompt !== "string" || prompt.trim().length === 0) {
+    return { ok: false, status: 400, message: blank };
+  }
+  if (prompt.length > 500) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Your description is too long. Keep it under 500 characters and try again.",
+    };
+  }
+  return { ok: true, prompt: prompt.trim() };
+}
+
+/**
+ * Read the body (size-capped) and validate it, answering 400/413 itself on
+ * failure. Returns the raw body when it is good. Used by the server BEFORE it
+ * counts a generate slot, so a malformed request never burns the quota.
+ */
+export async function preflightGenerate(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<string | null> {
+  const read = await readBody(req, res, MAX_GENERATE_BODY_BYTES);
+  if (!read.ok) return null;
+  const checked = validateGenerateBody(read.body);
+  if (!checked.ok) {
+    sendJson(res, checked.status, { ok: false, message: checked.message });
+    return null;
+  }
+  return read.body;
 }
 
 /**
@@ -74,56 +129,24 @@ export async function handleGenerate(
     return;
   }
 
-  // Read body with a hard size cap. readBody sends 413/400 itself on failure.
-  const read = await readBody(req, res, MAX_GENERATE_BODY_BYTES);
-  if (!read.ok) return;
-  const body = read.body;
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(body);
-  } catch {
-    sendJson(res, 400, {
-      ok: false,
-      message: "We couldn't understand your request. Please try again.",
-    });
-    return;
+  // The server (createServer) reads and validates the body BEFORE it counts a
+  // rate-limit slot and hands it over here; direct callers (tests) read it now.
+  let body = options.body;
+  if (body === undefined) {
+    const read = await readBody(req, res, MAX_GENERATE_BODY_BYTES);
+    if (!read.ok) return;
+    body = read.body;
   }
 
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    !("prompt" in parsed)
-  ) {
-    sendJson(res, 400, {
-      ok: false,
-      message: "Please describe what you'd like Stackyard to build.",
-    });
+  const checked = validateGenerateBody(body);
+  if (!checked.ok) {
+    sendJson(res, checked.status, { ok: false, message: checked.message });
     return;
   }
-
-  const { prompt } = parsed as Record<string, unknown>;
-
-  // Validate the prompt string.
-  if (typeof prompt !== "string" || prompt.trim().length === 0) {
-    sendJson(res, 400, {
-      ok: false,
-      message: "Please describe what you'd like Stackyard to build.",
-    });
-    return;
-  }
-
-  if (prompt.length > 500) {
-    sendJson(res, 400, {
-      ok: false,
-      message:
-        "Your description is too long. Keep it under 500 characters and try again.",
-    });
-    return;
-  }
+  const prompt = checked.prompt;
 
   // Call the generator.
-  const request: GenerateRequest = { prompt: prompt.trim() };
+  const request: GenerateRequest = { prompt };
 
   // Progressive (NDJSON) delivery when the client asks for it. The request
   // limit (16 KB) and prompt validation above are identical for both paths;

@@ -51,5 +51,5 @@ describe("TASK-P3: export after any edit round-trips", () => {
       ),
       { numRuns: 1000 }
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 });

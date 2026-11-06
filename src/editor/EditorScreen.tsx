@@ -13,6 +13,9 @@ import { CardList } from "./CardList.js";
 import { Inspector } from "./Inspector.js";
 import { Toolbar } from "./Toolbar.js";
 import { ExportDone } from "./ExportDone.js";
+import { ShareCheck } from "./ShareCheck.js";
+import { checkReachability, describeProblems, firstProblemCard, type ReachabilityReport } from "../shared/reachability.js";
+import { cardRefLabel } from "../shared/cardTitle.js";
 import { PlayerPreview } from "./PlayerPreview.js";
 import { fallbackMessage } from "./fallbackMessages.js";
 import { repairFlow } from "./operations.js";
@@ -40,7 +43,7 @@ export function EditorScreen({
     __demoNotice ??
       (state.isFallback
         ? fallbackMessage(state.fallbackReason, state.fallbackOnline)
-        : null),
+        : state.startNote ?? null),
   );
   // Which side of a flash card the canvas is previewing.
   const [flashSide, setFlashSide] = useState<FlashSide>("front");
@@ -57,12 +60,40 @@ export function EditorScreen({
   // When set, play the exported stack in-app (avoids the blob CSP blank page,
   // J4 H1). We play the current stack through the shared mountPlayer.
   const [previewing, setPreviewing] = useState(false);
+  // The "Before you share" dialog, shown BEFORE anything downloads (TASK-27f).
+  const [shareCheck, setShareCheck] = useState<{
+    lines: string[];
+    firstCardId: string | null;
+    canFix: boolean;
+    kind: ExportKind;
+  } | null>(null);
 
   if (stack === null) return <div class="app" />;
 
-  async function onExport(kind: ExportKind = exportKind): Promise<void> {
+  async function onExport(
+    kind: ExportKind = exportKind,
+    opts: { skipCheck?: boolean } = {},
+  ): Promise<void> {
     const current = store.getStack();
     if (current === null || !store.canExport()) return;
+
+    // Run the "before you share" check FIRST. If the class would meet a dead end,
+    // an unreachable card or unfinished placeholder words, stop and say so; the
+    // download only happens when the teacher chooses "Export anyway" (or there is
+    // nothing to warn about).
+    if (opts.skipCheck !== true) {
+      const report: ReachabilityReport = checkReachability(current);
+      if (!report.ok) {
+        const lines = describeProblems(report, (c) => cardRefLabel(current, c));
+        const first = firstProblemCard(report, current);
+        const flowProblem =
+          report.unreachable.length + report.deadEndQuiz.length + report.deadEndOther.length + report.stuck.length > 0;
+        setShareCheck({ lines, firstCardId: first?.id ?? null, canFix: flowProblem, kind });
+        announce(`Before you share: ${lines.join(" ")}`);
+        return;
+      }
+    }
+    setShareCheck(null);
     setNotice(null);
     setExporting(true);
     const outcome = await exportStackApi(current, kind);
@@ -203,11 +234,38 @@ export function EditorScreen({
         disabled={trying}
       />
 
+      {shareCheck !== null ? (
+        <ShareCheck
+          lines={shareCheck.lines}
+          canFix={shareCheck.canFix}
+          onTakeMe={() => {
+            if (shareCheck.firstCardId !== null) {
+              store.setSelectedCard(shareCheck.firstCardId);
+              store.setSelectedElement(null);
+            }
+            setShareCheck(null);
+          }}
+          onExportAnyway={() => {
+            const kind = shareCheck.kind;
+            setShareCheck(null);
+            void onExport(kind, { skipCheck: true });
+          }}
+          onFix={() => {
+            const kind = shareCheck.kind;
+            setShareCheck(null);
+            const res = store.apply((s) => repairFlow(s));
+            if (res.ok) void onExport(kind);
+            else setNotice(res.message);
+          }}
+        />
+      ) : null}
+
       {exportedName !== null ? (
         <ExportDone
           living={exportedLiving}
           filename={exportedName}
           stack={stack}
+          showCheck={false}
           onOpen={() => {
             // Play it in-app (not a blob: window, which the CSP blanks — J4 H1).
             setPreviewing(true);

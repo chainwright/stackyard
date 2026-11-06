@@ -69,7 +69,8 @@ describe("renderCard() — element types", () => {
 
     renderCard(card, root, state, navigate);
 
-    const p = root.querySelector("p.sy-text");
+    // A story card's first text is the story: p.sy-story (bigger, centred; TASK-27i).
+    const p = root.querySelector("p.sy-story, p.sy-text");
     expect(p).not.toBeNull();
     expect(p?.textContent).toBe("Hello World");
   });
@@ -448,10 +449,17 @@ describe("renderCard() — quiz answer tiles", () => {
     wrong.click();
     expect(correct.classList.contains("sy-tile-reveal")).toBe(true);
 
-    // The reveal uses an ink outline (not stamp red).
+    // TASK-27l: the reveal is a CLEAR highlight for a projected room — a thick
+    // ink frame (not stamp red, not the old 3 px outline) plus a "Right answer"
+    // tab on the tile.
     const css = document.head.querySelector("style")?.textContent ?? "";
     const revealRule = css.match(/\.sy-tile-reveal\s*\{([^}]+)\}/)?.[1] ?? "";
-    expect(revealRule).toMatch(/outline\s*:\s*3px solid var\(--color-ink\)/);
+    expect(revealRule).toMatch(/outline\s*:\s*6px solid var\(--color-ink\)/);
+    expect(revealRule.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(/stamp/); // ink, never stamp red
+    const mark = correct.querySelector(".sy-reveal-mark");
+    expect(mark, "a visible 'Right answer' tab on the revealed tile").not.toBeNull();
+    expect(mark!.textContent).toContain("✓");
+    expect(correct.querySelectorAll(".sy-reveal-mark")).toHaveLength(1);
 
     vi.advanceTimersByTime(600);
     vi.useRealTimers();
@@ -501,7 +509,7 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
    * it on the 4.67:1 paper pairing. jsdom does no layout, so we assert the CSS
    * rule values; pixel overlap is confirmed by the built-player screenshot.
    */
-  it("stamp CSS rule straddles the tile top edge (top:-34px; left:64px; transparent + multiply)", () => {
+  it("stamp CSS rule seats the stamp in the gutter above the tile (top:-38px; left:64px; 24px type; transparent + multiply)", () => {
     // Force styles to be injected by rendering a card.
     const card: Card = {
       id: IDS.card1,
@@ -539,13 +547,19 @@ describe("renderCard() — stamp layout (does not overlap tile label)", () => {
 
     // Straddles the tile's top edge on the label side (over the paper above),
     // lifted clear of the answer word.
-    expect(stampRule).toMatch(/top\s*:\s*-34px/);
+    // TASK-27a: smaller (24px type, line-height 1 => 36px tall) and seated in the
+    // 48px gutter the quiz template leaves above each row of tiles. The pixel
+    // proof — stamp rectangle vs label text rectangle — is scripts/check-text-fit.ts
+    // in real Chrome; this only pins the CSS that produces it.
+    expect(stampRule).toMatch(/top\s*:\s*-38px/);
     expect(stampRule).toMatch(/left\s*:\s*64px/);
+    expect(stampRule).toMatch(/font-size\s*:\s*24px/);
+    expect(stampRule).toMatch(/line-height\s*:\s*1\s*;/);
     // An ink stamp, not a paper sticker: transparent + multiply.
     expect(stampRule).toMatch(/background\s*:\s*transparent/);
     expect(stampRule).toMatch(/mix-blend-mode\s*:\s*multiply/);
     // Rotated and boxed in stamp red.
-    expect(stampRule).toMatch(/transform\s*:\s*rotate\(-8deg\)/);
+    expect(stampRule).toMatch(/transform\s*:\s*rotate\(-4deg\)/);
     expect(stampRule).toMatch(/border\s*:\s*3px solid var\(--color-stamp\)/);
 
     // NOTE: jsdom does no layout; real pixel overlap (stamp over the paper, not

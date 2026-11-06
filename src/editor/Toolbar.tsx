@@ -207,8 +207,9 @@ export function Toolbar({
   return (
     <footer class={disabled ? "toolbar toolbar-disabled" : "toolbar"} aria-disabled={disabled ? "true" : undefined}>
       {tool("Add Text", <TextIcon />, addText)}
-      {tool("Add Button", <ButtonIcon />, addButton)}
-      {selectedCard.kind === "quiz" ? tool("Add Answer", <ButtonIcon />, addAnswerTile) : null}
+      {selectedCard.kind === "quiz"
+        ? tool("Add Answer", <ButtonIcon />, addAnswerTile)
+        : tool("Add Button", <ButtonIcon />, addButton)}
       {tool("Add Picture", <PictureIcon />, addPicture)}
       {tool("Go to card…", <LinkCardIcon />, onLinkClick, { pressed: linking })}
 

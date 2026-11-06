@@ -14,7 +14,7 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
 ## Stack schema
 
 {
-  "id": "<UUID v4>",
+  "id": "<short unique id>",
   "title": "<string, max 120 chars>",
   "theme": {
     "background": "<CSS colour string>",
@@ -23,7 +23,7 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
   },
   "cards": [
     {
-      "id": "<UUID v4>",
+      "id": "<short unique id>",
       "kind": "quiz" | "flash" | "story" | "end",
       "elements": [ ...Element ],
       "actions": [ ...Action ]
@@ -32,21 +32,21 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
 }
 
 Element types:
-- { "type": "text", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
-- { "type": "button", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "field", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+- { "type": "text", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
+- { "type": "button", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
+- { "type": "field", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
 
 Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
 Action types:
-- { "type": "goto", "cardId": "<UUID of an existing card>" }
+- { "type": "goto", "cardId": "<id of an existing card>" }
 - { "type": "score", "delta": 1 }   (correct answer) or { "type": "score", "delta": 0 }
 - { "type": "sound", "sound": "cheer" }  or  { "type": "sound", "sound": "buzz" }
 - { "type": "set", "variable": "<name>", "value": "<string or number>" }
 
 ## Invariants — you must satisfy all seven before responding
 
-1. **Unique IDs** — Every id (stack, cards, elements) must be a UUID v4, unique within the document.
+1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a cardId that exists in the stack.
 3. **Exactly one end card** — The cards array must contain exactly one card with kind "end".
 4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
@@ -72,6 +72,14 @@ Never put the explanation in the first text. Give it exactly one button, labelle
 ## Layout
 
 Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+
+## Wrong answers
+
+Every wrong answer must be CLEARLY false for the age group. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know (do not offer "grass seeds" as a wrong answer for what a robin eats, or "field mouse" as a wrong answer for an animal that eats insects). Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+
+## The end card
+
+The "end" card's text is ONE short line of 70 characters or fewer (for example "Well done — you finished!"). Do not put a question or instructions on it.
 
 ## Audience writing rules — apply to all generated card text
 
@@ -103,7 +111,7 @@ Do not pretty-print — each JSON object must be on exactly one line with no emb
 ## Output framing (JSON Lines)
 
 Line 1 — the stack header (no cards):
-{"kind":"stack","id":"<UUID v4>","title":"<string, max 120 chars>","theme":{"background":"<CSS colour>","foreground":"<CSS colour>","font":"<CSS font-family>"}}
+{"kind":"stack","id":"<short unique id>","title":"<string, max 120 chars>","theme":{"background":"<CSS colour>","foreground":"<CSS colour>","font":"<CSS font-family>"}}
 
 Then one line per card, in play order:
 {"kind":"card","card":{ ...Card }}
@@ -113,28 +121,28 @@ Emit the header line first, then every card line. Nothing follows the last card.
 ## Card schema (the value of "card")
 
 {
-  "id": "<UUID v4>",
+  "id": "<short unique id>",
   "kind": "quiz" | "flash" | "story" | "end",
   "elements": [ ...Element ],
   "actions": [ ...Action ]
 }
 
 Element types:
-- { "type": "text", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
-- { "type": "button", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "field", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+- { "type": "text", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
+- { "type": "button", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
+- { "type": "field", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
 
 Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
 Action types:
-- { "type": "goto", "cardId": "<UUID of an existing card>" }
+- { "type": "goto", "cardId": "<id of an existing card>" }
 - { "type": "score", "delta": 1 }   (correct answer) or { "type": "score", "delta": 0 }
 - { "type": "sound", "sound": "cheer" }  or  { "type": "sound", "sound": "buzz" }
 - { "type": "set", "variable": "<name>", "value": "<string or number>" }
 
 ## Invariants — the full set of lines you emit must satisfy all seven
 
-1. **Unique IDs** — Every id (stack, cards, elements) must be a UUID v4, unique within the document.
+1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a card id you emit on some line.
 3. **Exactly one end card** — Emit exactly one card line with kind "end".
 4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
@@ -172,6 +180,14 @@ Never put the explanation in the first text. Give it exactly one button, labelle
 ## Layout
 
 Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+
+## Wrong answers
+
+Every wrong answer must be CLEARLY false for the age group. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know (do not offer "grass seeds" as a wrong answer for what a robin eats, or "field mouse" as a wrong answer for an animal that eats insects). Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+
+## The end card
+
+The "end" card's text is ONE short line of 70 characters or fewer (for example "Well done — you finished!"). Do not put a question or instructions on it.
 
 ## Audience writing rules — apply to all generated card text
 

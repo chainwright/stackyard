@@ -8,8 +8,8 @@
 
 import type { Stack } from "../shared/types.js";
 import { mountPlayer } from "../player/mount.js";
-import { checkReachability, describeProblems } from "../shared/reachability.js";
-import { primaryText, truncateLabel } from "../shared/cardTitle.js";
+import { checkReachability, describeProblems, firstProblemCard } from "../shared/reachability.js";
+import { cardRefLabel } from "../shared/cardTitle.js";
 import { ensureLivingStyles } from "./styles.js";
 import { LivingEditor } from "./editor.js";
 import { saveCopy } from "./saveCopy.js";
@@ -118,20 +118,22 @@ export function mountLivingApp(
   function doSaveCopy(): void {
     if (!editor) return;
     const edited = editor.getStack();
-    // "Before you share": warn about unreachable cards, answers/buttons that go
-    // nowhere, and cards with no way to move on (TASK-26b/o).
+    // "Before you share" (TASK-27f): the same check the Maker runs before it
+    // exports — unreachable cards, answers/buttons that go nowhere, cards with no
+    // way on, and cards still holding the words they started with. It runs BEFORE
+    // anything is written. OK saves anyway; Cancel writes nothing and takes the
+    // teacher to the first card with a problem.
     const report = checkReachability(edited);
     if (!report.ok) {
-      const label = (c: (typeof edited.cards)[number]): string => {
-        if (c.kind === "end") return "the last card";
-        const i = edited.cards.indexOf(c) + 1;
-        const words = truncateLabel(primaryText(c), 24);
-        return words.length > 0 ? `Card ${i} — ${words}` : `Card ${i}`;
-      };
+      const lines = describeProblems(report, (c) => cardRefLabel(edited, c));
       const proceed = window.confirm(
-        `Before you share:\n• ${describeProblems(report, label).join("\n• ")}\n\nSave the copy anyway?`,
+        `Before you share:\n• ${lines.join("\n• ")}\n\nPress OK to save the copy anyway, or Cancel to go to the card.`,
       );
-      if (!proceed) return;
+      if (!proceed) {
+        const first = firstProblemCard(report, edited);
+        if (first) editor.selectCard(first.id);
+        return;
+      }
     }
     const result = saveCopy(edited, { pristineHtml });
     if (result.ok) {

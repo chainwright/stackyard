@@ -448,8 +448,10 @@ describe("streamGenerate — streamed attempt fails → reset + fallback", () =>
     });
 
     expect(lines.some((l) => l.type === "reset")).toBe(false);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toEqual({ type: "error", message: "No cards for you." });
+    // An early `start` first (the client is never left in silence), then the error.
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toEqual({ type: "start", total: 0, title: "", isFallback: false });
+    expect(lines[1]).toEqual({ type: "error", message: "No cards for you." });
     expect(ended()).toBe(true);
   });
 

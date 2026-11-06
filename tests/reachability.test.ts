@@ -185,8 +185,8 @@ describe("TASK-26o: the share check catches both dead ends", () => {
     const flash: CardT = {
       id: U(10), kind: "flash", actions: [],
       elements: [
-        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Term" },
-        { type: "text", id: U(12), x: 0, y: 60, w: 100, h: 50, content: "Explanation" },
+        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Evaporation" },
+        { type: "text", id: U(12), x: 0, y: 60, w: 100, h: 50, content: "Water rises as vapour." },
       ],
     };
     const quizCard: CardT = {

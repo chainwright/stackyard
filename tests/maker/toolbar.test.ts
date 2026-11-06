@@ -127,12 +127,21 @@ describe("TASK-16: Toolbar", () => {
     expect(after).toBe(before + 1);
   });
 
-  it("Add Button adds a real (plain) button and keeps the quiz valid", async () => {
+  it("a quiz card offers one Add Answer and no separate Add Button (TASK-27h)", async () => {
+    const store = freshStore();
+    store.setSelectedCard(store.getStack()!.cards[0]!.id);
+    const root = mount(store);
+    const labels = Array.from(root.querySelectorAll("button.tool-card")).map((b) => (b.textContent ?? "").trim());
+    expect(labels.filter((l) => l.includes("Add Answer"))).toHaveLength(1);
+    expect(labels.some((l) => l.includes("Add Button"))).toBe(false);
+  });
+
+  it("Add Answer adds a real (plain) button and keeps the quiz valid", async () => {
     const store = freshStore();
     store.setSelectedCard(store.getStack()!.cards[0]!.id);
     const root = mount(store);
     const before = store.getStack()!.cards[0]!.elements.filter((e) => e.type === "button").length;
-    toolByLabel(root, "Add Button").click();
+    toolByLabel(root, "Add Answer").click();
     await flush();
     const after = store.getStack()!.cards[0]!.elements.filter((e) => e.type === "button").length;
     expect(after).toBe(before + 1);

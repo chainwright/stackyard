@@ -137,6 +137,7 @@ export function buildLivingHtml(options: BuildLivingHtmlOptions): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title>
+  <meta name="stackyard-copy" content="0">
   <style>
 ${SHELL_CSS}
 ${fontBlock}  </style>

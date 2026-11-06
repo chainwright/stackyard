@@ -333,7 +333,7 @@ describe("TASK-26i: choosing a ready-made deck is not a failure", () => {
     render(h(App, {}), root);
     mounted = root;
     await flush();
-    root.querySelector<HTMLButtonElement>(".ready-made .example-tab")!.click();
+    root.querySelector<HTMLButtonElement>(".ready-made-link")!.click();
     await flush();
     const notice = root.querySelector(".notice")?.textContent ?? "";
     expect(notice).toContain("Here's a ready-made deck you can edit.");
@@ -381,9 +381,9 @@ describe("TASK-26f: an honest wait screen", () => {
     render(h(StartScreen, { store, ...props }), root);
   };
 
-  it("never promises 20 seconds; it says 30–45", () => {
+  it("never promises 20 seconds; it says 30–60", () => {
     mountWait({ __demoDealt: [], __demoTotal: 0 });
-    expect(root.textContent).toContain("About 30–45 seconds");
+    expect(root.textContent).toContain("30–60 seconds");
     expect(root.textContent).not.toContain("20 seconds");
   });
 

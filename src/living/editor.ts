@@ -14,6 +14,7 @@ import {
   editLabel,
   setGotoTarget,
   addCardAfter,
+  addAnswer,
   takeLastInsertedCardId,
   removeCard,
   markCorrect,
@@ -39,6 +40,14 @@ export class LivingEditor {
   ) {
     this.stack = stack;
     this.selectedCardId = stack.cards[0]!.id;
+  }
+
+  /** Select a card (e.g. "Take me to the card" from the share check). */
+  selectCard(cardId: string): void {
+    if (!this.stack.cards.some((c) => c.id === cardId)) return;
+    this.selectedCardId = cardId;
+    this.selectedElementId = null;
+    this.render();
   }
 
   /** The current edited stack (what Save a Copy writes). */
@@ -90,9 +99,12 @@ export class LivingEditor {
       b.type = "button";
       if (c.id === this.selectedCardId) b.setAttribute("aria-current", "true");
       const num = el("span", "num");
-      num.textContent = String(i + 1);
+      num.textContent = `Card ${i + 1}`;
       b.appendChild(num);
-      b.appendChild(document.createTextNode(this.cardLabel(c)));
+      const text = el("span", "txt");
+      text.textContent = `— ${this.cardLabel(c)}`;
+      b.title = this.cardLabel(c);
+      b.appendChild(text);
       b.addEventListener("click", () => {
         this.selectedCardId = c.id;
         this.selectedElementId = null;
@@ -182,7 +194,7 @@ export class LivingEditor {
       const w = area.clientWidth - 32;
       const h = area.clientHeight - 32;
       if (w <= 0 || h <= 0) return;
-      const s = Math.min(w / 820, h / 640, 1);
+      const s = Math.min(w / 820, h / 640, 1.4);
       const inner = stackWrap.querySelector<HTMLElement>(".sy-card-stack");
       if (inner) {
         inner.style.transform = `scale(${s})`;
@@ -245,6 +257,13 @@ export class LivingEditor {
       });
       row.appendChild(rm);
     }
+    if (card.kind === "quiz") {
+      row.appendChild(
+        this.button("+ Add an answer", "sy-living-btn", () => {
+          if (this.apply((s) => addAnswer(s, card.id))) this.render();
+        }),
+      );
+    }
     insp.appendChild(row);
 
     const tryRow = el("div", "sy-living-row");
@@ -269,7 +288,7 @@ export class LivingEditor {
       if (this.apply((s) => markCorrect(s, card.id, elm.id))) this.render();
     });
     label.appendChild(radio);
-    label.appendChild(document.createTextNode("This one is right"));
+    label.appendChild(document.createTextNode("Right answer"));
     field.appendChild(label);
     const hint = el("p", "sy-living-hint");
     const right = card.elements.find(
@@ -300,14 +319,14 @@ export class LivingEditor {
       ta.addEventListener("input", () => {
         // Creates the side if the card has none yet — typing is never dropped.
         this.apply((s) => setFlashSide(s, card.id, side, ta.value));
-        const list = this.host.querySelector<HTMLElement>(".sy-living-list");
-        if (list) list.replaceWith(this.renderList());
+        // Refresh the card preview AND the list label (TASK-27x).
+        this.refreshPreviewOnly();
       });
       field.appendChild(label);
       field.appendChild(ta);
       return field;
     };
-    wrap.appendChild(make("Front (the word)", "front", texts[0]?.content ?? ""));
+    wrap.appendChild(make("Front (the term)", "front", texts[0]?.content ?? ""));
     wrap.appendChild(make("Back (the explanation)", "back", texts[1]?.content ?? ""));
     return wrap;
   }
@@ -330,7 +349,7 @@ export class LivingEditor {
   private labelField(elm: ButtonElement): HTMLElement {
     const field = el("div", "sy-living-field");
     const label = document.createElement("label");
-    label.textContent = "Button text";
+    label.textContent = this.card().kind === "quiz" ? "Answer" : "Button text";
     const input = document.createElement("input");
     input.type = "text";
     input.value = elm.label;

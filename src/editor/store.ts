@@ -193,6 +193,8 @@ export class EditorStore {
       isReadyMadeExample?: boolean;
       fallbackReason?: import("../shared/types.js").FallbackReason;
       fallbackOnline?: boolean;
+      /** A one-line note to show on the editor (TASK-27t). */
+      note?: string;
     },
   ): void {
     this.state.stack = stack;
@@ -209,6 +211,11 @@ export class EditorStore {
       delete (this.state as { fallbackReason?: unknown }).fallbackReason;
     }
     this.state.fallbackOnline = opts?.fallbackOnline ?? true;
+    if (opts?.note !== undefined) {
+      this.state.startNote = opts.note;
+    } else {
+      delete (this.state as { startNote?: unknown }).startNote;
+    }
     this.state.screen = "editor";
     persistence.save(stack, this.hooks.storage);
     this.changed();

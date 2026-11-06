@@ -196,3 +196,41 @@ describe("TASK-26: the generation prompts", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// TASK-27 e, m, b — distractors, ids, the end line
+
+describe("TASK-27: the generation prompts (round 3)", () => {
+  const all = (): Array<[string, string]> => [
+    ["one-shot", buildPrompt2({ prompt: "x" }).system],
+    ["streaming", buildStreamPrompt({ prompt: "x" }).system],
+    ["retry", buildRetryPrompt({ prompt: "x" }, ["quiz-answer"]).system],
+  ];
+
+  it("(e) every prompt demands wrong answers that are CLEARLY false, with the live examples", () => {
+    for (const [name, sys] of all()) {
+      expect(sys, name).toContain("## Wrong answers");
+      expect(sys, name).toMatch(/CLEARLY false for the age group/);
+      expect(sys, name).toMatch(/partly true/);
+      expect(sys, name).toMatch(/different category from the right answer/);
+      expect(sys, name).toMatch(/two defensible answers, rewrite the question/);
+      expect(sys, name).toContain("grass seeds");
+      expect(sys, name).toContain("field mouse");
+    }
+  });
+
+  it("(m) ids may be any short unique strings — the prompt no longer asks for UUIDs", () => {
+    for (const [name, sys] of all()) {
+      expect(sys, name).toMatch(/short, unique id string/);
+      expect(sys, name).not.toMatch(/must be a UUID v4/);
+      expect(sys, name).not.toContain("<UUID");
+    }
+  });
+
+  it("(b) every prompt asks for an end line of 70 characters or fewer", () => {
+    for (const [name, sys] of all()) {
+      expect(sys, name).toContain("## The end card");
+      expect(sys, name).toMatch(/ONE short line of 70 characters or fewer/);
+    }
+  });
+});

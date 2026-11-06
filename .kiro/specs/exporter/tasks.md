@@ -670,3 +670,36 @@ change in Play.
 **Gate (TASK-26 a, e):** `npm test` and `npx tsc --noEmit` exit 0; `npm run check:living-file` passes with the new click-through.
 
 > **Design note (supersedes the TASK-24 note above):** "Save a Copy re-emits the *current document*" was wrong for a document that has been mounted. The invariant is now: **a copy is built from the pristine snapshot taken before any UI mounts, with only `#stack-data` replaced.** The live DOM is never serialised.
+
+
+---
+
+## Phase 8 — Round-3 fixes to the living file and the file names (TASK-27 f, g, j, x, r)
+
+> Owned here: the living file (**x**, **j**, the Save-a-Copy half of **f**), file
+> names (**g**) and the font licence text (**r**).
+
+### TASK-27x: typing into a flash card's Front/Back updates the preview  *(P1)*
+  - **Bug.** `flashFields` applied the edit and refreshed the card LIST but never the card PREVIEW; the canvas kept the old word until another card was selected (J1 P1-4, J4 P1-3). Round-2 fixed the same class of bug for the other fields with one shared `mountPreview`; this handler bypassed it.
+  - **Fix.** Every field handler ends in the one `refreshPreviewOnly()`.
+  - **Acceptance criteria.** DOM test: type "XYZ" into Front and into Back; the canvas text contains it immediately, and the list label too.
+
+### TASK-27f (living half): Save a Copy checks first, and spots a placeholder card  *(P2)*
+  - **Fix.** Save a Copy runs the same "before you share" check as the Maker, **before** writing, and the check also flags an untouched placeholder card (question "Your question?", answers "Right answer" / "Wrong answer", or a flash card still "Term" / "Explanation", or a story still "Your text"). The confirm lists each problem and offers to go to the card.
+  - **Acceptance criteria.** A copy with a placeholder card prompts; declining writes nothing (no download) and selects the offending card; accepting writes.
+
+### TASK-27g: file names tell the files apart  *(P2)*
+  - **Bug.** Class and living exports had the same name; every copy was "(copy)", so a copy of a copy collided in Downloads.
+  - **Fix.** The class export gets a `-class` suffix (`<title>-class.html`); the living export keeps `<title>.html`. A copy is named from the file it was made from: `<title> (copy).html`, then `(copy 2)`, `(copy 3)`… The number is read from the title's own file name, which the living file knows (`location`/`document.title` carry no number, so the copy number is stored in the file as `data-copy="N"` on `#stack-data` and incremented on each Save a Copy, replaced by `replaceStackData`).
+  - **Acceptance criteria.** Unit tests: `classFileName`, `copyFileName(title, n)`; chaining three saves in jsdom names them `(copy)`, `(copy 2)`, `(copy 3)`; the server's Content-Disposition for a class export ends `-class.html`, and the Maker's download uses the same name; byte-stability of copies is unchanged apart from the counter digit (the browser gate still asserts identical sizes for same-length counters).
+
+### TASK-27j: the living editor looks like the Maker  *(P2)*
+  - **Fix.** Scale cap 1 → 1.4 (as the player). List labels single line with ellipsis. The "Back to editing" pill sits above the rings. Inspector type uses the Maker's tokens (18 px labels, 44 px controls). Wording matches the website: "Front (the term)", "Back (the explanation)", "Answer", "Right answer", "Card 1 — …". A "+ Add an answer" control on quiz cards (the shared `addAnswer`).
+  - **Acceptance criteria.** Tests: the fit scale reaches 1.4 on a large area and never exceeds it; list buttons carry the ellipsis style; the inspector uses the website's labels (string-equal to the Maker's); "+ Add an answer" adds a linked answer and stops at four.
+
+### TASK-27r: the OFL licence text travels in the export  *(P2)*
+  - **Bug.** The export carried the copyright line and a URL; the subset fonts' licence name table is empty, so only a pointer to the licence travelled with the file. OFL §2 asks for the notice AND the licence.
+  - **Fix.** Inline the SIL OFL 1.1 text once in a CSS comment in both templates.
+  - **Acceptance criteria.** Test: both the class and the living export contain "SIL OPEN FONT LICENSE Version 1.1" and "PERMISSION & CONDITIONS".
+
+**Gate (TASK-27 exporter items):** `npm test` and `npx tsc --noEmit` exit 0; `npm run check:living-file` passes.

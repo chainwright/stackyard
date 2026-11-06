@@ -15,7 +15,7 @@
 
 import type { Stack } from "../shared/types.js";
 import { validate } from "../shared/validator.js";
-import { replaceStackData } from "../shared/escapeStackJson.js";
+import { replaceStackData, readCopyCount, withCopyCount } from "../shared/escapeStackJson.js";
 import { copyFileName } from "../shared/messages.js";
 
 export type SaveResult =
@@ -51,12 +51,16 @@ export function saveCopy(stack: Stack, opts: SaveCopyOptions): SaveResult {
     return { ok: false, message: "We couldn't find the original file to copy, so the copy wasn't saved." };
   }
 
-  const html = replaceStackData(opts.pristineHtml, stack);
-  if (html === null) {
+  const replaced = replaceStackData(opts.pristineHtml, stack);
+  if (replaced === null) {
     return { ok: false, message: "We couldn't find where to write the cards, so the copy wasn't saved." };
   }
+  // Count this copy: the file remembers how many times it has been copied, so a
+  // copy of a copy is "(copy 2)", not "(copy)" again (TASK-27g).
+  const copyNumber = readCopyCount(opts.pristineHtml) + 1;
+  const html = withCopyCount(replaced, copyNumber);
 
-  const filename = copyFileName(stack.title);
+  const filename = copyFileName(stack.title, copyNumber);
   const doc = opts.doc ?? document;
   const download = opts.download ?? defaultDownload(doc);
   download(html, filename);

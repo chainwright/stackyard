@@ -60,13 +60,24 @@ export function safeFileName(title: string): string {
 }
 
 /**
- * The file name for a Save-a-Copy of the living file: "<title> (copy).html".
- * A copy must never take the original's name — on a real laptop the browser
- * would call it "…(1).html" and the teacher could not tell which file is new
- * (J2 step 17). Built from safeFileName so it follows the same safe-character
- * rule as every other export.
+ * The file name of the plain CLASS export: "<title>-class.html". The living
+ * export keeps "<title>.html", so the two files a teacher makes from one lesson
+ * can be told apart in Downloads (J2 #9).
  */
-export function copyFileName(title: string): string {
+export function classFileName(title: string): string {
   const base = safeFileName(title).replace(/\.html$/, "");
-  return `${base} (copy).html`;
+  return `${base}-class.html`;
+}
+
+/**
+ * The file name for the Nth Save-a-Copy of the living file: "<title> (copy).html",
+ * then "(copy 2)", "(copy 3)"… A copy must never take the original's name, and a
+ * copy of a copy must not take its parent's (a second fix on the class laptop
+ * used to collide with the first in Downloads: J2 #8, J1 P2-7). `n` is how many
+ * times the lesson has been copied, counting this one (1 = the first copy).
+ */
+export function copyFileName(title: string, n = 1): string {
+  const base = safeFileName(title).replace(/\.html$/, "");
+  const count = Number.isFinite(n) && n >= 2 ? Math.floor(n) : 1;
+  return count === 1 ? `${base} (copy).html` : `${base} (copy ${count}).html`;
 }

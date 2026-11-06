@@ -60,3 +60,21 @@ export function cardTitle(card: Card, maxLength = 40): string {
   if (card.kind === "flash") return "Flash card";
   return card.kind.charAt(0).toUpperCase() + card.kind.slice(1) + " card";
 }
+
+/**
+ * A short plain reference to a card for a sentence ("Card 5 — Which people began
+ * raiding Ire…", or "the last card"), used by every "before you share" message in
+ * the Maker AND the living file so they read the same.
+ */
+export function cardRefLabel(
+  stack: { cards: Card[] },
+  card: Card,
+  maxLength = 24,
+): string {
+  if (card.kind === "end") return "the last card";
+  const index = stack.cards.findIndex((c) => c.id === card.id);
+  const words = truncateLabel(primaryText(card), maxLength);
+  const n = index >= 0 ? index + 1 : 0;
+  if (n === 0) return words.length > 0 ? words : "a card";
+  return words.length > 0 ? `Card ${n} — ${words}` : `Card ${n}`;
+}

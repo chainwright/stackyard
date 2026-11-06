@@ -15,6 +15,51 @@
 
 import type { Stack, Card, Action } from "./types.js";
 import { buttonsWithoutGoto, cardHasForward } from "./flow.js";
+import { primaryText } from "./cardTitle.js";
+
+/** The words a freshly added card carries (src/editor/operations.ts seedCard). */
+export const PLACEHOLDER_WORDS = {
+  question: "Your question?",
+  rightAnswer: "Right answer",
+  wrongAnswer: "Wrong answer",
+  term: "Term",
+  explanation: "Explanation",
+  story: "Your text",
+} as const;
+
+/**
+ * True when a card still holds the placeholder words it was created with. A
+ * quiz is a placeholder if its question or any answer is untouched; a flash card
+ * if its front or back is; a story if its text is. (The end card has no seed
+ * text to leave behind.)
+ */
+export function isPlaceholderCard(card: Card): boolean {
+  const labels = card.elements
+    .filter((e) => e.type === "button")
+    .map((e) => (e.type === "button" ? e.label.trim() : ""));
+  const texts = card.elements
+    .filter((e) => e.type === "text")
+    .map((e) => (e.type === "text" ? e.content.trim() : ""));
+  switch (card.kind) {
+    case "quiz":
+      return (
+        primaryText(card) === PLACEHOLDER_WORDS.question ||
+        labels.includes(PLACEHOLDER_WORDS.rightAnswer) ||
+        labels.includes(PLACEHOLDER_WORDS.wrongAnswer)
+      );
+    case "flash":
+      return texts[0] === PLACEHOLDER_WORDS.term || texts[1] === PLACEHOLDER_WORDS.explanation;
+    case "story":
+      return texts[0] === PLACEHOLDER_WORDS.story;
+    default:
+      return false;
+  }
+}
+
+/** Placeholder cards, in deck order. */
+export function placeholderCards(stack: Stack): Card[] {
+  return stack.cards.filter(isPlaceholderCard);
+}
 
 export interface ReachabilityReport {
   /** Card ids reachable from the first card by following any goto. */
@@ -31,6 +76,19 @@ export interface ReachabilityReport {
    * one of the dead-end lists are not repeated here.
    */
   stuck: Card[];
+  /**
+   * Reachable cards that can never get to the end card: a branch that loops
+   * back on itself (card 3's only button goes to card 3). The class would play
+   * forever. Cards already listed as dead ends or stuck are not repeated
+   * (TASK-27 z3).
+   */
+  trapped: Card[];
+  /**
+   * Cards still holding the words "+ Add Card" gave them ("Your question?",
+   * "Right answer", "Term", "Your text"…): started but never filled in. They
+   * play, so the class would meet them (TASK-27f).
+   */
+  placeholders: Card[];
   /** True when nothing is wrong. */
   ok: boolean;
 }
@@ -85,17 +143,51 @@ export function checkReachability(stack: Stack): ReachabilityReport {
   const reported = new Set([...deadEndQuiz, ...deadEndOther].map((c) => c.id));
   const stuck = live.filter((c) => !reported.has(c.id) && !cardHasForward(c));
 
+  // Reverse reachability: walk BACKWARDS from the end card(s) over every goto
+  // (card-level auto-advance AND buttons). A live card that is not reached this
+  // way can never finish.
+  const canFinish = new Set<string>(stack.cards.filter((c) => c.kind === "end").map((c) => c.id));
+  const incoming = new Map<string, string[]>();
+  for (const c of stack.cards) {
+    for (const to of outgoing(c)) {
+      if (!byId.has(to)) continue;
+      const list = incoming.get(to);
+      if (list) list.push(c.id);
+      else incoming.set(to, [c.id]);
+    }
+  }
+  const back = [...canFinish];
+  while (back.length > 0) {
+    const id = back.pop()!;
+    for (const from of incoming.get(id) ?? []) {
+      if (!canFinish.has(from)) {
+        canFinish.add(from);
+        back.push(from);
+      }
+    }
+  }
+  const stuckIds = new Set(stuck.map((c) => c.id));
+  const trapped = live.filter(
+    (c) => !reported.has(c.id) && !stuckIds.has(c.id) && !canFinish.has(c.id),
+  );
+
+  const placeholders = placeholderCards(stack);
+
   return {
     reachable,
     unreachable,
     deadEndQuiz,
     deadEndOther,
     stuck,
+    trapped,
+    placeholders,
     ok:
       unreachable.length === 0 &&
       deadEndQuiz.length === 0 &&
       deadEndOther.length === 0 &&
-      stuck.length === 0,
+      stuck.length === 0 &&
+      trapped.length === 0 &&
+      placeholders.length === 0,
   };
 }
 
@@ -109,5 +201,25 @@ export function describeProblems(
   for (const c of report.deadEndQuiz) lines.push(`${label(c)} has an answer that goes nowhere.`);
   for (const c of report.deadEndOther) lines.push(`${label(c)} has a button that goes nowhere.`);
   for (const c of report.stuck) lines.push(`${label(c)} has no way to move on.`);
+  for (const c of report.trapped) lines.push(`${label(c)} loops back on itself and never reaches the last card.`);
+  for (const c of report.placeholders) lines.push(`${label(c)} still has the words it started with — fill it in or remove it.`);
   return lines;
+}
+
+/**
+ * The first card (in deck order) that has anything wrong with it, for "Take me to
+ * the card". Unreachable cards count too.
+ */
+export function firstProblemCard(report: ReachabilityReport, stack: Stack): Card | undefined {
+  const bad = new Set<string>(
+    [
+      ...report.unreachable,
+      ...report.deadEndQuiz,
+      ...report.deadEndOther,
+      ...report.stuck,
+      ...report.trapped,
+      ...report.placeholders,
+    ].map((c) => c.id),
+  );
+  return stack.cards.find((c) => bad.has(c.id));
 }

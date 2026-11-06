@@ -264,11 +264,23 @@ describe("TASK-26d: invented pictures never reach the editor or the export", () 
 // (j) text style
 
 describe("TASK-26j: sentence-case answers, no 'Question N:' prefixes", () => {
-  it("converts unmistakable Title Case to sentence case", () => {
-    expect(sentenceCaseLabel("Along Edges Of Tectonic Plates")).toBe("Along edges of tectonic plates");
-    expect(sentenceCaseLabel("It Turns Into Wood")).toBe("It turns into wood");
-    expect(sentenceCaseLabel("They Fan It With Their Wings")).toBe("They fan it with their wings");
-    expect(sentenceCaseLabel("Rainbows In The Sky")).toBe("Rainbows in the sky");
+  it("softens unmistakable Title Case by lowercasing only the small function words", () => {
+    // TASK-27A: content words are never lowercased (that corrupted names); the
+    // prompt asks for sentence case, this only tidies a model that ignored it.
+    expect(sentenceCaseLabel("Along Edges Of Tectonic Plates")).toBe("Along Edges of Tectonic Plates");
+    expect(sentenceCaseLabel("It Turns Into Wood")).toBe("It Turns into Wood");
+    expect(sentenceCaseLabel("They Fan It With Their Wings")).toBe("They Fan it with their Wings");
+    expect(sentenceCaseLabel("Rainbows In The Sky")).toBe("Rainbows in the Sky");
+  });
+
+  it("TASK-27A: never lowercases a proper noun (the five names J4 measured)", () => {
+    expect(sentenceCaseLabel("The Battle Of Hastings")).toBe("The Battle of Hastings");
+    expect(sentenceCaseLabel("United States Of America")).toBe("United States of America");
+    expect(sentenceCaseLabel("Isle Of Man")).toBe("Isle of Man");
+    expect(sentenceCaseLabel("Bank Of England")).toBe("Bank of England");
+    expect(sentenceCaseLabel("Treaty Of Versailles")).toBe("Treaty of Versailles");
+    // …and a name with no function word is untouched.
+    expect(sentenceCaseLabel("King Brian Boru")).toBe("King Brian Boru");
   });
 
   it("leaves names, short labels, acronyms and already-sentence-case labels alone", () => {
@@ -280,7 +292,7 @@ describe("TASK-26j: sentence-case answers, no 'Question N:' prefixes", () => {
   });
 
   it("keeps acronyms and 'I' when converting", () => {
-    expect(sentenceCaseLabel("How DNA Is Copied")).toBe("How DNA is copied");
+    expect(sentenceCaseLabel("How DNA Is Copied")).toBe("How DNA is Copied");
   });
 
   it("strips 'Question 3:', 'Q3.' and 'Card 4 of 8 –' but never empties the text", () => {
@@ -299,7 +311,7 @@ describe("TASK-26j: sentence-case answers, no 'Question N:' prefixes", () => {
     const q = c.elements.find((e) => e.type === "text");
     expect(q && q.type === "text" && q.content).toBe("Why do volcanoes erupt?");
     const labels = c.elements.filter((e) => e.type === "button").map((e) => (e.type === "button" ? e.label : ""));
-    expect(labels.sort()).toEqual(["Along edges of tectonic plates", "Because of the moon"].sort());
+    expect(labels.sort()).toEqual(["Along Edges of Tectonic Plates", "Because of the Moon"].sort());
   });
 });
 

@@ -363,10 +363,11 @@ export function Canvas({
             class="right-tag"
             style={{
               position: "absolute",
-              // Top-right corner INSIDE the tile, so it never overlaps a long
-              // answer label or pokes past the tile's right edge.
-              left: `${(correctTile.x + correctTile.w - 158) * scale}px`,
-              top: `${(correctTile.y + 8) * scale}px`,
+              // A tab hung ABOVE the tile's top-right edge (in the 48 px
+              // gutter), so it never covers a wrapped answer.
+              left: `${(correctTile.x + correctTile.w - 8) * scale}px`,
+              top: `${(correctTile.y - 30) * scale}px`,
+              transform: "translateX(-100%)",
               zIndex: 29,
             }}
           >
@@ -378,7 +379,7 @@ export function Canvas({
             class="branch-label"
             style={{
               left: `${el.x * scale}px`,
-              top: `${(el.y + el.h + 18) * scale}px`,
+              top: `${(el.y + el.h + 3) * scale}px`,
               width: `${el.w * scale}px`,
             }}
           >

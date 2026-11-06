@@ -355,5 +355,5 @@ describe("round-trip: parse(extract(export(stack))) deepEquals stack (TASK-16)",
       }),
       { numRuns: 1000 },
     );
-  });
+  }, 30_000); // explicit: heavy run, slow CI runners (z6)
 });

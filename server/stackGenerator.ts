@@ -37,6 +37,7 @@ async function attempt(
   messages: { system: string; user: string },
   temperature: number,
   onModelCall?: () => void,
+  signal?: AbortSignal,
 ): Promise<
   | { ok: true; stack: import("../src/shared/types.js").Stack }
   | { ok: false; errors: string[] }
@@ -44,7 +45,7 @@ async function attempt(
   // LlmUnavailableError and ConfigurationError are intentionally NOT caught here —
   // they propagate up to generate() where they trigger the fallback path.
   onModelCall?.();
-  const raw = await call(messages, { temperature });
+  const raw = await call(messages, signal === undefined ? { temperature } : { temperature, signal });
 
   let parsed: unknown;
   try {
@@ -86,6 +87,12 @@ export interface GenerateOptions {
    * the daily budget — one unit per call, never per request (J4 M2).
    */
   onModelCall?: () => void;
+  /**
+   * The client's connection signal. When it aborts, the in-flight model call is
+   * cancelled and no retry is started, so an abandoned request stops spending
+   * (TASK-27 z5).
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -127,15 +134,18 @@ export async function generate(
   try {
     // --- First attempt (temperature 0.7) ---
     const firstMessages = buildPrompt(request);
-    const first = await attempt(firstMessages, 0.7, opts.onModelCall);
+    const first = await attempt(firstMessages, 0.7, opts.onModelCall, opts.signal);
 
     if (first.ok) {
       return { ok: true, stack: first.stack, isFallback: false };
     }
 
+    // Nobody is listening any more: do not pay for a retry.
+    if (opts.signal?.aborted) return { ok: false, message: "The request was cancelled." };
+
     // --- Retry attempt (temperature 0.2) ---
     const retryMessages = buildRetry(request, first.errors);
-    const retry = await attempt(retryMessages, 0.2, opts.onModelCall);
+    const retry = await attempt(retryMessages, 0.2, opts.onModelCall, opts.signal);
 
     if (retry.ok) {
       return { ok: true, stack: retry.stack, isFallback: false };
@@ -149,6 +159,7 @@ export async function generate(
         "We couldn't build your set of cards. Try rephrasing your description and have another go.",
     };
   } catch (err) {
+    if (opts.signal?.aborted) return { ok: false, message: "The request was cancelled." };
     // A missing key, an unreachable/erroring model, or a deadline → return the
     // deterministic ready-made deck, labelled with the honest reason so the
     // Maker can say WHY (never "no internet" when the teacher is online).

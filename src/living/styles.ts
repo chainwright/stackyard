@@ -35,17 +35,19 @@ export const LIVING_STYLES = `
 
 .sy-living-body { flex: 1 1 auto; display: flex; min-height: 0; }
 .sy-living-list {
-  flex: 0 0 220px; overflow-y: auto; background: #FBF8F1;
+  flex: 0 0 240px; overflow-y: auto; background: #FBF8F1;
   border-right: 1px solid #C9D3E3; padding: 8px;
 }
 .sy-living-list button {
   display: block; width: 100%; text-align: left; font-family: inherit;
-  font-size: 16px; background: #FBF8F1; border: 1px solid #C9D3E3;
+  font-size: 18px; background: #FBF8F1; border: 1px solid #C9D3E3;
   border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
   color: #1E2A47;
 }
 .sy-living-list button[aria-current="true"] { border: 2px solid #1E2A47; background: #fff; }
 .sy-living-list .num { font-weight: 700; margin-right: 6px; }
+.sy-living-list button { display: flex; align-items: baseline; white-space: nowrap; }
+.sy-living-list .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 .sy-living-main { flex: 1 1 auto; display: flex; min-height: 0; }
 .sy-living-canvas {
@@ -58,15 +60,15 @@ export const LIVING_STYLES = `
   flex: 0 0 300px; overflow-y: auto; overflow-x: hidden; background: #FBF8F1;
   border-left: 1px solid #C9D3E3; padding: 14px; overflow-wrap: anywhere;
 }
-.sy-living-inspector h2 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; margin: 0 0 10px; }
+.sy-living-inspector h2 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 22px; line-height: 1.3; margin: 0 0 10px; }
 .sy-living-field { margin-bottom: 14px; }
-.sy-living-field label { display: block; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.sy-living-field label { display: block; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
 .sy-living-field input, .sy-living-field textarea, .sy-living-field select {
-  width: 100%; font: inherit; font-size: 16px; padding: 7px 9px;
+  width: 100%; font: inherit; font-size: 18px; padding: 7px 9px;
   border: 1.5px solid #C9D3E3; border-radius: 8px; color: #1E2A47; background: #fff;
 }
 .sy-living-field textarea { min-height: 90px; resize: vertical; }
-.sy-living-hint { font-size: 15px; color: #4a5878; margin-top: 4px; line-height: 1.4; }
+.sy-living-hint { font-size: 18px; color: #4a5878; margin-top: 4px; line-height: 1.4; }
 .sy-living-hint.warn {
   color: #1E2A47; border-left: 3px solid #1E2A47; padding-left: 8px;
   background: rgba(30,42,71,0.05); border-radius: 4px;
@@ -84,9 +86,9 @@ export const LIVING_STYLES = `
   font-family: 'Stackyard Reading', system-ui, sans-serif;
 }
 
-.sy-living-tryit { position: relative; }
+.sy-living-tryit { position: relative; padding-top: 48px; } /* the pill sits above the rings */
 .sy-living-tryit .sy-back {
-  position: absolute; top: 8px; left: 8px; z-index: 5;
+  position: absolute; top: 2px; left: 8px; z-index: 5;
 }
 `.trim();
 

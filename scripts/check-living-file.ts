@@ -31,6 +31,8 @@
 // browser-less machine; where Chrome exists it fails hard.
 
 import { writeFileSync, mkdtempSync, existsSync } from "node:fs";
+import { withCopyCount } from "../src/shared/escapeStackJson.js";
+
 import os from "node:os";
 import path from "node:path";
 import { exportLivingStack, exportStack } from "../server/exporter.js";
@@ -427,7 +429,9 @@ async function main(): Promise<void> {
   if (Math.abs(s1 - livingBytes) > 1024) {
     fail(`copy 1 (${s1} B) should be within 1 KB of the original (${livingBytes} B).`);
   }
-  if (copy1 !== copy2 || copy2 !== copy3) {
+  // The copy counter (TASK-27g) legitimately differs between saves; ignore it.
+  const sameCopy = (x: string, y: string): boolean => withCopyCount(x, 0) === withCopyCount(y, 0);
+  if (!sameCopy(copy1, copy2) || !sameCopy(copy2, copy3)) {
     fail("copies 1, 2 and 3 should be byte-identical (nothing was edited between saves).");
   }
 

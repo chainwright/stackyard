@@ -40,6 +40,10 @@ describe("TASK-26m: three sample lessons in samples/", () => {
         const stack = JSON.parse(m[1]!) as Stack;
         expect(validate(stack).valid).toBe(true);
         expect(stack.title).toBe(build().title);
+        // The WHOLE stack, not just the title (TASK-27n): a stale sample with
+        // the right name must fail. Images are inlined in the file, so compare
+        // against the same deck the exporter inlined.
+        expect(stack).toEqual(JSON.parse(JSON.stringify(build())));
       });
 
       it("loads nothing from the network (no external src/href/url/@import)", () => {
@@ -84,7 +88,7 @@ describe("TASK-26m: the README is honest for judges", () => {
   });
 
   it("lists every deck picture with its creator, licence and source (CC0 photos, no people)", () => {
-    expect(README).toMatch(/D Coetzee \| CC0 1\.0/);
+    expect(README).toMatch(/Chiara Coetzee \| CC0 1\.0/);
     expect(README).toMatch(/m\.jan\.adamczyk \| CC0 1\.0/);
     expect(README).not.toMatch(/cartoon of a pupil/);
   });
@@ -114,13 +118,16 @@ describe("TASK-26n: the tile shapes are documented as an accessibility feature",
   it("is in the README", () => {
     expect(README).toMatch(/^## Accessibility: answer tiles carry a shape as well as a colour$/m);
     expect(FLAT).toMatch(/colour-blind pupil can say "the triangle"/);
-    expect(README).toMatch(/deliberate/);
+    // TASK-27s: no confession of intent — a plain accessibility rationale only.
+    expect(README).not.toMatch(/deliberate/);
+    expect(FLAT).toContain("Shape-plus-colour coding is a common accessibility pattern");
   });
 
   it("is in the design-system steering", () => {
     const ds = read(".kiro/steering/design-system.md");
     expect(ds).toMatch(/Accessibility note \(why the shapes exist\)/);
     expect(ds).toMatch(/colour-blind pupil can say "the triangle"/);
-    expect(ds).toMatch(/not copied styling/);
+    expect(ds).toMatch(/Shape-plus-colour coding/);
+    expect(ds).not.toMatch(/deliberate/);
   });
 });

@@ -12,7 +12,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { exportStack, exportLivingStack, ExportValidationError } from "../exporter.js";
 import { readBody } from "../readBody.js";
 import { checkExportLimits } from "../exportLimits.js";
-import { plainMessageFrom, safeFileName } from "../../src/shared/messages.js";
+import { plainMessageFrom, safeFileName, classFileName } from "../../src/shared/messages.js";
 import type { Stack } from "../../src/shared/types.js";
 
 // An export body carries a whole stack with image data URIs inlined; 8 MB is
@@ -123,7 +123,10 @@ export async function handleExport(
   }
 
   // Success — respond with the HTML body verbatim (byte-exact).
-  const filename = safeFileName(typeof stack.title === "string" ? stack.title : "");
+  // The class export is "<title>-class.html" and the living export "<title>.html",
+  // so the two files from one lesson can be told apart (TASK-27g).
+  const title = typeof stack.title === "string" ? stack.title : "";
+  const filename = living ? safeFileName(title) : classFileName(title);
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8",
     "Content-Disposition": `attachment; filename="${filename}"`,

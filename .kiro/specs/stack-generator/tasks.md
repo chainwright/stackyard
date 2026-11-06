@@ -363,3 +363,63 @@ and an invented picture path made a deck impossible to export.
   - **Acceptance criteria.** Unit tests for the Title Case rule (converted: "Along Edges Of Tectonic Plates"; untouched: "Mount Vesuvius", "Brian Boru") and the prefix rule; the prompt tests assert the new rules are present in both prompts and the old "Title case for button labels" line is gone.
 
 **Gate (TASK-26 b, c, d, g, j):** `npm test` and `npx tsc --noEmit` exit 0.
+
+
+---
+
+## Phase — Round-3 review fixes to generation (TASK-27 b, e, m, t, A, B)
+
+> Owned here: **b** (cut text at boundaries), **e** (defensible distractors), **m**
+> (re-mint ids), **t** (say when pictures were not added), plus two J4 findings in
+> our own normaliser (**A**, **B**). The rest of TASK-27 is in `exporter/tasks.md`
+> (f-living, g, j, x, r) and `maker/tasks.md` (a, c, d, f, h, i, k, l, v–y, n, o,
+> p, q, s, u).
+
+**Why:** round 3 (`judge_2026-11-05_r3`) found that the LIVE model's output was still
+trusted in three more ways: one mistyped id withdrew a whole correct deck (J5 P0-2),
+text was cut in the middle of a word (J3 P1-2), and wrong answers a child could defend
+reached the class (J2 P1-2).
+
+### TASK-27m: re-mint every id server-side  *(P0)*
+  - **Bug.** The README's own example sentence fell back live: the model wrote ids like `00000000-0000-4000-8000-0000000100 01` (a space) and non-v4 ids. `validateCard` accepted the card (so it was dealt), the whole-stack `validate` then failed on `invalid-id`, the 11 on-topic cards were retracted at 45 s, and the retry hit its deadline: a ready-made deck at 90 s.
+  - **Fix.** Ids are *ours*, not the model's. Before validation, `sanitizeRawStack` / `sanitizeRawCard` mint a fresh v4 id for the stack, every card and every element, map old card id → new id, and rewrite every `goto.cardId` (a target that matches no card, or an old id that was duplicated, becomes the next card in deck order, else the end card). Duplicate ids are therefore harmless. The streaming path re-mints per card before dealing, using a stack-wide map so a goto to a LATER card still resolves; the final assembled stack is re-mapped consistently. Both prompts say ids may be any short unique strings.
+  - **Acceptance criteria.**
+    - A property test: any otherwise-valid model deck whose ids are arbitrary strings (spaces, duplicates, empty, non-v4, numbers-as-strings) goes through `generate()` AND `streamGenerate()` to `done` with `isFallback: false`, in ONE model call.
+    - Gotos survive the re-mint (a branch still reaches the same card it did); a goto to an unknown id points at the next card.
+    - Ids in the finished deck are valid, unique v4 ids and are not the model's.
+    - `validateCard` check ids too, so a bad card is never dealt and then retracted.
+    - The exact ids from the live failure (the space, the non-v4 `00000002-0100-…`) are a named test.
+
+### TASK-27b: cut text at a sentence or word boundary, never mid-word  *(P1)*
+  - **Bug.** `cap()` sliced at a fixed length and added "…" ("Now tell a p…" on the Viking end card, the last frame the class sees). The same helper cut questions (240), labels (90), bodies (600), the flash term (80).
+  - **Fix.** `cap()` keeps whole sentences if any fit inside the limit, else cuts at the last word boundary, and adds "…" only when it cut inside a sentence. The end-card heading keeps its first one or two whole sentences. Both prompts ask for an end line of 70 characters or fewer.
+  - **Acceptance criteria.** Unit tests: an 85-character end line comes back with no "…" mid-word and ends on a whole word or sentence; questions, labels, bodies and the flash term each cut at a boundary; text under the limit is untouched; a single word longer than the limit is hard-cut (no infinite loop).
+
+### TASK-27e: wrong answers must be clearly wrong  *(P1)*
+  - **Bug.** "What do robins mainly eat?" marked *Grass seeds* wrong (robins do eat seeds); *Field mouse* was a wrong answer for "which animal eats slugs, worms and insects" (it eats insects). A child answering correctly from what they know gets a red ✗.
+  - **Fix.** Both prompts: every wrong answer must be CLEARLY false for the age group; no option that is partly true or true in some season or situation; prefer a different category from the right answer (not a close relative of it); if a question could have two defensible answers, rewrite the question. A cheap self-check in the normaliser: a wrong answer whose label is identical (case-insensitive) to the right answer, or a duplicate wrong answer, is dropped while at least one wrong answer remains.
+  - **Acceptance criteria.** The rule text is asserted in all three prompts (one-shot, streaming, retry); the self-check drops an answer duplicating the right one and a duplicated wrong one, and never leaves a quiz card without a wrong answer.
+
+### TASK-27t: say so when pictures were not added  *(P2)*
+  - **Bug.** A teacher who asks for pictures gets none and no word about it (J1 P2-3, J5).
+  - **Fix.** After a generated deck is ready, if the sentence mentions a picture ("picture", "photo", "image", "illustration", "drawing"), the Maker shows one plain line: "Pictures aren't added automatically yet. Use Add Picture." The wait copy says "usually 30–60 s" (one live run took 60 s).
+  - **Acceptance criteria.** The note appears for such a sentence on a model-built deck and not otherwise; the wait screen says "30–60 seconds" and never "20 seconds" or "30–45".
+
+### TASK-27A: never lowercase a proper noun  *(J4 P1-2)*
+  - **Bug.** `sentenceCaseLabel` lowercased every word after the first once it saw one capitalised small word: "The Battle Of Hastings" → "The battle of hastings", "Isle Of Man" → "Isle of man". The comment said names were safe; names with a function word were not.
+  - **Fix.** Lowercase only the small function words ("Of", "The", "In" …), never the content words: "Along Edges Of Tectonic Plates" → "Along Edges of Tectonic Plates". The prompt still asks for sentence case, so this only touches a model that ignored it.
+  - **Acceptance criteria.** The five names J4 measured are unchanged except for function words (`The Battle of Hastings`, `United States of America`, `Isle of Man`, `Bank of England`, `Treaty of Versailles`).
+
+### TASK-27B: a pronoun is not a flash-card term  *(J4 P2-1)*
+  - **Bug.** The `X is/are/means …` rule made "This", "There", "It" the term.
+  - **Fix.** Reject pronoun and expletive subjects (this, that, these, those, it, there, they, he, she, we, you, i); fall through to the story-card conversion.
+  - **Acceptance criteria.** "This is the process where plants make food…", "There are 206 bones…" and "It is when water vapour cools…" each convert to a story card, not a one-word term.
+
+**Gate (TASK-27 b, e, m, t, A, B):** `npm test` and `npx tsc --noEmit` exit 0.
+
+### TASK-27 z1–z6 (J4 addendum)
+  - **z1 (done as TASK-27A).** Only small function words are lowercased; proper nouns keep their capitals. Tests add place and people names (Brian Boru and the Dal Cais, Saint Patrick of Ireland).
+  - **z2 (done as TASK-27B).** A pronoun or a term under three letters is never a flash front. Tests cover this/there/it/these/they and keep a real subject ("Evaporation").
+  - **z4.** `/api/generate` reads and validates the body (JSON, size, non-blank prompt, ≤500 characters) *before* it counts a rate or budget slot. Malformed requests answer 400 and cost nothing. *Acceptance:* with a limit of one, six malformed requests then one valid one → the valid one is served, and the next valid one is limited.
+  - **z5.** The retry/fallback path gets the client's disconnect signal: `generate()` passes it to the model call, starts no retry once it has aborted, and `streamFallback` writes nothing further. An early `start` line (`total: 0`, no title) is written before the fallback begins so the client is never in silence. *Acceptance:* tests for the signal reaching `generate()`, the early line arriving while `generate()` is still running, and no `error`/`card`/`done` after a disconnect.
+  - **z6.** The 1000-run property tests carry an explicit 30 s timeout (on top of the global 60 s `testTimeout`). *Acceptance:* `CI=true npm run check:claims` exits 0.
