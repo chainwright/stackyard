@@ -23,7 +23,7 @@ async function main(): Promise<void> {
       stale++;
       console.error(`check-samples: STALE — samples/${file} differs from a fresh export.`);
     } else {
-      console.log(`check-samples: OK — samples/${file}`);
+      console.log(`check-samples: OK — samples/${file} matches a fresh export (TASK-27n)`);
     }
   }
   if (stale > 0) {

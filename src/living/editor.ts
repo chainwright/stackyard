@@ -16,6 +16,7 @@ import {
   addCardAfter,
   addAnswer,
   takeLastInsertedCardId,
+  takeLastInsertNote,
   removeCard,
   markCorrect,
   setFlashSide,
@@ -246,6 +247,8 @@ export class LivingEditor {
         if (id) this.selectedCardId = id;
         this.selectedElementId = null;
         this.render();
+        const note = takeLastInsertNote();
+        if (note !== null) this.onNotice(note);
       }
     });
     row.appendChild(addBtn);
@@ -276,6 +279,10 @@ export class LivingEditor {
             const added = now?.elements.find((e) => e.type === "button" && !before.has(e.id));
             this.selectedElementId = added?.id ?? this.selectedElementId;
             this.render();
+            // Cursor into the new Answer box, text selected (TASK-29n).
+            const box = this.host.querySelector<HTMLInputElement>(".sy-living-inspector input[type=text]");
+            box?.focus();
+            box?.select();
           }
         }),
       );

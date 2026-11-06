@@ -25,6 +25,15 @@ import { fullCreditFor } from "../shared/readyMadeImages.js";
 
 type Notice = (m: string | null) => void;
 
+/** Focus the Answer box and select its text (the Inspector's answer field has id "label"). */
+export function focusAnswerBox(): void {
+  const input = document.getElementById("label");
+  if (input instanceof HTMLInputElement) {
+    input.focus();
+    input.select();
+  }
+}
+
 /** A button is an "answer" if it carries a score action (a quiz tile). */
 function isAnswerButton(el: ButtonElement): boolean {
   return el.actions.some((a) => a.type === "score");
@@ -121,7 +130,12 @@ export function Inspector({
             const updated = store.getStack();
             const c = updated?.cards.find((x) => x.id === card.id);
             const last = c?.elements[c.elements.length - 1];
-            if (last && last.type === "button") store.setSelectedElement(last.id);
+            if (last && last.type === "button") {
+              store.setSelectedElement(last.id);
+              // Put the cursor in the new answer's box, text selected, so the next
+              // typing replaces "Another answer" (TASK-29n; it stayed on <body>).
+              setTimeout(focusAnswerBox, 0);
+            }
           }}
         >
           + Add an answer

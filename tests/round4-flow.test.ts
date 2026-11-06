@@ -11,7 +11,9 @@ import {
   addButtonElement,
   repairFlow,
   takeLastInsertedCardId,
+  takeLastInsertNote,
 } from "../src/editor/operations.js";
+import { outTargets } from "../src/shared/flow.js";
 import { isRejected } from "../src/editor/types.js";
 import { validate } from "../src/shared/validator.js";
 import {
@@ -35,10 +37,10 @@ const DECKS: Array<[string, () => Stack]> = [
 ];
 
 /** The flow problems the splice is responsible for (placeholders are expected on a new card). */
-function flowProblems(stack: Stack): string[] {
+function flowProblems(stack: Stack, allowUnreachable: string | null = null): string[] {
   const r = checkReachability(stack);
   return [
-    ...r.unreachable.map((c) => `unreachable ${c.id}`),
+    ...r.unreachable.filter((c) => c.id !== allowUnreachable).map((c) => `unreachable ${c.id}`),
     ...r.trapped.map((c) => `trapped ${c.id}`),
     ...r.stuck.map((c) => `stuck ${c.id}`),
     ...r.deadEndQuiz.map((c) => `quiz dead end ${c.id}`),
@@ -48,16 +50,19 @@ function flowProblems(stack: Stack): string[] {
 
 describe("TASK-28h: + Add Card after ANY card type keeps every card reachable", () => {
   for (const [name, build] of DECKS) {
-    it(`${name}: every insertion point × every kind → all reachable, all can finish`, () => {
+    it(`${name}: every insertion point × every kind → all reachable, all can finish (a fork leaves the new card for the teacher to place — TASK-29a)`, () => {
       const base = build();
       const nonEnd = base.cards.filter((c) => c.kind !== "end");
       for (const after of nonEnd) {
         for (const kind of ["quiz", "flash", "story"] as const) {
           const next = asStack(addCardAfter(base, after.id, kind));
           const newId = takeLastInsertedCardId()!;
+          const note = takeLastInsertNote();
+          const fork = outTargets(after).length >= 2;
           expect(validate(next).valid, `${after.kind}→${kind}`).toBe(true);
-          expect(flowProblems(next), `${name}: ${after.kind} then ${kind}`).toEqual([]);
-          expect(checkReachability(next).reachable.has(newId)).toBe(true);
+          expect(flowProblems(next, fork ? newId : null), `${name}: ${after.kind} then ${kind}`).toEqual([]);
+          expect(checkReachability(next).reachable.has(newId)).toBe(!fork);
+          expect(note !== null, "the fork note").toBe(fork);
         }
       }
     });
@@ -73,10 +78,14 @@ describe("TASK-28h: + Add Card after ANY card type keeps every card reachable", 
           for (const [pick, kind] of steps) {
             const candidates = stack.cards.filter((c) => c.kind !== "end");
             const after = candidates[pick % candidates.length]!;
+            const fork = outTargets(after).length >= 2;
             stack = asStack(addCardAfter(stack, after.id, kind as Card["kind"]));
-            takeLastInsertedCardId();
+            const newId = takeLastInsertedCardId();
+            takeLastInsertNote();
             if (!validate(stack).valid) return false;
-            if (flowProblems(stack).length > 0) return false;
+            // A fork leaves the new card unreachable until the teacher places it; then stop this chain.
+            if (flowProblems(stack, fork ? newId : null).length > 0) return false;
+            if (fork) return true;
           }
           return true;
         },

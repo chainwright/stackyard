@@ -346,7 +346,7 @@ function main(): Promise<void> {
         for (const p of problems.slice(0, 14)) console.error("  - " + p);
         process.exit(1);
       }
-      console.log(`check-text-fit: OK @${w}×${h} (${name}, viewport ${viewport}) — ${cards} cards of long text; nothing overflows, clips or overlaps; stamps clear of every answer (${stamps.join(", ")}).`);
+      console.log(`check-text-fit: OK @${w}×${h} (${name}, viewport ${viewport}) — ${cards} cards of long text; nothing overflows, clips or overlaps; stamps clear of every answer, TASK-27a (${stamps.join(", ")}).`);
     }
   })();
 }

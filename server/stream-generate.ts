@@ -69,6 +69,8 @@ export interface StreamGenerateDeps {
   buildStream?: typeof defaultBuildStream;
   /** Sleep used for fallback pacing; tests pass a no-op to run instantly. */
   sleep?: (ms: number) => Promise<void>;
+  /** Clock for the time-to-first-card log line; tests pass a fake. */
+  now?: () => number;
   /**
    * The client's connection signal. When the client disconnects mid-stream it
    * aborts, which `callStream` forwards to its upstream fetch so the server
@@ -221,6 +223,7 @@ async function attemptStreamedLlm(
   deps: Required<Pick<StreamGenerateDeps, "callStream" | "buildStream">>,
   signal?: AbortSignal,
   onModelCall?: () => void,
+  now: () => number = Date.now,
 ): Promise<StreamAttemptResult> {
   const messages = deps.buildStream(request);
   const lineBuffer = new LineBuffer();
@@ -230,6 +233,12 @@ async function attemptStreamedLlm(
   let startWritten = false;
   const cards: Card[] = [];
   let dealtCards = 0;
+  // Time to the header and to the FIRST card (ttfc): the wait the teacher feels.
+  // Each is written to the client the moment its line is complete, never batched
+  // (TASK-29h); the numbers are logged once so a slow model shows up in the logs.
+  const t0 = now();
+  let headerMs: number | null = null;
+  let firstCardMs: number | null = null;
 
   // Process one complete JSON line. Returns false if the line is unusable
   // (malformed header/card), which aborts the attempt.
@@ -248,6 +257,7 @@ async function attemptStreamedLlm(
         isFallback: false,
       });
       startWritten = true;
+      headerMs = now() - t0;
       return true;
     }
 
@@ -262,6 +272,7 @@ async function attemptStreamedLlm(
     // model's own coordinates (text at y=40 over "Card N of M").
     cards.push(check.card);
     sink.write({ type: "card", index: dealtCards, card: normalizeGeneratedCard(check.card) });
+    if (firstCardMs === null) firstCardMs = now() - t0;
     dealtCards++;
     return true;
   };
@@ -316,6 +327,11 @@ async function attemptStreamedLlm(
   // Ids are ours (TASK-27m): re-mint every id and rewrite every goto BEFORE
   // validating, so a model that mistypes one character of one id no longer
   // withdraws eleven correct cards (J5 P0-2, the README's own example).
+  // One operator line: where the time went (no key, no URL, no text from the model).
+  console.log(
+    `[generate] stream timing: header=${headerMs ?? -1}ms ttfc=${firstCardMs ?? -1}ms ` +
+      `total=${now() - t0}ms cards=${cards.length}`,
+  );
   const whole = validate(sanitizeRawStack(assembled));
   if (!whole.valid) {
     logStreamFailure(`the assembled stack failed validation (${whole.errors.join(", ")})`);
@@ -484,6 +500,7 @@ export async function streamGenerate(
     { callStream, buildStream },
     signal,
     onModelCall,
+    deps.now ?? Date.now,
   );
 
   if (attempt.ok) {

@@ -7,7 +7,7 @@
 export const LIVING_STYLES = `
 .sy-teacher-tab {
   position: fixed; bottom: 12px; right: 12px; z-index: 60;
-  font-family: 'Stackyard Reading', system-ui, sans-serif; font-size: 18px;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif; font-size: 18px;
   background: rgba(30,42,71,0.85); color: #FBF8F1; border: none; cursor: pointer;
   border-radius: 999px; padding: 8px 14px; min-height: 44px; opacity: 0.7;
 }
@@ -16,7 +16,7 @@ export const LIVING_STYLES = `
 .sy-living-overlay {
   position: fixed; inset: 0; z-index: 70; background: #D4C9B0;
   display: flex; flex-direction: column; overflow: hidden; overflow: clip;
-  font-family: 'Stackyard Reading', system-ui, sans-serif; color: #1E2A47;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif; color: #1E2A47;
 }
 .sy-living-bar {
   flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
@@ -84,7 +84,7 @@ export const LIVING_STYLES = `
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
   z-index: 90; background: #1E2A47; color: #FBF8F1; padding: 10px 16px;
   border-radius: 8px; font-size: 18px; max-width: 80vw;
-  font-family: 'Stackyard Reading', system-ui, sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif;
 }
 
 .sy-living-tryit { position: relative; padding-top: 48px; } /* the pill sits above the rings */

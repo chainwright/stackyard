@@ -474,7 +474,7 @@ describe("TASK-27: living editor round-3 fixes", () => {
     expect(document.querySelector(".sy-living-list")!.textContent).toContain("Zebra");
   });
 
-  it("j: wording matches the website; list labels are 'Card N — …' on one ellipsis line", async () => {
+  it("TASK-27j: wording matches the website; list labels are 'Card N — …' on one ellipsis line", async () => {
     openFile(exportedFile(vikingsStack()));
     teardown = bootLivingFile();
     tab().click();
@@ -542,7 +542,7 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     tab().click();
   }
 
-  it("j: list labels of different cards differ, even when the questions share their first words", () => {
+  it("TASK-28j: list labels of different cards differ, even when the questions share their first words", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     openTeacher(sharedPrefixStack());
     const labels = Array.from(document.querySelectorAll(".sy-living-list button")).map((b) => b.textContent ?? "");
@@ -553,7 +553,7 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     expect(labels.every((l) => l.startsWith("Card "))).toBe(true);
   });
 
-  it("q: the 'show card…' dropdown uses '—' like the list and the website, never '·'", () => {
+  it("TASK-28q: the 'show card…' dropdown uses '—' like the list and the website, never '·'", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     openTeacher(sharedPrefixStack());
     // Select an answer button so the dropdown shows.
@@ -569,7 +569,7 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     }
   });
 
-  it("n: Remove this card asks first; cancel keeps the card, OK removes it", () => {
+  it("TASK-28n: Remove this card asks first; cancel keeps the card, OK removes it", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true); // the "Are you the teacher?" gate
     openTeacher(sharedPrefixStack());
     const remove = (): HTMLButtonElement =>
@@ -585,7 +585,7 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     expect(document.querySelectorAll(".sy-living-list button")).toHaveLength(4);
   });
 
-  it("o: after '+ Add an answer' the NEW answer is selected, so typing goes into it", () => {
+  it("TASK-28o: after '+ Add an answer' the NEW answer is selected, so typing goes into it", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     // A card with room: only two answers.
     openTeacher(sharedPrefixStack());
@@ -609,8 +609,57 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     expect(labels.some((l) => l.includes("Right"))).toBe(true);
   });
 
-  it("q: the Teacher list is wider on a big screen", async () => {
+  it("TASK-28q: the Teacher list is wider on a big screen", async () => {
     const { LIVING_STYLES } = await import("../src/living/styles.js");
     expect(LIVING_STYLES).toMatch(/@media \(min-width: 1600px\) \{ \.sy-living-list \{ flex-basis: 340px; \} \}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-29n (Teacher tab) / TASK-29a (living half)
+
+describe("TASK-29n and TASK-29a: the Teacher tab follows the same rules", () => {
+  function openTeacher(stack: Stack): void {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    openFile(exportedFile(stack));
+    teardown = bootLivingFile();
+    tab().click();
+  }
+
+  it("29n: '+ Add an answer' leaves the cursor in the new Answer box with its text selected", () => {
+    openTeacher(sharedPrefixStack());
+    const tiles = Array.from(document.querySelectorAll<HTMLElement>(".sy-living-canvas .sy-tile"));
+    tiles[1]!.click();
+    Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button"))
+      .find((b) => (b.textContent ?? "").includes("Add an answer"))!
+      .click();
+    const box = document.querySelector<HTMLInputElement>(".sy-living-inspector input[type=text]")!;
+    expect(box.value).toBe("Another answer");
+    expect(document.activeElement).toBe(box);
+    expect(box.selectionStart).toBe(0);
+    expect(box.selectionEnd).toBe("Another answer".length);
+  });
+
+  it("29a: 'Add a card after this' on a fork keeps every choice and says to choose where the card leads", () => {
+    const id = (n: number): string => `f7f70000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+    const textEl = (n: number, c: string) => ({ type: "text" as const, id: id(100 + n), x: 48, y: 104, w: 704, h: 120, content: c });
+    const btn = (n: number, label: string, to: number, y: number) => ({ type: "button" as const, id: id(200 + n), x: 48, y, w: 704, h: 72, label, actions: [{ type: "goto" as const, cardId: id(to) }] });
+    const fork: Stack = {
+      id: id(0), title: "Fork", theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+      cards: [
+        { id: id(1), kind: "story", actions: [], elements: [textEl(1, "A fork in the road."), btn(1, "Left", 2, 260), btn(2, "Right", 3, 360)] },
+        { id: id(2), kind: "story", actions: [], elements: [textEl(2, "Left."), btn(3, "Continue", 4, 440)] },
+        { id: id(3), kind: "story", actions: [], elements: [textEl(3, "Right."), btn(4, "Continue", 4, 440)] },
+        { id: id(4), kind: "end", actions: [], elements: [textEl(4, "The end")] },
+      ],
+    };
+    openTeacher(fork);
+    Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button"))
+      .find((b) => (b.textContent ?? "").includes("Add a card after this"))!
+      .click();
+    expect(document.querySelector(".sy-living-toast")?.textContent ?? document.body.textContent).toContain("Choose where this card leads");
+    // Left and Right still go where they went.
+    const labels = Array.from(document.querySelectorAll(".sy-living-list button")).map((b) => b.textContent ?? "");
+    expect(labels).toHaveLength(5);
   });
 });

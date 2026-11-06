@@ -4,7 +4,7 @@ inclusion: manual
 
 # Pre-submit gate (on demand)
 
-Include this file (`#pre-submit` in chat) when you want the full submission gate run now, without finishing a spec task. Kiro's `Manual` hook trigger is not invocable in the IDE or CLI v3, so the on-demand path is this steering file.
+Run this file on demand with `/pre-submit` (a manually included steering file runs as a slash command), or type `#pre-submit` to include it as context. Use it when you want the full submission gate run now, without finishing a spec task. kiro.dev lists `Manual` hooks as not invocable in CLI v3 and the IDE no longer creates them, so the on-demand path is this steering file.
 
 Run, in this order, from the repository root, and report each exit code:
 

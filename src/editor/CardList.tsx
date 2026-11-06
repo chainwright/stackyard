@@ -8,7 +8,7 @@
 import type { JSX } from "preact";
 import type { Card, Stack } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
-import { addCardAfter, removeCard, reorderCards, takeLastInsertedCardId } from "./operations.js";
+import { addCardAfter, removeCard, reorderCards, takeLastInsertedCardId, takeLastInsertNote } from "./operations.js";
 import { KindShape } from "./icons.js";
 import { cardTitle } from "../shared/cardTitle.js";
 
@@ -54,6 +54,8 @@ export function CardList({
     }
     const newId = takeLastInsertedCardId();
     if (newId !== null) store.setSelectedCard(newId);
+    const note = takeLastInsertNote();
+    if (note !== null) onNotice?.(note);
   }
 
   function remove(cardId: string): void {

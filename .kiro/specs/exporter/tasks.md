@@ -717,3 +717,8 @@ change in Play.
 
 ### TASK-28k: the round-3 fixes are pinned by the project's own mutation tool
   - `scripts/mutation-check.ts` gains one mutant each for: the ANSI strip in the claims parser, proper-noun casing, the flash preview refresh, the pronoun term guard, trap-loop reachability, body-before-slot, and the fallback's disconnect signal. **Acceptance:** `npm run check:mutants` reports every mutant killed.
+
+
+### TASK-29n (Teacher tab) / 29a (living half): the Teacher tab follows the same rules  *(J2, J4)*
+  - "+ Add an answer" focuses and selects the new Answer box. "Add a card after this" uses the same non-rewiring splice (a fork leaves the new card unlinked and says "Choose where this card leads"). A copy of a branching file saved after an insert keeps every existing choice's target.
+  - **Acceptance criteria.** Living tests: focus after Add an answer; a branching deck keeps its choices after "Add a card after this" and shows the fork note.

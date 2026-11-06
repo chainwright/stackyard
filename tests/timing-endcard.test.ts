@@ -199,7 +199,7 @@ describe("hold-before-goto timing", () => {
 // ---------------------------------------------------------------------------
 // (b) End-card rendering
 
-describe("end-card rendering", () => {
+describe("end-card rendering (TASK-27l: no \"Score 0 of 0\", neutral heading, announcement)", () => {
   let root: HTMLElement;
 
   beforeEach(() => {
@@ -348,7 +348,7 @@ describe("end-card rendering", () => {
 // ---------------------------------------------------------------------------
 // (c) Typography — quiz text elements use sy-question class
 
-describe("typography tokens", () => {
+describe("typography tokens (TASK-27i: story body 30px and centred)", () => {
   let root: HTMLElement;
 
   beforeEach(() => {

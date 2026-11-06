@@ -42,7 +42,7 @@ function summariseCard(card: Card, index: number, total: number): DealtCard {
   return { index, total, kind: card.kind, question, answers };
 }
 
-const PROMISE = "Make a clickable lesson from one sentence. Works offline.";
+const PROMISE = "Make a clickable lesson from one sentence. The lesson file works offline.";
 
 /** True when the teacher's sentence asks for pictures, which the builder does not add. */
 export function asksForPictures(sentence: string): boolean {

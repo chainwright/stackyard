@@ -13,8 +13,7 @@ import type {
   Action,
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
-import { linkQuizAnswersForward } from "../shared/linkForward.js";
-import { ensureForwardLinks, gotoOf, nextCardAfter, linkInto, reachableIds } from "../shared/flow.js";
+import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds } from "../shared/flow.js";
 import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
 import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
 
@@ -274,23 +273,38 @@ export function addCardAfter(
   const cards = [...stack.cards.slice(0, at), card, ...stack.cards.slice(at)];
   const inserted: Stack = { ...stack, cards };
 
-  // Splice the new card into the flow for EVERY kind of card before it (quiz
-  // answers, flash Next, story choices, auto-advance) — TASK-28h: the old code
-  // relinked quiz answers only, so after a flash or story card the previous
-  // card's Next still skipped the new one. Then re-link quiz answers forward
-  // (J2's "max score can never be reached" bug) and give the seeded card its own
-  // way forward (a new flash card gets "Next Card", a story card "Continue").
-  return ensureForwardLinks(linkQuizAnswersForward(linkInto(inserted, at)));
+  // Splice the new card into the flow on the REAL edge (TASK-29a): the card
+  // before it keeps leading where it led, only through the new card. A fork is
+  // left alone and the teacher is told to choose (the note, below).
+  const spliced = spliceNewCard(inserted, at);
+  lastInsertNote = spliced.fork
+    ? "This card is added, but nothing leads to it yet. Choose where this card leads: open a button on the card before it and use Go to card…"
+    : null;
+  return ensureForwardLinks(spliced.stack);
+}
+
+/** A note for the teacher about the card just inserted (e.g. "Choose where this card leads"). */
+let lastInsertNote: string | null = null;
+export function takeLastInsertNote(): string | null {
+  const n = lastInsertNote;
+  lastInsertNote = null;
+  return n;
 }
 
 /**
- * Repair the flow so every card is reachable and no quiz answer dead-ends
- * (the one-click fix behind the "before you share" check — J2 item 3):
+ * Repair the flow so every card is reachable (the one-click fix behind the
+ * "before you share" check — J2 item 3):
  *   1. move any content card that sits AFTER the end card to just before it, in
  *      order, so it is part of the playable sequence; then
- *   2. re-link every quiz answer forward (so a quiz answer always advances and
- *      the newly-placed cards are linked into the run).
- * Only reorders and retargets existing cards, so every invariant is preserved.
+ *   2. give every button that goes nowhere, and every flash/story card with
+ *      nothing to press, a way on; then
+ *   3. for each card still unreachable, link it in WITHOUT overwriting any
+ *      existing link (TASK-29a): when the nearest reachable card before it leads
+ *      to exactly one place that the stranded card also leads to, that one link
+ *      is moved onto the stranded card (a pure splice); otherwise a new
+ *      "Next Card" button is added to that card in free space. If there is no
+ *      room the card stays flagged, honestly.
+ * Existing buttons keep their targets, apart from a pure splice.
  */
 export function repairFlow(stack: Stack): Stack | Rejected {
   const endIndex = stack.cards.findIndex((c) => c.kind === "end");
@@ -302,18 +316,56 @@ export function repairFlow(stack: Stack): Stack | Rejected {
 
   // Keep the end card last; everything else stays in its current relative order.
   const reordered: Card[] = [...before, ...after, end];
-  // Link quiz answers forward, then give every other button that goes nowhere —
-  // and every flash/story card with nothing to press — a way on (TASK-26b/o).
-  let repaired = ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards: reordered }));
-  // Splice in every card still unreachable (TASK-28h): the card before it takes
-  // over the link that used to skip it. Re-checked after each splice; bounded.
+  let repaired = ensureForwardLinks({ ...stack, cards: reordered });
   for (let guard = 0; guard < repaired.cards.length; guard++) {
     const seen = reachableIds(repaired);
-    const stranded = repaired.cards.findIndex((c, i) => i > 0 && !seen.has(c.id));
-    if (stranded < 0) break;
-    repaired = ensureForwardLinks(linkInto(repaired, stranded));
+    const strandedIx = repaired.cards.findIndex((c, i) => i > 0 && !seen.has(c.id));
+    if (strandedIx < 0) break;
+    const next = linkStranded(repaired, strandedIx, seen);
+    if (next === null) break; // no room on the card before it: leave it flagged
+    repaired = next;
   }
   return repaired;
+}
+
+/** Link the unreachable card at `ix` in from the nearest reachable card before it, never overwriting. */
+function linkStranded(stack: Stack, ix: number, reachable: Set<string>): Stack | null {
+  const stranded = stack.cards[ix]!;
+  // The stranded card leads into the card play starts on, and nothing leads to
+  // it: it was the FIRST card before it got moved. Put it back at the front —
+  // a pure reorder; no link changes at all.
+  if (outTargets(stranded).includes(stack.cards[0]!.id)) {
+    return { ...stack, cards: [stranded, ...stack.cards.filter((c) => c.id !== stranded.id)] };
+  }
+  let pIx = ix - 1;
+  while (pIx >= 0 && (!reachable.has(stack.cards[pIx]!.id) || stack.cards[pIx]!.kind === "end")) pIx--;
+  if (pIx < 0) return null;
+  const p = stack.cards[pIx]!;
+
+  const pTargets = outTargets(p);
+  const x = pTargets.length === 1 ? pTargets[0]! : null;
+  if (x !== null && x !== stranded.id && outTargets(stranded).includes(x)) {
+    // A pure splice: p → x becomes p → stranded, and stranded already goes on to x.
+    const patched: Card = {
+      ...p,
+      actions: retarget(p.actions, x, stranded.id),
+      elements: p.elements.map((el) => (el.type === "button" ? { ...el, actions: retarget(el.actions, x, stranded.id) } : el)),
+    };
+    return { ...stack, cards: stack.cards.map((c) => (c.id === p.id ? patched : c)) };
+  }
+  // Otherwise ADD a way in: a plain button in free space (existing links untouched).
+  const y = freeY(p, NEW_BUTTON_SIZE.h);
+  if (y === null) return null;
+  const button: Element = {
+    type: "button",
+    id: newId(),
+    x: 48,
+    y,
+    ...NEW_BUTTON_SIZE,
+    label: "Next Card",
+    actions: [{ type: "goto", cardId: stranded.id }],
+  };
+  return addElementToCard(stack, p.id, button);
 }
 
 /** Strip every goto action that targets `removedId` from an action list. */

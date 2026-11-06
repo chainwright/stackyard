@@ -27,7 +27,7 @@ const BLOCK = `## By the numbers
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 `;
 
-describe("claims-lib", () => {
+describe("claims-lib (TASK-26l: pre-submit green, CI runs the claims checker)", () => {
   it("reads the four numbers", () => {
     expect(readClaims(BLOCK)).toEqual({ tests: 600, kb: 9.5, invariants: 9, runs: 1000 });
   });

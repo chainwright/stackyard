@@ -41,7 +41,7 @@ the play-only alternative.
 <!-- The screens below are real: `scripts/make-readme-media.ts` drives the built
      Maker in headless Chrome and writes docs/media/ (re-run it after a UI change). -->
 
-![From one sentence to an offline file: the sentence, the cards dealing in, the editor, Try It, the export, and the file opened with the network off](docs/media/demo.gif)
+![From one sentence to an offline file and its edited copy: the sentence, the cards dealing in, the editor, Try It, the export, the exported file opened with the network off, the Teacher tab changing the right answer, the stamp, and the saved copy playing](docs/media/demo.gif)
 
 Screens from the current build (`npm run media` regenerates them; the run has no
 model key, so the ready-made Vikings deck answers — the live app uses the model):
@@ -53,6 +53,14 @@ model key, so the ready-made Vikings deck answers — the live app uses the mode
 | 4. Try It: the rubber stamp | 5. One file | 6. The file, network off |
 |---|---|---|
 | ![CORRECT stamp on the right answer](docs/media/4-correct-stamp.png) | ![The EXPORTED stamp and the saved file](docs/media/5-exported.png) | ![The exported file playing with the network switched off](docs/media/6-offline-file.png) |
+
+| 7. Teacher: change the right answer | 8. Try It: the stamp lands there | 9. Save a Copy: the copy plays |
+|---|---|---|
+| ![Inside the exported file with Wi-Fi off: the Teacher tab, a different answer ticked as right](docs/media/7-teacher-edit.png) | ![The CORRECT stamp on the answer just chosen, inside the file](docs/media/8-teacher-stamp.png) | ![The saved copy, opened from disk with the network off, playing](docs/media/9-copy-plays.png) |
+
+The GIF ends the same way: the file exported in screen 5 is opened from disk with
+the network switched off (screen 6), edited in its own Teacher tab, and the copy it
+saves is opened and played (screen 9).
 
 - **Live app:** https://stackyard-sdqt.onrender.com (the GitHub About "Website"
   field points at this URL; it is set by hand in the repository settings, not by
@@ -140,8 +148,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **961** passing (`npm test`).
-- Player bundle: **11.5 KB** gzipped (budget 50 KB).
+- Tests: **1003** passing (`npm test`).
+- Player bundle: **11.7 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 
@@ -270,6 +278,7 @@ exported file.
 |---|---|---|---|---|---|
 | Bricolage Grotesque | Headings (`font-family: "Bricolage Grotesque"`) | Copyright 2022 The Bricolage Grotesque Project Authors | SIL Open Font License 1.1 | None | https://github.com/ateliertriay/bricolage |
 | Atkinson Hyperlegible | Body text, shipped as a Latin subset under the renamed family `"Stackyard Reading"` | Copyright 2020 Braille Institute of America, Inc. | SIL Open Font License 1.1 | "Atkinson", "Hyperlegible" | https://github.com/googlefonts/atkinson-hyperlegible |
+| Bricolage Grotesque (digits only) | The ten digits 0–9 on tiles and body text, so a zero is never slashed (`font-family: "Stackyard Digits"`, made by `scripts/make-digits-font.py`) | Copyright 2022 The Bricolage Grotesque Project Authors | SIL Open Font License 1.1 | None | https://github.com/ateliertriay/bricolage |
 
 Full licence text (with each copyright line) lives next to the font files:
 

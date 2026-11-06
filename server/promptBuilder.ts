@@ -75,11 +75,11 @@ Coordinates are tidied afterwards, so do not fuss over them, but keep every elem
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. A quiz question must not simply repeat a flash card's term-and-definition pair word for word: ask about it differently, or about something else.
 
 ## The end card
 
-The "end" card's text is ONE short line of 70 characters or fewer (for example "Well done — you finished!"). Do not put a question or instructions on it.
+The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card.
 
 ## Audience writing rules — apply to all generated card text
 
@@ -183,11 +183,11 @@ Coordinates are tidied afterwards, so do not fuss over them, but keep every elem
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. A quiz question must not simply repeat a flash card's term-and-definition pair word for word: ask about it differently, or about something else.
 
 ## The end card
 
-The "end" card's text is ONE short line of 70 characters or fewer (for example "Well done — you finished!"). Do not put a question or instructions on it.
+The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card.
 
 ## Audience writing rules — apply to all generated card text
 

@@ -106,6 +106,20 @@ export function distinctCardLabels(cards: Card[], max = 22): string[] {
 }
 
 /**
+ * Shorten `text` to at most `max` characters at a WORD boundary, ending "…"
+ * when cut (TASK-29p: "What is one quarter of …" lost the 20 that tells two
+ * cards apart, and truncateLabel can cut mid-word).
+ */
+export function wordCut(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const room = t.slice(0, max - 1);
+  const sp = room.lastIndexOf(" ");
+  const kept = (sp >= Math.floor(max * 0.4) ? room.slice(0, sp) : room).replace(/[\s,;:\-–—]+$/, "");
+  return kept + "…";
+}
+
+/**
  * A short plain reference to a card for a sentence ("Card 5 — Which people began
  * raiding Ire…", or "the last card"), used by every "before you share" message in
  * the Maker AND the living file so they read the same.
@@ -113,11 +127,11 @@ export function distinctCardLabels(cards: Card[], max = 22): string[] {
 export function cardRefLabel(
   stack: { cards: Card[] },
   card: Card,
-  maxLength = 24,
+  maxLength = 44,
 ): string {
   if (card.kind === "end") return "the last card";
   const index = stack.cards.findIndex((c) => c.id === card.id);
-  const words = truncateLabel(primaryText(card), maxLength);
+  const words = wordCut(primaryText(card), maxLength);
   const n = index >= 0 ? index + 1 : 0;
   if (n === 0) return words.length > 0 ? words : "a card";
   return words.length > 0 ? `Card ${n} — ${words}` : `Card ${n}`;

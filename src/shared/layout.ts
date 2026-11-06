@@ -57,6 +57,8 @@ export const STORY_BODY_SINGLE: Rect = { x: 48, y: 104, w: 704, h: 300 };
 
 /** The end card's heading and score field. */
 export const END_HEADING: Rect = { x: 48, y: 120, w: 704, h: 72 };
+/** The end card's optional longer message (TASK-29k). */
+export const END_BODY: Rect = { x: 48, y: 204, w: 704, h: 200 };
 export const END_SCORE: Rect = { x: 48, y: 420, w: 704, h: 60 };
 
 /** The most answers a quiz card keeps, and the most choices a story keeps. */

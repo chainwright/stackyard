@@ -434,3 +434,21 @@ reached the class (J2 P1-2).
   - **Bug.** The prompt quoted one judge's topic word for word (robins/seeds, field mice/insects), and "clearly false" over-corrected into jokes ("a holiday to Italy").
   - **Fix.** The wrong-answer rule is general: plausible for the age group, from the same topic, never jokes or absurd options, still clearly false. No topic-specific examples.
   - **Acceptance criteria.** Prompt test: both rules present; none of robin, seed, field mouse, mice, insect, Italy appears in the prompt.
+
+
+### TASK-29g: a quiz does not repeat the flash card before it  *(J1 P2-5)*
+  - **Fix.** Prompt rule: quiz questions must not simply repeat a flash card's term-and-definition pair word for word; ask about it differently, or about something else.
+  - **Acceptance criteria.** Prompt test: the rule is in the one-shot, streaming and retry prompts.
+
+### TASK-29h: the first card comes sooner, and we measure it  *(J1 #5)*
+  - **Fix.** The stream path emits the header and then the first card the moment each is parsed (no batching), and logs time-to-header and time-to-first-card (`ttfc`) in one operator line (no key, no URL).
+  - **Acceptance criteria.** Test with a fake clock/stream: the `start` and the first `card` lines are written before the second chunk is read; the log line contains `ttfc=`.
+
+### TASK-29k: the end card can carry a longer message, and there is one ending  *(J3 N1, P2)*
+  - **Bug.** A request for "a long encouraging message on the last card" made the model emit a fake flash card ("You did it!" + "Tap the card to see the answer") followed by the real end card showing the prompt's own example line, so the class got two endings.
+  - **Fix.** The end card has an optional body slot (heading ≤ 70, body ≤ 300). The prompt says longer encouragement goes in the end card's second text, asks for an end line that names the topic, and does not use "Well done — you finished!" as an example line to copy. The normaliser folds a final non-quiz card that sits right before the end card and has a celebratory front into the end card's body, and never fills the heading with the stock example line when the model wrote its own.
+  - **Acceptance criteria.** A test with the exact repro (flash "You did it!" + long back, then an end card) gives ONE ending whose body carries the long message; the stock line appears only when the model wrote nothing.
+
+### TASK-29p (prompt half): options fit the question's form  *(J2 #5)*
+  - **Fix.** General prompt rule: the answer options must fit the form of the question; a "which is bigger, A or B?" question offers only A and B.
+  - **Acceptance criteria.** The rule is in every prompt and no prompt carries the review's example.

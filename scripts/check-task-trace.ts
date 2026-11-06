@@ -43,10 +43,10 @@ function expandToken(tok: string): string[] {
 }
 
 /** All lettered ids declared in the specs, as "27c", "28h", "27z3". */
-export function declaredIds(): string[] {
+export function declaredIds(root: string = ROOT): string[] {
   const ids = new Set<string>();
-  for (const spec of readdirSync(path.join(ROOT, ".kiro", "specs"))) {
-    const file = path.join(ROOT, ".kiro", "specs", spec, "tasks.md");
+  for (const spec of readdirSync(path.join(root, ".kiro", "specs"))) {
+    const file = path.join(root, ".kiro", "specs", spec, "tasks.md");
     if (!existsSync(file)) continue;
     for (const line of readFileSync(file, "utf8").split("\n")) {
       const m = /^#{3,4}\s+TASK-(\d+)(.*)$/.exec(line);
@@ -62,54 +62,69 @@ export function declaredIds(): string[] {
   return [...ids].sort();
 }
 
-/** All ids mentioned by tests, scripts, hooks (not by this checker or its test). */
-export function tracedIds(): Set<string> {
-  const files = [
-    ...walk(path.join(ROOT, "tests"), [".ts", ".tsx"]),
-    ...walk(path.join(ROOT, "scripts"), [".ts", ".sh"]),
-    ...walk(path.join(ROOT, "mcp"), [".ts"]),
-    ...walk(path.join(ROOT, ".kiro", "hooks"), [".json"]),
-  ].filter((f) => !/check-task-trace\.ts$|task-traceability\.test\.ts$/.test(f));
+/** A line that declares a test or suite title (it / describe / test, with .each/.skip/.only). */
+const TITLE_LINE = /\b(?:it|describe|test)(?:\.(?:each|skip|only|todo|concurrent))*\s*(?:\(|\[)/;
+/** A comment-only line (so a comment never counts as coverage). */
+const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*|#)/;
+
+/**
+ * All ids NAMED by a test title, a gate script's message/name string, or a hook.
+ * Counting any mention (a comment, a prose line) let an id look "traced" without
+ * a test (J4 P2-2), so: in tests/ only title lines count; in scripts/ and mcp/
+ * comment lines do not; hook JSON counts as is.
+ */
+export function tracedIds(root: string = ROOT): Set<string> {
+  const tests = walk(path.join(root, "tests"), [".ts", ".tsx"]);
+  const gates = [...walk(path.join(root, "scripts"), [".ts", ".sh"]), ...walk(path.join(root, "mcp"), [".ts"])];
+  const hooks = walk(path.join(root, ".kiro", "hooks"), [".json"]);
+  const skip = /check-task-trace\.ts$/;
 
   const seen = new Set<string>();
-  for (const f of files) {
-    for (const line of readFileSync(f, "utf8").split("\n")) {
-      for (const m of line.matchAll(/TASK-(\d+)/g)) {
-        const after = line.slice(m.index! + m[0].length, m.index! + m[0].length + 80);
-        // A letter list straight after the number: "TASK-27c", "TASK-27 c, j",
-        // "TASK-27b/e/m". A lone spaced letter ("TASK-27 a quiz…") only counts
-        // when a ":" ")" or dash follows, so ordinary prose is not read as an id.
-        const lead = /^(\s?)([a-z]\d?)((?:\s*[\/,]\s*(?:\d+)?[a-z]\d?)*)(?![A-Za-z0-9])/.exec(after);
-        if (lead) {
-          const glued = lead[1] === "";
-          const listed = lead[3]!.length > 0;
-          const closed = /^\s*[:)\]—–-]/.test(after.slice(lead[0].length));
-          if (glued || listed || closed) {
-            seen.add(`${m[1]}${lead[2]}`);
-            for (const t of lead[3]!.matchAll(/(?:\d+)?([a-z]\d?)/g)) seen.add(`${m[1]}${t[1]}`);
-          }
-        }
-        // Ranges such as "z1–z6" → every number between.
-        const range = /^\s?([a-z])(\d)[–-]\1?(\d)(?!\d)/.exec(after);
-        if (range) {
-          for (let i = Number(range[2]); i <= Number(range[3]); i++) seen.add(`${m[1]}${range[1]}${i}`);
+  const scan = (line: string): void => {
+    for (const m of line.matchAll(/TASK-(\d+)/g)) {
+      const after = line.slice(m.index! + m[0].length, m.index! + m[0].length + 80);
+      // A letter list straight after the number: "TASK-27c", "TASK-27 c, j",
+      // "TASK-27b/e/m". A lone spaced letter ("TASK-27 a quiz…") only counts
+      // when a ":" ")" or dash follows, so ordinary prose is not read as an id.
+      const lead = /^(\s?)([a-z]\d?)((?:\s*[\/,]\s*(?:\d+)?[a-z]\d?)*)(?![A-Za-z0-9])/.exec(after);
+      if (lead) {
+        const glued = lead[1] === "";
+        const listed = lead[3]!.length > 0;
+        const closed = /^\s*[:)\]—–-]/.test(after.slice(lead[0].length));
+        if (glued || listed || closed) {
+          seen.add(`${m[1]}${lead[2]}`);
+          for (const t of lead[3]!.matchAll(/(?:\d+)?([a-z]\d?)/g)) seen.add(`${m[1]}${t[1]}`);
         }
       }
+      // Ranges such as "z1–z6" → every number between.
+      const range = /^\s?([a-z])(\d)[–-]\1?(\d)(?!\d)/.exec(after);
+      if (range) {
+        for (let i = Number(range[2]); i <= Number(range[3]); i++) seen.add(`${m[1]}${range[1]}${i}`);
+      }
     }
+  };
+  for (const f of tests) {
+    if (skip.test(f)) continue;
+    for (const line of readFileSync(f, "utf8").split("\n")) if (TITLE_LINE.test(line) && !COMMENT_LINE.test(line)) scan(line);
   }
+  for (const f of gates) {
+    if (skip.test(f)) continue;
+    for (const line of readFileSync(f, "utf8").split("\n")) if (!COMMENT_LINE.test(line)) scan(line);
+  }
+  for (const f of hooks) for (const line of readFileSync(f, "utf8").split("\n")) scan(line);
   return seen;
 }
 
-export function taskTrace(): { total: number; traced: number; missing: string[] } {
-  const declared = declaredIds();
-  const seen = tracedIds();
+export function taskTrace(root: string = ROOT): { total: number; traced: number; missing: string[] } {
+  const declared = declaredIds(root);
+  const seen = tracedIds(root);
   const missing = declared.filter((id) => !seen.has(id));
   return { total: declared.length, traced: declared.length - missing.length, missing };
 }
 
 function main(): void {
   const { total, traced, missing } = taskTrace();
-  console.log(`check-task-trace: ${traced} of ${total} spec task ids appear in tests, scripts or hooks.`);
+  console.log(`check-task-trace: ${traced} of ${total} spec task ids are named in a test title, a gate or a hook.`);
   if (missing.length > 0) {
     console.error(`check-task-trace: untraced — ${missing.map((id) => "TASK-" + id).join(", ")}. Put the id in a test title or a gate.`);
     process.exit(1);

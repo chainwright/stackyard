@@ -30,6 +30,14 @@
   font-display: swap;
   src: url('../assets/fonts/reading-700.woff2') format('woff2');
 }
+/* The ten digits only, cut from Bricolage Grotesque (plain zero). Listed first in
+   every Reading-face font-family so a zero is never slashed (TASK-29o). */
+@font-face {
+  font-family: 'Stackyard Digits';
+  font-style: normal; font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/digits.woff2') format('woff2');
+}
 
 :root {
   --color-paper:   #FBF8F1;
@@ -57,7 +65,7 @@
   --text-meta:     20px;   /* 0.9 x 20 = 18 at the minimum card scale */
 
   --font-head: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
-  --font-body: 'Stackyard Reading', 'Atkinson Hyperlegible', 'Arial', sans-serif;
+  --font-body: 'Stackyard Digits', 'Stackyard Reading', 'Atkinson Hyperlegible', 'Arial', sans-serif;
 
   --card-scale: 0.95;
 }
@@ -169,7 +177,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .start-ring svg { display: block; }
 .start-inner { position: relative; z-index: 3; }
 
-.start-card h1 { font-family: var(--font-head); font-weight: 800; font-size: var(--text-question); line-height: 1.2; margin-bottom: 10px; }
+.start-card h1 { font-family: var(--font-head); font-weight: 800; font-size: var(--text-question); line-height: 1.2; margin-bottom: 10px; background: var(--color-paper); }
+.start-card p.lede { background: var(--color-paper); }
 .start-card p.lede { font-size: var(--text-body); line-height: 1.5; margin-bottom: 22px; color: var(--color-ink); }
 
 label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
@@ -226,6 +235,9 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 .deal-card.c2 { transform: translate(30px,28px) rotate(3deg);  z-index: 2; }
 .deal-card.c3 { transform: translate(20px,16px) rotate(-2deg); z-index: 3; }
 .deal-card.c4 { transform: translate(0,0) rotate(1.5deg); z-index: 4; animation: land 240ms ease-out; overflow: visible; }
+/* The cards behind the top one are just paper: their "Card N · ready" label showed through
+   the landing card as a faint ghost (J1 r5), so it is not drawn. */
+.deal-card:not(.c4) .deal-num { visibility: hidden; }
 @keyframes land { from { transform: translate(-10px,-14px) rotate(5deg); opacity: 0.6; } to { transform: translate(0,0) rotate(1.5deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .deal-card.c4 { animation: none; } }
 
@@ -274,6 +286,8 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 .canvas-area { position: relative; background: var(--color-desk); background-image: repeating-linear-gradient(90deg, rgba(30,42,71,.025) 0 2px, transparent 2px 9px); display: flex; flex-direction: column; align-items: center; justify-content: center; justify-content: safe center; gap: 12px; overflow-x: hidden; overflow-y: auto; min-height: 0; padding: 16px; }
 .canvas-scale { width: calc(820px * var(--card-scale)); height: calc(640px * var(--card-scale)); flex: 0 0 auto; position: relative; margin-top: 24px; /* the ring loops stand ~22px above the card */ }
 .canvas-scale > .sy-card-stack { transform: scale(var(--card-scale)); transform-origin: top left; }
+/* Below scale 0.9 the 20px meta line would render under the 18px floor: counter-scale it. */
+.canvas-area .sy-meta { font-size: max(20px, calc(18px / var(--card-scale, 1))); }
 
 /* Flash front/back segmented control */
 .segmented { display: inline-flex; border: 1.5px solid var(--color-ink); border-radius: var(--radius-button); overflow: hidden; flex: 0 0 auto; }

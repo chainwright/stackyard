@@ -33,6 +33,7 @@ import { fitBody, STORY_BODY_MAX } from "../src/shared/fitText.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
+import { isStockEndLine, soundsLikeEnding } from "../src/shared/endLine.js";
 import {
   QUIZ_QUESTION,
   QUIZ_TILES,
@@ -40,6 +41,7 @@ import {
   FLASH_BACK,
   FLASH_NEXT,
   END_HEADING,
+  END_BODY,
   END_SCORE,
   MAX_QUIZ_ANSWERS,
   MAX_STORY_CHOICES,
@@ -167,6 +169,7 @@ const MAX_TERM = 80;
 const MAX_BACK = 500;
 const MAX_LABEL = 90;
 const MAX_END = 100;
+const MAX_END_BODY = 300;
 
 /** Words whose trailing dot is NOT a sentence end ("Dr. Thomas Edison"). */
 const ABBREVIATIONS = new Set(["dr", "mr", "mrs", "ms", "st", "e.g", "i.e", "etc", "vs", "no"]);
@@ -549,11 +552,75 @@ function normalizeEnd(card: Card): Card {
   const fields = card.elements.filter((e) => e.type === "field");
   const elements: Element[] = [];
   if (texts[0]) elements.push({ ...texts[0], ...END_HEADING, content: cap(texts[0].content, MAX_END) });
+  // An optional longer message under the heading (TASK-29k); any further texts join it.
+  const message = texts.slice(1).map((t) => t.content.trim()).filter((t) => t.length > 0).join(" ");
+  if (texts[1] && message.length > 0) {
+    elements.push({ ...texts[1], ...END_BODY, content: cap(message, MAX_END_BODY) });
+  }
   for (const f of fields) elements.push({ ...f, ...END_SCORE });
   for (const e of card.elements) {
     if (e.type === "button" || e.type === "image") elements.push(clampToCanvas(e));
   }
   return { ...card, elements };
+}
+
+/**
+ * One ending, not two (TASK-29k). A model asked for "a long encouraging message
+ * on the last card" tends to put it in a flash or story card right before the
+ * end card ("You did it!" / "Tap the card to see the answer"), after which the
+ * real end card shows its own stock line. When the card just before the end card
+ * is not a quiz and its front sounds like a sign-off, fold it into the end card:
+ * its front becomes the heading (unless the model wrote its own heading) and its
+ * longer text becomes the body. Links that pointed at it now point at the end card.
+ */
+export function foldEndLikeCard(stack: Stack): Stack {
+  const endIx = stack.cards.findIndex((c) => c.kind === "end");
+  if (endIx < 1) return stack;
+  const end = stack.cards[endIx]!;
+  const fake = stack.cards[endIx - 1]!;
+  if (fake.kind === "quiz" || fake.kind === "end") return stack;
+  if (stack.cards.filter((c) => c.id !== fake.id && c.kind !== "end").length < 1) return stack;
+  const fakeTexts = textsOf(fake);
+  const front = (fakeTexts[0]?.content ?? "").trim();
+  if (front.length === 0 || !soundsLikeEnding(front)) return stack;
+
+  const endTexts = textsOf(end);
+  const ownHeading = (endTexts[0]?.content ?? "").trim();
+  const headingText = ownHeading.length === 0 || isStockEndLine(ownHeading) ? front : ownHeading;
+  const longText = (fakeTexts[1]?.content ?? "").trim();
+  const bodyText = longText.length > 0 ? longText : headingText === front ? (endTexts[1]?.content ?? "").trim() : front;
+
+  const newElements: Element[] = [];
+  newElements.push({
+    type: "text",
+    id: endTexts[0]?.id ?? fakeTexts[0]!.id,
+    ...END_HEADING,
+    content: cap(headingText, MAX_END),
+  });
+  if (bodyText.length > 0) {
+    newElements.push({
+      type: "text",
+      id: endTexts[1]?.id ?? fakeTexts[1]?.id ?? crypto.randomUUID(),
+      ...END_BODY,
+      content: cap(bodyText, MAX_END_BODY),
+    });
+  }
+  for (const e of end.elements) if (e.type !== "text") newElements.push(e);
+
+  const retarget = (actions: Action[]): Action[] =>
+    actions.map((a) => (a.type === "goto" && a.cardId === fake.id ? { ...a, cardId: end.id } : a));
+  const cards = stack.cards
+    .filter((c) => c.id !== fake.id)
+    .map((c) =>
+      c.id === end.id
+        ? { ...c, elements: newElements }
+        : {
+            ...c,
+            actions: retarget(c.actions),
+            elements: c.elements.map((e) => (e.type === "button" ? { ...e, actions: retarget(e.actions) } : e)),
+          },
+    );
+  return { ...stack, cards };
 }
 
 // ---------------------------------------------------------------------------
@@ -580,7 +647,10 @@ export function normalizeGeneratedCard(card: Card, ctx: Ctx = {}): Card {
  * validation (it should not — every step only re-positions, retargets or adds),
  * the un-normalised stack is returned linked and shuffled, never a broken one.
  */
-export function finaliseGeneratedStack(stack: Stack): Stack {
+export function finaliseGeneratedStack(input: Stack): Stack {
+  // One ending: fold a fake sign-off card into the end card first (TASK-29k).
+  const folded = foldEndLikeCard(input);
+  const stack = validate(folded).valid ? folded : input;
   const ids = new Set(stack.cards.map((c) => c.id));
   const cards = stack.cards.map((card, i) =>
     normalizeGeneratedCard(card, { next: nextCardAfter(stack, i), ids }),

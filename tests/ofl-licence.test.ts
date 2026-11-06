@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { exportStack, exportLivingStack } from "../server/exporter.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 
-describe("the OFL 1.1 licence travels with the fonts", () => {
+describe("TASK-27r: the OFL 1.1 licence travels with the fonts", () => {
   for (const [name, fn] of [["class file", exportStack], ["living file", exportLivingStack]] as const) {
     it(`${name} contains the licence text exactly once`, async () => {
       const html = await fn(vikingsStack());

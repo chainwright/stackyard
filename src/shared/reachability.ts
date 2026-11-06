@@ -194,12 +194,15 @@ export function describeProblems(
   label: (card: Card) => string,
 ): string[] {
   const lines: string[] = [];
-  for (const c of report.unreachable) lines.push(`The class can't reach ${label(c)}.`);
-  for (const c of report.deadEndQuiz) lines.push(`${label(c)} has an answer that goes nowhere.`);
-  for (const c of report.deadEndOther) lines.push(`${label(c)} has a button that goes nowhere.`);
-  for (const c of report.stuck) lines.push(`${label(c)} has no way to move on.`);
-  for (const c of report.trapped) lines.push(`${label(c)} loops back on itself and never reaches the last card.`);
-  for (const c of report.placeholders) lines.push(`${label(c)} still has the words it started with — fill it in or remove it.`);
+  // A card name may already end in "." / "?" / "…": end the sentence once, never "..".
+  const finish = (s: string): string => (/[.!?…]$/.test(s) ? s : s + ".");
+  const mid = (s: string): string => s.replace(/\.+$/, (m) => (m.length > 1 ? "." : m));
+  for (const c of report.unreachable) lines.push(finish(`The class can't reach ${mid(label(c))}`));
+  for (const c of report.deadEndQuiz) lines.push(`${mid(label(c))} has an answer that goes nowhere.`);
+  for (const c of report.deadEndOther) lines.push(`${mid(label(c))} has a button that goes nowhere.`);
+  for (const c of report.stuck) lines.push(`${mid(label(c))} has no way to move on.`);
+  for (const c of report.trapped) lines.push(`${mid(label(c))} loops back on itself and never reaches the last card.`);
+  for (const c of report.placeholders) lines.push(`${mid(label(c))} still has the words it started with — fill it in or remove it.`);
   return lines;
 }
 

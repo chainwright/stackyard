@@ -88,6 +88,26 @@ const DRIVER = `
   function textRect(el) {
     var r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect();
   }
+  // TASK-29e: the whole card is visible without scrolling.
+  function fitsArea(label) {
+    label = "TASK-29e " + label;
+    var area = document.querySelector(".canvas-area");
+    var cardEl = document.querySelector(".sy-card");
+    if (!area || !cardEl) return;
+    var a = rect(area), c = rect(cardEl), tb = document.querySelector(".toolbar");
+    if (area.scrollHeight > area.clientHeight + 2) {
+      var over = [];
+      Array.prototype.forEach.call(area.querySelectorAll("*"), function (n) {
+        var r2 = rect(n);
+        if (r2.height > 0 && r2.bottom > a.bottom + 2 && over.length < 4) over.push(n.tagName + "." + (n.className && n.className.baseVal === undefined ? n.className : "") + "@" + Math.round(r2.bottom));
+      });
+      problems.push(label + ": the canvas area needs a scroll (" + area.scrollHeight + " > " + area.clientHeight + ") scale=" + area.style.getPropertyValue("--card-scale") + " card=" + Math.round(c.width) + "x" + Math.round(c.height) + " areaBottom=" + Math.round(a.bottom) + " over=" + over.join(","));
+    }
+    if (c.bottom > a.bottom + 1) problems.push(label + ": the card runs below its canvas area (" + Math.round(c.bottom) + " > " + Math.round(a.bottom) + ")");
+    if (tb && c.bottom > rect(tb).top + 1) problems.push(label + ": the card runs under the toolbar");
+    var rings = document.querySelector(".sy-rings");
+    if (rings && rect(rings).top < a.top - 0.5) problems.push(label + ": the ring loops are clipped by the top of the canvas area");
+  }
   function check() {
     if (MODE === "start") {
       var h1 = document.querySelector(".start-card h1");
@@ -105,11 +125,18 @@ const DRIVER = `
       var names = Array.prototype.map.call(document.querySelectorAll(".ready-made-link"), function (e) { return e.textContent; });
       if (names.length === 0) problems.push("no ready-made deck links");
       if (new Set(names).size !== names.length) problems.push("a ready-made deck is listed twice");
+      // TASK-29l: the card's ruled lines must not run through the heading or the intro
+      // (they sit on paper-coloured blocks that hide the rules behind them).
+      var transparent = /^rgba\(0, 0, 0, 0\)$|^transparent$/;
+      var intro = [document.querySelector(".start-card h1"), document.querySelector(".start-card p.lede")];
+      intro.forEach(function (n, k) {
+        if (n && transparent.test(getComputedStyle(n).backgroundColor)) problems.push("the " + (k === 0 ? "heading" : "intro") + " is on a transparent background, so the ruled lines run through it");
+      });
       // TASK-28e: the example chips share one row.
       var chips = document.querySelectorAll(".example-tab");
       if (chips.length > 1) {
         var tops = Array.prototype.map.call(chips, function (c) { return Math.round(rect(c).top); });
-        if (Math.max.apply(null, tops) - Math.min.apply(null, tops) > 3) problems.push("the example chips wrap onto more than one row");
+        if (Math.max.apply(null, tops) - Math.min.apply(null, tops) > 3) problems.push("TASK-28e: the example chips wrap onto more than one row");
       }
       // TASK-28e: the peek card's tiles lie inside it and are not hidden behind the start card.
       var peek = document.querySelector(".peek");
@@ -133,7 +160,7 @@ const DRIVER = `
     }
     if (MODE.indexOf("banner:") === 0) {
       var notice = document.querySelector(".notice");
-      if (!notice) { problems.push("no banner is showing, so the banner case did not run"); return; }
+      if (!notice) { problems.push("TASK-28r: no banner is showing, so the banner case did not run"); return; }
       var nr = rect(notice);
       var areaEl = document.querySelector(".canvas-area");
       var ar2 = rect(areaEl);
@@ -141,6 +168,7 @@ const DRIVER = `
       var ringEl = document.querySelector(".sy-rings");
       if (ringEl && rect(ringEl).top < ar2.top - 0.5) problems.push("the card's rings are clipped by the top of the canvas area");
       var seg = document.querySelector(".segmented button");
+      fitsArea(MODE);
       if (MODE === "banner:flash") {
         if (!seg) problems.push("no Front/Back switch on the flash card");
         else {
@@ -153,6 +181,7 @@ const DRIVER = `
     }
     var card = document.querySelector(".sy-card");
     if (!card) return false;
+    fitsArea(MODE);
     var exp = document.querySelector(".export-btn");
     if (exp && exp.getBoundingClientRect().height > 60) problems.push("Export File wraps onto two lines (" + Math.round(exp.getBoundingClientRect().height) + "px tall)");
     Array.prototype.forEach.call(document.querySelectorAll(".tool-card svg"), function (s) {
@@ -242,6 +271,9 @@ function main(): void {
     { name: "quiz editor @1366×911", mode: "quiz", stack: prepared(quizDeck()), win: [1366, 911] },
     { name: "quiz editor @1920×1080 (Right answer tab vs Drag pill)", mode: "quiz", stack: prepared(quizDeck()), win: [1920, 1080] },
     { name: "story editor @1366×911", mode: "story", stack: prepared(storyDeck()), win: [1366, 911] },
+    // TASK-29e: the whole card fits the canvas on the short 657 px laptop too.
+    { name: "quiz editor @1366×800 (657 viewport)", mode: "quiz", stack: prepared(quizDeck()), win: [1366, 800] },
+    { name: "story editor @1366×800 (657 viewport)", mode: "story", stack: prepared(storyDeck()), win: [1366, 800] },
     // TASK-28r: a notice banner shows (ready-made deck): the canvas lays out BELOW it.
     { name: "flash editor + banner @1366×911 (768 viewport)", mode: "banner:flash", stack: null, win: [1366, 911] },
     { name: "flash editor + banner @1366×800 (657 viewport)", mode: "banner:flash", stack: null, win: [1366, 800] },
@@ -250,8 +282,10 @@ function main(): void {
   ];
   let failed = false;
   let scenarioNo = 0;
+  const only = process.env["MAKER_FIT_ONLY"];
   for (const s of scenarios) {
     scenarioNo++;
+    if (only !== undefined && !s.name.includes(only)) continue;
     const seed =
       s.stack === null
         ? `try { localStorage.removeItem("stackyard:maker:v1"); } catch (e) {}`

@@ -254,12 +254,13 @@ describe("exportStack — REQ-EXP-01: loads nothing from the network at runtime 
 // Fonts inlined for offline use + OFL notice + no reserved font name.
 
 describe("exportStack — inlined fonts (built-app review P0 #2)", () => {
-  it("declares @font-face for all three design-system fonts as woff2 data URIs", async () => {
+  it("declares @font-face for all four design-system fonts as woff2 data URIs (headings, reading 400/700, digits)", async () => {
     const html = await exportStack(validStack());
     const fontFaceCount = (html.match(/@font-face/g) ?? []).length;
-    expect(fontFaceCount).toBe(3);
+    expect(fontFaceCount).toBe(4);
     const dataUriCount = (html.match(/data:font\/woff2;base64,/g) ?? []).length;
-    expect(dataUriCount).toBe(3);
+    expect(dataUriCount).toBe(4);
+    expect(html).toContain("'Stackyard Digits'");
     // Both design-system families are declared.
     expect(html).toContain("'Bricolage Grotesque'");
     expect(html).toContain("'Stackyard Reading'");

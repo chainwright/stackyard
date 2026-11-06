@@ -44,16 +44,21 @@ function elementIdFromClick(
 }
 
 /**
- * Fit scale: fill the canvas area, clamped ≥ 0.9 in the Maker (design-system).
- * `reservedTop` is the height of any control that sits ABOVE the card in this
- * view (e.g. the flash Front/Back switch), subtracted so the card plus its
- * control always fit and the control is never clipped under the top bar.
+ * Fit scale: fill the canvas area. The Maker used to clamp this to ≥ 0.9, which
+ * kept the "Card N of M" line at 18px but let the card overflow its area when a
+ * banner or a short laptop screen left too little height — the bottom ~60 px ran
+ * under the toolbar (TASK-29e). The card now always fits; the lower bound only
+ * stops it vanishing, and the meta line is counter-scaled in CSS so it still
+ * renders at 18px or more. `reservedTop` is the height of any control above the
+ * card (the flash Front/Back switch), subtracted so card and control fit.
  */
-function fitScale(area: HTMLElement, reservedTop = 0): number {
+export function fitScale(area: HTMLElement, reservedTop = 0): number {
   const w = area.clientWidth;
-  const h = area.clientHeight - reservedTop - 24; // 24 = room for the ring loops above the card
-  const s = Math.min((w - 48) / 812, (h - 48) / 612);
-  return Math.max(0.9, Math.min(s, 1.35));
+  // Height the scaled stack (820 × 640 design box) may take: the area minus its 16 px
+  // padding top and bottom, the 24 px of ring room above the card, and any control above it.
+  const h = area.clientHeight - reservedTop - 32 - 24;
+  const s = Math.min((w - 48) / 812, h / 640);
+  return Math.max(0.5, Math.min(s, 1.35));
 }
 
 export function Canvas({
@@ -162,6 +167,10 @@ export function Canvas({
           hint.style.height = "32px";
           const p = document.createElement("p");
           p.className = "sy-flash-hint";
+          // The wrapper already positions the hint (top 488). The class itself is
+          // absolute (top 524, for the player), which stacked on the wrapper's offset
+          // and drew the hint ~500 px BELOW the card (TASK-29e: it made the canvas scroll).
+          p.style.position = "static";
           p.textContent = "Tap the card to see the answer";
           hint.appendChild(p);
           cardEl.appendChild(hint);

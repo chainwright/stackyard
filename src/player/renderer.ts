@@ -18,6 +18,7 @@ import type { RuntimeState } from "./runtime.js";
 import { dispatch, resetRuntime } from "./runtime.js";
 import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT, STORY_BODY_MAX } from "../shared/fitText.js";
 import { gotoOf } from "../shared/flow.js";
+import { isStockEndLine } from "../shared/endLine.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -260,7 +261,7 @@ const PLAYER_STYLES = `
 }
 .sy-meta-chrome .sy-meta {
   font-size: var(--text-meta);     /* 20px — stays ≥ 18px at min scale */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -291,7 +292,7 @@ const PLAYER_STYLES = `
 /* ---- Text element — body (story / flash / generic) ---- */
 .sy-text {
   font-size: var(--text-body);       /* 22px */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -302,7 +303,7 @@ const PLAYER_STYLES = `
    box it read as a two-line note on a blank page. ---- */
 .sy-story {
   font-size: 30px;
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -370,7 +371,7 @@ const PLAYER_STYLES = `
   width: 704px;
   height: 280px;
   font-size: 26px;
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 40px;
   color: var(--color-ink);
@@ -387,7 +388,7 @@ const PLAYER_STYLES = `
   width: 344px;
   text-align: left;
   font-size: var(--text-meta);       /* 20px */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.3;
   color: #4a5878;
@@ -405,7 +406,7 @@ const PLAYER_STYLES = `
 /* ---- Meta text (Card N of M) ---- */
 .sy-meta {
   font-size: var(--text-meta);       /* 18px */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-ink);
@@ -414,7 +415,7 @@ const PLAYER_STYLES = `
 /* ---- Field span ---- */
 .sy-field {
   font-size: var(--text-meta);       /* 18px */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 400;
   color: var(--color-ink);
 }
@@ -436,7 +437,7 @@ const PLAYER_STYLES = `
   padding: 0 20px;
   min-height: 56px;
   font-size: var(--text-tile);       /* 32px */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 700;
   line-height: 1.3;
   cursor: pointer;
@@ -482,7 +483,7 @@ const PLAYER_STYLES = `
   background: var(--color-paper);
   color: var(--color-ink);
   font-size: var(--text-tile);       /* 32px — reads as a chunky tab */
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 700;
   cursor: pointer;
   min-height: 44px;
@@ -578,6 +579,17 @@ const PLAYER_STYLES = `
   line-height: 1.3;
   color: var(--color-ink);
 }
+.sy-end-body {
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
+  font-size: 22px;
+  line-height: 1.4;
+  max-width: 680px;
+  color: var(--color-ink);
+}
+/* With a longer message the end card tightens so everything still fits 600px. */
+.sy-end-has-body { gap: 12px; padding: 36px 60px; }
+.sy-end-has-body .sy-end-heading { font-size: 36px; }
+.sy-end-has-body .sy-end-score { font-size: 40px; }
 .sy-end-score {
   font-size: 56px;
   font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
@@ -693,7 +705,7 @@ const PLAYER_STYLES = `
   color: var(--color-white);
   font-size: 20px;
   line-height: 1;
-  font-family: 'Stackyard Reading', 'Arial', sans-serif;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
   font-weight: 700;
   padding: 5px 12px;
   border-radius: 6px;
@@ -769,8 +781,7 @@ function countQuizCards(stack: Stack): number {
 // ---------------------------------------------------------------------------
 // End-card renderer
 
-/** Headings that celebrate: swapped for a neutral line over a score of zero. */
-const CELEBRATORY = /\b(well done|great|brilliant|fantastic|amazing|excellent|congrat|superb|top marks|hooray|bravo|wow)\b/i;
+export { isStockEndLine };
 
 function renderEndCard(
   card: Card,
@@ -790,15 +801,28 @@ function renderEndCard(
 
   // Heading — use the card's own text element if present, otherwise "Well done!".
   // A celebratory line over a score of 0 reads as mockery ("Well done!" above
-  // "Score 0 of 3", J1 round 3), so at 0 a CELEBRATORY heading is swapped for a
-  // neutral one; a teacher's own heading is left alone.
-  const textEl = card.elements.find((e) => e.type === "text");
-  let headingText = textEl && textEl.type === "text" ? textEl.content : "Well done!";
-  if (total > 0 && score === 0 && CELEBRATORY.test(headingText)) headingText = "You finished!";
+  // "Score 0 of 3", J1 round 3), so at 0 one of Stackyard's OWN stock lines is
+  // swapped for a neutral one. A heading the teacher (or the model) wrote is kept
+  // at every score and shown as typed in the editor too (TASK-29m: it used to be
+  // swapped as well, so a teacher's "Brilliant work on fractions!" never showed).
+  const endTexts = card.elements.filter((e): e is Extract<typeof e, { type: "text" }> => e.type === "text");
+  const textEl = endTexts[0];
+  let headingText = textEl ? textEl.content : "Well done!";
+  if (total > 0 && score === 0 && isStockEndLine(headingText)) headingText = "You finished!";
   const heading = document.createElement("h1");
   heading.className = "sy-end-heading";
   heading.textContent = headingText;
   container.appendChild(heading);
+
+  // An optional body under the heading: a longer message (TASK-29k).
+  const bodyText = endTexts[1]?.content.trim() ?? "";
+  if (bodyText.length > 0) {
+    container.classList.add("sy-end-has-body");
+    const body = document.createElement("p");
+    body.className = "sy-end-body";
+    body.textContent = bodyText;
+    container.appendChild(body);
+  }
 
   // Score line "Score N of M" — only when the deck HAS questions. A story-only
   // deck has nothing to score, and "Score 0 of 0" is just noise (TASK-27l/y).
@@ -1194,6 +1218,12 @@ export function renderCard(
       )
     : [];
   let answerSlotIndex = 0;
+  // Sibling choices (story branches, plain buttons) share one font size.
+  const sharedChoices = sharedChoiceFit(
+    card.elements.filter(
+      (e): e is ButtonElement => e.type === "button" && !(isQuizCard && e.actions.length > 0),
+    ),
+  );
   // Only the FIRST text element on a quiz/flash card is the big question token;
   // any later text (e.g. an image credit line) renders as small body text, so a
   // credit doesn't shout in 44px (TASK-23 d).
@@ -1238,6 +1268,7 @@ export function renderCard(
           navigate,
           playSound,
           ariaLive,
+          isAnswer ? undefined : sharedChoices,
         );
         wrapper.appendChild(btn);
         if (isAnswer) answerSlotIndex++;
@@ -1316,6 +1347,24 @@ function positionElement(wrapper: HTMLElement, el: StackElement): void {
 // ---------------------------------------------------------------------------
 // Button / tile builder
 
+/** The font size a generic (non-tile) button needs to fit its box. */
+function genericButtonFit(el: ButtonElement): { size: number; lineHeight: number } {
+  return fitText(el.label, {
+    w: Math.max(40, el.w - 36),
+    h: Math.max(24, el.h - 20),
+    maxSize: 32,
+    minSize: MIN_FONT,
+    lineHeight: (sz) => Math.round(sz * 1.15),
+    charWidth: 0.56,
+  });
+}
+
+/** One size for a card's sibling choices: the smallest any of them needs. */
+export function sharedChoiceFit(buttons: ButtonElement[]): { size: number; lineHeight: number } | undefined {
+  if (buttons.length < 2) return undefined;
+  return buttons.map(genericButtonFit).reduce((a, b) => (b.size < a.size ? b : a));
+}
+
 function buildButtonElement(
   el: ButtonElement,
   isAnswerTile: boolean,
@@ -1325,6 +1374,7 @@ function buildButtonElement(
   navigate: (id: string, automatic: boolean) => void,
   playSound: (sound: "cheer" | "buzz") => void,
   ariaLive: HTMLElement,
+  sharedFit?: { size: number; lineHeight: number },
 ): HTMLButtonElement {
   const slot = isAnswerTile ? TILE_SLOTS[slotIndex % 4] : undefined;
 
@@ -1359,18 +1409,9 @@ function buildButtonElement(
     // ---- Generic button ----
     btn.className = "sy-button";
     btn.textContent = el.label;
-    applyFit(
-      btn,
-      fitText(el.label, {
-        w: Math.max(40, el.w - 36),
-        h: Math.max(24, el.h - 20),
-        maxSize: 32,
-        minSize: MIN_FONT,
-        lineHeight: (sz) => Math.round(sz * 1.15),
-        charWidth: 0.56,
-      }),
-      32,
-    );
+    // Sibling choices on a card share ONE size (the smallest any of them needs),
+    // so two choices don't read as two different weights (TASK-29l).
+    applyFit(btn, sharedFit ?? genericButtonFit(el), 32);
   }
 
   btn.addEventListener("click", () => {

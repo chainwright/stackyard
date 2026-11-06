@@ -86,52 +86,84 @@ function retarget(actions: Action[], from: string, to: string): Action[] {
   return actions.map((a) => (a.type === "goto" && a.cardId === from ? { ...a, cardId: to } : a));
 }
 
-/**
- * Splice the card at `index` into the flow (TASK-28h). The card before it in
- * deck order is where play comes from, and its Next / Continue / answers /
- * auto-advance still point at the card that used to follow it — which is now
- * the one AFTER the new card. So: every goto on the card before that targeted
- * the card after is retargeted to the new card. If it had none (a branch that
- * pointed somewhere else, or no button at all), its first button's goto — or a
- * card-level goto if it has no button — is pointed at the new card.
- *
- * Only retargets/adds gotos to real cards, so every stack invariant holds. The
- * new card's own way forward is added by {@link ensureForwardLinks}.
- */
-export function linkInto(stack: Stack, index: number): Stack {
-  const target = stack.cards[index];
-  const before = stack.cards[index - 1];
-  if (target === undefined || before === undefined || before.kind === "end") return stack;
-  const after = stack.cards[index + 1];
+/** Every distinct card a card leads to (button-level and card-level gotos). */
+export function outTargets(card: Card): string[] {
+  const out = new Set<string>();
+  for (const a of card.actions) if (a.type === "goto") out.add(a.cardId);
+  for (const el of card.elements) {
+    if (el.type === "button") for (const a of el.actions) if (a.type === "goto") out.add(a.cardId);
+  }
+  return [...out];
+}
 
-  const retargetCard = (card: Card): Card => {
-    if (after === undefined) return card;
-    return {
-      ...card,
-      actions: retarget(card.actions, after.id, target.id),
-      elements: card.elements.map((el) =>
-        el.type === "button" ? { ...el, actions: retarget(el.actions, after.id, target.id) } : el,
+/** Give every button of `card` that has no goto one to `target`; add a Next/Continue if it has none. */
+function withForward(card: Card, target: string): Card {
+  let elements: Element[] = card.elements.map((el) =>
+    el.type === "button" && gotoOf(el.actions) === null
+      ? { ...el, actions: [...el.actions, { type: "goto", cardId: target } as Action] }
+      : el,
+  );
+  const hasButton = elements.some((e) => e.type === "button");
+  if (!hasButton && gotoOf(card.actions) === null) {
+    if (card.kind === "flash") elements = [...elements, makeButton("Next Card", FLASH_NEXT, target)];
+    else if (card.kind === "story") elements = [...elements, makeButton("Continue", STORY_CONTINUE, target)];
+  }
+  return { ...card, elements };
+}
+
+export interface SpliceResult {
+  stack: Stack;
+  /** True when the card before the new one leads to several cards: the new card is left unlinked. */
+  fork: boolean;
+}
+
+/**
+ * Splice the new card at `index` into the flow WITHOUT rewiring anything
+ * (TASK-29a; the TASK-28h version overwrote a branch's link when the card before
+ * did not point at the next card in deck order, silently merging two story paths).
+ *
+ * Let P be the card before the new card N and X the one card P leads to:
+ *   - P → X becomes P → N → X (every link of P to X moves to N; N goes to X, not
+ *     to the next card in deck order);
+ *   - P leads nowhere yet: N goes to the next card in deck order, and the usual
+ *     forward-linking gives P its way on to N;
+ *   - P leads to two or more different cards (a fork): nothing is changed. N is
+ *     left unlinked — the teacher chooses where it leads.
+ * No existing link is ever pointed somewhere else except the spliced edge.
+ */
+export function spliceNewCard(stack: Stack, index: number): SpliceResult {
+  const fresh = stack.cards[index];
+  const before = stack.cards[index - 1];
+  if (fresh === undefined || before === undefined || before.kind === "end") return { stack, fork: false };
+  const deckNext = stack.cards[index + 1];
+  const targets = outTargets(before);
+
+  let x = deckNext?.id;
+  let patchedBefore = before;
+  let fork = false;
+  if (targets.length === 1) {
+    x = targets[0]!;
+    patchedBefore = {
+      ...before,
+      actions: retarget(before.actions, x, fresh.id),
+      elements: before.elements.map((el) =>
+        el.type === "button" ? { ...el, actions: retarget(el.actions, x!, fresh.id) } : el,
       ),
     };
-  };
-
-  let patched = retargetCard(before);
-  const touched = JSON.stringify(patched) !== JSON.stringify(before);
-  if (!touched) {
-    // Nothing on the card before pointed at the card after (it branched
-    // elsewhere, or had no way on). Give it a goto to the new card.
-    const firstButton = patched.elements.find((e): e is ButtonElement => e.type === "button");
-    if (firstButton !== undefined) {
-      const actions = gotoOf(firstButton.actions) !== null
-        ? firstButton.actions.map((a) => (a.type === "goto" ? { ...a, cardId: target.id } : a))
-        : [...firstButton.actions, { type: "goto", cardId: target.id } as Action];
-      patched = { ...patched, elements: patched.elements.map((e) => (e === firstButton ? { ...firstButton, actions } : e)) };
-    } else {
-      patched = { ...patched, actions: [...patched.actions.filter((a) => a.type !== "goto"), { type: "goto", cardId: target.id }] };
-    }
+  } else if (targets.length >= 2) {
+    fork = true;
   }
-  return { ...stack, cards: stack.cards.map((c) => (c.id === before.id ? patched : c)) };
+  const patchedFresh = x !== undefined && x !== fresh.id ? withForward(fresh, x) : fresh;
+  return {
+    stack: {
+      ...stack,
+      cards: stack.cards.map((c) => (c.id === before.id ? patchedBefore : c.id === fresh.id ? patchedFresh : c)),
+    },
+    fork,
+  };
 }
+
+export { retarget };
 
 /** Add a goto to an action list unless it already has one. */
 function withGoto(actions: Action[], target: string): Action[] {

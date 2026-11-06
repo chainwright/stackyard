@@ -17,7 +17,7 @@ const README = read("README.md");
 /** The README with line wrapping flattened, for phrase checks. */
 const FLAT = README.replace(/\s+/g, " ");
 
-describe("TASK-26m: three sample lessons in samples/", () => {
+describe("TASK-26m and TASK-27n: three sample lessons in samples/ match their ready-made decks", () => {
   it("there are exactly the three listed in the generator", () => {
     expect(SAMPLES.map((s) => s.file)).toEqual(["vikings-in-ireland.html", "times-tables.html", "irish-words.html"]);
   });
@@ -114,7 +114,7 @@ describe("TASK-26m: the README is honest for judges", () => {
   });
 });
 
-describe("TASK-26n: the tile shapes are documented as an accessibility feature", () => {
+describe("TASK-26n and TASK-27s: the tile shapes are documented as an accessibility feature, neutrally", () => {
   it("is in the README", () => {
     expect(README).toMatch(/^## Accessibility: answer tiles carry a shape as well as a colour$/m);
     expect(FLAT).toMatch(/colour-blind pupil can say "the triangle"/);

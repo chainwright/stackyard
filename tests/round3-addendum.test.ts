@@ -19,7 +19,7 @@ import type { Action, Card, GenerateStreamMessage, Stack } from "../src/shared/t
 // ---------------------------------------------------------------------------
 // z1 — proper nouns survive the sentence-case pass
 
-describe("z1: sentenceCaseLabel keeps proper nouns", () => {
+describe("TASK-27 z1: sentenceCaseLabel keeps proper nouns", () => {
   it.each([
     ["The Battle Of Hastings", "The Battle of Hastings"],
     ["United States Of America", "United States of America"],
@@ -36,7 +36,7 @@ describe("z1: sentenceCaseLabel keeps proper nouns", () => {
 // ---------------------------------------------------------------------------
 // z2 — a pronoun is never the front of a flash card
 
-describe("z2: no pronoun terms", () => {
+describe("TASK-27 z2: no pronoun terms", () => {
   it.each([
     "This is the process where plants make food from sunlight.",
     "There are 206 bones in the adult body.",
@@ -79,7 +79,7 @@ const deck = (cards: Card[]): Stack => ({
 });
 const END = (n: number): Card => ({ id: id(n), kind: "end", actions: [], elements: [] });
 
-describe("z3: reverse reachability from the end card", () => {
+describe("TASK-27 z3: reverse reachability from the end card", () => {
   it("a branch that loops on itself is reported, even though every card is reachable", () => {
     // 1 -> {2, 3};  2 -> end;  3 -> 3 (its only button points to itself)
     const stack = deck([card(1, "story", [2, 3]), card(2, "story", [4]), card(3, "story", [3]), END(4)]);
@@ -156,7 +156,7 @@ describe("z3: reverse reachability from the end card", () => {
 // ---------------------------------------------------------------------------
 // z4 — malformed requests do not burn a slot
 
-describe("z4: validate the body before counting a rate slot", () => {
+describe("TASK-27 z4: validate the body before counting a rate slot", () => {
   let server: Server;
   afterEach(() => server?.close());
 
@@ -195,7 +195,7 @@ const failingStream = async function* (): AsyncGenerator<string> {
   throw new Error("down");
 };
 
-describe("z5: fallback honours the client's disconnect and is never silent", () => {
+describe("TASK-27 z5: fallback honours the client's disconnect and is never silent", () => {
   it("passes the client's signal into generate()", async () => {
     const client = new AbortController();
     let seen: AbortSignal | undefined;

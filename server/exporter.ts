@@ -92,6 +92,17 @@ const FONT_FACES: readonly FontFace[] = [
     ],
   },
   {
+    file: "digits.woff2",
+    family: "Stackyard Digits",
+    weight: "200 800",
+    notice: [
+      "Stackyard Digits (the ten digits 0-9 of Bricolage Grotesque, so a zero is never slashed)",
+      "Copyright 2022 The Bricolage Grotesque Project Authors",
+      "SIL Open Font License 1.1 (no Reserved Font Name)",
+      "Source: https://github.com/ateliertriay/bricolage",
+    ],
+  },
+  {
     file: "reading-400.woff2",
     family: "Stackyard Reading",
     weight: "400",

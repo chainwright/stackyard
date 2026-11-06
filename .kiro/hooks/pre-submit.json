@@ -3,7 +3,7 @@
   "hooks": [
     {
       "name": "Pre-submit: full gate",
-      "description": "When a spec task is marked complete (PostTaskExec — a documented trigger in the IDE and CLI v3; `Manual` is not invocable in either, see kiro.dev/docs/hooks/types), run the full submission gate: the whole test suite, strict type-check, the Maker build, the real-browser checks, the sample freshness check and the README claim checker. To run it on demand, include the steering file `pre-submit` (`#pre-submit` in chat) or run `npm run pre-submit`.",
+      "description": "When a spec task is marked complete (PostTaskExec — a documented trigger in the IDE and CLI v3), run the full submission gate: the whole test suite, strict type-check, the Maker build, the real-browser checks, the sample freshness check, the task-trace check and the README claim checker. Not `Manual`: kiro.dev/docs/hooks/types lists Manual hooks as not invocable in CLI v3, and the IDE no longer creates them. To run it on demand, use the steering file `pre-submit` (type `/pre-submit` in chat) or run `npm run pre-submit`.",
       "trigger": "PostTaskExec",
       "action": {
         "type": "command",

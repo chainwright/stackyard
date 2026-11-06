@@ -1518,3 +1518,60 @@ Source: `judge_2026-11-06_r4/J1–J5`. Spec first, then code, then a test that f
   - **Acceptance criteria.** `tests/hooks.test.ts` checks the new hook's shape and that the steering rule is present. KIRO_LOG records a firing only if the session store shows one.
 
 **Gate (TASK-28):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `check:living-file`, `check:text-fit` (with the banner cases) and `check:samples` pass.
+
+
+## Phase 15 — Round-5 review fixes (TASK-29)
+
+Source: `judge_2026-11-06_r5/J1–J5`. Spec first, then code, then a test that fails without each fix. Source is edited with Kiro's file tools (steering rule in `tech.md`).
+
+### TASK-29a: inserting a card never rewires a story  *(J4 P1-1, P1)*
+  - **Bug.** `linkInto` assumed play reaches the new card from the card before it in deck order, and overwrote that card's first button when nothing pointed at the card after it. On a branching story that merged two branches silently, and `repairFlow` ("Link these in for me") did the same by overwriting a side card's Continue. The share check was then clean, so a corrupted story shipped.
+  - **Fix.** Splice on the real edge. Let X be the one place the card before the new card (P) leads. P → X becomes P → new → X (every link of P to X moves to the new card; the new card goes to X, not to the deck-order next). If P has no link at all, it gets one to the new card. If P leads to two or more different cards (a fork) nothing is changed: the new card is added unlinked and the editor says "Choose where this card leads". Quiz answers are no longer re-pointed wholesale. `repairFlow` never overwrites a link: it moves a link to an unreachable card only when that card leads on to the same place (a pure splice), otherwise it adds a link (a free button, or an unused one).
+  - **Acceptance criteria.** The J4 repros (`p6.mts` fork/cave/forest/glade; `p7.mts` market/longship) are unit tests. A property test over random BRANCHING stacks (2–3 choices per story card): after any insertion every button that existed before keeps its target except an edge that was spliced (and then the new card leads to the old target); every card that was reachable still is; the new card is reachable unless P was a fork; after `repairFlow` no existing button's target changed except a pure splice. A mutant that restores the overwrite goes red.
+
+### TASK-29b: share-check lines do not double the full stop  *(J4 P2-1)*
+  - **Fix.** Labels lose a trailing `.`, `!`, `?` (or "…") before the sentence's own full stop is added.
+  - **Acceptance criteria.** No line from `describeProblems` contains "..", ". ." or ends in a doubled mark, for a label that ends in "." or "…".
+
+### TASK-29c: `check:trace` counts titles, not mentions  *(J4 P2-2)*
+  - **Fix.** An id counts only when it appears in a test title (`it(`/`describe(`/`test(` string) or a gate script's output/name string, not in a comment. The command prints the true number and the docs quote it as "named in a test or gate".
+  - **Acceptance criteria.** A comment-only mention does not trace an id (unit test with a temp tree); the repo still reports every declared id traced.
+
+### TASK-29d: docs and the shell-edit hook  *(J4 P2-2, J5)*
+  - **Fix.** `KIRO_LOG` l.236 no longer calls `pre-submit` a Manual hook. `scripts/after-bash.sh` also catches `echo … > file`, `printf … > file`, `cat > file`, `tee` and here-docs.
+  - **Acceptance criteria.** Tests: the log has no "pre-submit is a Manual hook"; the script's pattern matches each of those commands and not `ls` / `npm test`.
+
+### TASK-29e: the Maker card fits its canvas  *(J1 P2-1, J2 #6; also q)*
+  - **Bug.** With a banner (or at 1366×657) the card was not shrunk to the space under the banner, so the canvas scrolled and the bottom ~60 px of the card ran under the toolbar.
+  - **Fix.** `fitScale` uses the area's real height (minus the Front/Back switch and the ring room) with a lower bound that lets the card shrink until it fits; the Maker minimum scale of 0.9 stays for the roomy cases only, the card never overflows.
+  - **Acceptance criteria.** `check-maker-fit` asserts, for the editor cases (quiz, story, flash+banner, quiz+banner at 768 and 657), that the whole card is visible without scrolling: `scrollHeight <= clientHeight + 2` and the card's bottom ≤ the toolbar's top.
+
+### TASK-29f / 29j: README GIF, header copy, counts  *(J1 P2-2/P2-4, J5 P2-2/P2-3)*
+  - **Fix.** `make-readme-media.ts` ends the GIF with the living file: export → open THAT file with the network off → Teacher → change the right answer → Try It → CORRECT → Save a Copy → the copy opens and plays; screen 2 is captured after the transition settles. The header says "The lesson file works offline." The sessions excerpt says 79 firings.
+  - **Acceptance criteria.** The script's frames/PNG list names the living-file steps; the app header text is the new line; docs say 79.
+
+### TASK-29i: Manual is described the way kiro.dev describes it  *(J5 P1-1, P2-1)*
+  - **Fix.** KIRO_LOG and `pre-submit.json` say: `Manual` is still in the trigger enum, but kiro.dev says CLI v3 lists Manual hooks without a way to invoke them and the IDE no longer creates them; so `pre-submit` is `PostTaskExec` plus an on-demand steering file run as `/pre-submit`.
+  - **Acceptance criteria.** No file says "enum has no Manual"; the steering file and docs say `/pre-submit`. The CLI is tried once; a firing is recorded only if it truly ran.
+
+### TASK-29l: sibling choices share a size; start card rules  *(J3 N2, N4)*
+  - **Fix.** All choice buttons on a story card are fitted to the smallest size any one needs. The start card's ruled lines do not run through the heading or intro text.
+  - **Acceptance criteria.** Renderer test: two choices of different lengths get the same font size. `check-maker-fit`: no rule line crosses the h1 or lede (the start card hides its rules behind a paper block there).
+
+### TASK-29m: a teacher's own last-card heading shows at every score  *(J2 #1)*
+  - **Fix.** The player swaps a celebratory heading for "You finished!" at score 0 only when it is one of Stackyard's own stock lines; a heading the teacher typed is kept at every score. The editor preview shows the heading as typed.
+  - **Acceptance criteria.** Renderer test: "Brilliant work on fractions!" at score 0 is shown as typed; the stock "Well done — you finished!" at 0 becomes "You finished!".
+
+### TASK-29n: "+ Add an answer" puts the cursor in the new answer  *(J2 #2)*
+  - **Fix.** After adding, the Answer box gets focus with its text selected, on the website and in the Teacher tab.
+  - **Acceptance criteria.** DOM tests: `document.activeElement` is the Answer input and its selection covers "Another answer".
+
+### TASK-29o: plain zeros on answer tiles  *(J2 #3, J3 N3)*
+  - **Fix.** Digits on tiles and questions use a plain zero (`font-variant-numeric: lining-nums` plus `font-feature-settings: "zero" 0` on the reading face, and a Latin-subset check that its zero glyph has no slash alternate selected).
+  - **Acceptance criteria.** The tile and question CSS carry the same numeric settings; a test reads both rules.
+
+### TASK-29p: share-check names; "which is bigger" options  *(J2 #4, #5)*
+  - **Fix.** The card name in "Before you share" is the card number plus the question up to a word boundary (never mid-word, ending "…" when cut, longer than before so the number "20" survives). The prompt says options must fit the question's form (a two-way comparison offers only the two compared items).
+  - **Acceptance criteria.** Unit test with "What is one quarter of 20?"; prompt test for the general rule, with no topic example.
+
+**Gate (TASK-29):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `check-living-file`, `check-text-fit`, `check-maker-fit`, `check:samples`, `check:trace` pass.

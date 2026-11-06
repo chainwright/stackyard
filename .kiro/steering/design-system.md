@@ -188,8 +188,11 @@ fixed chrome around the card:
 - `controlsH` is the height of any control that sits **above** the card in that
   view (e.g. the Front/Back switch on the flash editor, the Try It / Back pill),
   so the card plus its controls always fit. Use 0 where there is no such control.
-- **Maker:** clamp `--card-scale` to `≥ 0.9`. With `--text-meta` at 20px this
-  keeps meta at ≥ 18px (the floor). Do not clamp the top in the Maker; a large
+- **Maker:** the card is fitted to the space the canvas area really has (under any
+  notice banner, above the toolbar), so it never needs a scroll (TASK-29e). The old
+  `≥ 0.9` clamp let it overflow by up to ~110 px; the floor is now 0.5, and the
+  "Card N of M" line is counter-scaled in CSS so it still renders at 18px or more.
+  Do not clamp the top in the Maker; a large
   monitor may show the card above 1.0.
 - **Player:** do **not** clamp the top. On a 1920 × 1080 projector the card
   should grow to roughly 1.5× and fill the screen. Keep the 0.9 lower clamp.

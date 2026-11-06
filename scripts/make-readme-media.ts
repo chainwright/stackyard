@@ -1,7 +1,9 @@
 // scripts/make-readme-media.ts
 // TASK-28t: real screenshots (and a short GIF) of the CURRENT build for the
 // README — sentence → cards deal in → edit → Try It (the CORRECT stamp) →
-// export → the file opened offline. Nothing is mocked: it starts the real
+// export → THAT exported file opened with the network OFF → Teacher: change the
+// right answer → Try It (CORRECT stamp) → Save a Copy → the copy opens and plays
+// (TASK-29f). Nothing is mocked: it starts the real
 // server (no model key, so the ready-made offline path answers, which is what
 // the frames show), drives the built Maker in a real headless Chrome over the
 // DevTools protocol, then opens a committed sample from disk with the network
@@ -13,7 +15,7 @@
 // Needs Chrome (same lookup as the other gates) and ffmpeg (for the GIF only;
 // without it the PNGs are still written).
 
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync, rmSync, readFileSync, readdirSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -33,6 +35,31 @@ const CHROME = [
 
 const SENTENCE = "A 10-card quiz about the Vikings in Ireland, the right answer plays a cheer";
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** Wait for a file in `dir` that matches `want` to appear (and finish writing). */
+async function waitForFile(dir: string, want: (name: string) => boolean): Promise<string> {
+  for (let i = 0; i < 80; i++) {
+    const hit = readdirSync(dir).find((f) => want(f) && !f.endsWith(".crdownload"));
+    if (hit !== undefined) {
+      await sleep(300);
+      return hit;
+    }
+    await sleep(250);
+  }
+  throw new Error("the download never appeared in " + dir);
+}
+
+/** A small "Wi-Fi off" label drawn into the page, so a frame says what it shows. */
+async function badge(cdp: Cdp, text: string): Promise<void> {
+  await cdp.eval(`(() => {
+    document.getElementById("media-badge")?.remove();
+    const d = document.createElement("div");
+    d.id = "media-badge";
+    d.textContent = ${JSON.stringify(text)};
+    d.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:99999;background:#1E2A47;color:#FBF8F1;font:700 18px system-ui,sans-serif;padding:8px 14px;border-radius:8px;";
+    document.body.appendChild(d);
+  })()`);
+}
 
 // ---- a tiny DevTools-protocol client (Node 24 has a global WebSocket) ----
 class Cdp {
@@ -161,8 +188,14 @@ async function main(): Promise<void> {
       sawDeal = true;
       if (i % 2 === 0) await keep(cdp, null, 0.4);
       if (state.cards >= 5) {
-        dealt = true;
-        await cdp.shot(path.join(OUT, "2-cards-deal-in.png"));
+        // Capture only after the landing animation has settled (no ghost of the
+        // previous card): wait, then make sure no new card arrived meanwhile.
+        await sleep(450);
+        const again = await cdp.eval<number>(`document.querySelectorAll(".deal-card .deal-q, .deal-card .deal-num").length`);
+        if (again === state.cards) {
+          dealt = true;
+          await cdp.shot(path.join(OUT, "2-cards-deal-in.png"));
+        }
       }
     }
     if (!dealt) throw new Error("never saw the cards being dealt");
@@ -191,7 +224,10 @@ async function main(): Promise<void> {
     await sleep(350);
     await keep(cdp, "4-correct-stamp.png", 2);
 
-    // 5. Export → "EXPORTED ✓".
+    // 5. Export → "EXPORTED ✓". The file is really downloaded (into a temp folder)
+    //    so the next step opens THAT file, not a sample (TASK-29f).
+    const downloads = mkdtempSync(path.join(os.tmpdir(), "stackyard-downloads-"));
+    await cdp.send("Page.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
     await cdp.eval(`[...document.querySelectorAll("button")].find((b) => /Trying It|Back to Editing/i.test(b.textContent))?.click()`);
     await sleep(600);
     await cdp.eval(`document.querySelector(".export-btn").click()`);
@@ -202,16 +238,71 @@ async function main(): Promise<void> {
     await cdp.until(`document.querySelector(".done-card")`, 10000);
     await sleep(500);
     await keep(cdp, "5-exported.png", 2);
+    const exported = await waitForFile(downloads, (f) => f.endsWith(".html") && !f.endsWith("-class.html") && !f.includes("(copy"));
 
-    // 6. The file, opened from disk with the network OFF.
+    // 6. The exported file, opened from disk with the network OFF ("Wi-Fi off" badge).
     await cdp.send("Network.enable");
     await cdp.send("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
-    await cdp.goto(`file://${path.join(ROOT, "samples", "vikings-in-ireland.html")}`);
+    await cdp.goto(`file://${path.join(downloads, exported)}`);
     await cdp.until(`document.querySelector(".sy-card .sy-element")`, 10000);
+    await badge(cdp, "Wi-Fi off — this file is open from disk");
     await sleep(900);
     await keep(cdp, "6-offline-file.png", 2.5);
 
+    // 7. Teacher → change the right answer (all offline, inside the file).
+    await cdp.eval(`window.confirm = () => true`);
+    await cdp.eval(`document.querySelector(".sy-teacher-tab").click()`);
+    await cdp.until(`document.querySelector(".sy-living-canvas .sy-tile")`, 10000);
+    await sleep(500);
+    const newRight = await cdp.eval<string>(`(() => {
+      const tiles = [...document.querySelectorAll(".sy-living-canvas .sy-tile")];
+      // pick a tile that is NOT currently marked right in the inspector: select it and tick it
+      for (const t of tiles) {
+        t.click();
+        const radio = document.querySelector(".sy-living-inspector .sy-living-radio input");
+        if (radio && !radio.checked) {
+          const label = (t.querySelector(".sy-tile-label") || t).textContent.trim();
+          radio.click();
+          return label;
+        }
+      }
+      return "";
+    })()`);
+    if (newRight === "") throw new Error("could not change the right answer in the Teacher tab");
+    await sleep(500);
+    await badge(cdp, "Wi-Fi off — editing inside the file");
+    await keep(cdp, "7-teacher-edit.png", 2.5);
+
+    // 8. Try It → the CORRECT stamp lands on the answer just chosen.
+    await cdp.eval(`[...document.querySelectorAll(".sy-living-inspector button")].find((b) => /Try It/.test(b.textContent)).click()`);
+    await cdp.until(`document.querySelector(".sy-card .sy-tile")`, 8000);
+    await sleep(900);
+    const stamped = await cdp.eval<boolean>(`(() => {
+      const tile = [...document.querySelectorAll(".sy-card .sy-tile")].find((t) => (t.textContent || "").includes(${JSON.stringify(newRight)}));
+      if (!tile) return false;
+      tile.click();
+      return true;
+    })()`);
+    if (!stamped) throw new Error("could not click the new right answer in the Teacher tab's Try It");
+    await sleep(380);
+    await badge(cdp, "Wi-Fi off");
+    await keep(cdp, "8-teacher-stamp.png", 2.5);
+
+    // 9. Back to editing → Save a Copy → open the copy: it plays, with the change.
+    await sleep(1400);
+    await cdp.eval(`[...document.querySelectorAll("button")].find((b) => /Back to editing/i.test(b.textContent))?.click()`);
+    await sleep(500);
+    await cdp.eval(`[...document.querySelectorAll(".sy-living-bar button")].find((b) => /Save a Copy/i.test(b.textContent)).click()`);
+    const copy = await waitForFile(downloads, (f) => f.includes("(copy"));
+    await cdp.goto(`file://${path.join(downloads, copy)}`);
+    await cdp.until(`document.querySelector(".sy-card .sy-element")`, 10000);
+    await sleep(900);
+    await badge(cdp, "Wi-Fi off — the saved copy opens and plays");
+    await keep(cdp, "9-copy-plays.png", 3);
+    // The last GIF frame is the saved copy: the file made in the frames before it.
+
     cdp.close();
+    rmSync(downloads, { recursive: true, force: true });
   } finally {
     chrome.kill();
     server.close();
@@ -241,7 +332,7 @@ async function main(): Promise<void> {
     console.warn("make-readme-media: ffmpeg not found — PNGs written, no GIF.");
   }
   rmSync(frames, { recursive: true, force: true });
-  console.log("make-readme-media: wrote docs/media/*.png");
+  console.log("make-readme-media: wrote docs/media/*.png (TASK-29f: the GIF ends with the living file — Teacher edit, CORRECT stamp, Save a Copy, the copy plays)");
 }
 
 main().catch((err) => {
