@@ -9,29 +9,12 @@
 //
 // No framework (keep the bundle small). Vanilla TypeScript built on the SHARED
 // pure pieces: validator, operations, reachability, renderer + mountPlayer.
+//
+// All of the start-up logic is in boot.ts (so a test can drive it); the pristine
+// snapshot Save a Copy needs is taken there, before anything mounts.
 
-import { validate } from "../shared/validator.js";
-import { showFatalError } from "../player/errors.js";
-import { mountLivingApp } from "./livingApp.js";
+import { bootLivingFile } from "./boot.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const root = document.getElementById("player-root");
-  if (!root) return;
-
-  try {
-    const dataEl = document.getElementById("stack-data");
-    if (!dataEl) {
-      showFatalError(root);
-      return;
-    }
-    const parsed: unknown = JSON.parse(dataEl.textContent ?? "");
-    const result = validate(parsed as Parameters<typeof validate>[0]);
-    if (!result.valid) {
-      showFatalError(root);
-      return;
-    }
-    mountLivingApp(result.stack, root);
-  } catch {
-    showFatalError(root);
-  }
+  bootLivingFile(document);
 });

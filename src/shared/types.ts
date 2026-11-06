@@ -85,9 +85,13 @@ export type GenerateRequest = {
  *   - "cap"     — today's model-call budget is used up
  *   - "timeout" — the model didn't answer in time
  *   - "error"   — the model call failed for another reason
+ *   - "chosen"  — the teacher picked a ready-made deck herself (set by the
+ *                 Maker on the client; the server never sends it). It is not a
+ *                 failure and must never be worded like one (J1: "The lesson
+ *                 builder is resting right now" appeared after a deliberate pick).
  * Absent on the normal (model) success path.
  */
-export type FallbackReason = "no-key" | "cap" | "timeout" | "error";
+export type FallbackReason = "no-key" | "cap" | "timeout" | "error" | "chosen";
 
 export type GenerateSuccess = {
   ok: true;

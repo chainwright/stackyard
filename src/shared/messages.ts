@@ -58,3 +58,15 @@ export function safeFileName(title: string): string {
     .replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
   return base.length > 0 ? `${base}.html` : "lesson.html";
 }
+
+/**
+ * The file name for a Save-a-Copy of the living file: "<title> (copy).html".
+ * A copy must never take the original's name — on a real laptop the browser
+ * would call it "…(1).html" and the teacher could not tell which file is new
+ * (J2 step 17). Built from safeFileName so it follows the same safe-character
+ * rule as every other export.
+ */
+export function copyFileName(title: string): string {
+  const base = safeFileName(title).replace(/\.html$/, "");
+  return `${base} (copy).html`;
+}

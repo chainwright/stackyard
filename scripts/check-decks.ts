@@ -25,7 +25,7 @@ import {
   irishWordsStack,
 } from "../src/shared/readyMadeStacks.js";
 import { READY_MADE_IMAGES } from "../src/shared/readyMadeImages.js";
-import { creditLine } from "../src/shared/deckImageTypes.js";
+import { creditLine, creditFull } from "../src/shared/deckImageTypes.js";
 import type { Stack, Card, ButtonElement } from "../src/shared/types.js";
 
 // Answer tiles are 344px wide at 32px type and wrap to at most two lines
@@ -92,7 +92,7 @@ export function checkImageCredits(
 ): string[] {
   const problems: string[] = [];
   for (const [deckKey, img] of Object.entries(images)) {
-    const line = creditLine(img);
+    const line = creditFull(img);
     const namesOpenverse = /openverse/i.test(line);
     const hasOpenverseUrl =
       typeof img.creditSource === "string" &&
@@ -101,6 +101,13 @@ export function checkImageCredits(
       problems.push(
         `${deckKey}: image credit names Openverse but has no real openverse.org source URL ("${line}").`,
       );
+    }
+  }
+  // On the card the credit shows the DOMAIN only: a raw URL runs off the paper
+  // (TASK-26i).
+  for (const [deckKey, img] of Object.entries(images)) {
+    if (/https?:\/\//i.test(creditLine(img))) {
+      problems.push(`${deckKey}: the on-card credit prints a raw URL ("${creditLine(img)}") — show the domain only.`);
     }
   }
   return problems;

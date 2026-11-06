@@ -103,3 +103,112 @@ describe("buildTypedStack (TASK-22 q)", () => {
     expect(buildTypedStack("x", [{ question: "Q", right: "A", wrong: [""] }])).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TASK-26b/o — the two dead ends the round-2 teacher actually hit
+
+import { describeProblems } from "../src/shared/reachability.js";
+import { ensureForwardLinks } from "../src/shared/flow.js";
+import type { Stack as StackT, Card as CardT } from "../src/shared/types.js";
+
+const U = (n: number): string => `cafe0000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+
+function deck(content: CardT[]): StackT {
+  return {
+    id: U(1),
+    title: "T",
+    theme: { background: "#fff", foreground: "#000", font: "sans-serif" },
+    cards: [...content, { id: U(99), kind: "end", elements: [{ type: "field", id: U(98), x: 0, y: 0, w: 100, h: 50, variable: "score" }], actions: [] }],
+  };
+}
+
+describe("TASK-26o: the share check catches both dead ends", () => {
+  it("flags a flash card with no way forward (nothing to press)", () => {
+    const flash: CardT = {
+      id: U(10), kind: "flash", actions: [],
+      elements: [
+        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Term" },
+        { type: "text", id: U(12), x: 0, y: 60, w: 100, h: 50, content: "Explanation" },
+      ],
+    };
+    const report = checkReachability(deck([flash]));
+    expect(report.ok).toBe(false);
+    expect(report.stuck.map((c) => c.id)).toEqual([U(10)]);
+    // The score card is (correctly) also unreachable when the only card is stuck.
+    const lines = describeProblems(report, (c) => (c.kind === "end" ? "the last card" : "Card 1 — Term"));
+    expect(lines).toContain("Card 1 — Term has no way to move on.");
+    expect(lines).toContain("The class can't reach the last card.");
+  });
+
+  it("flags a flash card whose Next button goes nowhere", () => {
+    const flash: CardT = {
+      id: U(10), kind: "flash", actions: [],
+      elements: [
+        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Term" },
+        { type: "button", id: U(12), x: 0, y: 60, w: 100, h: 50, label: "Next Card", actions: [] },
+      ],
+    };
+    const report = checkReachability(deck([flash]));
+    expect(report.deadEndOther.map((c) => c.id)).toEqual([U(10)]);
+    expect(report.ok).toBe(false);
+  });
+
+  it("flags a quiz button made with Add Button (no action at all), not just scored answers", () => {
+    const quizCard: CardT = {
+      id: U(20), kind: "quiz", actions: [],
+      elements: [
+        { type: "text", id: U(21), x: 0, y: 0, w: 100, h: 50, content: "Q?" },
+        { type: "button", id: U(22), x: 0, y: 60, w: 100, h: 50, label: "Right", actions: [{ type: "score", delta: 1 }, { type: "goto", cardId: U(99) }] },
+        { type: "button", id: U(23), x: 0, y: 120, w: 100, h: 50, label: "Wrong", actions: [{ type: "score", delta: 0 }, { type: "goto", cardId: U(99) }] },
+        { type: "button", id: U(24), x: 0, y: 180, w: 100, h: 50, label: "Clouds", actions: [] },
+      ],
+    };
+    const report = checkReachability(deck([quizCard]));
+    expect(report.deadEndQuiz.map((c) => c.id)).toEqual([U(20)]);
+    expect(describeProblems(report, () => "Card 1")).toEqual(["Card 1 has an answer that goes nowhere."]);
+  });
+
+  it("does not repeat a card in two lists", () => {
+    const flash: CardT = {
+      id: U(10), kind: "flash", actions: [],
+      elements: [
+        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Term" },
+        { type: "button", id: U(12), x: 0, y: 60, w: 100, h: 50, label: "Next Card", actions: [] },
+      ],
+    };
+    const report = checkReachability(deck([flash]));
+    expect(report.deadEndOther).toHaveLength(1);
+    expect(report.stuck).toHaveLength(0);
+  });
+
+  it("repairFlow closes both dead ends and the check goes green", () => {
+    const flash: CardT = {
+      id: U(10), kind: "flash", actions: [],
+      elements: [
+        { type: "text", id: U(11), x: 0, y: 0, w: 100, h: 50, content: "Term" },
+        { type: "text", id: U(12), x: 0, y: 60, w: 100, h: 50, content: "Explanation" },
+      ],
+    };
+    const quizCard: CardT = {
+      id: U(20), kind: "quiz", actions: [],
+      elements: [
+        { type: "text", id: U(21), x: 0, y: 0, w: 100, h: 50, content: "Q?" },
+        { type: "button", id: U(22), x: 0, y: 60, w: 100, h: 50, label: "Right", actions: [{ type: "score", delta: 1 }] },
+        { type: "button", id: U(23), x: 0, y: 120, w: 100, h: 50, label: "Wrong", actions: [{ type: "score", delta: 0 }] },
+        { type: "button", id: U(24), x: 0, y: 180, w: 100, h: 50, label: "Clouds", actions: [] },
+      ],
+    };
+    const broken = deck([flash, quizCard]);
+    expect(checkReachability(broken).ok).toBe(false);
+    const fixed = repairFlow(broken) as StackT;
+    expect(checkReachability(fixed).ok).toBe(true);
+    // The flash card gained a Next Card that goes on to the quiz.
+    const next = fixed.cards[0]!.elements.find((e) => e.type === "button");
+    expect(next && next.type === "button" && next.label).toBe("Next Card");
+  });
+
+  it("a healthy deck stays healthy through ensureForwardLinks (no-op)", () => {
+    const s = vikingsStack();
+    expect(JSON.stringify(ensureForwardLinks(s))).toBe(JSON.stringify(s));
+  });
+});

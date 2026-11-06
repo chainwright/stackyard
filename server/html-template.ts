@@ -6,6 +6,8 @@
 // plain string assembly is clearer and dependency-free (see tech.md: the
 // exported file must have no external deps).
 //
+// Guarded by scripts/check-export-opens.ts (the export-regression-check hook).
+//
 // Contracts:
 //   - `title` is escaped for safe use as <title> text content (no raw <, >, &,
 //     or quotes).

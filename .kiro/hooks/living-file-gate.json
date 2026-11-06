@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Living file edits itself and every copy plays",
+      "description": "When the agent saves anything under src/living, export a living file, open it in headless Chrome with the network blocked, edit it, Save a Copy, and check that the copy (and a copy of the copy) opens in Play, answers advance, Teacher then Play works, three saves are identical in size, and the last copy plays to the end card.",
+      "trigger": "PostFileSave",
+      "matcher": "(^|/)src/living/.*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run check:living-file"
+      },
+      "timeout": 300
+    }
+  ]
+}

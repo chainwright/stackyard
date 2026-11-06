@@ -16,8 +16,7 @@ import type {
   FallbackReason,
 } from "../src/shared/types.js";
 import { validate } from "../src/shared/validator.js";
-import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
-import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
+import { sanitizeRawStack, finaliseGeneratedStack } from "./normalizeGenerated.js";
 import { build as buildPrompt, buildRetry } from "./promptBuilder.js";
 import { buildReadyMade } from "./fallback.js";
 import { call, LlmUnavailableError, ConfigurationError } from "./llmGateway.js";
@@ -55,13 +54,17 @@ async function attempt(
     return { ok: false, errors: ["invalid-shape"] };
   }
 
-  const result = validate(parsed);
+  // Drop pictures the model invented and clamp coordinates onto the canvas
+  // BEFORE validating, so a merely mis-sized box doesn't fail validation and burn
+  // a paid retry (TASK-26 c, d).
+  const result = validate(sanitizeRawStack(parsed));
   if (result.valid) {
-    // The model often points every quiz answer at the end card, which ends the
-    // game on the first click. Rewrite quiz answers to advance to the next card,
-    // then vary which tile the correct answer sits on. Both only reorder/retarget
-    // existing cards and preserve the one-correct-answer rule (invariants 2, 4).
-    return { ok: true, stack: shuffleQuizAnswers(linkQuizAnswersForward(result.stack)) };
+    // Re-lay every card from the template, repair flash cards, tidy the text,
+    // point quiz answers at the next card (the model often points them all at the
+    // end card, which ends the game on the first click), make sure every card has
+    // a way forward, and vary which tile is right. Each step only re-positions,
+    // retargets or adds, so the invariants hold (TASK-26 b, c, j).
+    return { ok: true, stack: finaliseGeneratedStack(result.stack) };
   }
   return { ok: false, errors: result.errors };
 }
@@ -85,15 +88,16 @@ export interface GenerateOptions {
   onModelCall?: () => void;
 }
 
-/** Infer the honest fallback reason from a thrown error (never leaks details). */
-function reasonFromError(err: unknown): FallbackReason {
+/**
+ * Infer the honest fallback reason from a thrown error (never leaks details).
+ * Maps from the error's `kind`, set where the gateway throws it — never from the
+ * message text (the old text sniffing searched for "time" while the message said
+ * "took too long", so "timeout" could never be produced; J4 N3).
+ */
+export function reasonFromError(err: unknown): FallbackReason {
   if (err instanceof ConfigurationError) return "no-key";
   if (err instanceof LlmUnavailableError) {
-    // llmGateway throws this for deadlines/cancels too; its message mentions
-    // time for the deadline case. Use "timeout" when it looks time-related.
-    const msg = (err.message ?? "").toLowerCase();
-    if (msg.includes("time") || msg.includes("cancel")) return "timeout";
-    return "error";
+    return err.kind === "timeout" ? "timeout" : "error";
   }
   return "error";
 }

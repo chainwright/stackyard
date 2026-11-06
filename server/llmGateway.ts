@@ -20,10 +20,26 @@ export class ConfigurationError extends Error {
   }
 }
 
+/**
+ * WHY the model was unavailable. Set where the error is thrown so callers map
+ * it to a fallback reason without sniffing the message text (the old
+ * `msg.includes("time")` never matched "took too long", so the "timeout" reason
+ * could never be produced — round-2 J4 N3).
+ */
+export type LlmFailureKind =
+  | "timeout"    // a total or idle deadline fired
+  | "cancelled"  // the client disconnected
+  | "http"       // the upstream answered non-2xx
+  | "network"    // the request could not be made
+  | "empty"      // 2xx with no body
+  | "dropped";   // the stream died mid-way
+
 export class LlmUnavailableError extends Error {
-  constructor(message: string) {
+  readonly kind: LlmFailureKind;
+  constructor(message: string, kind: LlmFailureKind = "network") {
     super(message);
     this.name = "LlmUnavailableError";
+    this.kind = kind;
   }
 }
 
@@ -221,18 +237,21 @@ export async function call(
       // might contain the key or the URL.
       if (timedOut) {
         throw new LlmUnavailableError(
-          "The AI service took too long to respond. Try again in a moment."
+          "The AI service took too long to respond. Try again in a moment.",
+          "timeout",
         );
       }
       throw new LlmUnavailableError(
-        "We couldn't reach the AI service. Check your internet connection and try again."
+        "We couldn't reach the AI service. Check your internet connection and try again.",
+        "network",
       );
     }
 
     if (!response.ok) {
       // Non-2xx — redact; do not echo the key or raw response body
       throw new LlmUnavailableError(
-        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
+        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`,
+        "http",
       );
     }
 
@@ -242,7 +261,8 @@ export async function call(
     } catch {
       if (timedOut) {
         throw new LlmUnavailableError(
-          "The AI service took too long to respond. Try again in a moment."
+          "The AI service took too long to respond. Try again in a moment.",
+          "timeout",
         );
       }
       throw new LlmMalformedError(
@@ -366,11 +386,13 @@ export async function* callStream(
       // Nobody is listening — the caller disconnected. Still surface a clean
       // unavailable error for any logging upstream; the key never appears.
       return new LlmUnavailableError(
-        "The request was cancelled before the AI service finished."
+        "The request was cancelled before the AI service finished.",
+        "cancelled",
       );
     }
     return new LlmUnavailableError(
-      "The AI service took too long to respond. Try again in a moment."
+      "The AI service took too long to respond. Try again in a moment.",
+      "timeout",
     );
   };
 
@@ -393,21 +415,24 @@ export async function* callStream(
       // contain the key or the URL.
       if (abortReason !== null) throw abortError();
       throw new LlmUnavailableError(
-        "We couldn't reach the AI service. Check your internet connection and try again."
+        "We couldn't reach the AI service. Check your internet connection and try again.",
+        "network",
       );
     }
 
     if (!response.ok) {
       // Non-2xx — redact; do not echo the key or raw response body
       throw new LlmUnavailableError(
-        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`
+        `The AI service returned an error (HTTP ${response.status}). Try again in a moment.`,
+        "http",
       );
     }
 
     const body$ = response.body;
     if (body$ === null) {
       throw new LlmUnavailableError(
-        "The AI service returned an empty response. Try again in a moment."
+        "The AI service returned an empty response. Try again in a moment.",
+        "empty",
       );
     }
 
@@ -427,7 +452,8 @@ export async function* callStream(
           // socket drop also lands here. Distinguish by abortReason.
           if (abortReason !== null) throw abortError();
           throw new LlmUnavailableError(
-            "The connection to the AI service dropped. Try again in a moment."
+            "The connection to the AI service dropped. Try again in a moment.",
+            "dropped",
           );
         }
         // A chunk (or stream end) arrived — restart the idle clock.

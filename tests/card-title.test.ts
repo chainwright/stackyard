@@ -4,9 +4,9 @@
 
 import { describe, it, expect } from "vitest";
 import { cardTitle, primaryText, truncateLabel } from "../src/shared/cardTitle.js";
-import { creditLine } from "../src/shared/deckImageTypes.js";
+import { creditLine, creditFull, creditDomain } from "../src/shared/deckImageTypes.js";
 import type { DeckImage } from "../src/shared/deckImageTypes.js";
-import { READY_MADE_IMAGES } from "../src/shared/readyMadeImages.js";
+import { READY_MADE_IMAGES, fullCreditFor } from "../src/shared/readyMadeImages.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 import { checkImageCredits } from "../scripts/check-decks.js";
 import type { Card } from "../src/shared/types.js";
@@ -118,17 +118,34 @@ describe("TASK-25b: image credits are truthful", () => {
     expect(creditLine(img)).not.toContain("http");
   });
 
-  it('renders a found image as "Image: Creator — Licence — Source"', () => {
+  it('prints a found image on the card as "Image: Creator, Licence — domain" (no raw URL)', () => {
     const img: DeckImage = {
       dataUri: "data:image/jpeg;base64,AA==",
       creditKind: "image",
       creditLicense: "CC0",
       creditCreator: "A. Photographer",
-      creditSource: "https://openverse.org/image/abc",
+      creditSource: "https://www.openverse.org/image/abc",
     };
-    expect(creditLine(img)).toBe(
-      "Image: A. Photographer — CC0 — https://openverse.org/image/abc",
+    // TASK-26i: the raw URL used to run off the edge of the card.
+    expect(creditLine(img)).toBe("Image: A. Photographer, CC0 — openverse.org");
+    expect(creditLine(img)).not.toMatch(/https?:/);
+    // The full credit, with the link, is what the inspector shows.
+    expect(creditFull(img)).toBe(
+      "Image: A. Photographer — CC0 — https://www.openverse.org/image/abc",
     );
+    expect(creditDomain("https://www.flickr.com/photos/1/2")).toBe("flickr.com");
+    expect(creditDomain("not a url")).toBe("");
+  });
+
+  it("every committed deck credit prints a domain, never a URL, and the full link is findable", () => {
+    for (const [key, img] of Object.entries(READY_MADE_IMAGES)) {
+      const line = creditLine(img);
+      expect(line, key).not.toMatch(/https?:/);
+      expect(line.length, key).toBeLessThan(70); // fits the 704px caption line
+      expect(fullCreditFor(line), key).toBe(creditFull(img));
+      expect(fullCreditFor(line)!, key).toContain("https://");
+    }
+    expect(fullCreditFor("some teacher's own caption")).toBeNull();
   });
 
   it("every ready-made image credit is truthful: our illustrations cite no source; found images cite a real one", () => {
@@ -196,5 +213,25 @@ describe("TASK-25b: check-decks rejects an Openverse claim without a real URL", 
       },
     };
     expect(checkImageCredits(good)).toEqual([]);
+  });
+});
+
+describe("TASK-26i: check-decks rejects a raw URL printed on the card", () => {
+  it("flags an on-card credit that carries a URL (it would run off the paper)", () => {
+    const bad: Record<string, DeckImage> = {
+      vikings: {
+        dataUri: "data:image/jpeg;base64,AA==",
+        creditKind: "image",
+        creditLicense: "PDM",
+        creditCreator: "see https://www.flickr.com/photos/1/2",
+        creditSource: "https://www.flickr.com/photos/1/2",
+      },
+    };
+    const problems = checkImageCredits(bad);
+    expect(problems.some((p) => p.includes("raw URL"))).toBe(true);
+  });
+
+  it("the committed credits pass (domain only)", () => {
+    expect(checkImageCredits(READY_MADE_IMAGES)).toEqual([]);
   });
 });

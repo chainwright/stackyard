@@ -16,6 +16,8 @@ import {
   addCardAfter,
   takeLastInsertedCardId,
   removeCard,
+  markCorrect,
+  setFlashSide,
 } from "../editor/operations.js";
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
@@ -110,6 +112,21 @@ export class LivingEditor {
 
   private renderCanvas(): HTMLElement {
     const area = el("div", "sy-living-canvas");
+    this.mountPreview(area);
+    return area;
+  }
+
+  /**
+   * (Re)build the card preview inside `area`: render the selected card with the
+   * player renderer, attach the click-to-select listener, and fit it to the
+   * area. This is the ONE place a preview is built — both the full render and
+   * the lighter "refresh after a text edit" go through it, so selection can
+   * never be lost again. (The old refreshPreviewOnly re-rendered without
+   * re-attaching the listener, so after any text edit a click on an answer
+   * PLAYED it instead of selecting it — round-2 J3 N3.)
+   */
+  private mountPreview(area: HTMLElement): void {
+    area.innerHTML = "";
     const card = this.card();
     const stackWrap = el("div", "");
     area.appendChild(stackWrap);
@@ -125,7 +142,8 @@ export class LivingEditor {
       () => {}, // silent
       index >= 0 ? { position: index + 1, total: this.stack.cards.length } : {},
     );
-    // Click an element in the preview to select it for editing.
+    // Click an element in the preview to SELECT it for editing — never to play
+    // it. Capture phase, so it runs before the tile's own click handler.
     stackWrap.addEventListener(
       "click",
       (e) => {
@@ -141,7 +159,6 @@ export class LivingEditor {
     );
     // Fit the 800×600 card into the available area.
     this.fit(area, stackWrap);
-    return area;
   }
 
   /** Map a clicked node to the element id it belongs to (by .sy-element order). */
@@ -192,7 +209,15 @@ export class LivingEditor {
       insp.appendChild(this.textField(selected));
     } else if (selected && selected.type === "button") {
       insp.appendChild(this.labelField(selected));
+      // On a quiz answer: which one is right (exactly one — invariant 4).
+      if (selected.actions.some((a) => a.type === "score")) {
+        insp.appendChild(this.rightAnswerField(card, selected));
+      }
       insp.appendChild(this.gotoField(card, selected));
+    } else if (card.kind === "flash") {
+      // A flash card plays as a flip surface, so there is nothing to click in
+      // the preview: edit the front and back right here.
+      insp.appendChild(this.flashFields(card));
     } else {
       const hint = el("p", "sy-living-hint");
       hint.textContent = "Tap the words or a button on the card to edit it.";
@@ -227,6 +252,64 @@ export class LivingEditor {
     insp.appendChild(tryRow);
 
     return insp;
+  }
+
+  /** "This one is right" — a radio that makes this answer the only right one. */
+  private rightAnswerField(card: Card, elm: ButtonElement): HTMLElement {
+    const field = el("div", "sy-living-field");
+    const isRight = elm.actions.some((a) => a.type === "score" && a.delta === 1);
+    const label = document.createElement("label");
+    label.className = "sy-living-radio";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "sy-right-answer";
+    radio.checked = isRight;
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      if (this.apply((s) => markCorrect(s, card.id, elm.id))) this.render();
+    });
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode("This one is right"));
+    field.appendChild(label);
+    const hint = el("p", "sy-living-hint");
+    const right = card.elements.find(
+      (e): e is ButtonElement =>
+        e.type === "button" && e.actions.some((a) => a.type === "score" && a.delta === 1),
+    );
+    hint.textContent = isRight
+      ? "Only one answer can be right. The class hears a cheer when they pick it."
+      : right
+        ? `“${right.label}” is the right answer now. Choose this to change it.`
+        : "No answer is right yet. Choose one.";
+    field.appendChild(hint);
+    return field;
+  }
+
+  /** Front (term) and Back (explanation) boxes for a flash card. */
+  private flashFields(card: Card): HTMLElement {
+    const wrap = el("div", "");
+    const texts = card.elements.filter(
+      (e): e is Extract<Element, { type: "text" }> => e.type === "text",
+    );
+    const make = (labelText: string, side: "front" | "back", value: string): HTMLElement => {
+      const field = el("div", "sy-living-field");
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      ta.addEventListener("input", () => {
+        // Creates the side if the card has none yet — typing is never dropped.
+        this.apply((s) => setFlashSide(s, card.id, side, ta.value));
+        const list = this.host.querySelector<HTMLElement>(".sy-living-list");
+        if (list) list.replaceWith(this.renderList());
+      });
+      field.appendChild(label);
+      field.appendChild(ta);
+      return field;
+    };
+    wrap.appendChild(make("Front (the word)", "front", texts[0]?.content ?? ""));
+    wrap.appendChild(make("Back (the explanation)", "back", texts[1]?.content ?? ""));
+    return wrap;
   }
 
   private textField(elm: Extract<Element, { type: "text" }>): HTMLElement {
@@ -291,20 +374,19 @@ export class LivingEditor {
     return field;
   }
 
-  /** Re-render just the preview canvas after a text/label edit (keep focus). */
+  /**
+   * Re-render just the preview canvas (and the card list's labels) after a
+   * text/label edit, so the textarea keeps its focus. Goes through the same
+   * mountPreview as a full render.
+   */
   private refreshPreviewOnly(): void {
     const area = this.host.querySelector<HTMLElement>(".sy-living-canvas");
     if (!area) return;
-    const card = this.card();
-    area.innerHTML = "";
-    const stackWrap = el("div", "");
-    area.appendChild(stackWrap);
-    const runtime = createRuntime(this.stack);
-    runtime.currentCardId = card.id;
-    const index = this.stack.cards.findIndex((c) => c.id === card.id);
-    renderCard(card, stackWrap, runtime, () => {}, () => {},
-      index >= 0 ? { position: index + 1, total: this.stack.cards.length } : {});
-    this.fit(area, stackWrap);
+    this.mountPreview(area);
+    // The left list names each card after its question: refresh it too, or it
+    // keeps the OLD wording after an edit (J2 step 16).
+    const list = this.host.querySelector<HTMLElement>(".sy-living-list");
+    if (list) list.replaceWith(this.renderList());
   }
 
   // -------------------------------------------------------------------------

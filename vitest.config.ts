@@ -20,6 +20,8 @@ export default defineConfig({
     css: false,
     // Per-file environment override: player + Maker UI tests need jsdom.
     environmentMatchGlobs: [
+      // New jsdom tests are named *.dom.test.ts so they need no registration.
+      ["tests/**/*.dom.test.ts", "jsdom"],
       ["tests/renderer.test.ts", "jsdom"],
       ["tests/scaler.test.ts", "jsdom"],
       ["tests/player.index.test.ts", "jsdom"],

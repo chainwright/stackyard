@@ -1,55 +1,63 @@
 // src/living/saveCopy.ts
-// "Save a Copy" for the living file (TASK-24). Regenerates a NEW self-contained
-// living file from the CURRENT document, swapping only the embedded stack JSON,
-// and downloads it via a Blob link. No network; the original file is untouched.
+// "Save a Copy" for the living file (TASK-24, fixed in TASK-26a). Builds a NEW
+// self-contained living file from the PRISTINE snapshot of the file taken at
+// start-up, swapping only the embedded stack JSON, and downloads it via a Blob
+// link. No network; the original file is untouched.
 //
-// Because the copy is the current document with one block replaced, it is
-// byte-identical except the stack — so it is itself a living file, and an
-// unedited save round-trips losslessly.
+// WHY A SNAPSHOT: the first version serialised the live DOM
+// (`document.documentElement.outerHTML`) at save time. Save a Copy is only
+// reachable from inside the editor overlay, so every copy carried the open
+// overlay, a hidden Teacher tab, the injected styles and the rendered card — it
+// opened on a frozen editor with dead buttons, and grew with every save
+// (147 → 171 KB). The copy is now the pristine document with one block
+// replaced, so it is byte-identical to the original except the stack, it is
+// itself a living file, and saving it again gives the same size.
 
 import type { Stack } from "../shared/types.js";
 import { validate } from "../shared/validator.js";
 import { replaceStackData } from "../shared/escapeStackJson.js";
-import { safeFileName } from "../shared/messages.js";
+import { copyFileName } from "../shared/messages.js";
 
 export type SaveResult =
   | { ok: true; filename: string; bytes: number }
   | { ok: false; message: string };
 
+export interface SaveCopyOptions {
+  /**
+   * The file's HTML exactly as it was before anything mounted (the snapshot
+   * taken at start-up). REQUIRED: there is deliberately no default that reads
+   * the live document, because that is the bug this module exists to prevent.
+   */
+  pristineHtml: string;
+  /** The document to create the download link in (defaults to the live one). */
+  doc?: Document;
+  /** Performs the download; defaults to a Blob + anchor click (no network). */
+  download?: (html: string, filename: string) => void;
+}
+
 /**
- * Build the HTML for a copy of the current living file carrying `stack`, and
- * trigger a download. `stack` MUST already be valid (the caller gates on
- * validate() + reachability). `doc` defaults to the live document; tests pass
- * a parsed document. `downloadImpl` lets tests capture the download instead of
- * touching the DOM/Blob APIs.
+ * Build the HTML for a copy of the file carrying `stack`, and trigger a
+ * download. `stack` MUST already be valid (the caller gates on validate() +
+ * reachability); this re-validates as belt and braces.
  */
-export function saveCopy(
-  stack: Stack,
-  opts: {
-    doc?: Document;
-    /** Returns the current file's full HTML (defaults to the live document). */
-    currentHtml?: () => string;
-    /** Performs the download; defaults to a Blob + anchor click. */
-    download?: (html: string, filename: string) => void;
-  } = {},
-): SaveResult {
-  // Belt-and-braces: never write an invalid stack, even though the editor keeps
-  // the stack valid by construction (invariants 1–9, stack-format.md).
+export function saveCopy(stack: Stack, opts: SaveCopyOptions): SaveResult {
+  // Never write an invalid stack, even though the editor keeps the stack valid
+  // by construction (invariants 1–9, stack-format.md).
   const check = validate(stack);
   if (!check.valid) {
     return { ok: false, message: "Something's not right with these cards, so the copy wasn't saved." };
   }
+  if (typeof opts.pristineHtml !== "string" || opts.pristineHtml.length === 0) {
+    return { ok: false, message: "We couldn't find the original file to copy, so the copy wasn't saved." };
+  }
 
-  const doc = opts.doc ?? document;
-  const currentHtml =
-    opts.currentHtml ?? (() => "<!doctype html>\n" + doc.documentElement.outerHTML);
-
-  const html = replaceStackData(currentHtml(), stack);
+  const html = replaceStackData(opts.pristineHtml, stack);
   if (html === null) {
     return { ok: false, message: "We couldn't find where to write the cards, so the copy wasn't saved." };
   }
 
-  const filename = safeFileName(stack.title);
+  const filename = copyFileName(stack.title);
+  const doc = opts.doc ?? document;
   const download = opts.download ?? defaultDownload(doc);
   download(html, filename);
   return { ok: true, filename, bytes: html.length };

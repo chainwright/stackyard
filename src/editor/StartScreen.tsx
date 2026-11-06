@@ -2,7 +2,7 @@
 // Start screen: sentence → generate. Matches the three Start mockups
 // (start-empty / start-generating / start-error) in docs/design/maker/.
 
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import type { Card } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
@@ -61,6 +61,7 @@ export function StartScreen({
   __demoDealt,
   __demoTotal,
   __demoOffline,
+  __demoTitle,
 }: {
   store: EditorStore;
   discardedNotice?: string | null;
@@ -71,6 +72,8 @@ export function StartScreen({
   __demoTotal?: number;
   /** Harness-only: show the generating screen's honest offline wording. */
   __demoOffline?: boolean;
+  /** Harness-only: the title the stream's `start` event has announced. */
+  __demoTitle?: string;
 }): JSX.Element {
   // Start EMPTY with a grey example in the placeholder; the three example chips
   // fill the box on tap (J2: a pre-filled real sentence read like someone had
@@ -86,6 +89,10 @@ export function StartScreen({
   // "About 20 seconds." only for the live model; offline just says each card
   // appears as it's ready, with no time (built-app review round 2, P1 #3).
   const [offline, setOffline] = useState<boolean>(__demoOffline ?? false);
+  // The set's title, known the moment the stream's `start` event arrives (long
+  // before the first card). Shown on the wait screen so ~10–25 s of "Preparing…"
+  // never looks frozen (TASK-26f).
+  const [startTitle, setStartTitle] = useState<string | null>(__demoTitle ?? null);
 
   // "Type your own questions" form (J2 item q): shown on request, no server.
   const [typing, setTyping] = useState(false);
@@ -97,7 +104,9 @@ export function StartScreen({
   /** Load a ready-made deck CLIENT-SIDE (no server) — the 429/failure way out. */
   function openReadyMade(key: ReadyMadeKey): void {
     const stack = buildReadyMadeDeck(key);
-    store.setStack(stack, { isFallback: true, isReadyMadeExample: false, fallbackReason: "error", fallbackOnline: browserOnline() });
+    // The teacher chose this deck: it is not a failure, so say so honestly
+    // ("chosen"), never "the lesson builder is resting" (TASK-26i).
+    store.setStack(stack, { isFallback: true, isReadyMadeExample: false, fallbackReason: "chosen", fallbackOnline: browserOnline() });
     store.setStatus("idle");
     announce("Here's a ready-made deck you can edit.");
   }
@@ -108,11 +117,13 @@ export function StartScreen({
     setDealt([]);
     setTotal(0);
     setOffline(false);
+    setStartTitle(null);
     store.setStatus("generating");
 
     const outcome = await generateStackStream(sentence.trim(), {
-      onStart: ({ total: t, isFallback }) => {
+      onStart: ({ total: t, isFallback, title }) => {
         setTotal(t);
+        setStartTitle(title.trim().length > 0 ? title : null);
         // A fallback deck is the offline/ready-made path; the honest wording is
         // chosen from the reason when the run completes.
         setOffline(isFallback);
@@ -133,6 +144,7 @@ export function StartScreen({
         setDealt([]);
         setTotal(0);
         setOffline(false);
+        setStartTitle(null);
       },
     });
 
@@ -160,7 +172,14 @@ export function StartScreen({
   }
 
   if (generating) {
-    return <GeneratingScreen dealt={dealt} total={total} offline={offline || (__demoOffline ?? false)} />;
+    return (
+      <GeneratingScreen
+        dealt={dealt}
+        total={total}
+        offline={offline || (__demoOffline ?? false)}
+        title={startTitle}
+      />
+    );
   }
 
   return (
@@ -393,12 +412,23 @@ function GeneratingScreen({
   dealt,
   total,
   offline,
+  title,
 }: {
   dealt: DealtCard[];
   total: number;
   /** True on the offline fallback path (a ready-made deck, no live model). */
   offline: boolean;
+  /** The set's title once the stream's `start` event has announced it. */
+  title: string | null;
 }): JSX.Element {
+  // Whole seconds since this screen appeared. A counter that always moves is the
+  // difference between "working" and "hung": real builds take 30–45 s and the
+  // first card can be 25 s away (TASK-26f).
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
   const dealtCount = dealt.length;
   // The three most recently dealt cards form the fanned pile; the newest lands
   // on top (c4) with its question and tiles, matching the mockup.
@@ -417,8 +447,11 @@ function GeneratingScreen({
         ? `All ${total} cards ready`
         : `Card ${Math.min(dealtCount, total)} of ${total}`
       : dealtCount > 0
-        ? `Card ${dealtCount} ready`
-        : "Working…";
+        ? `Card ${dealtCount} written`
+        : title !== null
+          ? `Writing “${title}” — card 1…`
+          : "Asking the AI to plan your cards…";
+  const seconds = offline ? "" : ` ${elapsed}s`;
 
   return (
     <div class="app">
@@ -431,9 +464,12 @@ function GeneratingScreen({
           <p>
             {offline
               ? "Each card appears as it's ready."
-              : "Each card appears as it's ready. About 20 seconds."}
+              : "Each card appears as it's ready. About 30–45 seconds."}
           </p>
-          <p class="counter" aria-live="polite">{counter}</p>
+          <p class="counter" aria-live="polite">
+            {counter}
+            {seconds !== "" ? <span class="elapsed"> ·{seconds}</span> : null}
+          </p>
         </div>
         <div class="deal" aria-hidden="true">
           {/* Cards behind the top one, fanned. We always render three slots so
@@ -459,7 +495,9 @@ function GeneratingScreen({
                 ? top.total > 0
                   ? `Card ${top.index + 1} of ${top.total}`
                   : `Card ${top.index + 1}`
-                : "Preparing…"}
+                : title !== null
+                  ? title
+                  : "Preparing…"}
             </p>
             {top?.question ? <p class="deal-q">{top.question}</p> : null}
             {top && top.kind === "quiz" ? (

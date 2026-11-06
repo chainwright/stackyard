@@ -45,7 +45,7 @@ const TOOLS = [
       type: "object",
       properties: {
         url: { type: "string", description: "Image URL on an allowed host." },
-        maxKB: { type: "number", description: "Size cap in KB (default 60)." },
+        maxKB: { type: "number", description: "Size cap in KB (default 60, never more than 512)." },
       },
       required: ["url"],
     },

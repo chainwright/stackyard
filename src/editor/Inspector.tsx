@@ -17,8 +17,11 @@ import {
   markCorrect,
   changeKind,
   setGotoTarget,
+  setFlashSide,
+  addAnswer,
 } from "./operations.js";
 import { primaryText, truncateLabel } from "../shared/cardTitle.js";
+import { fullCreditFor } from "../shared/readyMadeImages.js";
 
 type Notice = (m: string | null) => void;
 
@@ -100,6 +103,36 @@ export function Inspector({
       </select>
     </div>
   );
+
+  // "+ Add an answer" (TASK-26o): a real, linked answer tile on a quiz card —
+  // not a plain "Add Button" that goes nowhere. Up to four.
+  const answerCount = card.elements.filter(
+    (e) => e.type === "button" && e.actions.some((a) => a.type === "score"),
+  ).length;
+  const addAnswerControl =
+    card.kind === "quiz" ? (
+      <div class="field-group">
+        <button
+          class="ghost-btn add-answer-btn"
+          type="button"
+          disabled={answerCount >= 4}
+          onClick={() => {
+            dispatch((s) => addAnswer(s, card.id));
+            const updated = store.getStack();
+            const c = updated?.cards.find((x) => x.id === card.id);
+            const last = c?.elements[c.elements.length - 1];
+            if (last && last.type === "button") store.setSelectedElement(last.id);
+          }}
+        >
+          + Add an answer
+        </button>
+        <p class="hint">
+          {answerCount >= 4
+            ? "A question can have up to four answers."
+            : "Adds another wrong answer that goes on to the next card. Tick “Right answer” to change which one is right."}
+        </p>
+      </div>
+    ) : null;
 
   function gotoPicker(el: ButtonElement): JSX.Element {
     const current = gotoTargetOf(el);
@@ -240,6 +273,7 @@ export function Inspector({
                 : "No answer is the right one yet. Pick one so the class can earn a point."}
           </p>
         </div>
+        {addAnswerControl}
         {kindPicker}
         {gotoPicker(selectedEl)}
       </aside>
@@ -287,7 +321,8 @@ export function Inspector({
             value={front?.content ?? ""}
             onInput={(e) => {
               const value = (e.target as HTMLInputElement).value;
-              if (front) dispatch((s) => editText(s, front.id, value));
+              // Creates the front if the card has none yet (never drops typing).
+              dispatch((s) => setFlashSide(s, card.id, "front", value));
             }}
           />
         </div>
@@ -299,7 +334,10 @@ export function Inspector({
             value={back?.content ?? ""}
             onInput={(e) => {
               const value = (e.target as HTMLTextAreaElement).value;
-              if (back) dispatch((s) => editText(s, back.id, value));
+              // Creates the back if the card has none yet. This used to be
+              // `if (back) …`, which silently threw away text typed into the Back
+              // box of an AI-made flash card (J2 step 9, TASK-26o).
+              dispatch((s) => setFlashSide(s, card.id, "back", value));
             }}
           />
           <p class="hint">
@@ -327,7 +365,15 @@ export function Inspector({
               dispatch((s) => editText(s, selectedEl.id, value));
             }}
           />
+          {/* A picture credit prints only the domain on the card; the full link
+              lives here so it never runs off the paper (TASK-26i). */}
+          {fullCreditFor(selectedEl.content) !== null ? (
+            <p class="hint credit-full">
+              Full credit: <span class="credit-url">{fullCreditFor(selectedEl.content)}</span>
+            </p>
+          ) : null}
         </div>
+        {addAnswerControl}
         {kindPicker}
       </aside>
     );
@@ -338,6 +384,7 @@ export function Inspector({
     <aside class="inspector" aria-label="Edit">
       <h2>Edit this card</h2>
       <p class="hint">Tap something on the card to edit it.</p>
+      {addAnswerControl}
       {kindPicker}
     </aside>
   );

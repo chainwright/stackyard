@@ -3,14 +3,14 @@
   "hooks": [
     {
       "name": "Ready-made deck content check",
+      "description": "When the agent saves the ready-made decks or their pictures, check every quiz card has one correct answer, the correct position varies, no duplicate answers, no over-long answer labels, and that every picture credit is truthful (a credit that names Openverse needs a real Openverse source URL; no raw URL is printed on a card).",
       "trigger": "PostFileSave",
-      "description": "When the agent saves src/shared/readyMadeStacks.ts, check every quiz card has one correct answer, the correct position varies, no duplicate answers, and no over-long answer labels.",
-      "matcher": "readyMadeStacks\\.ts$",
+      "matcher": "(^|/)src/shared/(readyMadeStacks|readyMadeImages)\\.ts$",
       "action": {
         "type": "command",
-        "command": "npm run check:decks",
-        "timeout": 60
-      }
+        "command": "npm run check:decks"
+      },
+      "timeout": 60
     }
   ]
 }

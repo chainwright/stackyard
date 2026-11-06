@@ -9,6 +9,9 @@ import {
   searchImages,
   fetchImageAsDataUri,
   ALLOWED_IMAGE_HOSTS,
+  MAX_IMAGE_KB,
+  DEFAULT_IMAGE_KB,
+  clampMaxKB,
 } from "./openverse.js";
 
 // ---------------------------------------------------------------------------
@@ -213,5 +216,61 @@ describe("searchImages", () => {
   it("throws a plain message on a non-2xx API response", async () => {
     const fetchStub = vi.fn(async () => ({ ok: false, status: 503, headers: new Headers(), json: async () => ({}) }) as unknown as Response);
     await expect(searchImages("x", "cc0", 5, { fetch: fetchStub as unknown as typeof fetch })).rejects.toThrow(/HTTP 503/);
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// TASK-26h — a sane maximum for the size cap, and a read timeout on the body
+
+describe("TASK-26h: maxKB is clamped and the body read has a deadline", () => {
+  it("clampMaxKB keeps the cap in 1..512 and defaults a non-number", () => {
+    expect(MAX_IMAGE_KB).toBe(512);
+    expect(clampMaxKB(1e9)).toBe(512);
+    expect(clampMaxKB(0)).toBe(1);
+    expect(clampMaxKB(-5)).toBe(1);
+    expect(clampMaxKB(40)).toBe(40);
+    expect(clampMaxKB(Number.NaN)).toBe(DEFAULT_IMAGE_KB);
+    expect(clampMaxKB(Number.POSITIVE_INFINITY)).toBe(DEFAULT_IMAGE_KB);
+  });
+
+  it("an agent asking for maxKB 1e9 still gets the 512 KB cap enforced", async () => {
+    const big = new Uint8Array(600 * 1024); // 600 KB > the 512 KB ceiling
+    const fetchStub = vi.fn(async () => imgResponse(big, "image/png"));
+    await expect(
+      fetchImageAsDataUri("https://upload.wikimedia.org/big.png", 1e9, { fetch: fetchStub as unknown as typeof fetch }),
+    ).rejects.toThrow(/512 KB/);
+  });
+
+  it("a body that sends headers and then never finishes times out", async () => {
+    // Headers arrive at once; the body yields one byte and then stalls forever.
+    let cancelled = false;
+    const stalled = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1]));
+        // never close, never enqueue again
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const res = {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "image/png" }),
+      body: stalled,
+      arrayBuffer: async () => new ArrayBuffer(0),
+      json: async () => ({}),
+    } as unknown as Response;
+    const fetchStub = vi.fn(async () => res);
+    await expect(
+      fetchImageAsDataUri("https://upload.wikimedia.org/slow.png", 60, {
+        fetch: fetchStub as unknown as typeof fetch,
+        timeoutMs: 60,
+      }),
+    ).rejects.toThrow(/timed out/);
+    // The stalled connection is released, not left parked.
+    await new Promise((r) => setTimeout(r, 20));
+    expect(cancelled).toBe(true);
   });
 });

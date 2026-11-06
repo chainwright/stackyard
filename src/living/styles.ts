@@ -7,15 +7,15 @@
 export const LIVING_STYLES = `
 .sy-teacher-tab {
   position: fixed; bottom: 12px; right: 12px; z-index: 60;
-  font-family: 'Stackyard Reading', system-ui, sans-serif; font-size: 14px;
+  font-family: 'Stackyard Reading', system-ui, sans-serif; font-size: 18px;
   background: rgba(30,42,71,0.85); color: #FBF8F1; border: none; cursor: pointer;
-  border-radius: 999px; padding: 8px 14px; min-height: 36px; opacity: 0.7;
+  border-radius: 999px; padding: 8px 14px; min-height: 44px; opacity: 0.7;
 }
 .sy-teacher-tab:hover { opacity: 1; }
 
 .sy-living-overlay {
   position: fixed; inset: 0; z-index: 70; background: #D4C9B0;
-  display: flex; flex-direction: column; overflow: hidden;
+  display: flex; flex-direction: column; overflow: hidden; overflow: clip;
   font-family: 'Stackyard Reading', system-ui, sans-serif; color: #1E2A47;
 }
 .sy-living-bar {
@@ -25,8 +25,8 @@ export const LIVING_STYLES = `
 .sy-living-bar h1 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; margin: 0; }
 .sy-living-bar .sy-spacer { flex: 1 1 auto; }
 .sy-living-btn {
-  font-family: inherit; font-size: 15px; cursor: pointer; border-radius: 8px;
-  min-height: 38px; padding: 8px 14px; border: 2px solid #1E2A47;
+  font-family: inherit; font-size: 18px; cursor: pointer; border-radius: 8px;
+  min-height: 44px; padding: 8px 14px; border: 2px solid #1E2A47;
   background: #FBF8F1; color: #1E2A47;
 }
 .sy-living-btn.primary { background: #CE3926; color: #fff; border-color: #CE3926; }
@@ -40,7 +40,7 @@ export const LIVING_STYLES = `
 }
 .sy-living-list button {
   display: block; width: 100%; text-align: left; font-family: inherit;
-  font-size: 15px; background: #FBF8F1; border: 1px solid #C9D3E3;
+  font-size: 16px; background: #FBF8F1; border: 1px solid #C9D3E3;
   border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
   color: #1E2A47;
 }
@@ -50,33 +50,38 @@ export const LIVING_STYLES = `
 .sy-living-main { flex: 1 1 auto; display: flex; min-height: 0; }
 .sy-living-canvas {
   flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
-  overflow: hidden; padding: 16px; position: relative;
+  overflow: hidden; overflow: clip; padding: 16px; position: relative;
 }
 .sy-living-canvas .sy-card-stack { transform-origin: center center; }
 
 .sy-living-inspector {
-  flex: 0 0 300px; overflow-y: auto; background: #FBF8F1;
-  border-left: 1px solid #C9D3E3; padding: 14px;
+  flex: 0 0 300px; overflow-y: auto; overflow-x: hidden; background: #FBF8F1;
+  border-left: 1px solid #C9D3E3; padding: 14px; overflow-wrap: anywhere;
 }
 .sy-living-inspector h2 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; margin: 0 0 10px; }
 .sy-living-field { margin-bottom: 14px; }
-.sy-living-field label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.sy-living-field label { display: block; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .sy-living-field input, .sy-living-field textarea, .sy-living-field select {
-  width: 100%; font: inherit; font-size: 15px; padding: 7px 9px;
+  width: 100%; font: inherit; font-size: 16px; padding: 7px 9px;
   border: 1.5px solid #C9D3E3; border-radius: 8px; color: #1E2A47; background: #fff;
 }
 .sy-living-field textarea { min-height: 90px; resize: vertical; }
-.sy-living-hint { font-size: 13px; color: #4a5878; margin-top: 4px; line-height: 1.4; }
+.sy-living-hint { font-size: 15px; color: #4a5878; margin-top: 4px; line-height: 1.4; }
 .sy-living-hint.warn {
   color: #1E2A47; border-left: 3px solid #1E2A47; padding-left: 8px;
   background: rgba(30,42,71,0.05); border-radius: 4px;
 }
 .sy-living-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.sy-living-field .sy-living-radio {
+  display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer;
+}
+.sy-living-field .sy-living-radio input { width: auto; accent-color: #1E2A47; }
 
 .sy-living-toast {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
   z-index: 90; background: #1E2A47; color: #FBF8F1; padding: 10px 16px;
-  border-radius: 8px; font-size: 15px; max-width: 80vw;
+  border-radius: 8px; font-size: 18px; max-width: 80vw;
+  font-family: 'Stackyard Reading', system-ui, sans-serif;
 }
 
 .sy-living-tryit { position: relative; }
@@ -85,13 +90,15 @@ export const LIVING_STYLES = `
 }
 `.trim();
 
-/** Inject the living chrome styles once. */
-let injected = false;
+/**
+ * Inject the living chrome styles once per document. The check looks at the
+ * DOM, not a module flag, so a second document (a reopened copy in a test) gets
+ * its own styles and the same page never gets two blocks.
+ */
 export function ensureLivingStyles(doc: Document = document): void {
-  if (injected && doc === document) return;
+  if (doc.head.querySelector('style[data-living="chrome"]')) return;
   const style = doc.createElement("style");
   style.setAttribute("data-living", "chrome");
   style.textContent = LIVING_STYLES;
   doc.head.appendChild(style);
-  if (doc === document) injected = true;
 }

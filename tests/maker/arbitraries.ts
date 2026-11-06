@@ -25,6 +25,9 @@ import {
   addButtonElement,
   addPictureElement,
   linkButtonToCard,
+  addAnswer,
+  setFlashSide,
+  addCardAfter,
 } from "../../src/editor/operations.js";
 
 // A tiny valid PNG data URI (1×1 transparent pixel) for addPictureElement.
@@ -285,6 +288,27 @@ export const opSpecArb: fc.Arbitrary<OpSpec> = fc.oneof(
       if (!hit) return noop;
       const target = stack.cards[o.cardSeed % stack.cards.length]!;
       return (s) => linkButtonToCard(s, hit.el.id, target.id);
+    }
+  ),
+  // addAnswer — "+ Add an answer" on any card (rejects off a quiz card / at four)
+  fc.record({ kind: fc.constant("addAnswer" as const), seed: fc.nat() }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => addAnswer(s, card.id);
+    }
+  ),
+  // setFlashSide — type into a flash card's Front or Back (creating it if absent)
+  fc.record({ kind: fc.constant("setFlashSide" as const), seed: fc.nat(), back: fc.boolean(), content: fc.string() }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => setFlashSide(s, card.id, o.back ? "back" : "front", o.content);
+    }
+  ),
+  // addCardAfter — "+ Add Card" of any playable kind
+  fc.record({ kind: fc.constant("addCardAfter" as const), seed: fc.nat(), k: fc.constantFrom("quiz" as const, "flash" as const, "story" as const) }).map(
+    (o): OpSpec => (stack) => {
+      const card = stack.cards[o.seed % stack.cards.length]!;
+      return (s) => addCardAfter(s, card.id, o.k);
     }
   )
 );

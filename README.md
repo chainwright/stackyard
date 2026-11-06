@@ -25,6 +25,35 @@ Two halves:
 
 "Works offline" means the **exported lesson file**, not the Maker.
 
+### The living file
+
+The default export is a **living file**: it plays exactly like the plain class
+file, and a small **Teacher** tab in the corner opens a lighter editor *inside the
+file*, built on the same validated edit operations as the Maker. A teacher can fix
+a typo, change which answer is right, add or remove a card, press **Try It**, and
+**Save a Copy** (a new file, named `<title> (copy).html`) on a class laptop with
+the Wi-Fi off. The copy is itself a living file. "Export for class (smaller)" is
+the play-only alternative.
+
+## See it
+
+<!-- TODO before submission: replace this block with a ~15 s GIF at
+     docs/media/demo.gif (sentence → cards deal in → edit → Try It → export →
+     Wi-Fi off → Teacher → Save a Copy → the copy plays) and three screenshots
+     at docs/media/*.png. Keep the sample links below. -->
+
+*A screenshot and a short GIF go here (recorded before submission).* Until then:
+
+- **Live app:** https://stackyard-sdqt.onrender.com
+- **Three sample lessons, no server needed.** Download one and double-click it,
+  with the Wi-Fi off if you like. They are living files, so try the Teacher tab.
+  - [`samples/vikings-in-ireland.html`](samples/vikings-in-ireland.html) — quiz,
+    a flash card and a branching story
+  - [`samples/times-tables.html`](samples/times-tables.html) — a quiz game
+  - [`samples/irish-words.html`](samples/irish-words.html) — flashcards and a quiz
+
+  They are generated from the ready-made decks by `npm run samples`.
+
 ## Why HyperCard
 
 HyperCard let non-programmers build clickable, branching "stacks" in 1987 and
@@ -34,7 +63,7 @@ scored lesson the class plays, every stack satisfies nine validity invariants so
 it always plays to an end score, and the exported file is re-importable
 (round-tripped losslessly, checked by a 1,000-run property test).
 
-## Prior art (and what only Stackyard does)
+## Prior art (and what we haven't found elsewhere)
 
 - **Decker** (a modern HyperCard-tradition tool) exports one offline HTML with
   the runtime inside — but it has no generation and uses a scripting language.
@@ -45,8 +74,9 @@ it always plays to an end score, and the exported file is re-importable
   PDF/Word/platform links, need accounts, and give one-shot output you can't
   edit card by card.
 
-What only Stackyard does: **a teacher's sentence → a validated, branching,
-always-playable stack → direct card editing → one self-contained offline file.**
+What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
+always-playable stack → direct card editing → one self-contained offline file that
+can edit itself and save a copy of itself, offline.**
 
 ## Libraries and model
 
@@ -71,8 +101,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **600** passing (`npm test`).
-- Player bundle: **9.5 KB** gzipped (budget 50 KB).
+- Tests: **810** passing (`npm test`).
+- Player bundle: **10.5 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 
@@ -139,13 +169,15 @@ Run the production server locally:
 ```sh
 npm ci
 npm run build:player   # bundles the player runtime
+npm run build:living   # bundles the living-file runtime (editor + Save a Copy)
 npm run build:maker    # builds the Maker SPA into dist/maker
 npm start              # serves dist/maker + /api on PORT (default 3001)
 ```
 
 Then open `http://localhost:3001`. `npm start` sets `NODE_ENV=production`, which
 turns on static serving. Without a model key the generator falls back to the
-built-in ready-made decks, so the app still works offline.
+built-in ready-made decks, so the app still works with no model key. (The Maker
+itself still needs its server; only the exported file works offline.)
 
 Environment variables (server-only; the model key never reaches the browser):
 
@@ -154,6 +186,9 @@ Environment variables (server-only; the model key never reaches the browser):
 | `STACKYARD_LLM_API_KEY` | Model API key (set in the host's dashboard, never committed) | — |
 | `STACKYARD_LLM_BASE_URL` | OpenAI-compatible endpoint (live deploy uses Anthropic) | `https://api.openai.com/v1` |
 | `STACKYARD_LLM_MODEL` | Model name | `gpt-4o-mini` |
+| `STACKYARD_LLM_JSON_MODE` | `off` omits `response_format: json_object`. Some OpenAI-compatible endpoints reject it (Anthropic's does); the prompt still asks for JSON and the validator plus one retry still guard the result | on |
+| `STACKYARD_LLM_TEMPERATURE` | `off` omits `temperature`, which some newer models reject | on |
+| `STACKYARD_LLM_MAX_TOKENS` | Output token budget, clamped to 1,000–32,000. Raise it if a 10-card deck arrives cut off ("Unterminated string") | `4096` |
 | `PORT` | Port to listen on | `3001` |
 | `TRUST_PROXY` | `1` behind a trusted proxy (e.g. Render), so a forwarding header is used for the client's rate-limit identity | off |
 | `CLIENT_IP_HEADER` | the single-value client-IP header the proxy sets; on Render set to `cf-connecting-ip`. Falls back to the rightmost `X-Forwarded-For` entry (never the client-controlled leftmost) | — |
@@ -178,13 +213,13 @@ no model call and does not consume a per-client rate-limit slot.
 `render.yaml` is a one-service blueprint. In Render, choose **New → Blueprint**,
 point it at this repo, and set `STACKYARD_LLM_API_KEY` in the dashboard (it is
 `sync: false`, so it is never read from the repo). The build runs
-`npm ci && npm run build:player && npm run build:maker`, the service starts with
+`npm ci && npm run build:player && npm run build:living && npm run build:maker`, the service starts with
 `npm start`, and `/api/health` is the health check (a cheap keep-warm ping that
 makes no model call).
 
 ## Third-party assets
 
-Stackyard ships two open-source typefaces. Both are self-hosted (no CDN) as
+Stackyard ships two open-source typefaces and three public-domain-marked pictures. Both are self-hosted (no CDN) as
 Latin-subset `woff2` files and, in exported stacks, inlined as base64 inside
 the single HTML file. The SIL Open Font License 1.1 lets us embed and
 redistribute these fonts, but requires that the copyright notice and licence
@@ -213,3 +248,39 @@ is reduced, the outlines are unchanged. Bricolage Grotesque declares no
 Reserved Font Name, so it keeps its name.
 
 Both fonts are also disclosed in the Devpost "libraries / assets" list.
+
+### Pictures
+
+Each ready-made deck carries one picture (two photographs and one cartoon), inlined as a data URI and credited
+on the card (creator, licence, source domain). They were picked through the
+Openverse API (`mcp/openverse`, `npm run pick:images`) as **Public Domain Mark
+1.0** and come from Flickr. Public Domain Mark is the uploader's statement that
+the work is free of known copyright; it is a marker, not a licence we granted.
+
+| Deck | Picture | Creator | Licence | Source |
+|---|---|---|---|---|
+| Vikings in Ireland | A photograph of a model Viking ship | Gary Lee Todd, Ph.D. | Public Domain Mark 1.0 | https://www.flickr.com/photos/101561334@N08/54663235921 |
+| Times Tables Game | A cartoon of a pupil with an abacus (an illustration, not a photograph) | nunecoe | Public Domain Mark 1.0 | https://www.flickr.com/photos/141481059@N03/26041276381 |
+| Everyday Words in Irish | A photograph of sea cliffs (the Cliffs of Moher) | dougsnider72 | Public Domain Mark 1.0 | https://www.flickr.com/photos/97462521@N08/42075789872 |
+
+The on-card credit shows only the domain (`Image: Gary Lee Todd, Ph.D., PDM —
+flickr.com`) so it fits the card; selecting the credit in the Maker shows the
+full link.
+
+### Design reference image (AI-generated)
+
+`docs/design/reference-stamp-pad-tiles.png` is an **AI-generated concept image**
+used early on to choose the visual direction (paper, rings, coloured tiles). It
+is **not a screenshot of Stackyard** and no part of the shipped UI is copied from
+it. The PNG carries its generator's provenance metadata. See also
+[`docs/design/README.md`](docs/design/README.md).
+
+## Accessibility: answer tiles carry a shape as well as a colour
+
+Every answer tile pairs its colour with a permanent shape (coral ▲, sun ◆,
+teal ●, navy ■), so a colour-blind pupil can say "the triangle" and a washed-out
+projector can't make two answers look alike. The shape order will look familiar
+from other quiz tools: that is deliberate (a pattern pupils already know, and a
+common accessibility convention), not copied styling. Our colours, type and
+rubber-stamp feedback are our own. Answers also meet the 4.5:1 contrast rule and
+a 56 px minimum height; see `.kiro/steering/design-system.md`.

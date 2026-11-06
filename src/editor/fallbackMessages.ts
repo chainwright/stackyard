@@ -14,6 +14,11 @@ export function fallbackMessage(
   reason: FallbackReason | undefined,
   online: boolean,
 ): string {
+  // A deck the teacher chose herself is not a fallback at all: say so plainly,
+  // online or off (the old wording called a deliberate pick "resting").
+  if (reason === "chosen") {
+    return "Here's a ready-made deck you can edit.";
+  }
   if (!online) {
     return "You're offline, so here's a ready-made deck you can edit. Reconnect to build your own.";
   }

@@ -8,16 +8,37 @@
 
 import type { Stack } from "../shared/types.js";
 import { mountPlayer } from "../player/mount.js";
-import { checkReachability } from "../shared/reachability.js";
+import { checkReachability, describeProblems } from "../shared/reachability.js";
+import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 import { ensureLivingStyles } from "./styles.js";
 import { LivingEditor } from "./editor.js";
 import { saveCopy } from "./saveCopy.js";
+import { snapshotPristine } from "./pristine.js";
+
+export interface LivingAppOptions {
+  /**
+   * The file's HTML as it was BEFORE anything mounted. Save a Copy is built from
+   * this and nothing else (TASK-26a). The real boot (boot.ts) passes the
+   * snapshot it took first thing; if a caller omits it, it is taken here, before
+   * this function touches the DOM — still pristine, never the live document at
+   * save time.
+   */
+  pristineHtml?: string;
+}
 
 /**
  * Mount the living app on an exported living file. Starts in Play. Returns a
  * teardown (useful in tests); the real file never tears down.
  */
-export function mountLivingApp(stack: Stack, root: HTMLElement): () => void {
+export function mountLivingApp(
+  stack: Stack,
+  root: HTMLElement,
+  options: LivingAppOptions = {},
+): () => void {
+  // Snapshot FIRST: nothing below has mounted yet (no styles, no Teacher tab,
+  // no player, no overlay), so this is the file as the author exported it.
+  const pristineHtml = options.pristineHtml ?? snapshotPristine(document);
+
   ensureLivingStyles();
 
   let playTeardown: (() => void) | null = null;
@@ -97,22 +118,22 @@ export function mountLivingApp(stack: Stack, root: HTMLElement): () => void {
   function doSaveCopy(): void {
     if (!editor) return;
     const edited = editor.getStack();
-    // "Before you share": warn about unreachable cards / dead-end answers.
+    // "Before you share": warn about unreachable cards, answers/buttons that go
+    // nowhere, and cards with no way to move on (TASK-26b/o).
     const report = checkReachability(edited);
     if (!report.ok) {
-      const bits: string[] = [];
-      if (report.unreachable.length > 0) {
-        bits.push(`${report.unreachable.length} card(s) the class can't reach`);
-      }
-      if (report.deadEndQuiz.length > 0) {
-        bits.push(`${report.deadEndQuiz.length} card(s) with an answer that goes nowhere`);
-      }
+      const label = (c: (typeof edited.cards)[number]): string => {
+        if (c.kind === "end") return "the last card";
+        const i = edited.cards.indexOf(c) + 1;
+        const words = truncateLabel(primaryText(c), 24);
+        return words.length > 0 ? `Card ${i} — ${words}` : `Card ${i}`;
+      };
       const proceed = window.confirm(
-        `Before you share: ${bits.join(" and ")}. Save the copy anyway?`,
+        `Before you share:\n• ${describeProblems(report, label).join("\n• ")}\n\nSave the copy anyway?`,
       );
       if (!proceed) return;
     }
-    const result = saveCopy(edited);
+    const result = saveCopy(edited, { pristineHtml });
     if (result.ok) {
       showToast(`Saved a copy: ${result.filename}`);
     } else {

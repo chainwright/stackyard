@@ -313,3 +313,53 @@ leaks the URL or key. `callStream` also accepts the client's connection signal;
 aborts the upstream request (the server stops paying for tokens nobody reads) and
 `streamGenerate` skips the fallback when the client is gone. New fake-timer tests
 cover each deadline and both disconnect cases.
+
+
+---
+
+## Phase — Round-2 review fixes to generation (TASK-26 b, c, d, g, j)
+
+> Owned here: b (flash dead end), c (layout), d (invented pictures), g (generator
+> logging/timeouts/budget), j (distractor style). The rest of TASK-26 is in
+> `exporter/tasks.md` (a, e) and `maker/tasks.md` (f, h, i, k–o).
+
+**Why:** the first live review with real generation (5 Nov evening, J1–J5) found
+that the model's output was trusted as-is. Every generated deck with a flash card
+froze on that card, the model's coordinates overprinted the "Card N of M" line,
+and an invented picture path made a deck impossible to export.
+
+### TASK-26b: generated flash cards must never dead-end  *(P0, 3 of 3 live decks)*
+  - **Bug.** The model returned a flash card as ONE text plus a Next button. The player flips only with a second text and draws Next only on the back, so the card never moved on. The prompt never said what a flash card must contain; nothing in the validator or "before you share" check covered it.
+  - **Fix at every layer.**
+    1. *Prompt:* a "Flash cards" rule in BOTH prompts — text 1 is the term (at most four words), text 2 is the explanation, one "Next Card" button.
+    2. *Server normalisation:* a flash card with one text is split into term + explanation at a clean separator (`:`, ` – `, ` — `, ` - `, a newline); with no clean split it is converted to a **story** card with a "Continue" button. The Next button always exists and always has a `goto` (to the next card in deck order).
+    3. *Player:* a card with no forward control still draws one (a flash card with no back shows Next on the FRONT; any non-end card whose controls all lack a `goto` offers a "Next Card" to the next card in order). A button with no `goto` never greys out the card and stops.
+    4. *Check:* `checkReachability` reports `stuck` cards (non-end cards with no way forward) and answers/buttons that go nowhere; `repairFlow` fixes them.
+  - **Acceptance criteria.**
+    - A test with the exact malformed shape (one text + a Next button; and one text with no button) normalises to a playable card, and the player draws a forward control on the front.
+    - Property test over random stacks: after `repairFlow` + normalisation, **every non-end card has a forward control that targets an existing card** and walking forward from card 1 always reaches the end card.
+    - The "before you share" check flags a flash card with no way forward and a quiz/story button that goes nowhere.
+
+### TASK-26c: never trust model coordinates for core text  *(P0)*
+  - **Bug.** Generated cards used the model's layout (text at y=40, h=120): the question printed over "Card N of M", long questions ran into the answer tiles, and the CORRECT stamp landed on both.
+  - **Fix.** After validation, re-lay generated quiz / flash / story cards onto the same template as the ready-made decks (`src/shared/layout.ts`): a reserved top band (nothing above y=96), a question box that ends before the stamp gutter above the tiles, a 2×2 tile grid, stacked story choices, a fixed flash term/explanation/Next. The renderer fits text to its box (`src/shared/fitText.ts`, never below 20 px) so a long question or a two-line answer cannot overflow. Applied per streamed card too, so the dealing preview is clean.
+  - **Acceptance criteria.**
+    - For long questions (up to 240 characters) and long answers, no two core elements' rectangles intersect and nothing intrudes into the top band, at the 1366×768 and 1920×1080 player scales; the fitted text height never exceeds its box.
+    - The model's `y=40` input produces `y ≥ 104` output; out-of-bounds model coordinates are clamped rather than failing validation and burning a retry.
+
+### TASK-26d: model-invented pictures must never reach the editor or the export  *(P0)*
+  - **Bug.** The prompt offered `{"type":"image","src":"..."}`; the model invented `images/cheval.png`, the validator passed it, and Export answered 422 ("A picture on a card couldn't be found").
+  - **Fix.** Remove `image` from both model-facing schemas; strip any image element whose `src` is not an embedded `data:` URI before validation/streaming (both paths).
+  - **Acceptance criteria.** A test feeds model output with relative-path pictures through both the one-shot and the streaming path; the resulting stack has no such image and **exports with 200** (class AND living). A property test: for any model output built from valid cards plus arbitrary image elements, the generated stack exports.
+
+### TASK-26g: generator logging, the "timeout" reason, and the retry budget
+  - **Bug.** `reasonFromError` sniffed the message for "time" but the gateway says "took too long", so the `timeout` reason could never be produced; a stream fallback logged twice; the streamed attempt's own failure cause was swallowed; no test pinned that a retry counts against the daily budget (mutant D survived).
+  - **Fix.** `LlmUnavailableError` carries a `kind` (`timeout | cancelled | http | network | empty | dropped`) set where it is thrown; `reasonFromError` maps from `kind`, never from text. The stream attempt logs its own redacted cause once; the duplicate "served ready-made deck" line is dropped.
+  - **Acceptance criteria.** A deadline produces `fallbackReason: "timeout"` on both paths; exactly one log line per fallback; a test where the first attempt fails validation asserts `onModelCall` is called **twice** (and fails if the retry stops counting).
+
+### TASK-26j: plausible distractors in sentence case
+  - **Bug.** Answers came back in Title Case ("Along Edges Of Tectonic Plates") with joke distractors ("It Turns Into Wood"). The prompt itself said "Title case for button labels".
+  - **Fix.** Both prompts: wrong answers are plausible and from the same category; answer labels are sentence case; only navigation buttons ("Next Card", "Continue") are Title Case. The normaliser converts an unmistakable Title Case label (3+ words, a capitalised small word mid-label) to sentence case, and drops "Question 3:" / "Q3." prefixes from generated question text (the card counter already shows position, and inserting a card breaks the numbering).
+  - **Acceptance criteria.** Unit tests for the Title Case rule (converted: "Along Edges Of Tectonic Plates"; untouched: "Mount Vesuvius", "Brian Boru") and the prefix rule; the prompt tests assert the new rules are present in both prompts and the old "Title case for button labels" line is gone.
+
+**Gate (TASK-26 b, c, d, g, j):** `npm test` and `npx tsc --noEmit` exit 0.

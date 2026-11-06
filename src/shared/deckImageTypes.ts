@@ -23,15 +23,40 @@ export interface DeckImage {
   creditSource?: string;
 }
 
+/** The domain of a source URL ("https://www.flickr.com/photos/…" → "flickr.com"). */
+export function creditDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "");
+  } catch {
+    return "";
+  }
+}
+
+function creditLabel(img: DeckImage): string {
+  return img.creditKind === "illustration" ? "Illustration" : "Image";
+}
+
 /**
- * A one-line credit string from a DeckImage, for display on the card.
- * Shapes: "Image: Creator — Licence — Source" (a found image with a source) or
- * "Illustration: Creator, Licence" (our own drawing, no source URL).
+ * The credit line printed ON the card: creator, licence and the source's
+ * DOMAIN only. It used to print the full URL, which ran off the edge of the
+ * paper (J1, round 2). Shapes:
+ *   "Image: Gary Lee Todd, PDM — flickr.com"   (a found image with a source)
+ *   "Illustration: Stackyard, CC0"             (our own drawing, no source)
+ * The full URL is kept for the inspector — see {@link creditFull}.
  */
 export function creditLine(img: DeckImage): string {
-  const label = img.creditKind === "illustration" ? "Illustration" : "Image";
+  const base = `${creditLabel(img)}: ${img.creditCreator}, ${img.creditLicense}`;
+  const domain = img.creditSource ? creditDomain(img.creditSource) : "";
+  return domain.length > 0 ? `${base} — ${domain}` : base;
+}
+
+/**
+ * The complete credit including the full source URL — shown in the inspector
+ * (and listed in the README), never printed on the card.
+ */
+export function creditFull(img: DeckImage): string {
   if (img.creditSource && img.creditSource.length > 0) {
-    return `${label}: ${img.creditCreator} — ${img.creditLicense} — ${img.creditSource}`;
+    return `${creditLabel(img)}: ${img.creditCreator} — ${img.creditLicense} — ${img.creditSource}`;
   }
-  return `${label}: ${img.creditCreator}, ${img.creditLicense}`;
+  return creditLine(img);
 }

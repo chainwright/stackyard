@@ -17,14 +17,18 @@
     "build:living": "vite build --config vite.living.config.ts",
     "fonts:rename": "python3 scripts/rename-reading-font.py",
     "fonts:check": "python3 scripts/rename-reading-font.py --check",
-    "check:invariants": "npm run build:player && vitest run tests/validator.property.test.ts tests/roundtrip.property.test.ts tests/shuffle-answers.test.ts tests/reachability.test.ts tests/player-size.test.ts",
+    "check:invariants": "npm run build:player && vitest run tests/validator.property.test.ts tests/roundtrip.property.test.ts tests/shuffle-answers.test.ts tests/reachability.test.ts tests/flow.property.test.ts tests/fit-text.test.ts tests/player-size.test.ts",
     "check:decks": "node --import tsx/esm scripts/check-decks.ts",
     "check:export-opens": "node --import tsx/esm scripts/check-export-opens.ts",
     "check:living-file": "npm run build:player && npm run build:living && node --import tsx/esm scripts/check-living-file.ts",
     "check:claims": "node --import tsx/esm scripts/check-claims.ts",
     "check:mcp": "vitest run mcp/openverse/openverse.test.ts",
     "pick:images": "node --import tsx/esm scripts/pick-deck-images.ts",
-    "pre-submit": "npm test && npm run typecheck && npm run build:maker && npm run check:claims"
+    "pre-submit": "npm test && npm run typecheck && npm run build:maker && npm run check:decks && npm run check:text-fit && npm run check:living-file && npm run check:claims",
+    "samples": "node --import tsx/esm scripts/make-samples.ts",
+    "check:claims:fix": "node --import tsx/esm scripts/check-claims.ts --fix",
+    "check:mutants": "node --import tsx/esm scripts/mutation-check.ts",
+    "check:text-fit": "node --import tsx/esm scripts/check-text-fit.ts"
   },
   "dependencies": {
     "preact": "11.1.1",

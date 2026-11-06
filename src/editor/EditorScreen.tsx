@@ -51,6 +51,9 @@ export function EditorScreen({
   // Which kind of file to export (TASK-24). Defaults to the living file — the
   // one the teacher can edit later without Stackyard.
   const [exportKind, setExportKind] = useState<ExportKind>("living");
+  // The kind of the file that was just exported (the toolbar choice may change
+  // while the confirmation is open); drives the Teacher-tab hint.
+  const [exportedLiving, setExportedLiving] = useState(true);
   // When set, play the exported stack in-app (avoids the blob CSP blank page,
   // J4 H1). We play the current stack through the shared mountPlayer.
   const [previewing, setPreviewing] = useState(false);
@@ -66,6 +69,7 @@ export function EditorScreen({
     setExporting(false);
     if (outcome.ok) {
       triggerDownload(outcome.html, outcome.filename);
+      setExportedLiving(kind === "living");
       setExportedName(outcome.filename);
       announce(`Your file is ready. Saved as ${outcome.filename}.`);
     } else {
@@ -201,6 +205,7 @@ export function EditorScreen({
 
       {exportedName !== null ? (
         <ExportDone
+          living={exportedLiving}
           filename={exportedName}
           stack={stack}
           onOpen={() => {

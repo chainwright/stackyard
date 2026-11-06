@@ -123,11 +123,13 @@ describe("TASK-12: Start screen generate flow", () => {
     document.body.appendChild(root);
     mounted = root;
 
-    // Online (live model) path: the generating screen shows "About 20 seconds".
+    // Online (live model) path: the generating screen shows an honest estimate.
+    // Real builds took 37–40 s, so it must not say "20 seconds" (TASK-26f).
     const onlineStore = new EditorStore({ status: "generating" });
     render(h(StartScreen, { store: onlineStore, __demoDealt: [], __demoTotal: 0 }), root);
     await flush(1);
-    expect(root.textContent).toContain("About 20 seconds");
+    expect(root.textContent).toContain("About 30–45 seconds");
+    expect(root.textContent).not.toContain("About 20 seconds");
 
     render(null, root);
 

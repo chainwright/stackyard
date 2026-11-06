@@ -103,9 +103,22 @@ export function mountPlayer(
     // The end card shows no meta line (the renderer omits it), but it still
     // counts toward the total.
     const deckIndex = stack.cards.findIndex((c) => c.id === cardId);
+    // The safety net (TASK-26b): where a card goes when it offers no way forward
+    // of its own — the next card in deck order, else the end card. A pupil can
+    // never be stranded.
+    const nextCard =
+      deckIndex >= 0 && card.kind !== "end"
+        ? (stack.cards[deckIndex + 1] ?? stack.cards.find((c) => c.kind === "end"))
+        : undefined;
     const chrome =
       deckIndex >= 0
-        ? { position: deckIndex + 1, total: stack.cards.length }
+        ? {
+            position: deckIndex + 1,
+            total: stack.cards.length,
+            ...(nextCard !== undefined && nextCard.id !== card.id
+              ? { nextCardId: nextCard.id }
+              : {}),
+          }
         : {};
 
     renderCard(card, root, state, navigateTo, playSound, chrome);

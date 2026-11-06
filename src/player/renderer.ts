@@ -16,6 +16,8 @@
 import type { Card, Stack, Element as StackElement, ButtonElement } from "../shared/types.js";
 import type { RuntimeState } from "./runtime.js";
 import { dispatch, resetRuntime } from "./runtime.js";
+import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT } from "../shared/fitText.js";
+import { gotoOf } from "../shared/flow.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -37,6 +39,33 @@ import { dispatch, resetRuntime } from "./runtime.js";
 export interface CardChrome {
   position?: number;
   total?: number;
+  /**
+   * The card to move to when this card offers no way forward (TASK-26b). The
+   * PLAYER passes the next card in deck order; the editor's canvas passes
+   * nothing, so the editor still shows exactly what is stored. With it set:
+   *   - a button with no `goto` goes to this card instead of freezing the card,
+   *   - a card with nothing to press (a flash card with no Next, a story with no
+   *     choices) gets a "Next Card" button.
+   * A pupil can never be stranded on a card.
+   */
+  nextCardId?: string;
+}
+
+/** A copy of `el` with a `goto` to `fallbackNext` when it has none. */
+function withForward(el: ButtonElement, fallbackNext: string | undefined): ButtonElement {
+  if (fallbackNext === undefined || gotoOf(el.actions) !== null) return el;
+  return { ...el, actions: [...el.actions, { type: "goto", cardId: fallbackNext }] };
+}
+
+/** Apply a fitted font size to an element only when it differs from the CSS default. */
+function applyFit(
+  node: HTMLElement,
+  fit: { size: number; lineHeight: number },
+  defaultSize: number,
+): void {
+  if (fit.size === defaultSize) return;
+  node.style.fontSize = `${fit.size}px`;
+  node.style.lineHeight = `${fit.lineHeight}px`;
 }
 
 // The standing metal binder-ring loop (design-system.md "Rings sit outside the
@@ -410,17 +439,17 @@ const PLAYER_STYLES = `
   align-items: center;
   justify-content: center;
 }
-/* Long labels WRAP to two lines rather than being cut off with an ellipsis
-   ("Norsemen from…" in the class player — J1/J3, 5 Nov panel). Two lines fit
-   the 96px tile; a third would clamp. line-height stays tight so two lines
-   clear the tile padding. */
+/* Long labels WRAP rather than being cut off with an ellipsis ("Norsemen
+   from…" in the class player — J1/J3, 5 Nov panel). The renderer fits the font
+   to the tile (src/shared/fitText.ts), so up to three lines sit inside it; the
+   clamp is only a last-resort guard. */
 .sy-tile .sy-tile-label {
   flex: 1 1 auto;
   min-width: 0;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
   overflow-wrap: break-word;
   line-height: 1.15;
@@ -826,15 +855,28 @@ function renderFlashCard(
   navigate: (id: string, automatic: boolean) => void,
   playSound: (sound: "cheer" | "buzz") => void,
   ariaLive: HTMLElement,
+  nextCardId?: string,
 ): void {
   const texts = card.elements.filter(
     (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
   );
   const termText = texts[0]?.content ?? "";
   const backText = texts[1]?.content ?? "";
-  const buttons = card.elements.filter(
-    (e): e is ButtonElement => e.type === "button",
-  );
+  // Every button gets a way on (a missing goto falls back to the next card), and
+  // a flash card with NO button at all gets a "Next Card" — a pupil must never
+  // be stranded (TASK-26b: the AI's one-text flash cards froze the class).
+  let buttons = card.elements
+    .filter((e): e is ButtonElement => e.type === "button")
+    .map((b) => withForward(b, nextCardId));
+  if (buttons.length === 0 && nextCardId !== undefined && gotoOf(card.actions) === null) {
+    buttons = [
+      {
+        type: "button", id: "sy-next", x: 408, y: 496, w: 344, h: 72,
+        label: "Next Card",
+        actions: [{ type: "goto", cardId: nextCardId }],
+      },
+    ];
+  }
   const hasBack = backText.trim().length > 0;
 
   // A single tappable surface over the whole card (except the Next Card button)
@@ -861,6 +903,8 @@ function renderFlashCard(
       const term = document.createElement("p");
       term.className = "sy-flash-term";
       term.textContent = termText;
+      // The term sits in a 704 × 200 area above the hint and Next button.
+      applyFit(term, fitQuestion(termText, 704, 200), 44);
       surface.appendChild(term);
 
       if (hasBack) {
@@ -874,11 +918,21 @@ function renderFlashCard(
       const term = document.createElement("p");
       term.className = "sy-flash-term-small";
       term.textContent = termText;
+      applyFit(
+        term,
+        fitText(termText, { w: 704, h: 88, maxSize: 32, minSize: 24, lineHeight: (sz) => Math.round(sz * 1.3) }),
+        32,
+      );
       surface.appendChild(term);
 
       const back = document.createElement("p");
       back.className = "sy-flash-back";
       back.textContent = backText;
+      applyFit(
+        back,
+        fitText(backText, { w: 704, h: 280, maxSize: 26, minSize: MIN_FONT, lineHeight: (sz) => Math.round(sz * 1.54) }),
+        26,
+      );
       surface.appendChild(back);
 
       const hint = document.createElement("p");
@@ -891,8 +945,11 @@ function renderFlashCard(
         : termText;
     }
 
-    // "Next Card" on the back only, bottom-right, clear of the text.
-    if (side === "back") {
+    // "Next Card" on the back, bottom-right, clear of the text. A card with NO
+    // back can never be flipped, so there Next shows on the front too — it used
+    // to appear on the back only, which stranded the class on the one-text flash
+    // cards the model writes (TASK-26b).
+    if (side === "back" || !hasBack) {
       for (const el of buttons) {
         const wrapper = document.createElement("div");
         wrapper.className = "sy-flash-next";
@@ -1043,7 +1100,7 @@ export function renderCard(
     const flashButtons = card.elements.filter((e) => e.type === "button");
     const isPlayableFlash = flashTexts.length >= 2 || flashButtons.length >= 1;
     if (isPlayableFlash) {
-      renderFlashCard(card, cardEl, state, navigate, playSound, ariaLive);
+      renderFlashCard(card, cardEl, state, navigate, playSound, ariaLive, chrome.nextCardId);
       stackWrapper.appendChild(cardEl);
       stackWrapper.appendChild(rings);
       root.appendChild(stackWrapper);
@@ -1084,6 +1141,10 @@ export function renderCard(
         p.className = isQuestion ? "sy-question" : "sy-text";
         if (isQuestion) questionTextPlaced = true;
         p.textContent = el.content;
+        // Fit the text to its box so a long question can't run into the answer
+        // tiles (TASK-26c). Steps the font down from the token size.
+        if (isQuestion) applyFit(p, fitQuestion(el.content, el.w, el.h), 44);
+        else applyFit(p, fitBody(el.content, el.w, el.h), 22);
         wrapper.appendChild(p);
         break;
       }
@@ -1091,7 +1152,8 @@ export function renderCard(
       case "button": {
         const isAnswer = isQuizCard && el.actions.length > 0;
         const btn = buildButtonElement(
-          el,
+          // A button with no goto still moves on (TASK-26b): it never freezes.
+          withForward(el, chrome.nextCardId),
           isAnswer,
           answerButtons.length,
           isAnswer ? answerSlotIndex : 0,
@@ -1132,6 +1194,30 @@ export function renderCard(
       }
     }
 
+    cardEl.appendChild(wrapper);
+  }
+
+  // A card with nothing to press and no auto-advance would strand the class.
+  // In play (nextCardId set) it gets a "Next Card" button (TASK-26b).
+  if (
+    chrome.nextCardId !== undefined &&
+    gotoOf(card.actions) === null &&
+    !card.elements.some((e) => e.type === "button")
+  ) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "sy-element";
+    const rect = { x: 408, y: 496, w: 344, h: 72 };
+    wrapper.style.left = `${rect.x}px`;
+    wrapper.style.top = `${rect.y}px`;
+    wrapper.style.width = `${rect.w}px`;
+    wrapper.style.height = `${rect.h}px`;
+    const next = withForward(
+      { type: "button", id: "sy-next", ...rect, label: "Next Card", actions: [] },
+      chrome.nextCardId,
+    );
+    wrapper.appendChild(
+      buildButtonElement(next, false, 0, 0, state, navigate, playSound, ariaLive),
+    );
     cardEl.appendChild(wrapper);
   }
 
@@ -1188,11 +1274,26 @@ function buildButtonElement(
     const labelSpan = document.createElement("span");
     labelSpan.className = "sy-tile-label";
     labelSpan.textContent = el.label;
+    // Fit the label to its tile: a two- or three-line answer shrinks to sit
+    // inside it instead of overflowing (TASK-26c, J1/J2).
+    applyFit(labelSpan, fitTileLabel(el.label, el.w, el.h), 32);
     btn.appendChild(labelSpan);
   } else {
     // ---- Generic button ----
     btn.className = "sy-button";
     btn.textContent = el.label;
+    applyFit(
+      btn,
+      fitText(el.label, {
+        w: Math.max(40, el.w - 36),
+        h: Math.max(24, el.h - 20),
+        maxSize: 32,
+        minSize: MIN_FONT,
+        lineHeight: (sz) => Math.round(sz * 1.15),
+        charWidth: 0.56,
+      }),
+      32,
+    );
   }
 
   btn.addEventListener("click", () => {
@@ -1218,9 +1319,13 @@ function handleButtonClick(
     (a) => a.type === "score" && a.delta > 0,
   );
 
-  // Disable all tiles immediately — prevents double-clicks during the hold.
+  // Disable all tiles immediately — prevents double-clicks during the hold. But
+  // only when this click actually leads somewhere: a plain button with no goto
+  // (e.g. one made with "Add Button" and never linked) used to grey out every
+  // button on the card and then do nothing, stranding the class (J2 step 12).
   const cardEl = btn.closest(".sy-card");
-  if (cardEl) {
+  const leadsOn = el.actions.some((a) => a.type === "goto");
+  if (cardEl && (slot !== undefined || leadsOn)) {
     cardEl.querySelectorAll<HTMLButtonElement>(".sy-tile, .sy-button").forEach(
       (t) => { t.disabled = true; },
     );

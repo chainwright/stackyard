@@ -30,9 +30,12 @@ import type {
 } from "../src/shared/types.js";
 import { generate as defaultGenerate } from "./stackGenerator.js";
 import { validate, validateCard } from "../src/shared/validator.js";
-import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
-import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
-import { callStream as defaultCallStream } from "./llmGateway.js";
+import {
+  sanitizeRawCard,
+  normalizeGeneratedCard,
+  finaliseGeneratedStack,
+} from "./normalizeGenerated.js";
+import { callStream as defaultCallStream, LlmUnavailableError } from "./llmGateway.js";
 import { buildStream as defaultBuildStream } from "./promptBuilder.js";
 
 /** A sink for NDJSON lines. The HTTP route passes a writer backed by the
@@ -248,10 +251,15 @@ async function attemptStreamedLlm(
 
     const cardPayload = parseCardLine(trimmed);
     if (cardPayload === null) return false;
-    const check = validateCard(cardPayload);
+    // Drop invented pictures and clamp coordinates before judging the shape
+    // (TASK-26 c, d), so a mis-sized box is not a malformed card.
+    const check = validateCard(sanitizeRawCard(cardPayload));
     if (!check.valid) return false;
+    // The whole-stack validation + normalisation below runs on the RAW card; the
+    // client is shown a laid-out PREVIEW so the dealt pile never flashes the
+    // model's own coordinates (text at y=40 over "Card N of M").
     cards.push(check.card);
-    sink.write({ type: "card", index: dealtCards, card: check.card });
+    sink.write({ type: "card", index: dealtCards, card: normalizeGeneratedCard(check.card) });
     dealtCards++;
     return true;
   };
@@ -266,12 +274,17 @@ async function attemptStreamedLlm(
       lineBuffer.push(delta);
       for (const line of lineBuffer.takeCompleteLines()) {
         if (!handleLine(line)) {
+          logStreamFailure("a line from the model was not a valid header or card");
           return { ok: false, dealtCards };
         }
       }
     }
-  } catch {
-    // Network drop, non-2xx, missing key, or a dead stream — fall back.
+  } catch (err) {
+    // Network drop, non-2xx, missing key, or a dead stream — fall back. Log the
+    // cause once (redacted: the gateway's own message at most) so the operator
+    // sees WHY the streamed attempt failed, not only the later retry's reason
+    // (J4 N6).
+    logStreamFailure(describeError(err));
     return { ok: false, dealtCards };
   }
 
@@ -279,12 +292,14 @@ async function attemptStreamedLlm(
   const remainder = lineBuffer.takeRemainder().trim();
   if (remainder.length > 0) {
     if (!handleLine(remainder)) {
+      logStreamFailure("the last line from the model was not a valid card");
       return { ok: false, dealtCards };
     }
   }
 
   const finalHeader = state.header;
   if (finalHeader === null || !startWritten || cards.length === 0) {
+    logStreamFailure("the model's stream ended without a header and cards");
     return { ok: false, dealtCards };
   }
 
@@ -298,13 +313,25 @@ async function attemptStreamedLlm(
   };
   const whole = validate(assembled);
   if (!whole.valid) {
+    logStreamFailure(`the assembled stack failed validation (${whole.errors.join(", ")})`);
     return { ok: false, dealtCards };
   }
-  // Quiz answers advance to the next card (not straight to the end), then the
-  // correct answer is shuffled off tile A. The final `done` stack the editor
-  // loads carries both; the per-card previews already dealt are animation only.
-  // Both operations only reorder/retarget existing cards, so it stays valid.
-  return { ok: true, stack: shuffleQuizAnswers(linkQuizAnswersForward(whole.stack)) };
+  // Re-lay every card from the template, repair flash cards, tidy the text,
+  // point quiz answers at the next card, give every card a way forward and
+  // shuffle which tile is right. The final `done` stack the editor loads carries
+  // all of it; the per-card previews already dealt are animation only.
+  return { ok: true, stack: finaliseGeneratedStack(whole.stack) };
+}
+
+/** One operator log line for a failed streamed attempt (never a key or URL). */
+function logStreamFailure(cause: string): void {
+  console.warn(`[generate] stream attempt failed: ${cause}`);
+}
+
+/** A redacted one-line description of a thrown error (gateway messages only). */
+function describeError(err: unknown): string {
+  if (err instanceof LlmUnavailableError) return `${err.kind}: ${err.message}`;
+  return err instanceof Error ? err.name : "unknown error";
 }
 
 // ---------------------------------------------------------------------------
@@ -344,10 +371,11 @@ async function streamFallback(
   const isReadyMadeExample = outcome.isReadyMadeExample === true;
   const fallbackReason = outcome.fallbackReason;
 
-  // Log the fallback reason server-side (status only, never the key) so an
-  // operator can see WHY the live deck is canned (J4: stream-generate.ts:262).
-  if (outcome.isFallback && fallbackReason !== undefined) {
-    console.warn(`[generate] served ready-made deck — reason: ${fallbackReason}`);
+  // generate() already logs the reason for every fallback it chooses itself, so
+  // logging it again here printed two lines per fallback (J4 N6). The one case
+  // generate() does not log is the budget cap (it returns early), so log that.
+  if (outcome.isFallback && fallbackReason === "cap") {
+    console.warn("[generate] served ready-made deck — reason: cap");
   }
 
   sink.write({

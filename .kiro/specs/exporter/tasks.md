@@ -635,3 +635,38 @@ change in Play.
 > reachability, renderer, mountPlayer). Save a Copy re-emits the current
 > document rather than re-templating from scratch, which keeps the copy a living
 > file with zero duplication of the template.
+
+
+---
+
+## Phase 7 — Round-2 review fixes to the living file (TASK-26 a, e)
+
+> TASK-26 is split across three specs by concern. This file owns **a** and **e**
+> (the living file). `stack-generator/tasks.md` owns b, c, d, g, j (generation).
+> `maker/tasks.md` owns f, h, i, k, l, m, n, o and the index.
+
+### TASK-26a: Save a Copy writes the pristine file, not the live DOM  *(P0)*
+**Refs:** `judge_2026-11-05_r2/J4` N1, `J3` N2, `J1` item 10, `J2` step 18. Round 2 found every Save-a-Copy file opens on a frozen editor: `saveCopy.ts` serialised `document.documentElement.outerHTML` while the editor overlay was mounted, so the copy carried the dead overlay, a hidden Teacher tab, injected styles and the rendered card, and grew with every save (147→171 KB). Both gates were green because the unit test passed its own pristine HTML and the browser gate only looked for the edited text *anywhere* in the DOM.
+  - **Fix.** Snapshot the pristine document ONCE at start-up, before anything mounts (`src/living/boot.ts`, called from `index.ts`; `mountLivingApp` also snapshots first thing as a safety net), and build every copy by replacing only the `#stack-data` block of that snapshot. `saveCopy()` no longer reads the live DOM by default; a call without a snapshot is an error, not a silent fallback.
+  - **Acceptance criteria.**
+    1. A copy has **0** `.sy-living-overlay`, **exactly 1** Teacher tab, the **same number of `<style>` blocks** as the original, and opens in **Play** (an answer tile is the hit target at its centre and a click on it advances the card).
+    2. **Idempotent size:** copy → open → save → open → save gives byte-identical sizes (3 saves in a row), and the first copy is within a few hundred bytes of the original.
+    3. A copy of a copy is still a living file (Teacher tab present, edits survive).
+    4. The unit test drives the **real** default path (no injected `currentHtml`) in jsdom: boot → Teacher → edit → Save a Copy (captured Blob) → boot the copy in a fresh document → assert 1–3 above.
+    5. `scripts/check-living-file.ts` opens the reopened copy in headless Chromium with the network blocked, asserts the 1–3 above, **clicks an answer and asserts the card advances**, opens Teacher → **Play** in the copy and asserts it plays again, plays the third-generation copy through to the end card, and asserts sizes of three saves in a row are identical. It no longer treats "the edited text appears somewhere in the DOM" as success.
+    6. **Save a Copy saves under a new name:** `"<title> (copy).html"` (never the original name), via one shared `copyFileName(title)`.
+  - **Done when:** the tests above exist and fail on the old `outerHTML` implementation (mutation-check: restore it and see red).
+
+### TASK-26e: the living editor selects answers after an edit, and can change the right answer  *(P1)*
+**Refs:** `J3` N3/N4, `J2` step 16.
+  - **Bug.** After a text edit `refreshPreviewOnly()` re-rendered the card without re-attaching the capture-phase selection listener, so a click on an answer *played* it (✗ stamp) instead of selecting it. The editor also could not change which answer is right, and the card list did not refresh after an edit.
+  - **Fix.** One `mountPreview()` shared by `renderCanvas` and `refreshPreviewOnly` (so selection can never be lost again); a **"This one is right"** radio for an answer button using the shared `markCorrect` operation (exactly one right answer, invariant 4, always holds); the card-list label refreshes on text input; the editor does not scroll the page sideways while typing.
+  - **Acceptance criteria.**
+    1. After typing in the question box, clicking an answer selects it (inspector shows the answer fields) and does **not** play it (no stamp, no navigation).
+    2. Selecting a wrong answer and choosing "This one is right" makes it the only right answer (score 1, others 0) and the saved stack still validates.
+    3. Editing a question updates that card's label in the left list immediately.
+  - **Done when:** each criterion has a jsdom test that fails on the old code.
+
+**Gate (TASK-26 a, e):** `npm test` and `npx tsc --noEmit` exit 0; `npm run check:living-file` passes with the new click-through.
+
+> **Design note (supersedes the TASK-24 note above):** "Save a Copy re-emits the *current document*" was wrong for a document that has been mounted. The invariant is now: **a copy is built from the pristine snapshot taken before any UI mounts, with only `#stack-data` replaced.** The live DOM is never serialised.

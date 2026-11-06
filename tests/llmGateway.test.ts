@@ -530,6 +530,8 @@ describe("llmGateway.call — total deadline (fake timers)", () => {
     const err = await p;
     expect(err).toBeInstanceOf(LlmUnavailableError);
     expect((err as Error).message).toMatch(/too long/i);
+    // TASK-26g: the reason is carried as data, so callers never sniff the text.
+    expect((err as LlmUnavailableError).kind).toBe("timeout");
     expect((err as Error).message).not.toContain(FAKE_API_KEY);
     // The abort really reached fetch's signal.
     const init = vi.mocked(fetch).mock.calls[0]?.[1] as { signal?: AbortSignal };
@@ -567,6 +569,8 @@ describe("llmGateway.callStream — total deadline (fake timers)", () => {
     const err = await run;
     expect(err).toBeInstanceOf(LlmUnavailableError);
     expect((err as Error).message).toMatch(/too long/i);
+    // TASK-26g: the reason is carried as data, so callers never sniff the text.
+    expect((err as LlmUnavailableError).kind).toBe("timeout");
     expect((err as Error).message).not.toContain(FAKE_API_KEY);
     expect(ctl.signalRef()?.aborted).toBe(true);
   });
@@ -600,6 +604,8 @@ describe("llmGateway.callStream — idle deadline (fake timers)", () => {
     const err = await run;
     expect(err).toBeInstanceOf(LlmUnavailableError);
     expect((err as Error).message).toMatch(/too long/i);
+    // TASK-26g: the reason is carried as data, so callers never sniff the text.
+    expect((err as LlmUnavailableError).kind).toBe("timeout");
     expect((err as Error).message).not.toContain(FAKE_API_KEY);
     expect(collected.join("")).toBe("hello");
     expect(ctl.signalRef()?.aborted).toBe(true);
@@ -669,5 +675,46 @@ describe("llmGateway.callStream — client disconnect (fake timers)", () => {
     );
     expect(err).toBeInstanceOf(LlmUnavailableError);
     expect((err as Error).message).not.toContain(FAKE_API_KEY);
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// TASK-26g — every LlmUnavailableError says WHY, as data
+
+describe("TASK-26g: LlmUnavailableError carries a kind set where it is thrown", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("call: a non-2xx is 'http', a dead network is 'network'", async () => {
+    stubFetch(503, JSON.stringify({}), false);
+    const http = await call(MESSAGES).catch((e: unknown) => e);
+    expect(http).toBeInstanceOf(LlmUnavailableError);
+    expect((http as LlmUnavailableError).kind).toBe("http");
+
+    stubFetchNetworkError();
+    const net = await call(MESSAGES).catch((e: unknown) => e);
+    expect((net as LlmUnavailableError).kind).toBe("network");
+  });
+
+  it("callStream: http, network, and a client disconnect ('cancelled') are told apart", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 429, body: null }));
+    const http = await (async () => { try { for await (const _ of callStream(MESSAGES)) void _; } catch (e) { return e; } return null; })();
+    expect((http as LlmUnavailableError).kind).toBe("http");
+
+    stubFetchNetworkError();
+    const net = await (async () => { try { for await (const _ of callStream(MESSAGES)) void _; } catch (e) { return e; } return null; })();
+    expect((net as LlmUnavailableError).kind).toBe("network");
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, body: null }));
+    const empty = await (async () => { try { for await (const _ of callStream(MESSAGES)) void _; } catch (e) { return e; } return null; })();
+    expect((empty as LlmUnavailableError).kind).toBe("empty");
+  });
+
+  it("a timeout message never contains the word the old sniffer looked for ('time') as its only signal", () => {
+    // The message says "took too long"; the old code searched for "time" and
+    // therefore never matched. The kind makes the message irrelevant.
+    const e = new LlmUnavailableError("The AI service took too long to respond.", "timeout");
+    expect(e.message.toLowerCase().includes("time")).toBe(false);
+    expect(e.kind).toBe("timeout");
   });
 });

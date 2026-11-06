@@ -6,7 +6,7 @@
 import type { JSX } from "preact";
 import type { Stack } from "../shared/types.js";
 import { Ring } from "./icons.js";
-import { checkReachability } from "../shared/reachability.js";
+import { checkReachability, describeProblems } from "../shared/reachability.js";
 import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 
 /** The content line of a card, for naming it in the check ("Card 5 — …").
@@ -27,7 +27,10 @@ export function ExportDone({
   onBack,
   onExportAgain,
   onFixFlow,
+  living = false,
 }: {
+  /** True when the file just exported is a living file (has the Teacher tab). */
+  living?: boolean;
   filename: string;
   /** The exported stack, for the "before you share" reachability check. */
   stack: Stack;
@@ -58,11 +61,8 @@ export function ExportDone({
             <div class="share-check" role="alert">
               <h2>Before you share</h2>
               <ul>
-                {report.unreachable.map((c) => (
-                  <li>The class can't reach {cardLabel(stack, c.id)}.</li>
-                ))}
-                {report.deadEndQuiz.map((c) => (
-                  <li>{cardLabel(stack, c.id)} has an answer that goes nowhere.</li>
+                {describeProblems(report, (c) => cardLabel(stack, c.id)).map((line) => (
+                  <li>{line}</li>
                 ))}
               </ul>
               <button class="ghost-btn" type="button" onClick={onFixFlow}>
@@ -76,6 +76,12 @@ export function ExportDone({
             <li><span class="n">2</span><span>Double-click on the class laptop.</span></li>
             <li><span class="n">3</span><span>No internet needed — try it with Wi-Fi off.</span></li>
           </ol>
+          {living ? (
+            <p class="hint teacher-hint">
+              Open it and press <strong>Teacher</strong> in the corner to change a
+              word — even with no internet.
+            </p>
+          ) : null}
 
           <div class="done-actions">
             <button class="primary-btn" type="button" onClick={onOpen}>Open the File</button>

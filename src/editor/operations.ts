@@ -14,6 +14,8 @@ import type {
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
 import { linkQuizAnswersForward } from "../shared/linkForward.js";
+import { ensureForwardLinks, gotoOf, nextCardAfter } from "../shared/flow.js";
+import { FLASH_TERM, FLASH_BACK, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -273,8 +275,10 @@ export function addCardAfter(
 
   // Re-link quiz answers forward so the new card (and the card before it) lead
   // into the flow — no card is stranded after the end card, and no quiz answer
-  // dead-ends (J2's "max score can never be reached" bug).
-  return linkQuizAnswersForward(inserted);
+  // dead-ends (J2's "max score can never be reached" bug). Then make sure the
+  // seeded card itself has a way forward (a new flash card gets "Next Card", a
+  // new story card gets "Continue" — TASK-26b/o).
+  return ensureForwardLinks(linkQuizAnswersForward(inserted));
 }
 
 /**
@@ -296,7 +300,9 @@ export function repairFlow(stack: Stack): Stack | Rejected {
 
   // Keep the end card last; everything else stays in its current relative order.
   const reordered: Card[] = [...before, ...after, end];
-  return linkQuizAnswersForward({ ...stack, cards: reordered });
+  // Link quiz answers forward, then give every other button that goes nowhere —
+  // and every flash/story card with nothing to press — a way on (TASK-26b/o).
+  return ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards: reordered }));
 }
 
 /** Strip every goto action that targets `removedId` from an action list. */
@@ -709,4 +715,108 @@ function dataUriByteLength(dataUri: string): number {
   } catch {
     return new TextEncoder().encode(payload).length;
   }
+}
+
+// ---------------------------------------------------------------------------
+// TASK-26o — setFlashSide, addAnswer
+
+/**
+ * Set the FRONT (the term) or the BACK (the explanation) of a flash card.
+ *
+ * The inspector used to do `if (back) editText(...)`, so text typed into the
+ * Back box was silently thrown away whenever the card had no second text element
+ * yet — which is exactly what every AI-made flash card looked like (J2 step 9).
+ * This creates the missing element instead. A flash card's texts are positional:
+ * the FIRST text is the front, the SECOND is the back.
+ */
+export function setFlashSide(
+  stack: Stack,
+  cardId: string,
+  side: "front" | "back",
+  content: string,
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  if (card.kind !== "flash") return reject("Only a flash card has a front and a back.");
+
+  const makeText = (r: { x: number; y: number; w: number; h: number }, text: string): Element => ({
+    type: "text",
+    id: newId(),
+    x: r.x, y: r.y, w: r.w, h: r.h,
+    content: text,
+  });
+
+  const textIdx = card.elements
+    .map((e, i) => (e.type === "text" ? i : -1))
+    .filter((i) => i >= 0);
+
+  let elements = card.elements.slice();
+  const wanted = side === "front" ? 0 : 1;
+
+  if (textIdx[wanted] !== undefined) {
+    elements = elements.map((el, i) =>
+      i === textIdx[wanted] && el.type === "text" ? { ...el, content } : el,
+    );
+  } else if (side === "front") {
+    // No text at all yet: the front goes first.
+    elements = [makeText(FLASH_TERM, content), ...elements];
+  } else {
+    // Need a back. Make sure a front exists first, then add the back right
+    // after it so the positional "second text" rule holds.
+    if (textIdx[0] === undefined) {
+      elements = [makeText(FLASH_TERM, ""), ...elements];
+      elements.splice(1, 0, makeText(FLASH_BACK, content));
+    } else {
+      elements.splice(textIdx[0] + 1, 0, makeText(FLASH_BACK, content));
+    }
+  }
+  return mapCard(stack, cardId, (c) => ({ ...c, elements }));
+}
+
+/** The plain-language message when a question already has four answers. */
+const ANSWERS_FULL_MESSAGE = "A question can have up to four answers.";
+
+/**
+ * "+ Add an answer" on a quiz card (J2 step 7): a REAL answer — a coloured tile
+ * in the next free slot, wrong by default (the teacher ticks "Right answer" to
+ * change that), that goes on to the same card the other answers go to. The old
+ * route was "Add Button", which made a plain outlined button with no action; a
+ * pupil who tapped it froze the card.
+ */
+export function addAnswer(
+  stack: Stack,
+  cardId: string,
+  label = "Another answer",
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  if (card.kind !== "quiz") return reject("Answers belong on a question card.");
+
+  const answers = card.elements.filter(
+    (el): el is ButtonElement => el.type === "button" && isAnswerButton(el),
+  );
+  if (answers.length >= MAX_QUIZ_ANSWERS) return reject(ANSWERS_FULL_MESSAGE);
+
+  const allButtons = card.elements.filter((el) => el.type === "button");
+  const slot = QUIZ_TILES.find((t) => !allButtons.some((b) => boxesOverlap(t, b)));
+  if (slot === undefined) return reject(ANSWERS_FULL_MESSAGE);
+
+  // Where the siblings go: their first goto, else the next card in deck order.
+  const index = stack.cards.findIndex((c) => c.id === cardId);
+  const siblingTarget = answers.map((a) => gotoOf(a.actions)).find((t) => t !== null) ?? null;
+  const target = siblingTarget ?? nextCardAfter(stack, index)?.id ?? null;
+
+  const actions: Action[] = [
+    { type: "score", delta: 0 },
+    { type: "sound", sound: "buzz" },
+    ...(target !== null ? [{ type: "goto", cardId: target } as Action] : []),
+  ];
+  const el: Element = {
+    type: "button",
+    id: newId(),
+    x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+    label,
+    actions,
+  };
+  return addElementToCard(stack, cardId, el);
 }

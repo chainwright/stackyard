@@ -139,3 +139,60 @@ describe("promptBuilder.buildStream (JSON Lines path)", () => {
     expect(buildStream(req).system).not.toBe(build(req).system);
   });
 });
+
+// ---------------------------------------------------------------------------
+// TASK-26 b, d, j — what the prompts now tell the model
+
+import { buildStream as buildStreamPrompt, build as buildPrompt2, buildRetry as buildRetryPrompt } from "../server/promptBuilder.js";
+
+describe("TASK-26: the generation prompts", () => {
+  const both = (): Array<[string, string]> => [
+    ["one-shot", buildPrompt2({ prompt: "x" }).system],
+    ["streaming", buildStreamPrompt({ prompt: "x" }).system],
+    ["retry", buildRetryPrompt({ prompt: "x" }, ["quiz-answer"]).system],
+  ];
+
+  it("(d) neither prompt offers image elements — and both forbid them", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).not.toMatch(/\{\s*"type":\s*"image"/);
+      expect(sys, name).toContain('Do NOT output "image" elements');
+    }
+  });
+
+  it("(b) both prompts say what a flash card must contain", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).toContain("## Flash cards");
+      expect(sys, name).toMatch(/exactly two "text" elements/);
+      expect(sys, name).toMatch(/term — one to four words/);
+      expect(sys, name).toMatch(/Never put the explanation in the first text/);
+      expect(sys, name).toMatch(/exactly one button, labelled "Next Card"/);
+    }
+  });
+
+  it("(j) both prompts ask for sentence-case answers and plausible wrong answers", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).toMatch(/sentence case/);
+      expect(sys, name).toMatch(/never Title Case/);
+      expect(sys, name).toMatch(/Wrong answers must be plausible/);
+      expect(sys, name).toMatch(/Never joke answers/);
+    }
+  });
+
+  it("(j) the old 'Title case for button labels' line (which taught the model Title Case answers) is gone", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).not.toContain("Title case for button labels");
+    }
+  });
+
+  it("(j) both prompts tell the model not to number the questions", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).toMatch(/Do not number the questions/);
+    }
+  });
+
+  it("(c) both prompts reserve the top band for the card counter", () => {
+    for (const [name, sys] of both()) {
+      expect(sys, name).toMatch(/start text at y 104 or lower/);
+    }
+  });
+});

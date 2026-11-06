@@ -62,6 +62,16 @@ rule exists precisely to avoid that.
 
 ## Shape tokens (answer tiles)
 
+> **Accessibility note (why the shapes exist).** Shape is a *second channel*, not
+> decoration: a colour-blind pupil can say "the triangle", and a washed-out
+> projector can't make coral and sun-yellow look alike. Neither the colour nor
+> the shape alone identifies an answer. The ▲ ◆ ● ■ order will look familiar from
+> other quiz tools; that is deliberate (a pattern pupils already know and a
+> common accessibility convention), not copied styling: our palette, type,
+> paper look and rubber-stamp feedback are our own. Do not reorder or drop the
+> shapes to look different.
+
+
 Shape icons are inline SVG, not emoji or icon fonts.
 Each shape is paired permanently with its tile colour — never swap them.
 

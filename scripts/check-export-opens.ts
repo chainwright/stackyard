@@ -16,10 +16,10 @@
 // on a blank page.
 
 import { writeFileSync, mkdtempSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { exportStack } from "../server/exporter.js";
+import { dumpDomOffline } from "./chrome.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 import type { Stack, Card } from "../src/shared/types.js";
 
@@ -59,20 +59,14 @@ async function main(): Promise<void> {
     return; // exit 0: never block a browser-less machine
   }
 
-  // Dump the post-JS DOM. --virtual-time-budget lets the inline player run.
-  const dom = execFileSync(
-    chrome,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--allow-file-access-from-files",
-      "--virtual-time-budget=3000",
-      "--dump-dom",
-      `file://${file}`,
-    ],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 30_000 },
-  );
+  // Dump the post-JS DOM, with the network blocked (an exported file must need
+  // none). --virtual-time-budget lets the inline player run. Judged by its
+  // output, not Chrome's exit status — see scripts/chrome.ts.
+  const dom = dumpDomOffline(chrome, {
+    flags: ["--virtual-time-budget=3000"],
+    url: `file://${file}`,
+    timeoutMs: 30_000,
+  });
 
   const expected = firstText(stack);
   const renderedCard = dom.includes('class="sy-card"') || dom.includes("sy-card-stack");

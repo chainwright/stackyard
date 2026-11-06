@@ -34,8 +34,9 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
 Element types:
 - { "type": "text", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
 - { "type": "button", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "image", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "src": "...", "alt": "..." }
 - { "type": "field", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+
+Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
 Action types:
 - { "type": "goto", "cardId": "<UUID of an existing card>" }
@@ -61,6 +62,17 @@ Every quiz answer (right and wrong) should "goto" the NEXT card in the cards arr
 
 A "story" card offers the class a choice between two or more buttons. Each choice MUST lead to a DIFFERENT card — give every button its own "goto" target. Never point two choices at the same card: that makes the choice meaningless. Make each choice go to a short consequence card (one text element describing what happened plus one "Continue" button), and let the two consequence cards rejoin the set at the same later card AFTER the choice. In short: the branch must split first, then rejoin.
 
+## Flash cards
+
+A "flash" card shows a TERM on the front and its EXPLANATION on the back. Give it exactly two "text" elements, in this order:
+1. the term — one to four words, e.g. "Evaporation";
+2. the explanation — one or two short sentences for the year group.
+Never put the explanation in the first text. Give it exactly one button, labelled "Next Card", with a "goto" to the NEXT card in play order.
+
+## Layout
+
+Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+
 ## Audience writing rules — apply to all generated card text
 
 - Write for the year group specified in the prompt (default: 4th class, approximately 9–10 years old).
@@ -69,7 +81,9 @@ A "story" card offers the class a choice between two or more buttons. Each choic
 - Irish/UK English spelling: colour, behaviour, recognise, organise, fulfil, practise, licence (noun).
 - Say "pupils" not "students".
 - Questions must be unambiguous — one clearly correct answer.
-- Title case for button labels. Sentence case for all other text.
+- Write answer labels in sentence case ("Along the edges of tectonic plates"), never Title Case. Only the navigation buttons "Next Card" and "Continue" are Title Case. All other text is sentence case.
+- Wrong answers must be plausible: from the same category as the right answer and believable to a child who has not learned the topic. Never joke answers, never silly or absurd options.
+- Do not number the questions. Do not write "Question 1:" or "Q2." — the card already shows its position.
 `;
 
 // ---------------------------------------------------------------------------
@@ -108,8 +122,9 @@ Emit the header line first, then every card line. Nothing follows the last card.
 Element types:
 - { "type": "text", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
 - { "type": "button", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "image", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "src": "...", "alt": "..." }
 - { "type": "field", "id": "<UUID>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+
+Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
 Action types:
 - { "type": "goto", "cardId": "<UUID of an existing card>" }
@@ -147,6 +162,17 @@ plus one "Continue" button), and let the two consequence cards rejoin the set at
 the same later card AFTER the choice. In short: the branch must split first, then
 rejoin.
 
+## Flash cards
+
+A "flash" card shows a TERM on the front and its EXPLANATION on the back. Give it exactly two "text" elements, in this order:
+1. the term — one to four words, e.g. "Evaporation";
+2. the explanation — one or two short sentences for the year group.
+Never put the explanation in the first text. Give it exactly one button, labelled "Next Card", with a "goto" to the NEXT card in play order.
+
+## Layout
+
+Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+
 ## Audience writing rules — apply to all generated card text
 
 - Write for the year group specified in the prompt (default: 4th class, approximately 9–10 years old).
@@ -155,7 +181,9 @@ rejoin.
 - Irish/UK English spelling: colour, behaviour, recognise, organise, fulfil, practise, licence (noun).
 - Say "pupils" not "students".
 - Questions must be unambiguous — one clearly correct answer.
-- Title case for button labels. Sentence case for all other text.
+- Write answer labels in sentence case ("Along the edges of tectonic plates"), never Title Case. Only the navigation buttons "Next Card" and "Continue" are Title Case. All other text is sentence case.
+- Wrong answers must be plausible: from the same category as the right answer and believable to a child who has not learned the topic. Never joke answers, never silly or absurd options.
+- Do not number the questions. Do not write "Question 1:" or "Q2." — the card already shows its position.
 `;
 
 // ---------------------------------------------------------------------------

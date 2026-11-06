@@ -24,6 +24,7 @@ import {
   addTextElement,
   addButtonElement,
   addPictureElement,
+  addAnswer,
   linkButtonToCard,
   MAX_PICTURE_BYTES,
 } from "./operations.js";
@@ -119,6 +120,13 @@ export function Toolbar({
     if (ok) selectLastElement();
   }
 
+  // "Add Answer" (TASK-26o): a real, linked answer tile — not a plain button
+  // that goes nowhere. Only offered on a quiz card.
+  function addAnswerTile(): void {
+    const ok = dispatch((s) => addAnswer(s, selectedCard.id));
+    if (ok) selectLastElement();
+  }
+
   function addPicture(): void {
     notice(null);
     fileInputRef.current?.click();
@@ -200,6 +208,7 @@ export function Toolbar({
     <footer class={disabled ? "toolbar toolbar-disabled" : "toolbar"} aria-disabled={disabled ? "true" : undefined}>
       {tool("Add Text", <TextIcon />, addText)}
       {tool("Add Button", <ButtonIcon />, addButton)}
+      {selectedCard.kind === "quiz" ? tool("Add Answer", <ButtonIcon />, addAnswerTile) : null}
       {tool("Add Picture", <PictureIcon />, addPicture)}
       {tool("Go to card…", <LinkCardIcon />, onLinkClick, { pressed: linking })}
 

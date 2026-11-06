@@ -125,8 +125,22 @@ export async function searchImages(
 
 export interface FetchImageDeps {
   fetch?: typeof fetch;
-  /** Timeout in ms (default 10s). */
+  /** Timeout in ms for the WHOLE fetch including the body (default 10s). */
   timeoutMs?: number;
+}
+
+/**
+ * The hardest size cap any caller can ask for. `maxKB` comes straight from a
+ * tool call, so an agent could pass 1e9 and the cap would be gone (J4 N4).
+ * Whatever is asked for is clamped into [1, MAX_IMAGE_KB]; the default is 60.
+ */
+export const MAX_IMAGE_KB = 512;
+export const DEFAULT_IMAGE_KB = 60;
+
+/** Clamp a requested cap into the sane range. Non-numbers use the default. */
+export function clampMaxKB(requested: number): number {
+  const n = typeof requested === "number" && Number.isFinite(requested) ? requested : DEFAULT_IMAGE_KB;
+  return Math.min(MAX_IMAGE_KB, Math.max(1, n));
 }
 
 /** A redirect status that carries a Location to follow. */
@@ -149,11 +163,12 @@ function redirectLocation(res: Response): string | null {
  */
 export async function fetchImageAsDataUri(
   url: string,
-  maxKB = 60,
+  requestedKB = DEFAULT_IMAGE_KB,
   deps: FetchImageDeps = {},
 ): Promise<string> {
   const doFetch = deps.fetch ?? fetch;
   const timeoutMs = deps.timeoutMs ?? 10_000;
+  const maxKB = clampMaxKB(requestedKB);
   const maxBytes = Math.max(1, Math.floor(maxKB * 1024));
 
   let current = url;
@@ -166,50 +181,70 @@ export async function fetchImageAsDataUri(
       throw new Error(`fetch_image_as_data_uri: host "${host}" is not on the Openverse/Wikimedia allowlist.`);
     }
 
+    // ONE timer covers the headers AND the body. It used to be cleared as soon
+    // as the headers arrived, so a host that sent headers and then dripped the
+    // body one byte a minute hung the tool forever (J4 N4).
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let res: Response;
+    const timedOut = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener(
+        "abort",
+        () => reject(new Error("fetch_image_as_data_uri: the image took too long to fetch (timed out).")),
+        { once: true },
+      );
+    });
+    // If nothing awaits `timedOut` (the normal path) its rejection must not be unhandled.
+    timedOut.catch(() => {});
+
     try {
-      res = await doFetch(current, {
-        redirect: "manual", // we re-check every hop's host ourselves
-        signal: controller.signal,
-        headers: { "User-Agent": "Stackyard/openverse-mcp" },
-      });
-    } catch (err) {
-      clearTimeout(timer);
-      if ((err as { name?: string }).name === "AbortError") {
-        throw new Error("fetch_image_as_data_uri: the image took too long to fetch (timed out).");
+      let res: Response;
+      try {
+        res = await Promise.race([
+          doFetch(current, {
+            redirect: "manual", // we re-check every hop's host ourselves
+            signal: controller.signal,
+            headers: { "User-Agent": "Stackyard/openverse-mcp" },
+          }),
+          timedOut,
+        ]);
+      } catch (err) {
+        if (controller.signal.aborted || (err as { name?: string }).name === "AbortError") {
+          throw new Error("fetch_image_as_data_uri: the image took too long to fetch (timed out).");
+        }
+        if (err instanceof Error && err.message.startsWith("fetch_image_as_data_uri:")) throw err;
+        throw new Error("fetch_image_as_data_uri: could not fetch the image.");
       }
-      throw new Error("fetch_image_as_data_uri: could not fetch the image.");
-    }
-    clearTimeout(timer);
 
-    const location = redirectLocation(res);
-    if (location !== null) {
-      // Resolve the redirect target and loop so its host is re-checked.
-      current = new URL(location, current).toString();
-      continue;
-    }
+      const location = redirectLocation(res);
+      if (location !== null) {
+        // Resolve the redirect target and loop so its host is re-checked.
+        current = new URL(location, current).toString();
+        continue;
+      }
 
-    if (!res.ok) {
-      throw new Error(`fetch_image_as_data_uri: image host returned HTTP ${res.status}.`);
-    }
+      if (!res.ok) {
+        throw new Error(`fetch_image_as_data_uri: image host returned HTTP ${res.status}.`);
+      }
 
-    const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
-    if (!contentType.startsWith("image/")) {
-      throw new Error(`fetch_image_as_data_uri: expected an image, got "${contentType || "unknown"}".`);
-    }
+      const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+      if (!contentType.startsWith("image/")) {
+        throw new Error(`fetch_image_as_data_uri: expected an image, got "${contentType || "unknown"}".`);
+      }
 
-    // A declared Content-Length over the cap is refused before reading.
-    const declared = Number(res.headers.get("content-length") ?? "");
-    if (Number.isFinite(declared) && declared > maxBytes) {
-      throw new Error(`fetch_image_as_data_uri: image is ${Math.round(declared / 1024)} KB, over the ${maxKB} KB cap.`);
-    }
+      // A declared Content-Length over the cap is refused before reading.
+      const declared = Number(res.headers.get("content-length") ?? "");
+      if (Number.isFinite(declared) && declared > maxBytes) {
+        throw new Error(`fetch_image_as_data_uri: image is ${Math.round(declared / 1024)} KB, over the ${maxKB} KB cap.`);
+      }
 
-    const bytes = await readCapped(res, maxBytes, maxKB);
-    const mime = contentType.split(";")[0]!.trim();
-    const b64 = Buffer.from(bytes).toString("base64");
-    return `data:${mime};base64,${b64}`;
+      // The body read is raced against the SAME timer.
+      const bytes = await Promise.race([readCapped(res, maxBytes, maxKB, controller.signal), timedOut]);
+      const mime = contentType.split(";")[0]!.trim();
+      const b64 = Buffer.from(bytes).toString("base64");
+      return `data:${mime};base64,${b64}`;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   throw new Error("fetch_image_as_data_uri: too many redirects.");
@@ -219,24 +254,39 @@ export async function fetchImageAsDataUri(
  * Read a response body, aborting as soon as the running byte count passes the
  * cap. Works with a web ReadableStream (preferred) or arrayBuffer fallback.
  */
-async function readCapped(res: Response, maxBytes: number, maxKB: number): Promise<Uint8Array> {
+async function readCapped(
+  res: Response,
+  maxBytes: number,
+  maxKB: number,
+  signal: AbortSignal,
+): Promise<Uint8Array> {
   const body = res.body;
   if (body && typeof body.getReader === "function") {
     const reader = body.getReader();
+    // On the timeout, stop reading and release the connection instead of leaving
+    // a slow-drip body parked forever.
+    const onAbort = (): void => {
+      reader.cancel().catch(() => {});
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
     const chunks: Uint8Array[] = [];
     let total = 0;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (value) {
-        total += value.byteLength;
-        if (total > maxBytes) {
-          await reader.cancel().catch(() => {});
-          throw new Error(`fetch_image_as_data_uri: image exceeds the ${maxKB} KB cap.`);
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          total += value.byteLength;
+          if (total > maxBytes) {
+            await reader.cancel().catch(() => {});
+            throw new Error(`fetch_image_as_data_uri: image exceeds the ${maxKB} KB cap.`);
+          }
+          chunks.push(value);
         }
-        chunks.push(value);
       }
+    } finally {
+      signal.removeEventListener("abort", onAbort);
     }
     const out = new Uint8Array(total);
     let offset = 0;
