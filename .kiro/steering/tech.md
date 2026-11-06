@@ -101,3 +101,7 @@ The export path also caps what the validator does not: `server/exportLimits.ts` 
 stack with more than `MAX_CARDS` cards or any text field longer than `MAX_TEXT_LENGTH`
 (the nine stack-format.md invariants bound neither), returning `413` with a plain-language
 message before the exporter runs. Each limit has tests in `tests/request-size-limits.test.ts`.
+
+## How the agent edits source files
+
+Edit source files with the file tools (`fs_write`, `str_replace`, `fs_append`), not with shell or python edit scripts (`sed -i`, heredocs, `python3 - <<…`). Kiro's `PostFileSave` hooks fire on its file tools, so a shell-script edit skips them: in TASK-27 the session store recorded zero hook firings for 82 changed files because 167 of 179 tool calls were `execute_bash`. If a shell edit is unavoidable, run `npm run check:invariants` straight afterwards (a `PostToolUse` hook on `execute_bash` does this for commands that look like they wrote a file).

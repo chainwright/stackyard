@@ -127,6 +127,10 @@ const TILE_SLOTS = [
 const HOLD_CORRECT_MS = 900;   // stamp shown → goto fires
 const HOLD_WRONG_MS   = 600;   // shake ends  → goto fires
 
+/** The card turn (TASK-28g): a short lift, then a heavier ~360 ms settle. */
+export const FLIP_EXIT_MS = 180;
+export const FLIP_ENTER_MS = 360;
+
 // ---------------------------------------------------------------------------
 // CSS injected once per page-load
 
@@ -649,14 +653,18 @@ const PLAYER_STYLES = `
   100% { transform: translateX(0); }
 }
 
+/* The card turns on its top (ring) edge like a page of a notepad. It stays
+   OPAQUE the whole turn — no opacity ramp, which read as a fade — and a shadow
+   sweeps under it as it lifts and settles, so it has weight (TASK-28g). */
 @keyframes card-exit {
-  from { transform: rotateX(0deg);   opacity: 1; }
-  to   { transform: rotateX(-90deg); opacity: 0; }
+  from { transform: rotateX(0deg);   box-shadow: 0 2px 0 rgba(30,42,71,.10); }
+  to   { transform: rotateX(-90deg); box-shadow: 0 16px 20px -6px rgba(30,42,71,.45); }
 }
 
 @keyframes card-enter {
-  from { transform: rotateX(90deg);  opacity: 0; }
-  to   { transform: rotateX(0deg);   opacity: 1; }
+  0%   { transform: rotateX(90deg);  box-shadow: 0 16px 20px -6px rgba(30,42,71,.45); }
+  70%  { transform: rotateX(-5deg);  box-shadow: 0 8px 12px -6px rgba(30,42,71,.30); }
+  100% { transform: rotateX(0deg);   box-shadow: 0 2px 0 rgba(30,42,71,.10); }
 }
 
 .sy-stamp-animate {
@@ -1032,7 +1040,7 @@ function renderFlashCard(
       // Restart the animation reliably.
       cardEl.style.animation = "none";
       void cardEl.offsetWidth;
-      cardEl.style.animation = "card-enter 240ms ease-out";
+      cardEl.style.animation = `card-enter ${FLIP_ENTER_MS}ms ease-out`;
     }
   };
 

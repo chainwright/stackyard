@@ -29,9 +29,124 @@ interface Mutant {
   replace: string;
   /** Tests that must go red. */
   tests: string[];
+  /**
+   * A real-browser gate instead of vitest files: a command (argv) that must exit
+   * NON-zero with the fix reverted. Used for the CSS fixes only a browser can see.
+   */
+  gate?: string[];
 }
 
 const MUTANTS: Mutant[] = [
+  // ---- Round-3 fixes (TASK-28k) ----
+  {
+    name: "claims: the ANSI colour strip is gone",
+    reverts: "27v — CI-safe test total",
+    file: "scripts/claims-lib.ts",
+    find: 'return text.replace(/\\u001b\\[[0-9;?]*[A-Za-z]/g, "");',
+    replace: "return text;",
+    tests: ["tests/claims.test.ts"],
+  },
+  {
+    name: "generator: proper nouns are lowercased again",
+    reverts: "27A / z1 — function words only",
+    file: "server/normalizeGenerated.ts",
+    find: "(i > 0 && SMALL_WORDS.has(w.toLowerCase()) ? w.toLowerCase() : w)",
+    replace: "(i > 0 ? w.toLowerCase() : w)",
+    tests: ["tests/round3-addendum.test.ts", "tests/generated-normalize.test.ts"],
+  },
+  {
+    name: "living editor: a flash Front edit refreshes only the list, not the card preview",
+    reverts: "27x — preview refresh",
+    file: "src/living/editor.ts",
+    find: "// Refresh the card preview AND the list label (TASK-27x).\n        this.refreshPreviewOnly();",
+    replace: 'const list = this.host.querySelector<HTMLElement>(".sy-living-list");\n        if (list) list.replaceWith(this.renderList());',
+    tests: ["tests/living.test.ts"],
+  },
+  {
+    name: "generator: a pronoun becomes the flash term again",
+    reverts: "27B / z2 — pronoun guard",
+    file: "server/normalizeGenerated.ts",
+    find: "&& !isPronounTerm(term)) return { term, back: t };",
+    replace: ") return { term, back: t };",
+    tests: ["tests/round3-addendum.test.ts", "tests/round3-generation.test.ts"],
+  },
+  {
+    name: "check: a trap loop is not reported",
+    reverts: "z3 — reverse reachability",
+    file: "src/shared/reachability.ts",
+    find: "&& !canFinish.has(c.id),",
+    replace: "&& false,",
+    tests: ["tests/round3-addendum.test.ts"],
+  },
+  {
+    name: "server: a malformed body still burns a rate slot",
+    reverts: "z4 — validate the body before the slot",
+    file: "server/index.ts",
+    find: "if (goodBody === null) return;",
+    replace: "/* mutant: carry on and count the slot */",
+    tests: ["tests/round3-addendum.test.ts"],
+  },
+  {
+    name: "stream: the fallback's generate() is not given the client's signal",
+    reverts: "z5 — disconnect reaches the fallback",
+    file: "server/stream-generate.ts",
+    find: "...(signal ? { signal } : {}),",
+    replace: "...{},",
+    tests: ["tests/round3-addendum.test.ts"],
+  },
+  // ---- Round-4 fixes (TASK-28) ----
+  {
+    name: "operations: + Add Card relinks quiz answers only (flash/story Next skip the new card)",
+    reverts: "28h — splice links for every card type",
+    file: "src/editor/operations.ts",
+    find: "ensureForwardLinks(linkQuizAnswersForward(linkInto(inserted, at)))",
+    replace: "ensureForwardLinks(linkQuizAnswersForward(inserted))",
+    tests: ["tests/round4-flow.test.ts"],
+  },
+  {
+    name: "check: the placeholder list forgets 'Another answer' again",
+    reverts: "28m — every default label",
+    file: "src/shared/reachability.ts",
+    find: "new Set(Object.values(PLACEHOLDER_WORDS));",
+    replace: 'new Set([PLACEHOLDER_WORDS.question, PLACEHOLDER_WORDS.rightAnswer, PLACEHOLDER_WORDS.wrongAnswer, PLACEHOLDER_WORDS.term, PLACEHOLDER_WORDS.explanation, PLACEHOLDER_WORDS.story]);',
+    tests: ["tests/round4-flow.test.ts"],
+  },
+  {
+    name: "generator: cap() takes the '.' in '2.5' for a sentence end again",
+    reverts: "28i — look-ahead on the full text",
+    file: "server/normalizeGenerated.ts",
+    find: "for (const m of t.matchAll(/[.!?]",
+    replace: "for (const m of window.matchAll(/[.!?]",
+    tests: ["tests/round4-generation.test.ts"],
+  },
+  {
+    name: "maker (browser): the canvas is centred and clips under a banner",
+    reverts: "28r — safe centring below the banner",
+    file: "src/editor/styles.css",
+    find: "justify-content: center; justify-content: safe center;",
+    replace: "justify-content: center;",
+    tests: [],
+    gate: ["node", "--import", "tsx/esm", "scripts/check-maker-fit.ts"],
+  },
+  {
+    name: "maker (browser): the Drag pill sits over the Right answer tab again",
+    reverts: "28d — drag pill moves left",
+    file: "src/editor/styles.css",
+    find: ".drag-tab-left { left: 0; transform: none; }",
+    replace: ".drag-tab-left { }",
+    tests: [],
+    gate: ["node", "--import", "tsx/esm", "scripts/check-maker-fit.ts"],
+  },
+  {
+    name: "maker (browser): the start card's peek tiles hang off a hidden edge again",
+    reverts: "28e — peek content in the visible strip",
+    file: "src/editor/styles.css",
+    find: "padding: 28px 32px 28px 308px;",
+    replace: "padding: 28px 32px;",
+    tests: [],
+    gate: ["node", "--import", "tsx/esm", "scripts/check-maker-fit.ts"],
+  },
+  // ---- Round-2 fixes (TASK-26) ----
   {
     name: "living: Save a Copy serialises the live DOM",
     reverts: "26a — pristine snapshot",
@@ -132,8 +247,8 @@ const MUTANTS: Mutant[] = [
     name: "generator: the retry is not counted against the budget (the survived mutant D)",
     reverts: "26g — retry budget test",
     file: "server/stackGenerator.ts",
-    find: "const retry = await attempt(retryMessages, 0.2, opts.onModelCall);",
-    replace: "const retry = await attempt(retryMessages, 0.2);",
+    find: "const retry = await attempt(retryMessages, 0.2, opts.onModelCall, opts.signal);",
+    replace: "const retry = await attempt(retryMessages, 0.2, undefined, opts.signal);",
     tests: ["tests/generate-hardening.test.ts"],
   },
   {
@@ -172,7 +287,7 @@ const MUTANTS: Mutant[] = [
     name: "maker: the wait screen promises 20 seconds again",
     reverts: "26f — honest estimate",
     file: "src/editor/StartScreen.tsx",
-    find: "Usually 30–60 seconds.",
+    find: "Usually 20–45 seconds.",
     replace: "About 20 seconds.",
     tests: ["tests/maker/round2-editing.dom.test.ts", "tests/maker/generate-flow.test.ts"],
   },
@@ -194,13 +309,16 @@ const MUTANTS: Mutant[] = [
   },
 ];
 
-function run(tests: string[]): number {
-  const r = spawnSync("npx", ["vitest", "run", ...tests], {
-    cwd: ROOT,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout: 300_000,
-  });
+function run(tests: string[], gate?: string[]): number {
+  const r =
+    gate !== undefined
+      ? spawnSync(gate[0]!, gate.slice(1), { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 600_000 })
+      : spawnSync("npx", ["vitest", "run", ...tests], {
+          cwd: ROOT,
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 300_000,
+        });
   return r.status ?? 1;
 }
 
@@ -214,8 +332,12 @@ function main(): void {
 
   // Sanity: the guarding tests must be GREEN before we break anything.
   const all = [...new Set(chosen.flatMap((m) => m.tests))];
-  if (run(all) !== 0) {
+  if (all.length > 0 && run(all) !== 0) {
     console.error("mutation-check: the guarding tests are not green on the unmodified code; fix that first.");
+    process.exit(1);
+  }
+  if (chosen.some((m) => m.gate !== undefined) && run([], chosen.find((m) => m.gate !== undefined)!.gate) !== 0) {
+    console.error("mutation-check: the browser gate is not green on the unmodified code; fix that first.");
     process.exit(1);
   }
 
@@ -229,7 +351,7 @@ function main(): void {
     }
     try {
       writeFileSync(abs, original.replace(m.find, m.replace), "utf8");
-      const status = run(m.tests);
+      const status = run(m.tests, m.gate);
       if (status !== 0) {
         console.log(`  KILLED    ${m.name}   [reverts ${m.reverts}]`);
       } else {

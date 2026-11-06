@@ -51,7 +51,7 @@ function elementIdFromClick(
  */
 function fitScale(area: HTMLElement, reservedTop = 0): number {
   const w = area.clientWidth;
-  const h = area.clientHeight - reservedTop;
+  const h = area.clientHeight - reservedTop - 24; // 24 = room for the ring loops above the card
   const s = Math.min((w - 48) / 812, (h - 48) / 612);
   return Math.max(0.9, Math.min(s, 1.35));
 }
@@ -343,7 +343,7 @@ export function Canvas({
               height: `${(selectedEl.h + 8) * scale}px`,
             }}
           >
-            <span class="drag-tab">
+            <span class={selectedEl.id === correctTile?.id ? "drag-tab drag-tab-left" : "drag-tab"}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H5v2l-3-3 3-3v2h4V5H7z"

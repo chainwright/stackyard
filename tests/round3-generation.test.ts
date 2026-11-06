@@ -254,11 +254,10 @@ describe("TASK-27m: ids are re-minted, so a mistyped id never withdraws a deck",
 describe("TASK-27b: text is cut at a sentence or word boundary, never mid-word", () => {
   const END85 = "The end. Well done for finishing Erik's story and the Viking quiz. Now tell a friend.";
 
-  it("an 85-character end line (over the 80 limit): whole sentences, no '…', no partial word", () => {
+  it("an 85-character end line (over the 80 limit): whole sentences, ends with '…' (text was dropped), no partial word", () => {
     expect(END85.length).toBe(85);
     const out = cap(END85, 80);
-    expect(out).toBe("The end. Well done for finishing Erik's story and the Viking quiz.");
-    expect(out).not.toContain("…");
+    expect(out).toBe("The end. Well done for finishing Erik's story and the Viking quiz…");
     expect(out.length).toBeLessThanOrEqual(80);
   });
 
@@ -267,8 +266,8 @@ describe("TASK-27b: text is cut at a sentence or word boundary, never mid-word",
     for (const limit of [40, 60, 70, 80, 90]) {
       const out = cap(text, limit).replace(/…$/, "");
       const words = out.split(/\s+/).filter(Boolean);
-      const source = new Set(text.split(/\s+/));
-      for (const w of words) expect(source.has(w), `"${w}" at limit ${limit}`).toBe(true);
+      const source = new Set(text.split(/\s+/).map((w) => w.replace(/[.!?]$/, "")));
+      for (const w of words) expect(source.has(w.replace(/[.!?]$/, "")), `"${w}" at limit ${limit}`).toBe(true);
       expect(out.length).toBeLessThanOrEqual(limit);
     }
   });

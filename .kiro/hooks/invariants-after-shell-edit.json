@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Invariants after a shell edit",
+      "trigger": "PostToolUse",
+      "description": "Save hooks don't fire for files written by a shell command, so after an execute_bash command that looks like it wrote a file, run check:invariants (scripts/after-bash.sh).",
+      "matcher": "^execute_bash$",
+      "action": {
+        "type": "command",
+        "command": "sh scripts/after-bash.sh"
+      },
+      "timeout": 240
+    }
+  ]
+}

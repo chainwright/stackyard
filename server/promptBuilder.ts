@@ -75,7 +75,7 @@ Coordinates are tidied afterwards, so do not fuss over them, but keep every elem
 
 ## Wrong answers
 
-Every wrong answer must be CLEARLY false for the age group. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know (do not offer "grass seeds" as a wrong answer for what a robin eats, or "field mouse" as a wrong answer for an animal that eats insects). Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
 
 ## The end card
 
@@ -183,7 +183,7 @@ Coordinates are tidied afterwards, so do not fuss over them, but keep every elem
 
 ## Wrong answers
 
-Every wrong answer must be CLEARLY false for the age group. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know (do not offer "grass seeds" as a wrong answer for what a robin eats, or "field mouse" as a wrong answer for an animal that eats insects). Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question.
 
 ## The end card
 

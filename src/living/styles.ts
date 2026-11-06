@@ -38,6 +38,7 @@ export const LIVING_STYLES = `
   flex: 0 0 240px; overflow-y: auto; background: #FBF8F1;
   border-right: 1px solid #C9D3E3; padding: 8px;
 }
+@media (min-width: 1600px) { .sy-living-list { flex-basis: 340px; } }
 .sy-living-list button {
   display: block; width: 100%; text-align: left; font-family: inherit;
   font-size: 18px; background: #FBF8F1; border: 1px solid #C9D3E3;

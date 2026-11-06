@@ -207,15 +207,15 @@ describe("TASK-27: the generation prompts (round 3)", () => {
     ["retry", buildRetryPrompt({ prompt: "x" }, ["quiz-answer"]).system],
   ];
 
-  it("(e) every prompt demands wrong answers that are CLEARLY false, with the live examples", () => {
+  it("(e) every prompt demands wrong answers that are clearly false AND plausible, with no tuned examples (TASK-28p)", () => {
     for (const [name, sys] of all()) {
       expect(sys, name).toContain("## Wrong answers");
-      expect(sys, name).toMatch(/CLEARLY false for the age group/);
+      expect(sys, name).toMatch(/clearly false for the age group/);
       expect(sys, name).toMatch(/partly true/);
       expect(sys, name).toMatch(/different category from the right answer/);
       expect(sys, name).toMatch(/two defensible answers, rewrite the question/);
-      expect(sys, name).toContain("grass seeds");
-      expect(sys, name).toContain("field mouse");
+      expect(sys, name).not.toContain("grass seeds");
+      expect(sys, name).not.toContain("field mouse");
     }
   });
 

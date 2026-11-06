@@ -51,6 +51,88 @@ export function nextCardAfter(stack: Stack, index: number): Card | undefined {
   return stack.cards.find((c) => c.kind === "end" && c !== stack.cards[index]);
 }
 
+/**
+ * Every card id reachable from the first card by following any goto (button
+ * or card-level). The same walk the "before you share" check does.
+ */
+export function reachableIds(stack: Stack): Set<string> {
+  const byId = new Map(stack.cards.map((c) => [c.id, c]));
+  const seen = new Set<string>();
+  const first = stack.cards[0];
+  if (first === undefined) return seen;
+  const queue = [first.id];
+  seen.add(first.id);
+  while (queue.length > 0) {
+    const card = byId.get(queue.shift()!);
+    if (card === undefined) continue;
+    const targets = [
+      ...card.actions.flatMap((a) => (a.type === "goto" ? [a.cardId] : [])),
+      ...card.elements.flatMap((e) =>
+        e.type === "button" ? e.actions.flatMap((a) => (a.type === "goto" ? [a.cardId] : [])) : [],
+      ),
+    ];
+    for (const t of targets) {
+      if (!seen.has(t) && byId.has(t)) {
+        seen.add(t);
+        queue.push(t);
+      }
+    }
+  }
+  return seen;
+}
+
+/** Point every goto in `actions` that targets `from` at `to` instead. */
+function retarget(actions: Action[], from: string, to: string): Action[] {
+  return actions.map((a) => (a.type === "goto" && a.cardId === from ? { ...a, cardId: to } : a));
+}
+
+/**
+ * Splice the card at `index` into the flow (TASK-28h). The card before it in
+ * deck order is where play comes from, and its Next / Continue / answers /
+ * auto-advance still point at the card that used to follow it — which is now
+ * the one AFTER the new card. So: every goto on the card before that targeted
+ * the card after is retargeted to the new card. If it had none (a branch that
+ * pointed somewhere else, or no button at all), its first button's goto — or a
+ * card-level goto if it has no button — is pointed at the new card.
+ *
+ * Only retargets/adds gotos to real cards, so every stack invariant holds. The
+ * new card's own way forward is added by {@link ensureForwardLinks}.
+ */
+export function linkInto(stack: Stack, index: number): Stack {
+  const target = stack.cards[index];
+  const before = stack.cards[index - 1];
+  if (target === undefined || before === undefined || before.kind === "end") return stack;
+  const after = stack.cards[index + 1];
+
+  const retargetCard = (card: Card): Card => {
+    if (after === undefined) return card;
+    return {
+      ...card,
+      actions: retarget(card.actions, after.id, target.id),
+      elements: card.elements.map((el) =>
+        el.type === "button" ? { ...el, actions: retarget(el.actions, after.id, target.id) } : el,
+      ),
+    };
+  };
+
+  let patched = retargetCard(before);
+  const touched = JSON.stringify(patched) !== JSON.stringify(before);
+  if (!touched) {
+    // Nothing on the card before pointed at the card after (it branched
+    // elsewhere, or had no way on). Give it a goto to the new card.
+    const firstButton = patched.elements.find((e): e is ButtonElement => e.type === "button");
+    if (firstButton !== undefined) {
+      const actions = gotoOf(firstButton.actions) !== null
+        ? firstButton.actions.map((a) => (a.type === "goto" ? { ...a, cardId: target.id } : a))
+        : [...firstButton.actions, { type: "goto", cardId: target.id } as Action];
+      patched = { ...patched, elements: patched.elements.map((e) => (e === firstButton ? { ...firstButton, actions } : e)) };
+    } else {
+      patched = { ...patched, actions: [...patched.actions.filter((a) => a.type !== "goto"), { type: "goto", cardId: target.id }] };
+    }
+  }
+  return { ...stack, cards: stack.cards.map((c) => (c.id === before.id ? patched : c)) };
+}
+
 /** Add a goto to an action list unless it already has one. */
 function withGoto(actions: Action[], target: string): Action[] {
   return gotoOf(actions) !== null ? actions : [...actions, { type: "goto", cardId: target }];

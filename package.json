@@ -25,8 +25,10 @@
     "check:claims": "node --import tsx/esm scripts/check-claims.ts",
     "check:mcp": "vitest run mcp/openverse/openverse.test.ts",
     "pick:images": "node --import tsx/esm scripts/pick-deck-images.ts",
-    "pre-submit": "npm test && npm run typecheck && npm run build:maker && npm run check:decks && npm run check:text-fit && npm run check:living-file && npm run check:samples && npm run check:claims",
+    "pre-submit": "npm test && npm run typecheck && npm run build:maker && npm run check:decks && npm run check:text-fit && npm run check:living-file && npm run check:samples && npm run check:trace && npm run check:claims",
     "samples": "node --import tsx/esm scripts/make-samples.ts",
+    "media": "npm run build:maker && npm run build:player && npm run build:living && node --import tsx/esm scripts/make-readme-media.ts",
+    "check:trace": "node --import tsx/esm scripts/check-task-trace.ts",
     "check:claims:fix": "node --import tsx/esm scripts/check-claims.ts --fix",
     "check:mutants": "node --import tsx/esm scripts/mutation-check.ts",
     "check:text-fit": "node --import tsx/esm scripts/check-text-fit.ts && node --import tsx/esm scripts/check-maker-fit.ts"

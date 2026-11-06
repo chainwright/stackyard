@@ -14,7 +14,8 @@ import type {
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
 import { linkQuizAnswersForward } from "../shared/linkForward.js";
-import { ensureForwardLinks, gotoOf, nextCardAfter } from "../shared/flow.js";
+import { ensureForwardLinks, gotoOf, nextCardAfter, linkInto, reachableIds } from "../shared/flow.js";
+import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
 import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
 
 // ---------------------------------------------------------------------------
@@ -159,13 +160,13 @@ function seedCard(kind: Card["kind"]): Card {
             type: "text",
             id: newId(),
             ...QUIZ_QUESTION,
-            content: "Your question?",
+            content: PLACEHOLDER_WORDS.question,
           },
           {
             type: "button",
             id: newId(),
             ...QUIZ_TILES[0]!,
-            label: "Right answer",
+            label: PLACEHOLDER_WORDS.rightAnswer,
             actions: [
               { type: "score", delta: 1 },
               { type: "sound", sound: "cheer" },
@@ -175,7 +176,7 @@ function seedCard(kind: Card["kind"]): Card {
             type: "button",
             id: newId(),
             ...QUIZ_TILES[1]!,
-            label: "Wrong answer",
+            label: PLACEHOLDER_WORDS.wrongAnswer,
             actions: [
               { type: "score", delta: 0 },
               { type: "sound", sound: "buzz" },
@@ -190,8 +191,8 @@ function seedCard(kind: Card["kind"]): Card {
         id: cardId,
         kind: "flash",
         elements: [
-          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 160, content: "Term" },
-          { type: "text", id: newId(), x: 48, y: 300, w: 704, h: 160, content: "Explanation" },
+          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 160, content: PLACEHOLDER_WORDS.term },
+          { type: "text", id: newId(), x: 48, y: 300, w: 704, h: 160, content: PLACEHOLDER_WORDS.explanation },
         ],
         actions: [],
       };
@@ -201,7 +202,7 @@ function seedCard(kind: Card["kind"]): Card {
         id: cardId,
         kind: "story",
         elements: [
-          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 200, content: "Your text" },
+          { type: "text", id: newId(), x: 48, y: 104, w: 704, h: 200, content: PLACEHOLDER_WORDS.story },
         ],
         actions: [],
       };
@@ -273,12 +274,13 @@ export function addCardAfter(
   const cards = [...stack.cards.slice(0, at), card, ...stack.cards.slice(at)];
   const inserted: Stack = { ...stack, cards };
 
-  // Re-link quiz answers forward so the new card (and the card before it) lead
-  // into the flow — no card is stranded after the end card, and no quiz answer
-  // dead-ends (J2's "max score can never be reached" bug). Then make sure the
-  // seeded card itself has a way forward (a new flash card gets "Next Card", a
-  // new story card gets "Continue" — TASK-26b/o).
-  return ensureForwardLinks(linkQuizAnswersForward(inserted));
+  // Splice the new card into the flow for EVERY kind of card before it (quiz
+  // answers, flash Next, story choices, auto-advance) — TASK-28h: the old code
+  // relinked quiz answers only, so after a flash or story card the previous
+  // card's Next still skipped the new one. Then re-link quiz answers forward
+  // (J2's "max score can never be reached" bug) and give the seeded card its own
+  // way forward (a new flash card gets "Next Card", a story card "Continue").
+  return ensureForwardLinks(linkQuizAnswersForward(linkInto(inserted, at)));
 }
 
 /**
@@ -302,7 +304,16 @@ export function repairFlow(stack: Stack): Stack | Rejected {
   const reordered: Card[] = [...before, ...after, end];
   // Link quiz answers forward, then give every other button that goes nowhere —
   // and every flash/story card with nothing to press — a way on (TASK-26b/o).
-  return ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards: reordered }));
+  let repaired = ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards: reordered }));
+  // Splice in every card still unreachable (TASK-28h): the card before it takes
+  // over the link that used to skip it. Re-checked after each splice; bounded.
+  for (let guard = 0; guard < repaired.cards.length; guard++) {
+    const seen = reachableIds(repaired);
+    const stranded = repaired.cards.findIndex((c, i) => i > 0 && !seen.has(c.id));
+    if (stranded < 0) break;
+    repaired = ensureForwardLinks(linkInto(repaired, stranded));
+  }
+  return repaired;
 }
 
 /** Strip every goto action that targets `removedId` from an action list. */
@@ -386,7 +397,7 @@ function withSeededAnswers(card: Card): Card {
         type: "button",
         id: newId(),
         x: 40, y: 360, w: 340, h: 80,
-        label: "Right answer",
+        label: PLACEHOLDER_WORDS.rightAnswer,
         actions: [
           { type: "score", delta: 1 },
           { type: "sound", sound: "cheer" },
@@ -396,7 +407,7 @@ function withSeededAnswers(card: Card): Card {
         type: "button",
         id: newId(),
         x: 420, y: 360, w: 340, h: 80,
-        label: "Wrong answer",
+        label: PLACEHOLDER_WORDS.wrongAnswer,
         actions: [
           { type: "score", delta: 0 },
           { type: "sound", sound: "buzz" },
@@ -589,7 +600,7 @@ function addElementToCard(
 export function addTextElement(
   stack: Stack,
   cardId: string,
-  content = "New text"
+  content: string = PLACEHOLDER_WORDS.newText
 ): Stack | Rejected {
   const card = stack.cards.find((c) => c.id === cardId);
   if (card === undefined) return reject("That card isn't here any more.");
@@ -615,7 +626,7 @@ export function addTextElement(
 export function addButtonElement(
   stack: Stack,
   cardId: string,
-  label = "New button"
+  label: string = PLACEHOLDER_WORDS.newButton
 ): Stack | Rejected {
   const card = stack.cards.find((c) => c.id === cardId);
   if (card === undefined) return reject("That card isn't here any more.");
@@ -786,7 +797,7 @@ const ANSWERS_FULL_MESSAGE = "A question can have up to four answers.";
 export function addAnswer(
   stack: Stack,
   cardId: string,
-  label = "Another answer",
+  label: string = PLACEHOLDER_WORDS.anotherAnswer,
 ): Stack | Rejected {
   const card = stack.cards.find((c) => c.id === cardId);
   if (card === undefined) return reject("That card isn't here any more.");

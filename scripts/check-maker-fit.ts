@@ -81,6 +81,7 @@ function prepared(s: Stack): Stack {
 const DRIVER = `
 (function () {
   var MODE = __MODE__;
+  var FOLD = __FOLD__;
   var problems = [];
   function rect(el) { return el.getBoundingClientRect(); }
   function hit(a, b) { return a.left < b.right - 0.5 && a.right > b.left + 0.5 && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5; }
@@ -104,6 +105,50 @@ const DRIVER = `
       var names = Array.prototype.map.call(document.querySelectorAll(".ready-made-link"), function (e) { return e.textContent; });
       if (names.length === 0) problems.push("no ready-made deck links");
       if (new Set(names).size !== names.length) problems.push("a ready-made deck is listed twice");
+      // TASK-28e: the example chips share one row.
+      var chips = document.querySelectorAll(".example-tab");
+      if (chips.length > 1) {
+        var tops = Array.prototype.map.call(chips, function (c) { return Math.round(rect(c).top); });
+        if (Math.max.apply(null, tops) - Math.min.apply(null, tops) > 3) problems.push("the example chips wrap onto more than one row");
+      }
+      // TASK-28e: the peek card's tiles lie inside it and are not hidden behind the start card.
+      var peek = document.querySelector(".peek");
+      var pc = document.querySelector(".peek-card");
+      var sc = document.querySelector(".start-card");
+      if (peek && pc && sc && getComputedStyle(peek).display !== "none") {
+        var pr = rect(pc), sr = rect(sc);
+        Array.prototype.forEach.call(document.querySelectorAll(".peek-tile"), function (t) {
+          var r = rect(t);
+          if (r.left < pr.left - 0.5 || r.right > pr.right + 0.5 || r.top < pr.top - 0.5 || r.bottom > pr.bottom + 0.5) problems.push("a peek tile hangs outside its card");
+          if (r.left < sr.right - 0.5) problems.push("a peek tile is partly hidden behind the start card");
+        });
+      }
+      // TASK-28r: Build Cards is above the fold on first load (the 657 px laptop).
+      if (FOLD) {
+        var build = Array.prototype.find.call(document.querySelectorAll("button"), function (b) { return /Build Cards/i.test(b.textContent || ""); });
+        if (!build) problems.push("no Build Cards button");
+        else if (rect(build).bottom > window.innerHeight + 0.5) problems.push("Build Cards is below the fold (bottom " + Math.round(rect(build).bottom) + " > " + window.innerHeight + ")");
+      }
+      return;
+    }
+    if (MODE.indexOf("banner:") === 0) {
+      var notice = document.querySelector(".notice");
+      if (!notice) { problems.push("no banner is showing, so the banner case did not run"); return; }
+      var nr = rect(notice);
+      var areaEl = document.querySelector(".canvas-area");
+      var ar2 = rect(areaEl);
+      if (ar2.top < nr.bottom - 1) problems.push("the canvas area starts under the banner");
+      var ringEl = document.querySelector(".sy-rings");
+      if (ringEl && rect(ringEl).top < ar2.top - 0.5) problems.push("the card's rings are clipped by the top of the canvas area");
+      var seg = document.querySelector(".segmented button");
+      if (MODE === "banner:flash") {
+        if (!seg) problems.push("no Front/Back switch on the flash card");
+        else {
+          var sg = rect(seg);
+          var hitEl = document.elementFromPoint(sg.left + sg.width / 2, sg.top + sg.height / 2);
+          if (!hitEl || !seg.contains(hitEl)) problems.push("the Front/Back switch cannot be clicked: the hit target is " + (hitEl ? (hitEl.className || hitEl.tagName) : "nothing"));
+        }
+      }
       return;
     }
     var card = document.querySelector(".sy-card");
@@ -120,6 +165,19 @@ const DRIVER = `
       Array.prototype.forEach.call(document.querySelectorAll(".sy-tile-label"), function (l) {
         if (hit(tr, textRect(l))) problems.push("the Right answer tag covers answer text: " + (l.textContent || "").slice(0, 30) + " tag=" + JSON.stringify([tr.left|0,tr.top|0,tr.right|0,tr.bottom|0]) + " label=" + JSON.stringify((function(r){return [r.left|0,r.top|0,r.right|0,r.bottom|0];})(textRect(l))));
       });
+      // TASK-28d: select the right-answer tile; its "Drag to move" pill must not touch the tag.
+      var tiles = document.querySelectorAll(".sy-element .sy-tile");
+      var rightTile = Array.prototype.find.call(tiles, function (t) { return Math.abs(rect(t).right - 8 - tr.right) < 6; });
+      if (!rightTile) { problems.push("could not find the right-answer tile to select"); return; }
+      rightTile.click();
+      setTimeout(function () {
+        var tag2 = document.querySelector(".right-tag");
+        var drag = document.querySelector(".drag-tab");
+        if (!tag2 || !drag) problems.push("selecting the right tile did not show both the tag and the Drag to move pill");
+        else if (hit(rect(tag2), rect(drag))) problems.push("the Drag to move pill overlaps the Right answer tab");
+        finish();
+      }, 500);
+      return "deferred";
     }
     if (MODE === "story") {
       var labels = document.querySelectorAll(".branch-label");
@@ -140,10 +198,27 @@ const DRIVER = `
     document.body.appendChild(node);
   }
   var tries = 0;
+  var clicked = false;
   (function poll() {
     tries++;
+    var isBanner = MODE.indexOf("banner:") === 0;
+    if (isBanner && !clicked) {
+      var want = MODE === "banner:flash" ? /Irish/i : /Vikings/i;
+      var link = Array.prototype.find.call(document.querySelectorAll(".ready-made-link"), function (b) { return want.test(b.textContent || ""); });
+      if (link) { clicked = true; link.click(); }
+      if (tries > 60) { problems.push("could not open the ready-made deck"); finish(); return; }
+      setTimeout(poll, 100);
+      return;
+    }
     var ready = MODE === "start" ? document.querySelector(".start-card h1") : document.querySelector(".sy-card .sy-element");
-    if (ready || tries > 60) { setTimeout(function () { if (check() === false) problems.push("the editor never showed a card"); finish(); }, 600); }
+    if (ready || tries > 60) {
+      setTimeout(function () {
+        var r = check();
+        if (r === "deferred") return;
+        if (r === false) problems.push("the editor never showed a card");
+        finish();
+      }, 600);
+    }
     else setTimeout(poll, 100);
   })();
 })();
@@ -158,24 +233,33 @@ function main(): void {
   execFileSync("npx", ["vite", "build", "--base=./", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { stdio: "inherit" });
   const indexHtml = readFileSync(path.join(out, "index.html"), "utf8");
 
-  const scenarios: Array<{ name: string; mode: "start" | "quiz" | "story"; stack: Stack | null; win: [number, number] }> = [
+  const scenarios: Array<{ name: string; mode: string; stack: Stack | null; win: [number, number]; fold?: boolean }> = [
     // Window = viewport + 143 px of Chrome: 1366×768 -> a 1366×625 viewport (the hard case).
     { name: "Start screen @1366×768 window", mode: "start", stack: null, win: [1366, 768] },
+    { name: "Start screen @1366×800 window (657 viewport): Build Cards above the fold", mode: "start", stack: null, win: [1366, 800], fold: true },
     { name: "Start screen @1366×911 (768 viewport)", mode: "start", stack: null, win: [1366, 911] },
     { name: "Start screen @1920×1080", mode: "start", stack: null, win: [1920, 1080] },
     { name: "quiz editor @1366×911", mode: "quiz", stack: prepared(quizDeck()), win: [1366, 911] },
+    { name: "quiz editor @1920×1080 (Right answer tab vs Drag pill)", mode: "quiz", stack: prepared(quizDeck()), win: [1920, 1080] },
     { name: "story editor @1366×911", mode: "story", stack: prepared(storyDeck()), win: [1366, 911] },
+    // TASK-28r: a notice banner shows (ready-made deck): the canvas lays out BELOW it.
+    { name: "flash editor + banner @1366×911 (768 viewport)", mode: "banner:flash", stack: null, win: [1366, 911] },
+    { name: "flash editor + banner @1366×800 (657 viewport)", mode: "banner:flash", stack: null, win: [1366, 800] },
+    { name: "quiz editor + banner @1366×911 (768 viewport)", mode: "banner:quiz", stack: null, win: [1366, 911] },
+    { name: "quiz editor + banner @1366×800 (657 viewport)", mode: "banner:quiz", stack: null, win: [1366, 800] },
   ];
   let failed = false;
+  let scenarioNo = 0;
   for (const s of scenarios) {
+    scenarioNo++;
     const seed =
       s.stack === null
         ? `try { localStorage.removeItem("stackyard:maker:v1"); } catch (e) {}`
         : `try { localStorage.setItem("stackyard:maker:v1", ${JSON.stringify(JSON.stringify(s.stack))}); } catch (e) {}`;
-    const driver = DRIVER.replace("__MODE__", JSON.stringify(s.mode));
+    const driver = DRIVER.replace("__MODE__", JSON.stringify(s.mode)).replace("__FOLD__", s.fold === true ? "true" : "false");
     const idx = indexHtml.indexOf("<script");
     const html = indexHtml.slice(0, idx) + `<script>${seed}</script>` + indexHtml.slice(idx).replace("</body>", `<script>${driver}</script></body>`);
-    const file = path.join(out, `check-${s.mode}-${s.win[0]}-${s.win[1]}.html`);
+    const file = path.join(out, `check-${scenarioNo}-${s.win[0]}-${s.win[1]}.html`);
     writeFileSync(file, html, "utf8");
     const dom = dumpDomOffline(CHROME, {
       flags: [`--window-size=${s.win[0]},${s.win[1]}`, "--virtual-time-budget=20000"],

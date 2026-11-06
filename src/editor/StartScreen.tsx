@@ -54,12 +54,12 @@ export const PICTURES_NOTE = "Pictures aren't added automatically yet. Use Add P
 
 const EXAMPLES: ReadonlyArray<{ label: string; sentence: string }> = [
   {
-    label: "Vikings in Ireland quiz",
+    label: "Vikings quiz",
     sentence:
       "A lesson about the Vikings in Ireland with quiz questions and a story choice, the right answer plays a cheer",
   },
   { label: "Times tables game", sentence: "A quiz game for the times tables up to 12" },
-  { label: "Irish words flashcards", sentence: "Flashcards for ten everyday words in Irish" },
+  { label: "Irish word cards", sentence: "Flashcards for ten everyday words in Irish" },
 ];
 
 export function StartScreen({
@@ -498,7 +498,7 @@ export function GeneratingScreen({
           <p>
             {offline
               ? "Each card appears as it's ready."
-              : "Each card appears as it's ready. Usually 30–60 seconds."}
+              : "Each card appears as it's ready. Usually 20–45 seconds."}
           </p>
           <p class="counter" aria-live="polite">
             {counter}

@@ -18,14 +18,17 @@ required to play it.
 **When** the Maker exports a stack,  
 **the system shall** produce a single HTML file in which every asset —
 player runtime JavaScript, card images, fonts, and sounds — is inlined; the
-file shall contain no `http://` or `https://` URLs and shall make no network
-requests at runtime.
+file shall load nothing from the network at runtime; inert licence source URLs
+inside comments are allowed.
 
 **Acceptance criteria**
 
-- WHEN the exported HTML file is scanned, THEN it contains zero occurrences of
-  `http://` or `https://` as attribute values or inside `<script>` or `<style>`
-  blocks.
+- WHEN the exported HTML file is scanned, THEN no `src=` or `href=` attribute,
+  no CSS `url(...)` or `@import`, and no script (`fetch`, `XMLHttpRequest`,
+  `WebSocket`, `import()`, `sendBeacon`) refers to an `http://` or `https://`
+  address. A URL that appears only inside a comment (the SIL Open Font
+  Licence source links above each `@font-face`) is allowed: it is text, not a
+  request.
 - WHEN the exported HTML file is opened from a `file://` URL with the browser's
   network access blocked, THEN the player loads and renders the first card
   without error.

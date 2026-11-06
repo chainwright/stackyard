@@ -16,7 +16,12 @@ const HOOKS_DIR = path.join(process.cwd(), ".kiro", "hooks");
 
 const VALID_TRIGGERS = [
   "PreToolUse", "PostToolUse", "SessionStart", "Stop", "UserPromptSubmit",
-  "PreTaskExec", "PostTaskExec", "PostFileCreate", "PostFileSave", "PostFileDelete", "Manual",
+  "PreTaskExec", "PostTaskExec", "PostFileCreate", "PostFileSave", "PostFileDelete",
+  // NOT "Manual": kiro.dev/docs/hooks/types lists it as unsupported in the IDE
+  // and "listed but not invocable" in CLI v3, and this Kiro build's trigger enum
+  // (PreToolUse, PostToolUse, SessionStart, Stop, UserPromptSubmit, PreTaskExec,
+  // PostTaskExec, PreCompact, PostCompact, PostFileCreate/Save/Delete) has none.
+  "PreCompact", "PostCompact",
 ];
 
 interface Hook {
@@ -98,9 +103,41 @@ describe("TASK-26k: .kiro/hooks files match the Kiro 1.x hook schema", () => {
     });
   }
 
-  it("the full gate is a Manual hook — a run-on-demand button, not tied to task completion", () => {
+  it("TASK-28s: no hook uses the Manual trigger (not invocable in Kiro)", () => {
+    for (const file of files) {
+      const doc = JSON.parse(readFileSync(path.join(HOOKS_DIR, file), "utf8")) as { hooks: Hook[] };
+      for (const h of doc.hooks) expect(h.trigger, file).not.toBe("Manual");
+    }
+  });
+
+  it("TASK-28s: the full gate fires when a spec task is done (PostTaskExec), with an on-demand steering file", () => {
     const pre = JSON.parse(readFileSync(path.join(HOOKS_DIR, "pre-submit.json"), "utf8")) as { hooks: Hook[] };
-    expect(pre.hooks[0]!.trigger).toBe("Manual");
+    expect(pre.hooks[0]!.trigger).toBe("PostTaskExec");
+    const steering = readFileSync(path.join(process.cwd(), ".kiro", "steering", "pre-submit.md"), "utf8");
+    expect(steering).toMatch(/^---\ninclusion: manual\n---/);
+  });
+
+  it("TASK-28u: a PostToolUse hook on execute_bash re-runs the invariants after a shell edit", () => {
+    const doc = JSON.parse(readFileSync(path.join(HOOKS_DIR, "invariants-after-shell-edit.json"), "utf8")) as { hooks: Hook[] };
+    const h = doc.hooks[0]!;
+    expect(h.trigger).toBe("PostToolUse");
+    expect(new RegExp(h.matcher as string).test("execute_bash")).toBe(true);
+    expect(new RegExp(h.matcher as string).test("fs_write")).toBe(false);
+    const script = readFileSync(path.join(process.cwd(), "scripts", "after-bash.sh"), "utf8");
+    expect(script).toContain("npm run check:invariants");
+  });
+
+  it("TASK-28u: tech.md tells the agent to edit with the file tools so save hooks run", () => {
+    const tech = readFileSync(path.join(process.cwd(), ".kiro", "steering", "tech.md"), "utf8");
+    expect(tech).toMatch(/Edit source files with the file tools \(`fs_write`, `str_replace`/);
+  });
+
+  it("the README, KIRO_LOG and session excerpts do not call pre-submit a run-on-demand button", () => {
+    for (const f of ["README.md", "docs/KIRO_LOG.md", "docs/kiro-sessions/README.md"]) {
+      const text = readFileSync(path.join(process.cwd(), f), "utf8");
+      expect(text, f).not.toMatch(/run-on-demand button/i);
+      expect(text, f).not.toMatch(/`Manual`-trigger hook/);
+    }
   });
 
   it("the living-file gate fires on edits under src/living", () => {

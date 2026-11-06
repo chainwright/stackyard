@@ -93,9 +93,9 @@ describe("TASK-26m: the README is honest for judges", () => {
     expect(README).not.toMatch(/cartoon of a pupil/);
   });
 
-  it("has a screenshot/GIF placeholder section", () => {
+  it("has a 'See it' section with the GIF and screenshots (TASK-28t: no longer a placeholder)", () => {
     expect(README).toMatch(/^## See it$/m);
-    expect(README).toMatch(/GIF/);
+    expect(README).toMatch(/docs\/media\/demo\.gif/);
   });
 
   it("labels the reference image as AI-generated, in the README and beside the file", () => {

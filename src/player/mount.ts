@@ -11,13 +11,13 @@
 
 import type { Stack } from "../shared/types.js";
 import { createRuntime, dispatch } from "./runtime.js";
-import { renderCard } from "./renderer.js";
+import { renderCard, FLIP_EXIT_MS, FLIP_ENTER_MS } from "./renderer.js";
 import { applyScaling } from "./scaler.js";
 import { playSound } from "./audio.js";
 import { showFatalError } from "./errors.js";
 
-/** Flip duration — matches the design-system card-exit/enter keyframes. */
-const FLIP_MS = 240;
+/** Flip timing — the exit lift and the heavier enter settle (renderer.ts). */
+const FLIP_MS = FLIP_EXIT_MS;
 
 export interface MountOptions {
   /** Card to show first. Defaults to the first card in the deck. "Try It"
@@ -127,7 +127,7 @@ export function mountPlayer(
       const cardEl = root.querySelector<HTMLElement>(".sy-card");
       if (cardEl) {
         cardEl.style.transformOrigin = "top center";
-        cardEl.style.animation = `card-enter ${FLIP_MS}ms ease-out`;
+        cardEl.style.animation = `card-enter ${FLIP_ENTER_MS}ms ease-out`;
       }
     }
 

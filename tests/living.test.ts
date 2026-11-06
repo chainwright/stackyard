@@ -505,3 +505,112 @@ describe("TASK-27: living editor round-3 fixes", () => {
     expect(after).toBe(before + 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// TASK-28 n / o / j / q — the Teacher tab (J2, J4)
+
+/** A generated-looking deck: four questions that all open "What is the capital of …". */
+function sharedPrefixStack(): Stack {
+  const mk = (n: number, q: string): Stack["cards"][number] => ({
+    id: `bbbbbbbb-0000-4000-8000-0000000001${n}0`,
+    kind: "quiz",
+    elements: [
+      { type: "text", id: `cccccccc-0000-4000-8000-0000000001${n}0`, x: 48, y: 104, w: 704, h: 128, content: q },
+      { type: "button", id: `dddddddd-0000-4000-8000-0000000001${n}0`, x: 48, y: 296, w: 344, h: 96, label: "Right", actions: [{ type: "score", delta: 1 }, { type: "goto", cardId: n === 4 ? END : `bbbbbbbb-0000-4000-8000-0000000001${n + 1}0` }] },
+      { type: "button", id: `eeeeeeee-0000-4000-8000-0000000001${n}0`, x: 408, y: 296, w: 344, h: 96, label: "Wrong", actions: [{ type: "score", delta: 0 }, { type: "goto", cardId: n === 4 ? END : `bbbbbbbb-0000-4000-8000-0000000001${n + 1}0` }] },
+    ],
+    actions: [],
+  });
+  return {
+    id: "11111111-0000-4000-8000-000000000002",
+    title: "Capitals",
+    theme: { background: "#FBF8F1", foreground: "#1E2A47", font: "sans-serif" },
+    cards: [
+      mk(1, "What is the capital of France?"),
+      mk(2, "What is the capital of Spain?"),
+      mk(3, "What is the capital of Italy?"),
+      mk(4, "What is the capital of Ireland?"),
+      { id: END, kind: "end", elements: [{ type: "field", id: "ffffffff-0000-4000-8000-000000000002", x: 48, y: 420, w: 704, h: 60, variable: "score" }], actions: [] },
+    ],
+  };
+}
+
+describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
+  function openTeacher(stack: Stack): void {
+    openFile(exportedFile(stack));
+    teardown = bootLivingFile();
+    tab().click();
+  }
+
+  it("j: list labels of different cards differ, even when the questions share their first words", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    openTeacher(sharedPrefixStack());
+    const labels = Array.from(document.querySelectorAll(".sy-living-list button")).map((b) => b.textContent ?? "");
+    expect(labels).toHaveLength(5);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels[0]).toContain("France");
+    expect(labels[3]).toContain("Ireland");
+    expect(labels.every((l) => l.startsWith("Card "))).toBe(true);
+  });
+
+  it("q: the 'show card…' dropdown uses '—' like the list and the website, never '·'", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    openTeacher(sharedPrefixStack());
+    // Select an answer button so the dropdown shows.
+    const tile = document.querySelector<HTMLElement>(".sy-living-canvas .sy-tile")!;
+    tile.click();
+    const options = Array.from(document.querySelectorAll(".sy-living-inspector select option")).map((o) => o.textContent ?? "");
+    expect(options.length).toBeGreaterThan(1);
+    const cardOptions = options.filter((o) => o.startsWith("Card "));
+    expect(cardOptions.length).toBeGreaterThan(0);
+    for (const o of cardOptions) {
+      expect(o).toContain(" — ");
+      expect(o).not.toContain(" · ");
+    }
+  });
+
+  it("n: Remove this card asks first; cancel keeps the card, OK removes it", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true); // the "Are you the teacher?" gate
+    openTeacher(sharedPrefixStack());
+    const remove = (): HTMLButtonElement =>
+      Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button")).find((b) => (b.textContent ?? "").includes("Remove this card"))!;
+
+    confirm.mockReturnValueOnce(false);
+    remove().click();
+    expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining("Remove card 1"));
+    expect(document.querySelectorAll(".sy-living-list button")).toHaveLength(5); // nothing removed
+
+    confirm.mockReturnValueOnce(true);
+    remove().click();
+    expect(document.querySelectorAll(".sy-living-list button")).toHaveLength(4);
+  });
+
+  it("o: after '+ Add an answer' the NEW answer is selected, so typing goes into it", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    // A card with room: only two answers.
+    openTeacher(sharedPrefixStack());
+    // Select the existing "Wrong" answer first (the J2 repro: it stays selected).
+    const tiles = Array.from(document.querySelectorAll<HTMLElement>(".sy-living-canvas .sy-tile"));
+    tiles[1]!.click();
+    const field = (): HTMLInputElement => document.querySelector<HTMLInputElement>(".sy-living-inspector input[type=text]")!;
+    expect(field().value).toBe("Wrong");
+
+    Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button"))
+      .find((b) => (b.textContent ?? "").includes("Add an answer"))!
+      .click();
+    // The Answer box now holds the NEW tile's words…
+    expect(field().value).toBe("Another answer");
+    // …and typing changes only that tile.
+    field().value = "Paris";
+    field().dispatchEvent(new Event("input", { bubbles: true }));
+    const labels = Array.from(document.querySelectorAll(".sy-living-canvas .sy-tile")).map((t) => t.textContent ?? "");
+    expect(labels.some((l) => l.includes("Paris"))).toBe(true);
+    expect(labels.some((l) => l.includes("Wrong"))).toBe(true);
+    expect(labels.some((l) => l.includes("Right"))).toBe(true);
+  });
+
+  it("q: the Teacher list is wider on a big screen", async () => {
+    const { LIVING_STYLES } = await import("../src/living/styles.js");
+    expect(LIVING_STYLES).toMatch(/@media \(min-width: 1600px\) \{ \.sy-living-list \{ flex-basis: 340px; \} \}/);
+  });
+});

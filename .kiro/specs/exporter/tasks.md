@@ -703,3 +703,17 @@ change in Play.
   - **Acceptance criteria.** Test: both the class and the living export contain "SIL OPEN FONT LICENSE Version 1.1" and "PERMISSION & CONDITIONS".
 
 **Gate (TASK-27 exporter items):** `npm test` and `npx tsc --noEmit` exit 0; `npm run check:living-file` passes.
+
+
+### TASK-28n/o/j: the Teacher tab (living editor)  *(J2, J4)*
+  - **28n.** "Remove this card" asks first ("Remove card N — …?"); cancelling removes nothing.
+  - **28o.** After "+ Add an answer" the NEW answer is selected, so typing goes into it, not into the answer that was selected before.
+  - **28j.** List labels are distinct: "Card N — " is not part of the truncation budget, and when two labels would still collide the text is lengthened until they differ (or ends with the card's answer/term).
+  - **28q (Teacher).** The "If they pick this, show card…" dropdown uses "—", the same form as the website and list.
+  - **Acceptance criteria.** Living tests: cancel on Remove keeps the card; accept removes it; after Add an answer the Answer field holds "Another answer" and typing changes the new tile only; labels of different cards differ on a generated-style deck whose questions share a long prefix; dropdown options contain " — " and no " · ".
+
+### TASK-28a: REQ-EXP-01 matches what is shipped
+  - See `maker/tasks.md` Phase 14 (28a). The exporter test is renamed to cite REQ-EXP-01.
+
+### TASK-28k: the round-3 fixes are pinned by the project's own mutation tool
+  - `scripts/mutation-check.ts` gains one mutant each for: the ANSI strip in the claims parser, proper-noun casing, the flash preview refresh, the pronoun term guard, trap-loop reachability, body-before-slot, and the fallback's disconnect signal. **Acceptance:** `npm run check:mutants` reports every mutant killed.

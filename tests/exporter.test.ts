@@ -224,18 +224,29 @@ function validStackWithImage(): Stack {
 // ---------------------------------------------------------------------------
 // TASK-14 — No external URLs in the exported file.
 
-describe("exportStack — no external URLs (TASK-14)", () => {
-  it("loads no external resource: no url(http…), src/href=http, @import, or protocol-relative //", async () => {
+describe("exportStack — REQ-EXP-01: loads nothing from the network at runtime (TASK-14, TASK-28a)", () => {
+  // REQ-EXP-01 (amended): "…shall load nothing from the network at runtime;
+  // inert licence source URLs inside comments are allowed."
+  it("makes no runtime request: no url(http…), src/href=http, @import, protocol-relative //, fetch or XHR", async () => {
     const html = await exportStack(validStackWithImage());
-    // A fetchable external URL would appear in a url(), an element src=/href=,
-    // an @import, or a protocol-relative //. The three fonts and the image are
-    // all inlined as data URIs, so none of these may contain an external URL.
-    // (The OFL notice may carry a source URL inside a CSS comment — that is not
-    //  fetched, so the file still works fully offline.)
     expect(html).not.toMatch(/url\(\s*['"]?https?:\/\//i);
     expect(html).not.toMatch(/url\(\s*['"]?\/\//i);
     expect(html).not.toMatch(/\b(?:src|href)\s*=\s*['"]?https?:\/\//i);
+    expect(html).not.toMatch(/<link[^>]+href\s*=\s*['"]?https?:/i);
     expect(html).not.toMatch(/@import/i);
+    // No script in the class file can fetch anything.
+    expect(html).not.toMatch(/\b(?:fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource)\s*\(/);
+    expect(html).not.toMatch(/\bimport\s*\(\s*['"`]https?:/);
+  });
+
+  it("the only http(s) URLs in the file are inert: inside comments, or the SVG namespace string", async () => {
+    const html = await exportStack(validStackWithImage());
+    const withoutComments = html.replace(/\/\*[\s\S]*?\*\//g, "").replace(/<!--[\s\S]*?-->/g, "");
+    const left = [...withoutComments.matchAll(/https?:\/\/[^\s"'<>)]+/g)].map((m) => m[0]);
+    for (const u of left) expect(u, "a URL outside a comment").toBe("http://www.w3.org/2000/svg");
+    // …and the licence source URLs ARE there, in comments (allowed).
+    const commentUrls = [...html.matchAll(/\/\*[\s\S]*?\*\//g)].flatMap((m) => [...m[0].matchAll(/https?:\/\/\S+/g)].map((u) => u[0]));
+    expect(commentUrls.length).toBeGreaterThan(0);
   });
 });
 

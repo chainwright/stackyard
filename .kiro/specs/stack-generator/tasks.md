@@ -423,3 +423,14 @@ reached the class (J2 P1-2).
   - **z4.** `/api/generate` reads and validates the body (JSON, size, non-blank prompt, ≤500 characters) *before* it counts a rate or budget slot. Malformed requests answer 400 and cost nothing. *Acceptance:* with a limit of one, six malformed requests then one valid one → the valid one is served, and the next valid one is limited.
   - **z5.** The retry/fallback path gets the client's disconnect signal: `generate()` passes it to the model call, starts no retry once it has aborted, and `streamFallback` writes nothing further. An early `start` line (`total: 0`, no title) is written before the fallback begins so the client is never in silence. *Acceptance:* tests for the signal reaching `generate()`, the early line arriving while `generate()` is still running, and no `error`/`card`/`done` after a disconnect.
   - **z6.** The 1000-run property tests carry an explicit 30 s timeout (on top of the global 60 s `testTimeout`). *Acceptance:* `CI=true npm run check:claims` exits 0.
+
+
+### TASK-28i: `cap()` respects decimals and abbreviations  *(J4 P2-1)*
+  - **Bug.** The sentence pass ran its lookahead on the cut window, so a `.` at the cut counted as a sentence end: "The answer is 2.5 kilograms…" → "The answer is 2."; "…improved by Dr. Thomas Edison…" → "…improved by Dr.", both with no "…".
+  - **Fix.** A `.` followed by a digit is never a sentence end; the abbreviations Dr, Mr, Mrs, Ms, St, e.g., i.e., etc., vs, No are skipped; the lookahead is tested against the FULL text, not the window; "…" is appended whenever any text is dropped.
+  - **Acceptance criteria.** Unit tests for both examples (no cut after "2." or "Dr."), and a test that any shortened text ends with "…" or a real sentence end that is also the end of the original.
+
+### TASK-28p: wrong answers are plausible, and the prompt has no tuned examples  *(J2 P2 #4)*
+  - **Bug.** The prompt quoted one judge's topic word for word (robins/seeds, field mice/insects), and "clearly false" over-corrected into jokes ("a holiday to Italy").
+  - **Fix.** The wrong-answer rule is general: plausible for the age group, from the same topic, never jokes or absurd options, still clearly false. No topic-specific examples.
+  - **Acceptance criteria.** Prompt test: both rules present; none of robin, seed, field mouse, mice, insect, Italy appears in the prompt.

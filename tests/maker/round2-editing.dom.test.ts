@@ -381,9 +381,9 @@ describe("TASK-26f: an honest wait screen", () => {
     render(h(StartScreen, { store, ...props }), root);
   };
 
-  it("never promises 20 seconds; it says 30–60", () => {
+  it("never promises 20 seconds flat; it says 20–45 (TASK-28f: measured live 20–30 s)", () => {
     mountWait({ __demoDealt: [], __demoTotal: 0 });
-    expect(root.textContent).toContain("30–60 seconds");
+    expect(root.textContent).toContain("20–45 seconds");
     expect(root.textContent).not.toContain("20 seconds");
   });
 

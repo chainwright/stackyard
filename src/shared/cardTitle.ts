@@ -62,6 +62,50 @@ export function cardTitle(card: Card, maxLength = 40): string {
 }
 
 /**
+ * One short label per card for a LIST, guaranteed to tell different cards apart
+ * (TASK-28j). Generated decks often open several questions with the same words
+ * ("What is the c…" ×4), so a plain left-truncation labels them identically.
+ * Cards whose labels collide drop the leading words they share and show what
+ * differs ("…capital of France?"); if that still collides (identical questions),
+ * the right answer or the card number is added. End card: "Last card".
+ */
+export function distinctCardLabels(cards: Card[], max = 22): string[] {
+  const base = cards.map((c) =>
+    c.kind === "end" ? "Last card" : truncateLabel(primaryText(c), max) || `${c.kind} card`,
+  );
+  const out = [...base];
+  const groups = new Map<string, number[]>();
+  base.forEach((b, i) => groups.set(b, [...(groups.get(b) ?? []), i]));
+
+  for (const idxs of groups.values()) {
+    if (idxs.length < 2 || cards[idxs[0]!]!.kind === "end") continue;
+    const words = idxs.map((i) => primaryText(cards[i]!).split(/\s+/).filter(Boolean));
+    let shared = 0;
+    while (words.every((w) => w[shared] !== undefined && w[shared] === words[0]![shared])) shared++;
+    idxs.forEach((cardIndex, k) => {
+      const tail = words[k]!.slice(Math.min(shared, Math.max(0, words[k]!.length - 1))).join(" ");
+      out[cardIndex] = truncateLabel(shared > 0 ? `…${tail}` : tail, max) || base[cardIndex]!;
+    });
+    // Still equal (identical questions)? Add the right answer, then the number.
+    const seen = new Map<string, number[]>();
+    idxs.forEach((i) => seen.set(out[i]!, [...(seen.get(out[i]!) ?? []), i]));
+    for (const dup of seen.values()) {
+      if (dup.length < 2) continue;
+      for (const i of dup) {
+        const right = cards[i]!.elements.find(
+          (e) => e.type === "button" && e.actions.some((a) => a.type === "score" && a.delta === 1),
+        );
+        const answer = right && right.type === "button" ? right.label.trim() : "";
+        out[i] = answer.length > 0
+          ? `${truncateLabel(out[i]!, 12)} → ${truncateLabel(answer, 8)}`
+          : `${truncateLabel(out[i]!, 16)} (${i + 1})`;
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * A short plain reference to a card for a sentence ("Card 5 — Which people began
  * raiding Ire…", or "the last card"), used by every "before you share" message in
  * the Maker AND the living file so they read the same.

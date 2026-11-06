@@ -653,7 +653,7 @@ TASK-05 + ops + TASK-10M ──┬─ TASK-11 app shell (Preact) ─ TASK-12 sta
 
 ---
 
-## Phase 8 — Built-app review fixes (2026-11-05)
+## Phase 8c — Built-app review fixes (2026-11-05)
 
 An outside judge ran the built app and scored it 5.0 against the 7.8 mockup set
 (`docs/design/review/MAKER_MOCKUPS_JUDGE.md`, "Built app verdict"). The class saw
@@ -1462,3 +1462,59 @@ Schemas follow the current kiro.dev docs: hooks are JSON in `.kiro/hooks/<id>.js
   - **Bug.** `checkReachability` only walked forward from card 1, so a branch whose only button points to itself passed ("1→{2,3}, 2→end, 3→3"). A J4 mutant that ignored card-level (auto-advance) gotos also survived.
   - **Fix.** A reverse pass from the end card(s) over every goto, card-level and button-level. Reachable non-end cards that cannot get to an end are `report.trapped`, counted in `ok`, listed in the share check ("… loops back on itself and never reaches the last card") and offered by "Take me to the card". Cards already reported as dead ends or stuck are not repeated.
   - **Acceptance criteria.** A trap-loop fixture and a two-card loop are reported; a card reachable only by a card-level goto is reachable and not trapped; a property test (random small graphs) checks `ok` ⇒ every reachable card reaches the end, against an independent depth-first oracle.
+
+
+## Phase 14 — Round-4 review fixes (TASK-28)
+
+Source: `judge_2026-11-06_r4/J1–J5`. Spec first, then code, then a test that fails without each fix. Source files are edited with Kiro's file tools (fs_write / str_replace), not shell or python edit scripts, so the save hooks really run.
+
+### TASK-28h: "+ Add Card" splices links for every card type  *(J4 P1-1, P1)*
+  - **Bug.** `addCardAfter` relinked quiz answers only. After a flash or story card the previous card's Next still pointed at the old next card, so the new card was unreachable; `repairFlow` ("Link these in for me") had the same blind spot and did nothing.
+  - **Fix.** One shared `linkInto(stack, index)` in `src/shared/flow.ts`: on the card before an inserted card, every goto (button-level and card-level) that pointed at the old next card now points at the new card; if the card before has no such goto, it gets one. The new card's own forward link goes to the old next card. `repairFlow` applies the same splice to every unreachable card.
+  - **Acceptance criteria.** Property test: for any stack from the ready-made decks plus random insertions, and for every insertion index and kind, after `addCardAfter` every card is reachable from the first card and every card can reach the end. Unit test: `repairFlow` clears an unreachable card that follows a flash card and one that follows a story card.
+
+### TASK-28m: every default placeholder label is flagged  *(J2 P1, J2/J4)*
+  - **Bug.** "+ Add an answer" makes a tile labelled "Another answer"; the placeholder list in `reachability.ts` was a hand list that did not include it, so it reached the class with no warning (website export and the living file's Save a Copy).
+  - **Fix.** The default labels live in ONE exported object (`PLACEHOLDER_WORDS` in `src/shared/reachability.ts`, including `anotherAnswer`); `operations.ts` uses it for its seeds, so the list can't drift from the defaults.
+  - **Acceptance criteria.** A test that adds an answer to a card and checks the card is flagged; a test that walks every value of `PLACEHOLDER_WORDS` and checks a card holding it is flagged.
+
+### TASK-28d: the drag pill and the "✓ Right answer" tab never overlap  *(J3 N1, P2)*
+  - **Fix.** When the selected element is the right answer, the drag pill sits at the left edge of the selection (`left: 0`), the right-answer tab is right-aligned over the tile.
+  - **Acceptance criteria.** `check-maker-fit` selects the right tile at 1366 and 1920 and asserts the two rects do not intersect.
+
+### TASK-28e: Start screen at 1920  *(J3 N2, P3)*
+  - **Fix.** The peek card clips its tiles inside itself; the three example chips fit on one row (shorter labels).
+  - **Acceptance criteria.** `check-maker-fit` at 1366 and 1920: every `.peek-tile` lies inside `.peek-card`; the example chips share one row.
+
+### TASK-28f: honest wait copy  *(J3 N3)*
+  - **Fix.** "Usually 20–45 seconds." (measured live: 20.3 s, 25.5 s, 23–30 s; the slowest seen was 59.7 s on the fallback path, which the counter covers).
+  - **Acceptance criteria.** The wait-screen tests and the mutant carry the new string.
+
+### TASK-28g: the flip has weight  *(J3 D10)*
+  - **Fix.** The card faces are opaque, the hinge takes ~360 ms, a shadow sweeps across during the turn. `prefers-reduced-motion: reduce` keeps the 100 ms cross-fade.
+  - **Acceptance criteria.** Renderer/CSS test: the flip duration is 360 ms, the keyframes include the shadow, and the reduced-motion block removes the animation.
+
+### TASK-28q: small Maker/Teacher polish  *(J2 P2)*
+  - **Fix.** The pictures notice sits clear of the card's rings; the Teacher dropdown uses "—" like the website; the Teacher list is wider at ≥1600 px.
+  - **Acceptance criteria.** The Teacher dropdown option text equals the website's `cardRefLabel` form; `check-maker-fit` covers the notice case (see r).
+
+### TASK-28r: a banner never hides the canvas controls  *(J1 P1-1, P2-2, P2-3)*
+  - **Bug.** At 1366×768 with a notice showing, `.canvas-area` centred a column taller than the area, so the flash Front/Back switch slid under the banner and the card's rings were clipped.
+  - **Fix.** The canvas area lays out *below* the banner (`safe center`, scale fitted to the space left after the banner). The Start screen's top padding is trimmed so Build Cards is above the fold at 1366×657.
+  - **Acceptance criteria.** `check-maker-fit` adds "banner shown" cases (ready-made Irish deck and a picture-request banner) at 1366×768 and 1366×657: the Front/Back switch is the hit target at its centre; the card's ring tops are not under the banner; Build Cards' bottom ≤ viewport height at 1366×657.
+
+### TASK-28s: the pre-submit hook uses a documented trigger  *(J1 P1-2, J4)*
+  - **Decision.** kiro.dev's hook-types page lists `Manual` as not supported in the IDE and "listed but not invocable" in CLI v3; the trigger enum in this Kiro build has no `Manual`. The documented trigger that fits "when a spec task is done" is `PostTaskExec`. `pre-submit` goes back to it, and an on-demand path is a manual steering file (`.kiro/steering/pre-submit.md`, `inclusion: manual`).
+  - **Acceptance criteria.** `tests/hooks.test.ts` rejects `Manual`, requires `pre-submit` to be `PostTaskExec`, and checks the steering file exists with `inclusion: manual`. README, KIRO_LOG and `docs/kiro-sessions` stop calling it a run-on-demand button. A firing is recorded only if the session store shows one.
+
+### TASK-28t / 28b / 28a: documents tell the truth  *(J5, J1)*
+  - **28a.** REQ-EXP-01 reads "…shall load nothing from the network at runtime; inert licence source URLs inside comments are allowed". Its test asserts exactly that: no `src=`/`href=`/`url(`/`@import`/fetch to http(s) at runtime; comment URLs are allowed.
+  - **28b.** Every TASK id in the three `tasks.md` appears in a test, script or hook. A new test (`tests/task-traceability.test.ts`) fails if one does not. The 7 TASK-27 ids (27c, 27j, 27o, 27p, 27t, 27w, 27y) are traced into test titles.
+  - **28t.** Docs say "N of M task ids appear in tests or gates" with the number from that test, never "every". README gains a screens section from real screenshots of the current build and a note that the GitHub About website is the live demo URL.
+  - **28c.** KIRO_LOG: "Chiara Coetzee"; the samples were NOT regenerated at that commit; the honest line about shell edits and save hooks. README: the lesson checker was run on the ready-made decks.
+
+### TASK-28u: edit with file tools; a PostToolUse guard  *(J5 P1-1)*
+  - **Fix.** `.kiro/steering/tech.md` gains the rule "edit source files with fs_write / str_replace so the save hooks run". A `PostToolUse` hook on `execute_bash` (trigger verified in this Kiro build's enum) runs `check:invariants` when the shell command looks like it wrote a file.
+  - **Acceptance criteria.** `tests/hooks.test.ts` checks the new hook's shape and that the steering rule is present. KIRO_LOG records a firing only if the session store shows one.
+
+**Gate (TASK-28):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `check:living-file`, `check:text-fit` (with the banner cases) and `check:samples` pass.

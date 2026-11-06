@@ -128,7 +128,7 @@ describe("TASK-12: Start screen generate flow", () => {
     const onlineStore = new EditorStore({ status: "generating" });
     render(h(StartScreen, { store: onlineStore, __demoDealt: [], __demoTotal: 0 }), root);
     await flush(1);
-    expect(root.textContent).toContain("30–60 seconds");
+    expect(root.textContent).toContain("20–45 seconds");
     expect(root.textContent).not.toContain("About 20 seconds");
 
     render(null, root);

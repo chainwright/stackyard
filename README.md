@@ -38,14 +38,25 @@ the play-only alternative.
 
 ## See it
 
-<!-- TODO before submission: replace this block with a ~15 s GIF at
-     docs/media/demo.gif (sentence → cards deal in → edit → Try It → export →
-     Wi-Fi off → Teacher → Save a Copy → the copy plays) and three screenshots
-     at docs/media/*.png. Keep the sample links below. -->
+<!-- The screens below are real: `scripts/make-readme-media.ts` drives the built
+     Maker in headless Chrome and writes docs/media/ (re-run it after a UI change). -->
 
-*A screenshot and a short GIF go here (recorded before submission).* Until then:
+![From one sentence to an offline file: the sentence, the cards dealing in, the editor, Try It, the export, and the file opened with the network off](docs/media/demo.gif)
 
-- **Live app:** https://stackyard-sdqt.onrender.com
+Screens from the current build (`npm run media` regenerates them; the run has no
+model key, so the ready-made Vikings deck answers — the live app uses the model):
+
+| 1. The sentence | 2. Cards deal in | 3. Edit any card |
+|---|---|---|
+| ![The start screen with a sentence typed](docs/media/1-sentence.png) | ![The cards dealing in one by one](docs/media/2-cards-deal-in.png) | ![The editor on a quiz card](docs/media/3-edit.png) |
+
+| 4. Try It: the rubber stamp | 5. One file | 6. The file, network off |
+|---|---|---|
+| ![CORRECT stamp on the right answer](docs/media/4-correct-stamp.png) | ![The EXPORTED stamp and the saved file](docs/media/5-exported.png) | ![The exported file playing with the network switched off](docs/media/6-offline-file.png) |
+
+- **Live app:** https://stackyard-sdqt.onrender.com (the GitHub About "Website"
+  field points at this URL; it is set by hand in the repository settings, not by
+  anything in the code).
 - **Three sample lessons, no server needed.** Download one and double-click it,
   with the Wi-Fi off if you like. They are living files, so try the Teacher tab.
   - [`samples/vikings-in-ireland.html`](samples/vikings-in-ireland.html) — quiz,
@@ -63,13 +74,17 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
   stack format and design system: [`.kiro/steering/`](.kiro/steering/).
 - **Specs** — requirements, design and tasks for three features (the Maker, the
   stack generator and the exporter), each written by Kiro from a chat request
-  and then reviewed: [`.kiro/specs/`](.kiro/specs/). Task ids appear in test
-  names, so a task can be traced to the test that proves it.
+  and then reviewed: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
+  fails if a lettered task id in the specs is not mentioned by a test, a gate
+  script or a hook; today it reports the true count (see its output, not a
+  claim in this file).
 - **Hooks** — five hooks (invariants on save, living-file gate, export check,
-  ready-made content check, and a manual `pre-submit` gate):
+  ready-made content check, and a `pre-submit` gate that fires when a spec
+  task is done):
   [`.kiro/hooks/`](.kiro/hooks/).
-- **Custom agent** — the lesson checker that reads a generated set of cards for
-  factual errors and reading level: [`.kiro/agents/`](.kiro/agents/).
+- **Custom agent** — the lesson checker that reads a set of cards (we ran it on
+  the ready-made decks) for factual errors, ambiguous questions and reading
+  level: [`.kiro/agents/`](.kiro/agents/).
 - **MCP server** — `mcp/openverse` finds public-domain pictures for the
   ready-made decks.
 - **Property-based tests** — every stack invariant has a `fast-check` property.
@@ -125,8 +140,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **883** passing (`npm test`).
-- Player bundle: **11.4 KB** gzipped (budget 50 KB).
+- Tests: **961** passing (`npm test`).
+- Player bundle: **11.5 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 

@@ -23,7 +23,7 @@ import {
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { mountPlayer } from "../player/mount.js";
-import { primaryText, truncateLabel } from "../shared/cardTitle.js";
+import { primaryText, truncateLabel, distinctCardLabels } from "../shared/cardTitle.js";
 
 type ApplyFn = (s: Stack) => Stack | import("../editor/types.js").Rejected;
 
@@ -94,6 +94,7 @@ export class LivingEditor {
 
   private renderList(): HTMLElement {
     const list = el("nav", "sy-living-list");
+    const labels = distinctCardLabels(this.stack.cards);
     this.stack.cards.forEach((c, i) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -102,8 +103,8 @@ export class LivingEditor {
       num.textContent = `Card ${i + 1}`;
       b.appendChild(num);
       const text = el("span", "txt");
-      text.textContent = `— ${this.cardLabel(c)}`;
-      b.title = this.cardLabel(c);
+      text.textContent = `— ${labels[i]}`;
+      b.title = this.cardLabel(c, primaryText(c).trim() || labels[i]!);
       b.appendChild(text);
       b.addEventListener("click", () => {
         this.selectedCardId = c.id;
@@ -115,7 +116,8 @@ export class LivingEditor {
     return list;
   }
 
-  private cardLabel(card: Card): string {
+  private cardLabel(card: Card, override?: string): string {
+    if (override !== undefined) return override;
     if (card.kind === "end") return "Last card";
     // The question/front/story line, never a caption or image credit.
     const short = truncateLabel(primaryText(card), 22);
@@ -249,6 +251,12 @@ export class LivingEditor {
     row.appendChild(addBtn);
     if (card.kind !== "end") {
       const rm = this.button("Remove this card", "sy-living-btn", () => {
+        // An instant, un-undoable delete is a trap for a child who taps Teacher →
+        // OK → Remove (J2 P2 #3, TASK-28n): ask first.
+        const n = this.stack.cards.findIndex((c) => c.id === card.id) + 1;
+        const words = truncateLabel(primaryText(card), 40);
+        const ok = window.confirm(`Remove card ${n}${words.length > 0 ? ` — ${words}` : ""}? This can't be undone.`);
+        if (!ok) return;
         if (this.apply((s) => removeCard(s, card.id))) {
           this.selectedCardId = this.stack.cards[0]!.id;
           this.selectedElementId = null;
@@ -260,7 +268,15 @@ export class LivingEditor {
     if (card.kind === "quiz") {
       row.appendChild(
         this.button("+ Add an answer", "sy-living-btn", () => {
-          if (this.apply((s) => addAnswer(s, card.id))) this.render();
+          const before = new Set(card.elements.map((e) => e.id));
+          if (this.apply((s) => addAnswer(s, card.id))) {
+            // Select the NEW answer so the next typing goes into it, not into the
+            // answer that was selected before (J2 P2 #2, TASK-28o).
+            const now = this.stack.cards.find((c) => c.id === card.id);
+            const added = now?.elements.find((e) => e.type === "button" && !before.has(e.id));
+            this.selectedElementId = added?.id ?? this.selectedElementId;
+            this.render();
+          }
         }),
       );
     }
@@ -374,13 +390,15 @@ export class LivingEditor {
       opt.textContent = "Choose a card…";
       select.appendChild(opt);
     }
+    const labels = distinctCardLabels(this.stack.cards);
     this.stack.cards
       .filter((c) => c.id !== card.id)
       .forEach((c) => {
         const i = this.stack.cards.indexOf(c);
         const opt = document.createElement("option");
         opt.value = c.id;
-        opt.textContent = c.kind === "end" ? "Last card" : `Card ${i + 1} · ${this.cardLabel(c)}`;
+        // The same "Card N — …" form as the list and the website (TASK-28q).
+        opt.textContent = c.kind === "end" ? "Last card" : `Card ${i + 1} — ${labels[i]}`;
         if (c.id === currentId) opt.selected = true;
         select.appendChild(opt);
       });

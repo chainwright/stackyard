@@ -17,43 +17,40 @@ import type { Stack, Card, Action } from "./types.js";
 import { buttonsWithoutGoto, cardHasForward } from "./flow.js";
 import { primaryText } from "./cardTitle.js";
 
-/** The words a freshly added card carries (src/editor/operations.ts seedCard). */
+/**
+ * Every default word the editor's operations put on a card (src/editor/
+ * operations.ts imports THESE for its seeds and defaults, so this list cannot
+ * drift from them — TASK-28m: "Another answer" slipped through a hand list).
+ */
 export const PLACEHOLDER_WORDS = {
   question: "Your question?",
   rightAnswer: "Right answer",
   wrongAnswer: "Wrong answer",
+  anotherAnswer: "Another answer",
   term: "Term",
   explanation: "Explanation",
   story: "Your text",
+  newText: "New text",
+  newButton: "New button",
 } as const;
 
+const PLACEHOLDER_SET: ReadonlySet<string> = new Set(Object.values(PLACEHOLDER_WORDS));
+
 /**
- * True when a card still holds the placeholder words it was created with. A
- * quiz is a placeholder if its question or any answer is untouched; a flash card
- * if its front or back is; a story if its text is. (The end card has no seed
- * text to leave behind.)
+ * True when a card still holds any placeholder word it was created with — in a
+ * text or on a button, on any kind of card. (The end card has no seed text to
+ * leave behind.)
  */
 export function isPlaceholderCard(card: Card): boolean {
-  const labels = card.elements
-    .filter((e) => e.type === "button")
-    .map((e) => (e.type === "button" ? e.label.trim() : ""));
-  const texts = card.elements
-    .filter((e) => e.type === "text")
-    .map((e) => (e.type === "text" ? e.content.trim() : ""));
-  switch (card.kind) {
-    case "quiz":
-      return (
-        primaryText(card) === PLACEHOLDER_WORDS.question ||
-        labels.includes(PLACEHOLDER_WORDS.rightAnswer) ||
-        labels.includes(PLACEHOLDER_WORDS.wrongAnswer)
-      );
-    case "flash":
-      return texts[0] === PLACEHOLDER_WORDS.term || texts[1] === PLACEHOLDER_WORDS.explanation;
-    case "story":
-      return texts[0] === PLACEHOLDER_WORDS.story;
-    default:
-      return false;
-  }
+  if (card.kind === "end") return false;
+  if (primaryText(card) === PLACEHOLDER_WORDS.question) return true;
+  return card.elements.some((e) =>
+    e.type === "text"
+      ? PLACEHOLDER_SET.has(e.content.trim())
+      : e.type === "button"
+        ? PLACEHOLDER_SET.has(e.label.trim())
+        : false,
+  );
 }
 
 /** Placeholder cards, in deck order. */

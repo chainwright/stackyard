@@ -27,7 +27,7 @@ Five `ContextualHookInvoked` records from the same session, 2026-11-06, after sm
 2026-11-06T01:37:48.377Z  living-file-gate.json  completed
 ```
 
-The `pre-submit` hook is a `Manual` hook (a run-on-demand button). It has not been recorded firing in a Kiro session; the same gate runs as `npm run pre-submit`.
+The `pre-submit` hook is a `PostTaskExec` hook (it fires when a spec task is marked done; `Manual` is not used, because kiro.dev lists it as not invocable). It has not been recorded firing in a Kiro session; the same gate runs on demand as `npm run pre-submit` or by including the `pre-submit` steering file.
 
 ## 3. The lesson-checker agent reviewing the ready-made decks
 
@@ -49,3 +49,17 @@ Findings (prioritised):
 
 2. [Vikings] [c2 — "What is a longship?" → "A fast boat"] — Minor: the correct answer is a loose definition. A longship was specificall
 ```
+
+## 4. TASK-28: hooks fire when the agent edits with its file tools (6 Nov)
+
+In the TASK-28 session, source files were edited with `fs_write` / `str_replace` (rule added to `.kiro/steering/tech.md`), and the new `PostToolUse` hook on `execute_bash` re-runs the invariants after shell edits. The session store (`messages.jsonl`) recorded, for that one session: 71 `invariants-after-shell-edit`, 12 `invariants-on-save` and 7 `living-file-gate` `ContextualHookInvoked` records, all `completed`. First of each:
+
+```text
+2026-11-06T17:36:45.575Z  invariants-after-shell-edit.json#hook-0  completed
+2026-11-06T17:43:30.859Z  invariants-on-save.json#hook-0           completed
+2026-11-06T17:44:56.542Z  invariants-on-save.json#hook-0           completed
+2026-11-06T17:45:19.203Z  invariants-on-save.json#hook-0           completed
+2026-11-06T18:13:33.024Z  living-file-gate.json#hook-0             completed
+```
+
+`pre-submit` (`PostTaskExec`) still has no recorded firing: it needs a spec task to be marked complete, which this kind of session does not do.

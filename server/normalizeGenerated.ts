@@ -168,12 +168,24 @@ const MAX_BACK = 500;
 const MAX_LABEL = 90;
 const MAX_END = 100;
 
+/** Words whose trailing dot is NOT a sentence end ("Dr. Thomas Edison"). */
+const ABBREVIATIONS = new Set(["dr", "mr", "mrs", "ms", "st", "e.g", "i.e", "etc", "vs", "no"]);
+
+/** True when the full-stop at `dotIndex` of `t` belongs to a known abbreviation. */
+function isAbbreviationDot(t: string, dotIndex: number): boolean {
+  const start = t.lastIndexOf(" ", dotIndex) + 1;
+  return ABBREVIATIONS.has(t.slice(start, dotIndex).replace(/^[("'[]+/, "").toLowerCase());
+}
+
 /**
  * Shorten `text` to at most `max` characters WITHOUT cutting a word in half
  * (b). Whole sentences are kept if enough of them fit; otherwise the cut is at
- * the last word boundary. "…" is added only when the cut falls inside a
- * sentence; a cut that lands on a sentence end needs none. A single word longer
- * than the limit is hard-cut (nothing better exists).
+ * the last word boundary. Whenever any text is dropped the result ends with
+ * "…" (TASK-28i), so a shortened fact is never presented as complete. A "." is
+ * a sentence end only if the character after it in the FULL text is white space
+ * or the end (so "2.5 kilograms" is never cut after "2.") and the word before
+ * it is not a known abbreviation ("Dr.", "e.g."). A single word longer than the
+ * limit is hard-cut (nothing better exists).
  *
  * This used to be `slice(0, max - 1) + "…"`, which printed "Now tell a p…" on
  * the last card of a live Viking deck.
@@ -187,16 +199,30 @@ export function cap(text: string, max: number): string {
   // 1. Whole sentences: the last sentence end inside the window, if it keeps a
   //    worthwhile share of the allowance (not just "Hi.").
   let lastEnd = -1;
-  for (const m of window.matchAll(/[.!?]["')\]]?(?=\s|$)/g)) {
-    lastEnd = m.index! + m[0].length;
+  for (const m of t.matchAll(/[.!?]["')\]]?(?=\s|$)/g)) {
+    const end = m.index! + m[0].length;
+    // A full stop becomes "…" (same length); "!"/"?" get "…" added, so leave room.
+    if (end > (m[0].startsWith(".") ? max : max - 1)) break;
+    if (m[0].startsWith(".") && isAbbreviationDot(t, m.index!)) continue;
+    lastEnd = end;
   }
-  if (lastEnd >= Math.ceil(max * 0.4)) return window.slice(0, lastEnd).trim();
+  if (lastEnd >= Math.ceil(max * 0.4)) {
+    // Text was dropped after this sentence: say so. A closing full stop is
+    // replaced by the ellipsis ("…flour…" not "…flour.…").
+    return t.slice(0, lastEnd).trim().replace(/\.(["')\]]?)$/, "$1") + "…";
+  }
 
   // 2. A word boundary: either the window already ends on one, or back up to
-  //    the last space.
-  const nextIsBreak = /\s/.test(t.charAt(max));
-  let cut = nextIsBreak ? window : window.slice(0, window.lastIndexOf(" ") + 1 || 0);
+  //    the last space. One character is kept back for the "…".
+  const room = max - 1;
+  const nextIsBreak = /\s/.test(t.charAt(room));
+  let cut = nextIsBreak ? t.slice(0, room) : t.slice(0, room).slice(0, t.slice(0, room).lastIndexOf(" ") + 1 || 0);
   cut = cut.replace(/[\s,;:\-–—]+$/, "");
+  // Never end on "Dr." / "Mrs." — an abbreviation promises a name that was cut.
+  const lastWord = /(\S+)$/.exec(cut);
+  if (lastWord && lastWord[1]!.endsWith(".") && ABBREVIATIONS.has(lastWord[1]!.slice(0, -1).toLowerCase())) {
+    cut = cut.slice(0, lastWord.index).replace(/[\s,;:\-–—]+$/, "");
+  }
   if (cut.length >= Math.ceil(max * 0.25)) return cut + "…";
 
   // 3. One very long word: hard cut.
