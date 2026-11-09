@@ -126,7 +126,7 @@ describe("TASK-27d/t: Start screen", () => {
   it("notes when the teacher asked for pictures", () => {
     expect(asksForPictures("A quiz with pictures of castles")).toBe(true);
     expect(asksForPictures("A quiz about castles")).toBe(false);
-    expect(PICTURES_NOTE).toBe("Pictures aren't added automatically yet. Use Add Picture.");
+    expect(PICTURES_NOTE).toBe("No pictures were added this time. Use Add Picture."); // TASK-31h: the truth now
   });
 });
 

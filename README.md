@@ -148,8 +148,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1115** passing (`npm test`).
-- Player bundle: **11.8 KB** gzipped (budget 50 KB).
+- Tests: **1145** passing (`npm test`).
+- Player bundle: **12.0 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 
@@ -300,6 +300,8 @@ Reserved Font Name, so it keeps its name.
 Both fonts are also disclosed in the Devpost "libraries / assets" list.
 
 ### Pictures
+
+Generated cards can carry one small drawing too: the model names a picture from a set of 42 pictograms that we drew ourselves (sun, cloud, rain, river, ship, castle, book and so on; MIT, like the code), and the server draws it from that set. No model text ever becomes picture data, nothing is fetched, and the card credits it as "Picture: Stackyard pictogram". The teacher can swap or remove it in the Maker (Picture list) or add their own photo with Add Picture.
 
 Each ready-made deck carries one picture (three photographs, none showing people), inlined as a data URI and credited
 on the card (creator, licence, source domain). We found them on

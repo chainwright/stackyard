@@ -28,6 +28,7 @@ import path from "node:path";
 import { exportStack } from "../server/exporter.js";
 import { finaliseGeneratedStack } from "../server/normalizeGenerated.js";
 import { validate } from "../src/shared/validator.js";
+import { pictogramDataUri } from "../src/shared/pictograms.js";
 import { dumpDomOffline } from "./chrome.js";
 import type { Stack, Card, Element } from "../src/shared/types.js";
 
@@ -47,6 +48,9 @@ const b = (label: string, actions: Element extends infer E ? (E extends { type: 
   type: "button", id: id(), x: 0, y: 200, w: 300, h: 70, label, actions,
 });
 
+/** A model-style picture slot: the generator re-places it from the template. */
+const pic = (name: string): Element => ({ type: "image", id: id(), x: 0, y: 0, w: 10, h: 10, src: pictogramDataUri(name), alt: `Picture: ${name}` });
+
 const LONG_Q =
   "Long ago, around the year 795, a people from the far north first sailed their longships across " +
   "the cold sea to the coast of Ireland. Which people were they, and what did they want when they came?";
@@ -63,7 +67,9 @@ function deck(): Stack {
   const flash = id();
   const quiz2 = id();
   const cards: Card[] = [
-    { id: id(), kind: "quiz", actions: [], elements: [t(LONG_Q), ...LONG_A.map((a, i) => b(a, [{ type: "score", delta: i === 0 ? 1 : 0 }]))] },
+    // Cards 1–3 carry a pictogram (TASK-31h): the same worst-case text, plus a picture
+    // and its credit, must still fit with nothing overlapping.
+    { id: id(), kind: "quiz", actions: [], elements: [t(LONG_Q), ...LONG_A.map((a, i) => b(a, [{ type: "score", delta: i === 0 ? 1 : 0 }])), pic("rain")] },
     {
       id: story2, kind: "story", actions: [],
       elements: [
@@ -71,6 +77,7 @@ function deck(): Stack {
         b("Knock on the door of the house with the chimney smoke", [{ type: "goto", cardId: flash }]),
         b("Walk along the harbour wall to look at the boats", [{ type: "goto", cardId: flash }]),
         b("Wait quietly and watch who comes out first", [{ type: "goto", cardId: flash }]),
+        pic("ship"),
       ],
     },
     {
@@ -79,6 +86,7 @@ function deck(): Stack {
         t("Condensation of water vapour in the cold upper air"),
         t("Condensation is when invisible water vapour cools down high in the sky and turns back into tiny drops of liquid water. Millions of these drops together make a cloud. ".repeat(2)),
         b("Next Card", [{ type: "goto", cardId: quiz2 }]),
+        pic("sun"),
       ],
     },
     { id: quiz2, kind: "quiz", actions: [], elements: [t("Question 4: Why?"), b(LONG_A[1]!, [{ type: "score", delta: 1 }]), b(LONG_A[2]!, [{ type: "score", delta: 0 }])] },
@@ -147,7 +155,8 @@ const DRIVER = `
     for (var i = 0; i < els.length; i++) {
       var w = els[i], r = rectOf(w);
       rects.push({ r: r, w: w });
-      if (r.y < 96) note("an element starts at y=" + r.y + " inside the 96px chrome band");
+      // A pictogram sits in the top strip on purpose (like the ready-made decks' pictures).
+      if (r.y < 96 && !w.querySelector(".sy-image")) note("an element starts at y=" + r.y + " inside the 96px chrome band");
       var text = w.querySelector(".sy-question, .sy-text");
       if (text && text.offsetHeight > r.h + 2) note("text is " + text.offsetHeight + "px tall in a " + r.h + "px box: " + text.textContent.slice(0, 40));
       var label = w.querySelector(".sy-tile-label");
@@ -288,6 +297,8 @@ function main(): Promise<void> {
     const v = validate(raw);
     if (!v.valid) throw new Error("the fixture deck is invalid: " + v.errors.join(", "));
     const stack = finaliseGeneratedStack(v.stack);
+    const pictures = stack.cards.filter((c) => c.elements.some((e) => e.type === "image")).length;
+    if (pictures !== 3) throw new Error(`the fixture should carry 3 pictograms after layout, it has ${pictures}`);
     // Put the right answer where each stamp card needs it (the generator shuffles).
     for (const [no, plan] of Object.entries(STAMP_PLAN)) {
       const card = stack.cards[Number(no) - 1];

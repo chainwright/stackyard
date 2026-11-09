@@ -16,6 +16,7 @@ import type { FlashSide } from "./EditorScreen.js";
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { moveElement } from "./operations.js";
+import { isPictogramCredit } from "../shared/pictogramCredit.js";
 
 /** Map a clicked DOM node up to the card element id it belongs to. */
 function elementIdFromClick(
@@ -86,9 +87,12 @@ export function Canvas({
   const isFlash = card.kind === "flash";
   const flashTexts = isFlash
     ? card.elements.filter(
-        (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
+        (e): e is Extract<StackElement, { type: "text" }> => e.type === "text" && !isPictogramCredit(e.content),
       )
     : [];
+  const flashCredit = isFlash
+    ? card.elements.find((e): e is Extract<StackElement, { type: "text" }> => e.type === "text" && isPictogramCredit(e.content))
+    : undefined;
   // On the BACK side, also draw the flash card's "Next Card" button so a
   // teacher can select it and change where it goes (J2: it was hidden in the
   // editor, so its link couldn't be edited). It keeps its real position.
@@ -112,6 +116,9 @@ export function Canvas({
               h: flashSide === "front" ? 72 : 320,
             },
             ...(flashButton ? [flashButton] : []),
+            // A picture and its credit (the third text) ride along on both sides (TASK-31h).
+            ...card.elements.filter((e) => e.type === "image"),
+            ...(card.elements.some((e) => e.type === "image") && flashCredit ? [flashCredit] : []),
           ],
         }
       : card;

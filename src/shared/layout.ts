@@ -51,6 +51,15 @@ export const FLASH_TERM: Rect = { x: 48, y: 264, w: 704, h: 72 };
 export const FLASH_BACK: Rect = { x: 48, y: 360, w: 704, h: 120 };
 export const FLASH_NEXT: Rect = { x: 408, y: 496, w: 344, h: 72 };
 
+/**
+ * The slot for a generated card's pictogram (TASK-31h): a small square tucked in
+ * the top strip, centred, where the ready-made decks' pictures sit (the "Card N
+ * of M" counter is at the left and the score at the right, so the middle is
+ * free), and its credit line in the caption strip. Clear of every other slot.
+ */
+export const PICTURE_SLOT: Rect = { x: 356, y: 8, w: 88, h: 88 };
+export const PICTURE_CREDIT: Rect = { x: 48, y: 566, w: 340, h: 28 };
+
 /** A lone story "Continue" button (a consequence card). */
 export const STORY_CONTINUE: Rect = { x: 408, y: 440, w: 344, h: 80 };
 export const STORY_BODY_SINGLE: Rect = { x: 48, y: 104, w: 704, h: 300 };

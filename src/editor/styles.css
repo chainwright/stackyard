@@ -368,9 +368,13 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 .handle.br { bottom: -7px; right: -7px; }
 .drag-tab { position: absolute; top: -34px; left: 50%; transform: translateX(-50%); background: var(--color-ink); color: var(--color-paper); font-family: var(--font-body); font-weight: 700; font-size: 18px; padding: 4px 12px; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
 .drag-tab svg { width: 16px; height: 16px; }
-/* On the right-answer tile the "✓ Right answer" tab owns the top-right of the
-   strip, so the drag pill moves to the left edge (TASK-28d: they overlapped). */
-.drag-tab-left { left: 0; transform: none; }
+/* On the right-answer tile the "✓ Right answer" tab owns the strip ABOVE the
+   tile, so the drag pill hangs BELOW it, in the gutter under the tile. Sharing the
+   top strip (TASK-28d moved it to the left edge) still collided whenever the right
+   answer was in the top row on a 1366-wide laptop: two 18 px labels do not fit
+   side by side over a tile scaled to ~0.85 (TASK-31h found it once the gate forced
+   the right answer into each row instead of trusting the shuffle). */
+.drag-tab-left { top: auto; bottom: -34px; left: 50%; transform: translateX(-50%); }
 
 /* --- Inspector (right) --- */
 .inspector { background: var(--color-paper); border-left: 1px solid var(--color-rule); padding: 18px 16px; overflow-y: auto; min-height: 0; }

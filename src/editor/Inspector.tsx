@@ -11,9 +11,12 @@
 import type { JSX } from "preact";
 import type { Card, Stack, Element as StackElement, ButtonElement } from "../shared/types.js";
 import type { EditorStore } from "./store.js";
+import { PICTOGRAM_NAMES } from "../shared/pictograms.js";
 import {
   editText,
   setEndMessage,
+  setPictogram,
+  pictogramOf,
   editLabel,
   markCorrect,
   changeKind,
@@ -94,7 +97,32 @@ export function Inspector({
     if (!res.ok) notice(res.message);
   }
 
+  // A picture from Stackyard's own set (TASK-31h): add, swap or remove it. Not on
+  // the last card. The credit line goes with it.
+  const currentPicture = pictogramOf(card);
+  const pictureControl =
+    card.kind === "end" ? null : (
+      <div class="field-group">
+        <label for="picture">Picture</label>
+        <select
+          id="picture"
+          value={currentPicture ?? ""}
+          onChange={(e) => {
+            const value = (e.target as HTMLSelectElement).value;
+            dispatch((s) => setPictogram(s, card.id, value === "" ? null : value));
+          }}
+        >
+          <option value="">None</option>
+          {PICTOGRAM_NAMES.map((n) => (
+            <option value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>
+          ))}
+        </select>
+        <p class="hint">A small drawing at the top of the card. For a photo, use Add Picture.</p>
+      </div>
+    );
+
   const kindPicker = (
+    <>
     <div class="field-group">
       <label for="kind">Card type</label>
       <select
@@ -112,6 +140,8 @@ export function Inspector({
         <option value="end">Last card</option>
       </select>
     </div>
+    {pictureControl}
+    </>
   );
 
   // "+ Add an answer" (TASK-26o): a real, linked answer tile on a quiz card —

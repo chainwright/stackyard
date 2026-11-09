@@ -19,6 +19,7 @@ import { dispatch, resetRuntime } from "./runtime.js";
 import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT, STORY_BODY_MAX } from "../shared/fitText.js";
 import { gotoOf } from "../shared/flow.js";
 import { isStockEndLine } from "../shared/endLine.js";
+import { isPictogramCredit } from "../shared/pictogramCredit.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -943,9 +944,11 @@ function renderFlashCard(
   ariaLive: HTMLElement,
   nextCardId?: string,
 ): void {
-  const texts = card.elements.filter(
+  const allTexts = card.elements.filter(
     (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
   );
+  // The credit line of a pictogram is a caption, never the term or the back (TASK-31h).
+  const texts = allTexts.filter((t) => !isPictogramCredit(t.content));
   const termText = texts[0]?.content ?? "";
   const backText = texts[1]?.content ?? "";
   // Every button gets a way on (a missing goto falls back to the next card), and
@@ -979,6 +982,39 @@ function renderFlashCard(
     );
   }
   cardEl.appendChild(surface);
+
+  // A picture on a flash card (TASK-31h): drawn over the card in its own slot, with
+  // its credit line (the third text). It never takes a tap, so the card still flips.
+  const pictures = card.elements.filter((e): e is Extract<StackElement, { type: "image" }> => e.type === "image");
+  for (const pic of pictures) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "sy-element";
+    wrapper.setAttribute("data-element-id", pic.id);
+    positionElement(wrapper, pic);
+    wrapper.style.pointerEvents = "none";
+    const img = document.createElement("img");
+    img.setAttribute("src", pic.src);
+    img.setAttribute("alt", pic.alt);
+    img.className = "sy-image";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    wrapper.appendChild(img);
+    cardEl.appendChild(wrapper);
+  }
+  const credit = pictures.length > 0 ? allTexts.find((t) => isPictogramCredit(t.content)) : undefined;
+  if (credit !== undefined) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "sy-element";
+    wrapper.setAttribute("data-element-id", credit.id);
+    positionElement(wrapper, credit);
+    wrapper.style.pointerEvents = "none";
+    const p = document.createElement("p");
+    p.className = "sy-text";
+    p.textContent = credit.content;
+    applyFit(p, fitBody(credit.content, credit.w, credit.h), 22);
+    wrapper.appendChild(p);
+    cardEl.appendChild(wrapper);
+  }
 
   let side: "front" | "back" = "front";
 
@@ -1191,7 +1227,8 @@ export function renderCard(
   // falls through to the regular element path below so the editor keeps its
   // per-element `.sy-element` wrappers for click-selection.
   if (card.kind === "flash") {
-    const flashTexts = card.elements.filter((e) => e.type === "text");
+    // A pictogram's credit line is a caption, not the back of the card (TASK-31h).
+    const flashTexts = card.elements.filter((e) => e.type === "text" && !isPictogramCredit(e.content));
     const flashButtons = card.elements.filter((e) => e.type === "button");
     const isPlayableFlash = flashTexts.length >= 2 || flashButtons.length >= 1;
     if (isPlayableFlash) {

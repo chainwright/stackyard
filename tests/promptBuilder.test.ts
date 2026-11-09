@@ -152,10 +152,11 @@ describe("TASK-26: the generation prompts", () => {
     ["retry", buildRetryPrompt({ prompt: "x" }, ["quiz-answer"]).system],
   ];
 
-  it("(d) neither prompt offers image elements — and both forbid them", () => {
+  it("(d, superseded by TASK-31h) the prompts offer an image ONLY as a picture name, never a src", () => {
     for (const [name, sys] of both()) {
-      expect(sys, name).not.toMatch(/\{\s*"type":\s*"image"/);
-      expect(sys, name).toContain('Do NOT output "image" elements');
+      expect(sys, name).not.toMatch(/"src"/);
+      expect(sys, name).not.toContain('Do NOT output "image" elements');
+      expect(sys, name).toContain('{ "type": "image", "picto": "<name>" }');
     }
   });
 

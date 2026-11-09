@@ -216,13 +216,13 @@ describe("TASK-26d: invented pictures never reach the editor or the export", () 
     return c;
   };
 
-  it("sanitizeRawCard strips a relative-path picture and keeps an embedded one", () => {
+  it("sanitizeRawCard strips a relative-path picture, and a model's own embedded one too (TASK-31h: only a NAME from our set survives)", () => {
     const raw = JSON.parse(JSON.stringify(withImage("images/cheval.png")));
     const cleaned = sanitizeRawCard(raw) as Card;
     expect(cleaned.elements.some((e) => e.type === "image")).toBe(false);
 
     const kept = sanitizeRawCard(JSON.parse(JSON.stringify(withImage("data:image/png;base64,AAAA")))) as Card;
-    expect(kept.elements.some((e) => e.type === "image")).toBe(true);
+    expect(kept.elements.some((e) => e.type === "image")).toBe(false);
   });
 
   it("strips https pictures too — only data: URIs can be exported", () => {

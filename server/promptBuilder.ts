@@ -3,6 +3,7 @@
 // No LLM calls made here — pure string construction.
 
 import type { GenerateRequest } from "../src/shared/types.js";
+import { PICTOGRAM_NAMES } from "../src/shared/pictograms.js";
 
 // ---------------------------------------------------------------------------
 // System prompt (constant)
@@ -36,7 +37,9 @@ Element types (do NOT write x, y, w or h — Stackyard places every element itse
 - { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
 - { "type": "field", "id": "<short unique id>", "variable": "score" }
 
-Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
+## Pictures
+
+You may add ONE small picture to a quiz, flash or story card, only when it really helps a 9-year-old understand that card. Add it as an element that holds only a name: { "type": "image", "picto": "<name>" }. The name must be one of: ${PICTOGRAM_NAMES.join(", ")}. At most one picture per card. Never put a picture on the end card.
 
 Action types:
 - { "type": "goto", "cardId": "<id of an existing card>" }
@@ -134,7 +137,9 @@ Element types (do NOT write x, y, w or h — Stackyard places every element itse
 - { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
 - { "type": "field", "id": "<short unique id>", "variable": "score" }
 
-Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
+## Pictures
+
+You may add ONE small picture to a quiz, flash or story card, only when it really helps a 9-year-old understand that card. Add it as an element that holds only a name: { "type": "image", "picto": "<name>" }. The name must be one of: ${PICTOGRAM_NAMES.join(", ")}. At most one picture per card. Never put a picture on the end card.
 
 Action types:
 - { "type": "goto", "cardId": "<id of an existing card>" }

@@ -4,7 +4,8 @@
 
 import { useEffect, useState } from "preact/hooks";
 import type { JSX } from "preact";
-import type { Card } from "../shared/types.js";
+import type { Card, Stack } from "../shared/types.js";
+import { pictogramNameOfSrc } from "../shared/pictograms.js";
 import type { EditorStore } from "./store.js";
 import { generateStackStream } from "./api.js";
 import { announce } from "./a11y.js";
@@ -49,8 +50,16 @@ export function asksForPictures(sentence: string): boolean {
   return /\b(pictures?|photos?|photographs?|images?|illustrations?|drawings?|diagrams?)\b/i.test(sentence);
 }
 
-/** The plain note shown when pictures were asked for and were not added. */
-export const PICTURES_NOTE = "Pictures aren't added automatically yet. Use Add Picture.";
+/** The plain note shown when pictures were asked for and none came (TASK-31h). */
+export const PICTURES_NOTE = "No pictures were added this time. Use Add Picture.";
+
+/** The note shown when pictures were asked for and some cards got one (TASK-31h). */
+export const PICTURES_ADDED_NOTE = "We added a simple picture to some cards. For a photo, use Add Picture.";
+
+/** True when any card of the deck carries one of Stackyard's own pictures. */
+export function hasPictograms(stack: Stack): boolean {
+  return stack.cards.some((c) => c.elements.some((e) => e.type === "image" && pictogramNameOfSrc(e.src) !== null));
+}
 
 /** Shown when the builder moved a closing message onto the last card (TASK-30a). */
 export const CLOSING_MESSAGE_NOTE = "We moved your closing message onto the last card.";
@@ -171,7 +180,9 @@ export function StartScreen({
         // closing message is told too (TASK-30a).
         ...(() => {
           const notes: string[] = [];
-          if (!outcome.isFallback && asksForPictures(sentence)) notes.push(PICTURES_NOTE);
+          if (!outcome.isFallback && asksForPictures(sentence)) {
+            notes.push(hasPictograms(outcome.stack) ? PICTURES_ADDED_NOTE : PICTURES_NOTE);
+          }
           if (outcome.movedClosingMessage === true) notes.push(CLOSING_MESSAGE_NOTE);
           return notes.length > 0 ? { note: notes.join(" ") } : {};
         })(),

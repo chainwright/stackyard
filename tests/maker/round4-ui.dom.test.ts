@@ -89,7 +89,8 @@ describe("TASK-28d: the drag pill moves to the left edge on the right-answer til
     expect(root.querySelector(".drag-tab")?.classList.contains("drag-tab-left")).toBe(false);
 
     const css = readFileSync("src/editor/styles.css", "utf8");
-    expect(css).toMatch(/\.drag-tab-left\s*\{\s*left:\s*0;\s*transform:\s*none;\s*\}/);
+    // TASK-31h: the pill hangs BELOW the right tile, out of the tab's strip.
+    expect(css).toMatch(/\.drag-tab-left\s*\{\s*top:\s*auto;\s*bottom:\s*-34px;/);
   });
 });
 

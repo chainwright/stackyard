@@ -19,6 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import { finaliseGeneratedStack } from "../server/normalizeGenerated.js";
 import { validate } from "../src/shared/validator.js";
+import { pictogramDataUri } from "../src/shared/pictograms.js";
 import { dumpDomOffline } from "./chrome.js";
 import type { Stack, Card, Element } from "../src/shared/types.js";
 
@@ -53,6 +54,12 @@ function quizDeck(): Stack {
   ];
   return { id: id(), title: "Quiz", theme: THEME, cards };
 }
+/** The quiz deck with a pictogram on its question card (TASK-31h); layout re-places it. */
+function quizDeckWithPicture(): Stack {
+  const s = quizDeck();
+  s.cards[0]!.elements.push({ type: "image", id: id(), x: 0, y: 0, w: 10, h: 10, src: pictogramDataUri("rain"), alt: "Picture: rain" });
+  return s;
+}
 function storyDeck(): Stack {
   const end = id();
   const next = id();
@@ -68,6 +75,24 @@ function storyDeck(): Stack {
     { id: end, kind: "end", actions: [], elements: [{ type: "field", id: id(), x: 40, y: 250, w: 720, h: 80, variable: "score" }] },
   ];
   return { id: id(), title: "Story", theme: THEME, cards };
+}
+/**
+ * Put the right answer on tile `k` (0..3, row-major). The generator shuffles
+ * which tile is right from the stack id, so without this the quiz scenarios only
+ * ever tested whichever row the id happened to pick (TASK-31h: the Drag pill hit
+ * the Right answer tab whenever the right tile was in the TOP row, and the gate
+ * was green by luck).
+ */
+function rightAt(s: Stack, k: number): Stack {
+  const tiles = s.cards[0]!.elements.filter((e) => e.type === "button");
+  const r = tiles.findIndex((e) => e.type === "button" && e.actions.some((a) => a.type === "score" && a.delta === 1));
+  const a = tiles[r], c = tiles[k];
+  if (a && c && a.type === "button" && c.type === "button" && r !== k) {
+    const sw = { label: a.label, actions: a.actions };
+    a.label = c.label; a.actions = c.actions;
+    c.label = sw.label; c.actions = sw.actions;
+  }
+  return s;
 }
 function prepared(s: Stack): Stack {
   const v = validate(JSON.parse(JSON.stringify(s)));
@@ -187,10 +212,19 @@ const DRIVER = `
     Array.prototype.forEach.call(document.querySelectorAll(".tool-card svg"), function (s) {
       var r = rect(s); if (r.width < 20 || r.height < 20) problems.push("a toolbar icon is squashed to " + Math.round(r.width) + "x" + Math.round(r.height));
     });
-    if (MODE === "quiz") {
+    if (MODE === "quiz" || MODE === "quizpic") {
       var tag = document.querySelector(".right-tag");
       if (!tag) { problems.push("no Right answer tag"); return; }
       var tr = rect(tag);
+      // TASK-31h: a pictogram on the card is there, inside it, and clear of the tag and the text.
+      var pimg = document.querySelector(".sy-card .sy-image");
+      if (MODE === "quizpic" && !pimg) problems.push("TASK-31h: the quiz card shows no picture");
+      if (pimg) {
+        var pr = rect(pimg), cardR = rect(document.querySelector(".sy-card"));
+        if (pr.left < cardR.left || pr.right > cardR.right || pr.top < cardR.top - 30) problems.push("TASK-31h: the picture lies outside the card");
+        if (hit(pr, tr)) problems.push("TASK-31h: the picture overlaps the Right answer tag");
+        Array.prototype.forEach.call(document.querySelectorAll(".sy-tile-label, .sy-question"), function (l) { if (hit(pr, textRect(l))) problems.push("TASK-31h: the picture covers text: " + (l.textContent || "").slice(0, 30)); });
+      }
       Array.prototype.forEach.call(document.querySelectorAll(".sy-tile-label"), function (l) {
         if (hit(tr, textRect(l))) problems.push("the Right answer tag covers answer text: " + (l.textContent || "").slice(0, 30) + " tag=" + JSON.stringify([tr.left|0,tr.top|0,tr.right|0,tr.bottom|0]) + " label=" + JSON.stringify((function(r){return [r.left|0,r.top|0,r.right|0,r.bottom|0];})(textRect(l))));
       });
@@ -295,17 +329,24 @@ function main(): void {
     { name: "Start screen @1366×800 window (657 viewport): Build Cards above the fold", mode: "start", stack: null, win: [1366, 800], fold: true },
     { name: "Start screen @1366×911 (768 viewport)", mode: "start", stack: null, win: [1366, 911] },
     { name: "Start screen @1920×1080", mode: "start", stack: null, win: [1920, 1080] },
-    { name: "quiz editor @1366×911", mode: "quiz", stack: prepared(quizDeck()), win: [1366, 911] },
-    { name: "quiz editor @1920×1080 (Right answer tab vs Drag pill)", mode: "quiz", stack: prepared(quizDeck()), win: [1920, 1080] },
+    // The right answer is put in the TOP row (tile B) and the BOTTOM row (tile C) on
+    // purpose; the shuffle used to pick one by luck (TASK-31h).
+    { name: "quiz editor @1366×911 (right answer top row)", mode: "quiz", stack: rightAt(prepared(quizDeck()), 1), win: [1366, 911] },
+    { name: "quiz editor @1366×911 (right answer bottom row)", mode: "quiz", stack: rightAt(prepared(quizDeck()), 2), win: [1366, 911] },
+    { name: "quiz editor @1920×1080 (Right answer tab vs Drag pill, top row)", mode: "quiz", stack: rightAt(prepared(quizDeck()), 0), win: [1920, 1080] },
     { name: "story editor @1366×911", mode: "story", stack: prepared(storyDeck()), win: [1366, 911] },
     // TASK-29e: the whole card fits the canvas on the short 657 px laptop too.
-    { name: "quiz editor @1366×800 (657 viewport)", mode: "quiz", stack: prepared(quizDeck()), win: [1366, 800] },
+    { name: "quiz editor @1366×800 (657 viewport, right answer top row)", mode: "quiz", stack: rightAt(prepared(quizDeck()), 0), win: [1366, 800] },
+    { name: "quiz editor @1366×800 (657 viewport, right answer bottom row)", mode: "quiz", stack: rightAt(prepared(quizDeck()), 3), win: [1366, 800] },
     { name: "story editor @1366×800 (657 viewport)", mode: "story", stack: prepared(storyDeck()), win: [1366, 800] },
     // TASK-28r: a notice banner shows (ready-made deck): the canvas lays out BELOW it.
     { name: "flash editor + banner @1366×911 (768 viewport)", mode: "banner:flash", stack: null, win: [1366, 911] },
     { name: "flash editor + banner @1366×800 (657 viewport)", mode: "banner:flash", stack: null, win: [1366, 800] },
     { name: "quiz editor + banner @1366×911 (768 viewport)", mode: "banner:quiz", stack: null, win: [1366, 911] },
     { name: "quiz editor + banner @1366×800 (657 viewport)", mode: "banner:quiz", stack: null, win: [1366, 800] },
+    // TASK-31h: a pictogram on the question card fits the canvas like any card.
+    { name: "quiz editor + pictogram @1366×911", mode: "quizpic", stack: rightAt(prepared(quizDeckWithPicture()), 1), win: [1366, 911] },
+    { name: "quiz editor + pictogram @1366×800 (657 viewport)", mode: "quizpic", stack: rightAt(prepared(quizDeckWithPicture()), 2), win: [1366, 800] },
   ];
   let failed = false;
   let scenarioNo = 0;

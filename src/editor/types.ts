@@ -38,7 +38,7 @@ export interface EditorState {
   fallbackOnline: boolean;
   /**
    * A one-line plain note to show when the editor opens on a freshly built deck
-   * (e.g. "Pictures aren't added automatically yet. Use Add Picture." — TASK-27t).
+   * (e.g. "No pictures were added this time. Use Add Picture." — TASK-27t, TASK-31h).
    * Cleared the next time a stack is loaded.
    */
   startNote?: string;

@@ -26,6 +26,7 @@ import {
 } from "../src/shared/readyMadeStacks.js";
 import { READY_MADE_IMAGES } from "../src/shared/readyMadeImages.js";
 import { creditLine, creditFull } from "../src/shared/deckImageTypes.js";
+import { pictogramProblems, PICTOGRAM_CREDIT } from "../src/shared/pictograms.js";
 import type { Stack, Card, ButtonElement } from "../src/shared/types.js";
 
 // Answer tiles are 344px wide at 32px type and wrap to at most two lines
@@ -131,11 +132,18 @@ function main(): void {
   for (const p of creditProblems) console.error(`  [DRIFT] ${p}`);
   problems = problems.concat(creditProblems);
 
+  // TASK-31h: the pictogram set is part of what ships on generated cards; its
+  // drawings must be safe, small and one ink, and its credit line fixed.
+  const pictoProblems = pictogramProblems();
+  if (PICTOGRAM_CREDIT !== "Picture: Stackyard pictogram") pictoProblems.push(`the pictogram credit line changed: "${PICTOGRAM_CREDIT}"`);
+  for (const p of pictoProblems) console.error(`  [DRIFT] pictograms: ${p}`);
+  problems = problems.concat(pictoProblems);
+
   if (problems.length > 0) {
     console.error(`check-decks: ${problems.length} problem(s) in the ready-made decks.`);
     process.exit(1);
   }
-  console.log("check-decks: OK — all three ready-made decks pass the content checks.");
+  console.log("check-decks: OK — all three ready-made decks and the pictogram set pass the content checks.");
 }
 
 // Run only when invoked directly (node … scripts/check-decks.ts), not when a

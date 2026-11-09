@@ -35,6 +35,16 @@ import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
 import { isStockEndLine, soundsLikeEnding, isLongProse, isShortPair, isShortTerm, asksForClosingMessage } from "../src/shared/endLine.js";
 import {
+  pictogramName,
+  pictogramNameOfSrc,
+  pictogramDataUri,
+  pictogramAlt,
+  isPictogramCredit,
+  PICTOGRAM_CREDIT,
+} from "../src/shared/pictograms.js";
+import {
+  PICTURE_SLOT,
+  PICTURE_CREDIT,
   QUIZ_QUESTION,
   QUIZ_TILES,
   FLASH_TERM,
@@ -56,16 +66,32 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-/** True for an embedded picture (the only kind that can be exported). */
-function isDataUri(v: unknown): boolean {
-  return typeof v === "string" && /^data:/i.test(v);
+/**
+ * (TASK-31h) A model picture is a NAME from our set, nothing else. The returned
+ * element's `src` and `alt` come from src/shared/pictograms.ts, never from the
+ * model's text, so no model-controlled byte reaches `src`. A name we do not have
+ * is dropped silently; so is every other kind of model picture (any `src`). An
+ * element that already carries exactly one of OUR data URIs (a second pass over
+ * a sanitised card) is kept, so sanitising is idempotent.
+ */
+function sanitizePicto(el: Record<string, unknown>): unknown | null {
+  const name = pictogramName(el["picto"]) ?? pictogramNameOfSrc(el["src"]);
+  if (name === null) return null;
+  return {
+    type: "image",
+    id: mintId(),
+    ...PICTURE_SLOT,
+    src: pictogramDataUri(name),
+    alt: pictogramAlt(name),
+  };
 }
 
 function sanitizeRawElement(el: unknown): unknown | null {
   if (!isRecord(el)) return el;
   // (d) A picture the model invented ("images/cheval.png") can never be
-  // exported. Only an embedded data: URI survives.
-  if (el["type"] === "image" && !isDataUri(el["src"])) return null;
+  // exported, and a model-supplied data: URI is model-controlled bytes. The only
+  // picture that survives is one chosen by NAME from our own set (TASK-31h).
+  if (el["type"] === "image") return sanitizePicto(el);
 
   // (m) Element ids are ours: always a fresh v4, whatever the model wrote
   // (spaces, duplicates, numbers, nothing at all). Nothing refers to an element
@@ -109,9 +135,21 @@ const DEFAULT_BOX: Record<string, { x: number; y: number; w: number; h: number }
  */
 export function sanitizeRawCard(input: unknown): unknown {
   if (!isRecord(input) || !Array.isArray(input["elements"])) return input;
-  const elements = (input["elements"] as unknown[])
+  let elements = (input["elements"] as unknown[])
     .map(sanitizeRawElement)
     .filter((e) => e !== null);
+  // At most one picture per card, and none on the end card (TASK-31h).
+  const isImage = (e: unknown): boolean => isRecord(e) && e["type"] === "image";
+  if (input["kind"] === "end") elements = elements.filter((e) => !isImage(e));
+  else {
+    let seen = false;
+    elements = elements.filter((e) => {
+      if (!isImage(e)) return true;
+      if (seen) return false;
+      seen = true;
+      return true;
+    });
+  }
   const id = typeof input["id"] === "string" && input["id"].length > 0 ? input["id"] : mintId();
   return { ...input, id, elements };
 }
@@ -688,12 +726,42 @@ export function foldEndLikeCard(stack: Stack, ctx: FoldContext = {}): Stack {
  * none (it only needs a clean layout to be dealt onto the pile).
  */
 export function normalizeGeneratedCard(card: Card, ctx: Ctx = {}): Card {
-  switch (card.kind) {
-    case "quiz": return normalizeQuiz(card, ctx);
-    case "flash": return normalizeFlash(card, ctx);
-    case "story": return normalizeStory(card, ctx);
-    case "end": return normalizeEnd(card);
-  }
+  if (card.kind === "end") return normalizeEnd(card);
+  // A pictogram (TASK-31h) is lifted out first so the per-kind layout never sees
+  // it, then put back in the template's picture slot with its credit line.
+  const { name, rest } = splitPictogram(card);
+  const laid =
+    rest.kind === "quiz" ? normalizeQuiz(rest, ctx)
+    : rest.kind === "flash" ? normalizeFlash(rest, ctx)
+    : normalizeStory(rest, ctx);
+  return name === null ? laid : withPictogram(laid, name);
+}
+
+/** The first pictogram on a card (by its exact data URI), and the card without any pictogram or credit. */
+function splitPictogram(card: Card): { name: string | null; rest: Card } {
+  let name: string | null = null;
+  const elements = card.elements.filter((e) => {
+    if (e.type === "image") {
+      const n = pictogramNameOfSrc(e.src);
+      if (n === null) return true;
+      if (name === null) name = n;
+      return false;
+    }
+    return !(e.type === "text" && isPictogramCredit(e.content));
+  });
+  return { name, rest: { ...card, elements } };
+}
+
+/** Add the picture and its credit line, in their template slots, to a laid-out card. */
+function withPictogram(card: Card, name: string): Card {
+  return {
+    ...card,
+    elements: [
+      ...card.elements,
+      { type: "image", id: newId(), ...PICTURE_SLOT, src: pictogramDataUri(name), alt: pictogramAlt(name) },
+      { type: "text", id: newId(), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT },
+    ],
+  };
 }
 
 /**

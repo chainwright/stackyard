@@ -15,7 +15,15 @@ import type {
 import { reject, type Rejected } from "./types.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds, isChoiceFork, nearestReachableBefore, canSplice } from "../shared/flow.js";
 import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
-import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY } from "../shared/layout.js";
+import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY, PICTURE_SLOT, PICTURE_CREDIT } from "../shared/layout.js";
+import {
+  pictogramName,
+  pictogramNameOfSrc,
+  pictogramDataUri,
+  pictogramAlt,
+  isPictogramCredit,
+  PICTOGRAM_CREDIT,
+} from "../shared/pictograms.js";
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -879,6 +887,47 @@ export function setFlashSide(
     }
   }
   return mapCard(stack, cardId, (c) => ({ ...c, elements }));
+}
+
+/** The pictogram on a card, by name, or null (TASK-31h). */
+export function pictogramOf(card: Card): string | null {
+  for (const e of card.elements) {
+    if (e.type === "image") {
+      const n = pictogramNameOfSrc(e.src);
+      if (n !== null) return n;
+    }
+  }
+  return null;
+}
+
+/**
+ * Add, swap or remove a card's pictogram (TASK-31h). `name` is one of the names
+ * in src/shared/pictograms.ts, or null to remove the picture. Any pictogram and
+ * its credit line already on the card are taken off first, so a card never has two.
+ * The picture and its credit go in the template's slots. Pictures the teacher added
+ * with Add Picture are left alone. Not on the last card; a flash card needs its back
+ * first (the credit would otherwise be read as the back).
+ */
+export function setPictogram(stack: Stack, cardId: string, name: string | null): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined) return reject("That card isn't here any more.");
+  if (card.kind === "end") return reject("The last card can't have a picture.");
+  const kept = card.elements.filter(
+    (e) =>
+      !(e.type === "image" && pictogramNameOfSrc(e.src) !== null) &&
+      !(e.type === "text" && isPictogramCredit(e.content)),
+  );
+  if (name === null) return mapCard(stack, cardId, (c) => ({ ...c, elements: kept }));
+  const picked = pictogramName(name);
+  if (picked === null) return reject("That picture isn't in the set. Choose one from the list.");
+  if (card.kind === "flash" && kept.filter((e) => e.type === "text").length < 2) {
+    return reject("Add the back of the card first, then choose a picture.");
+  }
+  const added: Element[] = [
+    { type: "image", id: newId(), ...PICTURE_SLOT, src: pictogramDataUri(picked), alt: pictogramAlt(picked) },
+    { type: "text", id: newId(), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT },
+  ];
+  return mapCard(stack, cardId, (c) => ({ ...c, elements: [...kept, ...added] }));
 }
 
 /** The plain-language message when a question already has four answers. */

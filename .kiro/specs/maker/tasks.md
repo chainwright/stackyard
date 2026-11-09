@@ -1672,6 +1672,32 @@ Source: `judge_v2_2026-11-09_app/SUMMARY.md`, `J04_engineering.md` (4.4, 4.6, 7)
   - **Fix.** Each "98" carries its date and scope; a TASK-31 entry is added; `scripts/mutation-check.ts` prints the tail of the failing vitest output on a baseline failure.
   - **Acceptance criteria.** A test of the KIRO_LOG strings; a test that the baseline-failure path prints the tail.
 
+### TASK-31h: pictures on generated decks, with no new outbound call  *(SUMMARY product P1-4, FIX_LIST P1-4; optional)*
+  - **Bug.** Generated decks have no pictures: the prompt says `Do NOT output "image" elements` and the sanitiser drops any model picture that is not a `data:` URI. The README's pictures are only on the three ready-made decks. The Start screen says "Pictures aren't added automatically yet", and the Maker has no way to remove a picture from a card (no remove path exists for an element).
+  - **Fix.** Pictures by NAME from a set we own, never from model bytes.
+    - `src/shared/pictograms.ts`: about 40 simple inline SVG pictograms in the design system's ink style (one colour, `#1E2A47`, on transparent, viewBox 0 0 64 64, each under 1.5 KB, no text, no external reference, no script, no `<foreignObject>`, no `href`), licensed with the repo (MIT) and credited on the card as "Picture: Stackyard pictogram". Exports the names, `isPictogramName`, `pictogramDataUri(name)` (built only from our set) and `pictogramNameOfSrc`.
+    - Schema: the model may add `{ "type": "image", "picto": "<name>" }` to a quiz, flash or story card (at most one per card, never on the end card). The prompts list the allowed names and say nothing else about images. `sanitizeRawElement` turns a known name (trimmed, lower-case) into an image element whose `src` and `alt` come from OUR set; an unknown name is dropped silently; EVERY other model-supplied image (any `src`) is dropped, so no model-controlled bytes reach `src`.
+    - Layout: `normalizeGeneratedCard` takes the pictogram out before the per-kind layout and puts it back in the template's picture slot (top centre, x 356, y 8, 88 x 88, the strip the ready-made decks' pictures use) with the credit line in the caption slot (x 48, y 566, w 340, h 28), on the one-shot, retry, stream and streamed-preview paths. The flash renderer and the Maker's flash preview draw the picture and its credit (they ignored images).
+    - Maker: the inspector's "Picture" select (None plus the same names) adds, swaps or removes the picture through a new `setPictogram` operation (a flash card needs its back first). The Start-screen note tells the truth: "We added a simple picture to some cards. For a photo, use Add Picture." or, when none came, "No pictures were added this time. Use Add Picture."
+    - README: one line under Pictures.
+  - **Acceptance criteria.**
+    - Tests (`TASK-31h` in the titles):
+      - every pictogram SVG is safe (no `<script`, `on*=`, `href`, `foreignObject`, external URL) and under the size cap;
+      - the set has 40 or more lower-case noun names;
+      - a property test that for ANY model string the produced `src` is one of the known data URIs, or no image at all;
+      - model-supplied images are dropped;
+      - at most one per card, none on the end card;
+      - the streamed preview card carries it;
+      - normalising is idempotent;
+      - the flash renderer and the Maker preview draw it;
+      - `setPictogram` adds, swaps and removes, and rejects the end card;
+      - the Inspector select works;
+      - the notice wording.
+    - A mutant that passes a model-supplied `src` through is killed.
+    - `scripts/check-pictograms.ts` (headless Chrome, network blocked) plays an exported class file and a living file with a pictogram on a quiz, a flash and a story card and finds the picture decoded, inside the card, overlapping nothing, and no network request.
+    - `check-text-fit` and `check-maker-fit` stay green with a picture on a quiz card (a case is added to each).
+  - **Found on the way (a real Maker bug, not caused by pictures).** Adding the picture scenarios shifted `check-maker-fit`'s id counter, which changes the stack id, and the right answer's shuffle is seeded from the stack id. The quiz scenario at 1366 px then failed: "the Drag to move pill overlaps the Right answer tab". Forcing each position showed it fails whenever the right answer is in the TOP row (tiles A or B) and passes in the bottom row. The gate had been green only because the shuffle happened to pick row 2. **Fix:** on the right tile the pill hangs below the tile (the gutter under it) instead of sharing the top strip with the tab. The quiz scenarios now force the right answer into the top row and the bottom row explicitly (`rightAt`). The existing 28d mutant now restores the old left-edge pill.
+
 ### TASK-31g: the fold property states the real invariant  *(our gate run, seed 1135286996)*
   - **Bug.** `tests/round6-generation.test.ts` "TASK-30a: property — when every flash front is a short term…" failed on a random seed: the deck `aa / AA`, `Well done / Q0` kept all its cards (no fold, `movedClosingMessage` false) but the second flash card came out a story card "Well done" with no back. Cause: `isCounterOnly` in `normalizeGenerated.ts` treats ANY text that is just `q`/`question`/`card` plus digits as the model's own "Question 3 of 6" header and drops it, so a real back such as "Q0" vanished and the one-text flash repair turned the card into a story. The property counted flash cards, so it was flaky since TASK-30 (green only for lucky seeds) and asserted the wrong thing.
   - **Fix.** Code: only a counter that is clearly chrome is dropped — the words `question` / `card` with a number, or `q` with "of N" — and a bare `Q0`, `Q1` is kept as real text; a prefix is still stripped only when text FOLLOWS it (`stripQuestionPrefix` already leaves a bare label alone). Test: the property now states the invariant — finalising never removes a card (the non-end card count is unchanged) and every original front is still on some card, for any prompt, unless `movedClosingMessage` is true — and the counterexample runs as an explicit `examples` entry every time.
