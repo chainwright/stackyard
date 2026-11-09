@@ -246,8 +246,9 @@ describe("TASK-32h: a / an before a number", () => {
     expect(compareWriteup(fixed, seventyTwo).filter((c) => !c.ok)).toEqual([]);
   });
 
-  it("TASK-32h: the write-up says 'an 86-mutant script'", () => {
-    expect(read("docs/DEVPOST_WRITEUP.md")).toMatch(/\ban \d+-mutant script/);
-    expect(read("docs/DEVPOST_WRITEUP.md")).not.toMatch(/\ba 8\d-mutant script/);
+  it("TASK-32h: the write-up's article before the mutant count is the one the number is spoken with ('an 86', 'a 90')", () => {
+    const m = /\b(an?) (\d+)-mutant script/.exec(read("docs/DEVPOST_WRITEUP.md"));
+    expect(m).not.toBeNull();
+    expect(m![1]).toBe(articleFor(Number(m![2])));
   });
 });

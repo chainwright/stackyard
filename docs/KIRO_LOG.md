@@ -379,3 +379,30 @@ From the coordinator's note and our teardown of the other HyperCard entries (`..
   - It states each sample's size and keeps each under 300 KB: irish-words 252,776 B, times-tables 248,187 B, vikings-in-ireland 238,930 B. Each carries a JPEG photo and is larger than the fixture, which is why the claim names the fixture.
   - A new mutant (the count rounds up) is killed.
 - **Shell edits this time.** No lasting file was edited through the shell. Two throwaway measuring probes were written with shell heredocs and deleted at once: `/tmp/m.ts` (it failed to run) and `tests/zz-measure.tmp.test.ts` (it printed the 189,754 bytes). Every source, test, doc and spec edit went through the file tools.
+
+## 9 Nov 2026 (late night): the curriculum bench (TASK-33c)
+
+Our honest substitute for "a real teacher used it". It is **not a classroom study: no teacher or pupil was involved**, and every text that reports it says so. From the teardown's §4 row 4. Spec first: a new spec, `.kiro/specs/curriculum-bench/` (requirements in EARS form, design, tasks TASK-33c1–c8).
+
+- **c1 — the objectives.** `bench/objectives.json` holds all 55 statutory "Pupils should be taught to" bullets of Years 3–5 from the National curriculum in England science programmes of study, verbatim. Each row carries the gov.uk URL and the licence: OGL v3.0, © Crown copyright 2015.
+  - We compared the file in full against the extraction we were given, and a test pins the SHA-256 of the outcomes.
+  - `bench/README.md` carries the OGL attribution, the template, how to replay and how to re-record, and the disclaimer.
+- **c2 — one sentence.** "A 5-question quiz, two flash cards and a short choose-your-path story for pupils aged 8 to 10 on this objective: <outcome>." It lives in `scripts/bench-lib.ts` and in `bench/README.md`, and a test checks they agree. `parseRequestedCounts` reads 5 and 2 from every one of the 55 sentences.
+- **c3 — `npm run bench:record` (we run it; Kiro has no key).** It runs `streamGenerate` in process, with a tee around the real `llmGateway.callStream` and a fallback stub that makes no model call, so nothing is retried and nothing goes over HTTP or the limiter.
+  - It writes `bench/cache/<id>.json`: the raw text exactly as streamed, the timings (first content, first and last card, done), and the model and thinking setting.
+  - It runs at most three at once and skips cached objectives unless `--force`. `--only` picks objectives.
+  - Without a key it refuses to start, and the writer refuses any cache that contains the key.
+- **c4 — `npm run bench`.** It replays each cache through the same `streamGenerate` pipeline with a fake gateway, then exports a living file per first-try deck to `bench/files/`, plus `results.json` and `RESULTS.md`.
+  - Replay is deterministic: `crypto.randomUUID` is seeded per objective during replay, and the answer shuffle is already seeded from the stack id. Two processes gave byte-identical files.
+  - Metrics per deck: first try, lesson check, counts, reachability, Flesch-Kincaid grade (documented syllable counter), answers per quiz, pictures, size, timings. The summary gives p50 and p90.
+- **c5 — offline.** `scripts/check-bench-offline.ts` uses one headless Chrome on port 9347 with every host NOTFOUND, a dead proxy and DevTools offline. For each file it checks that a card renders, the first card plays and there are 0 requests. A copy with an injected `https://` image fails it, as it should.
+- **c6 — where it runs.** On this Mac, 55 synthetic decks (the clean fixture under every id) took 0.2 s to replay, 0.2 s to `--check` and 10.6 s for the offline check. So `check:bench` runs in full in pre-submit. CI is unchanged, because our token can't push workflow files.
+- **c7 — claims.** Once `bench/results.json` exists, the README's "By the numbers" and the write-up's "Accomplishments" must each carry "N of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; M passed our lesson check with no warnings", with "not a classroom study". `--fix` inserts the line or rewrites its numbers.
+  - Before the results exist, a bench line in either file fails. Today neither has one, and the cache is empty, so the bench reports "0 recorded".
+  - The write-up's "five numbers in the README" no longer counts them, since the bench line will add one. "Three specs" became four in the README and the write-up.
+- **c8 — fixtures first.** Three hand-made caches in the recorded format: clean, a two-answer quiz, and a repeated card. 31 TASK-33c tests and two new mutants (bench line accepted whatever its numbers; replay ids random again), both killed.
+- **Small server change.** `llmGateway.configuredModel()` exports the model id, never the key or URL, so the cache can name it.
+- **Shell edits this time.** No lasting file was edited through the shell. Throwaway probes only:
+  - `tests/zz.tmp.test.ts`, written by a heredoc and deleted at once;
+  - `/tmp/bench55/` (55 synthetic caches for the timing run) and `/tmp/benchneg/leak.html` (the negative offline check), both deleted.
+- **Not done yet.** The recording itself (needs our key) and the lesson-checker persona over five bench decks we name (`bench/LESSON_CHECKER.md`, after recording).

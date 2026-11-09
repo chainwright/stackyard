@@ -770,6 +770,23 @@ const MUTANTS: Mutant[] = [
     replace: "  return Math.ceil(FLOPPY_BYTES / bytes);",
     tests: ["tests/export-size.test.ts"],
   },
+  // ---- the curriculum bench (TASK-33c) ----
+  {
+    name: "claims: the bench line is accepted whatever its numbers",
+    reverts: "33c7 — the bench line is checked against bench/results.json",
+    file: "scripts/claims-lib.ts",
+    find: "      ok: claimed.objectives === bench.objectives && claimed.firstTry === bench.firstTry && claimed.lessonClean === bench.lessonClean,",
+    replace: "      ok: true,",
+    tests: ["tests/bench.test.ts"],
+  },
+  {
+    name: "bench: replay ids are random again (files differ run to run)",
+    reverts: "33c4 — replay is deterministic",
+    file: "scripts/bench-lib.ts",
+    find: '  Object.defineProperty(c, "randomUUID", { value: seededUuids(seed), configurable: true, writable: true });',
+    replace: "",
+    tests: ["tests/bench.test.ts"],
+  },
 ];
 
 function run(tests: string[], gate?: string[]): { status: number; output: string } {

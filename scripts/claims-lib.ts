@@ -310,3 +310,85 @@ export function parseTraceCount(output: string): { traced: number; total: number
   const m = /(\d+) of (\d+) spec task ids/.exec(stripAnsi(output));
   return m ? { traced: Number(m[1]), total: Number(m[2]) } : null;
 }
+
+// ---------------------------------------------------------------------------
+// The curriculum bench line (TASK-33c7): README "By the numbers" and the
+// write-up each carry "N of 55 England KS2 science objectives (Years 3–5)
+// became a valid lesson file on the first try; M passed our lesson check with no
+// warnings", checked against bench/results.json, and each says it is not a
+// classroom study. Before bench/results.json exists, neither may carry it.
+
+/** The three numbers the line states (from bench/results.json's summary). */
+export interface BenchNumbers {
+  objectives: number;
+  firstTry: number;
+  lessonClean: number;
+}
+
+const BENCH_RE =
+  /(\d+) of (\d+) England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; (\d+) passed our lesson check with no warnings/;
+
+/** Every text that reports a bench number says this. */
+export const BENCH_DISCLAIMER = "not a classroom study";
+
+export function benchSentence(b: BenchNumbers): string {
+  return `${b.firstTry} of ${b.objectives} England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; ${b.lessonClean} passed our lesson check with no warnings`;
+}
+
+/** The README's bench line. */
+export function readmeBenchLine(b: BenchNumbers): string {
+  return `- Curriculum bench: ${benchSentence(b)} ([\`bench/RESULTS.md\`](bench/RESULTS.md)). It measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
+}
+
+/** The write-up's bench line ("Accomplishments"). */
+export function writeupBenchLine(b: BenchNumbers): string {
+  return `- ${benchSentence(b)} (\`bench/RESULTS.md\` in the repo, one lesson file per objective). This measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
+}
+
+/** The numbers a text's bench line states, or null when it has none. */
+export function readBenchClaim(text: string): BenchNumbers | null {
+  const m = BENCH_RE.exec(text);
+  return m ? { firstTry: Number(m[1]), objectives: Number(m[2]), lessonClean: Number(m[3]) } : null;
+}
+
+/** The bench check for one file. `bench` is null while bench/results.json does not exist. */
+export function compareBench(text: string, where: string, bench: BenchNumbers | null): Check[] {
+  const claimed = readBenchClaim(text);
+  const name = `${where} bench line`;
+  if (bench === null) {
+    return claimed === null
+      ? []
+      : [{ name, claimed: benchSentence(claimed), actual: "(no bench/results.json)", ok: false, note: "nothing backs it yet: record and replay the bench first" }];
+  }
+  if (claimed === null) return [{ name, claimed: "(missing)", actual: benchSentence(bench), ok: false, note: "bench/results.json exists, so the line is required" }];
+  const checks: Check[] = [
+    {
+      name,
+      claimed: benchSentence(claimed),
+      actual: benchSentence(bench),
+      ok: claimed.objectives === bench.objectives && claimed.firstTry === bench.firstTry && claimed.lessonClean === bench.lessonClean,
+    },
+  ];
+  const line = text.split("\n").find((l) => BENCH_RE.test(l)) ?? "";
+  if (!line.includes(BENCH_DISCLAIMER)) {
+    checks.push({ name: `${name} disclaimer`, claimed: "(no disclaimer)", actual: BENCH_DISCLAIMER, ok: false, note: "the line must say it is not a classroom study" });
+  }
+  return checks;
+}
+
+/**
+ * Rewrite the bench line's numbers from MEASURED values, or insert `line(b)`
+ * after the first line containing `anchor` when the text has none.
+ */
+export function fixBench(text: string, b: BenchNumbers, anchor: string, line: (b: BenchNumbers) => string): string {
+  if (BENCH_RE.test(text)) return text.replace(BENCH_RE, benchSentence(b));
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => l.includes(anchor));
+  if (at < 0) return text;
+  lines.splice(at + 1, 0, line(b));
+  return lines.join("\n");
+}
+
+/** Where `--fix` inserts the bench line. */
+export const README_BENCH_ANCHOR = "carry photos, so they are larger.";
+export const WRITEUP_BENCH_ANCHOR = "- The player bundle is ";

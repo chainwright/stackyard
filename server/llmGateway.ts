@@ -194,6 +194,11 @@ function getModel(): string {
   );
 }
 
+/** The model id calls are made with (no key, no URL): the curriculum bench records it (TASK-33c3). */
+export function configuredModel(): string {
+  return getModel();
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 

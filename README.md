@@ -80,8 +80,8 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 
 - **Steering** — five always-on files describe the product, audience, tech,
   stack format and design system: [`.kiro/steering/`](.kiro/steering/).
-- **Specs** — requirements, design and tasks for three features (the Maker, the
-  stack generator and the exporter), each written by Kiro from a chat request
+- **Specs** — requirements, design and tasks for four features (the Maker, the
+  stack generator, the exporter and the curriculum bench), each written by Kiro from a chat request
   and then reviewed: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
   fails if a lettered task id in the specs is not mentioned by a test, a gate
   script or a hook; today it reports the true count (see its output, not a
@@ -147,7 +147,7 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1211** passing (`npm test`).
+- Tests: **1242** passing (`npm test`).
 - Player bundle: **11.9 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
@@ -155,6 +155,13 @@ These figures are checked against the code by `scripts/check-claims` (run by the
   (1,457,664 bytes). That is a living export of
   `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
   The ready-made samples in `samples/` carry photos, so they are larger.
+- Curriculum bench: 50 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 36 passed our lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
+
+The **curriculum bench** ([`bench/`](bench/README.md)) runs all 55 statutory Years 3–5
+objectives of England's KS2 science programme of study through the generator. It
+measures the generator against curriculum objectives; it is not a classroom study.
+`check:claims` requires its result line in this list whenever `bench/results.json`
+exists.
 
 ## Development
 

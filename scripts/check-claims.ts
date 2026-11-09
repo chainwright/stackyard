@@ -20,6 +20,9 @@
 //     KB, and "about N KB" vs a living export of the water-cycle fixture (±10 %).
 //   - (TASK-33b) The floppy count in both files: floor(1,457,664 / bytes of
 //     that same living export), exact (scripts/lesson-size.ts measures it).
+//   - (TASK-33c7) Once bench/results.json exists: the curriculum-bench line in
+//     both files ("N of 55 … first try; M passed our lesson check …"), with its
+//     "not a classroom study"; before then, neither file may carry it.
 //
 // Exits 0 when every claim matches, 1 (with a report) when any has drifted.
 //
@@ -52,6 +55,13 @@ import {
   floppyCount,
   fixFloppyClaim,
   compareFloppy,
+  compareBench,
+  fixBench,
+  readmeBenchLine,
+  writeupBenchLine,
+  README_BENCH_ANCHOR,
+  WRITEUP_BENCH_ANCHOR,
+  type BenchNumbers,
   type WriteupNumbers,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
@@ -59,6 +69,14 @@ import { fixtureLivingExportBytes } from "./lesson-size.js";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
 const WRITEUP = path.join(ROOT, "docs", "DEVPOST_WRITEUP.md");
+const BENCH_RESULTS = path.join(ROOT, "bench", "results.json");
+
+/** The bench line's numbers from bench/results.json, or null while it does not exist (TASK-33c7). */
+function benchNumbers(): BenchNumbers | null {
+  if (!existsSync(BENCH_RESULTS)) return null;
+  const s = (JSON.parse(readFileSync(BENCH_RESULTS, "utf8")) as { summary: BenchNumbers }).summary;
+  return { objectives: s.objectives, firstTry: s.firstTry, lessonClean: s.lessonClean };
+}
 const PLAYER = path.join(ROOT, "dist", "player", "player.iife.js");
 const VALIDATOR = path.join(ROOT, "src", "shared", "validator.ts");
 const ROUNDTRIP = path.join(ROOT, "tests", "roundtrip.property.test.ts");
@@ -136,6 +154,8 @@ async function run(): Promise<void> {
   // TASK-33b: one living export of the water-cycle fixture backs "about N KB"
   // and the floppy count in both files.
   const file = await lessonFileNumbers();
+  // TASK-33c7: the bench line is required only once bench/results.json exists.
+  const bench = benchNumbers();
 
   if (fix) {
     if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0 || file.floppy <= 0) {
@@ -147,6 +167,7 @@ async function run(): Promise<void> {
     }
     let fixed = applyFix(readme, actual);
     fixed = fixFloppyClaim(fixed, file.floppy);
+    if (bench !== null) fixed = fixBench(fixed, bench, README_BENCH_ANCHOR, readmeBenchLine);
     if (renderCmd !== null) fixed = fixBuildCommands(fixed, renderCmd);
     if (fixed !== readme) {
       writeFileSync(README, fixed, "utf8");
@@ -160,6 +181,7 @@ async function run(): Promise<void> {
   const nowClaimed = readClaims(text)!;
   const checks = compare(nowClaimed, actual);
   checks.push(compareFloppy(text, file.floppy));
+  checks.push(...compareBench(text, "README", bench));
   if (renderCmd !== null) {
     const ok = readmeBuildCommandsMatch(text, renderCmd);
     checks.push({
@@ -178,13 +200,15 @@ async function run(): Promise<void> {
       console.error("check-claims --fix: could not measure the write-up's numbers; not touching docs/DEVPOST_WRITEUP.md.");
       process.exit(1);
     }
-    const after = applyWriteupFix(before, writeupActual);
+    let after = applyWriteupFix(before, writeupActual);
+    if (bench !== null) after = fixBench(after, bench, WRITEUP_BENCH_ANCHOR, writeupBenchLine);
     if (after !== before) {
       writeFileSync(WRITEUP, after, "utf8");
       console.log("check-claims --fix: docs/DEVPOST_WRITEUP.md rewritten from measured values.");
     }
   }
   checks.push(...compareWriteup(readFileSync(WRITEUP, "utf8"), writeupActual));
+  checks.push(...compareBench(readFileSync(WRITEUP, "utf8"), "write-up", bench));
 
   let failed = false;
   for (const c of checks) {
