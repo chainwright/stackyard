@@ -787,6 +787,22 @@ const MUTANTS: Mutant[] = [
     replace: "",
     tests: ["tests/bench.test.ts"],
   },
+  {
+    name: "prompt: 'vary which position the right answer sits in' is back (and no 'Stackyard shuffles')",
+    reverts: "33c9 — mark the right answer on its own button; Stackyard shuffles",
+    file: "server/promptBuilder.ts",
+    find: "Stackyard shuffles the order of the answers itself, so do not move answers around and never write the same answer twice.",
+    replace: "VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one.",
+    tests: ["tests/bench-v2.test.ts"],
+  },
+  {
+    name: "prompt: the card plan is only at the end of the request, not at the top",
+    reverts: "33c10 — the card plan opens and closes the request",
+    file: "server/promptBuilder.ts",
+    find: "return `${plan}\\n\\nGenerate a stack for: \"${prompt}\"${counts}\\n\\n${plan}`;",
+    replace: "return `Generate a stack for: \"${prompt}\"${counts}\\n\\n${plan}`;",
+    tests: ["tests/bench-v2.test.ts"],
+  },
 ];
 
 function run(tests: string[], gate?: string[]): { status: number; output: string } {

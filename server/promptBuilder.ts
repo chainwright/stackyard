@@ -53,7 +53,7 @@ Action types:
 1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a cardId that exists in the stack.
 3. **Exactly one end card** — The cards array must contain exactly one card with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
+4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. A yes/no question is not a comparison: ask it another way, with 3 or 4 answers. Never ask a question about the lesson itself ("How many questions have you tried?"). Put { "type": "score", "delta": 1 } on the button whose label IS the right answer, as you write that button — never on another button, and never leave a quiz card with no delta 1. Stackyard shuffles the order of the answers itself, so do not move answers around and never write the same answer twice. Write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — stack.title must not be blank or whitespace only.
 7. **At least one non-end card** — The stack must contain at least one card that is not kind "end".
@@ -81,7 +81,11 @@ You do not set positions or sizes. Stackyard lays every card out from its own te
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else. In the three cards after a flash card, no quiz may have that flash card's term as its right answer, ask "What is <term>?", or ask for a fact its explanation states; ask there about a different part of the topic. No answer may be another answer with words added or taken away ("Sieve" and "Sieve with larger holes", "Sunlight" and "Sunlight and air"): a pupil could defend both.
+
+## Card plan
+
+When the request gives a card plan, write exactly that many cards of each kind. A story card and its consequence cards are never quiz cards: they do not count towards the quiz cards, even when the story asks the class a question. Count your quiz cards before you write the end card.
 
 ## The end card
 
@@ -153,7 +157,7 @@ Action types:
 1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a card id you emit on some line.
 3. **Exactly one end card** — Emit exactly one card line with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
+4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. A yes/no question is not a comparison: ask it another way, with 3 or 4 answers. Never ask a question about the lesson itself ("How many questions have you tried?"). Put { "type": "score", "delta": 1 } on the button whose label IS the right answer, as you write that button — never on another button, and never leave a quiz card with no delta 1. Stackyard shuffles the order of the answers itself, so do not move answers around and never write the same answer twice. Write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — The header title must not be blank or whitespace only.
 7. **At least one non-end card** — Emit at least one card line whose kind is not "end".
@@ -190,7 +194,11 @@ You do not set positions or sizes. Stackyard lays every card out from its own te
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else. In the three cards after a flash card, no quiz may have that flash card's term as its right answer, ask "What is <term>?", or ask for a fact its explanation states; ask there about a different part of the topic. No answer may be another answer with words added or taken away ("Sieve" and "Sieve with larger holes", "Sunlight" and "Sunlight and air"): a pupil could defend both.
+
+## Card plan
+
+When the request gives a card plan, write exactly that many cards of each kind. A story card and its consequence cards are never quiz cards: they do not count towards the quiz cards, even when the story asks the class a question. Count your quiz cards before you write the end card.
 
 ## The end card
 
@@ -231,17 +239,41 @@ function extractCardCount(prompt: string): number | null {
   return null;
 }
 
+/**
+ * TASK-33c10: the card plan, stated near the top AND at the end of the user
+ * message. In the v1 bench, 25 of 55 decks asked for "a 5-question quiz, two
+ * flash cards and a short choose-your-path story" came back with 4 quiz cards,
+ * 20 of them in the same 10-card shape (2 flash, 3 quiz, the story trio, 1 quiz,
+ * end): the story's own question stood in for the fifth. "" when the sentence
+ * names no quiz or flash count.
+ */
+export function cardPlan(prompt: string): string {
+  const c = parseRequestedCounts(prompt);
+  if (c.quiz === undefined && c.flash === undefined) return "";
+  const story = /\bstor(?:y|ies)\b/i.test(prompt);
+  const parts: string[] = [];
+  if (c.quiz !== undefined) parts.push(`exactly ${c.quiz} quiz card${c.quiz === 1 ? "" : "s"}`);
+  if (c.flash !== undefined) parts.push(`exactly ${c.flash} flash card${c.flash === 1 ? "" : "s"}`);
+  if (story) parts.push("1 story card with its 2 consequence cards");
+  parts.push("1 end card");
+  const all = c.quiz !== undefined && c.flash !== undefined ? ` (${c.quiz + c.flash + (story ? 3 : 0) + 1} cards in all)` : "";
+  const notQuiz = story ? " The story cards are not quiz cards." : "";
+  return `Card plan: ${parts.join(", ")}${all}.${notQuiz}`;
+}
+
 function buildUserBody(prompt: string): string {
   const detected = extractCardCount(prompt);
   // TASK-32b.3: the counts the teacher named, as hard numbers.
   const exact = countsInstruction(parseRequestedCounts(prompt));
   const counts = exact.length > 0 ? `\n\n${exact}` : "";
+  const plan = cardPlan(prompt);
   if (detected !== null && detected > MAX_CARDS) {
     return (
       `Generate a stack for: "${prompt}"\n\n` +
       `Note: you requested ${detected} cards — cap the stack at ${MAX_CARDS} cards maximum.`
     );
   }
+  if (plan.length > 0) return `${plan}\n\nGenerate a stack for: "${prompt}"${counts}\n\n${plan}`;
   return `Generate a stack for: "${prompt}"${counts}`;
 }
 
@@ -273,10 +305,12 @@ export function buildRetry(
 ): { system: string; user: string } {
   const bulletList = errors.map((e) => `  • ${e}`).join("\n");
   const exact = countsInstruction(parseRequestedCounts(request.prompt));
+  const plan = cardPlan(request.prompt);
   const user =
     `The previous stack had these validation errors:\n\n${bulletList}\n\n` +
     `Fix all of them and return the corrected stack for: "${request.prompt}"` +
-    (exact.length > 0 ? `\n\n${exact}` : "");
+    (exact.length > 0 ? `\n\n${exact}` : "") +
+    (plan.length > 0 ? `\n\n${plan}` : "");
   return {
     system: SYSTEM_PROMPT,
     user,

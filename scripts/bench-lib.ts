@@ -512,20 +512,9 @@ const yesNo = (b: boolean | null): string => (b === null ? "—" : b ? "yes" : "
 const secs = (ms: number | null): string => (ms === null ? "—" : (ms / 1000).toFixed(1) + " s");
 const kb = (b: number | null): string => (b === null ? "—" : `${Math.round(b / 1024)} KB`);
 
-/** bench/RESULTS.md: the summary table plus one row per objective, linking its file. */
-export function resultsMarkdown(r: BenchResults): string {
-  const s = r.summary;
-  const lines = [
-    "# Curriculum bench: results",
-    "",
-    `**${ABOUT}**`,
-    "",
-    `Source: [${r.source.title}](${r.source.url}), Years 3–5, every statutory "Pupils should be taught to" requirement. ${r.source.licence}. Contains public sector information licensed under the Open Government Licence v3.0.`,
-    "",
-    `Sentence for every objective: "${r.template}"`,
-    "",
-    `Written by \`npm run bench\` from the recorded model text in \`bench/cache/\`. Model: ${s.models.join(", ") || "—"}.`,
-    "",
+/** The headline rows of a run (used for the current run and for v1). */
+function summaryRows(s: BenchSummary): string[] {
+  return [
     "| Measure | Result |",
     "|---|---|",
     `| Objectives recorded | ${s.recorded} of ${s.objectives} |`,
@@ -538,6 +527,41 @@ export function resultsMarkdown(r: BenchResults): string {
     `| File size | ${kb(s.fileBytesMin)} to ${kb(s.fileBytesMax)} |`,
     `| Time to the first card, p50 / p90 | ${secs(s.firstCardMs.p50)} / ${secs(s.firstCardMs.p90)} |`,
     `| Time to done, p50 / p90 | ${secs(s.totalMs.p50)} / ${secs(s.totalMs.p90)} |`,
+  ];
+}
+
+/**
+ * bench/RESULTS.md: the v1 summary (TASK-33c12, from bench/results-v1.json, when
+ * given), then the current summary table plus one row per objective, linking its file.
+ */
+export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null): string {
+  const s = r.summary;
+  const v1Lines =
+    v1 === null
+      ? []
+      : [
+          "## v1 (before the TASK-33 prompt fixes)",
+          "",
+          `Kept in \`bench/results-v1.json\`; model: ${v1.models.join(", ") || "—"}. What went wrong and why: [\`DIAGNOSIS.md\`](DIAGNOSIS.md).`,
+          "",
+          ...summaryRows(v1),
+          "",
+          "## Current run",
+          "",
+        ];
+  const lines = [
+    "# Curriculum bench: results",
+    "",
+    `**${ABOUT}**`,
+    "",
+    `Source: [${r.source.title}](${r.source.url}), Years 3–5, every statutory "Pupils should be taught to" requirement. ${r.source.licence}. Contains public sector information licensed under the Open Government Licence v3.0.`,
+    "",
+    `Sentence for every objective: "${r.template}"`,
+    "",
+    ...v1Lines,
+    `Written by \`npm run bench\` from the recorded model text in \`bench/cache/\`. Model: ${s.models.join(", ") || "—"}.`,
+    "",
+    ...summaryRows(s),
     "",
     "Times are as recorded by `bench:record` (in process, one sentence each, up to three at once); the replay itself makes no network request.",
     "",

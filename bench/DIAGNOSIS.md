@@ -1,0 +1,109 @@
+# Curriculum bench v1: diagnosis
+
+Written on 9 November 2026 inside Kiro from the v1 recordings in `bench/cache/` (offline; we read the raw model text). The run used the live model config, `claude-haiku-5-5` with thinking off, and its summary is kept in [`results-v1.json`](results-v1.json). The bench measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
+
+The v1 headline: 50 of 55 decks were valid on the first try, 36 of 55 had no lesson warnings, and 25 of 55 kept the asked-for counts (5 quiz cards, 2 flash cards).
+
+## a) The five first-try failures: a quiz with no right answer (5 of 5)
+
+All five decks failed whole-stack validation on invariant 4 (the quiz answer rule). In each, one quiz card has **0** answers with `score` delta 1.
+
+- No card had 2 right answers.
+- No story or flash card carried a score action. Each broken card is plainly a quiz: every answer has a score action, so there is no story choice mislabelled as a quiz.
+
+| Objective | Card | Question | What the model wrote |
+|---|---|---|---|
+| y3-animals-2 | c4 | What pulls on bones to make them move? | "Muscles" first, delta 0, with "buzz" on every answer |
+| y3-forces-magnets-3 | c4 | What happens when two north poles are brought together? | "They push apart" first, delta 0, "buzz" on every answer |
+| y3-rocks-3 | c1 | What is organic matter in soil? | "Dead plants and animals that have broken down" first, delta 0 |
+| y4-sound-2 | c4 | What is needed for sound to travel from a source to our ears? | "A medium, such as air" first, delta 0, "buzz" on every answer |
+| y5-materials-6 | c3 | Which pair of materials, when mixed, makes a fizzing gas? | "Vinegar and bicarbonate of soda" first, delta 0 |
+
+**Cause.** In 5 of 5 the right answer is the **first** button, and it is marked wrong. The prompt said: "VARY which position the correct answer sits in … do NOT always make the first button the right one." The model kept writing the right answer first, then took the "1" off it.
+
+**The same cause also gives wrong answer keys that pass every check.** We read by eye every v1 quiz whose key sits on the third or fourth button (32 cards). In these, the right answer is written first and a later, wrong button carries the delta 1:
+
+- y3-rocks-2: sediment settles "Deep inside volcanoes".
+- y4-electricity-4: opening the switch makes the lamp "turn a different colour".
+- y4-living-things-3: a forest fire "helps seeds to sleep".
+- y4-sound-1: a plucked string is "shining brightly".
+- y4-states-of-matter-2: water freezing is "Dissolving".
+- In the failed decks: y3-rocks-3 c6 ("Salt from the sea") and y5-materials-6 c4 ("Hydrogen").
+
+So "valid on the first try" over-counts good decks: at least 5 of the 50 have a wrong key. We did not read the second-button keys by eye.
+
+**Fix (TASK-33c9): the prompt only.**
+
+- The server already shuffles the answer order (seeded per deck), so the position rule was never needed.
+- All three prompts now say: put delta 1 on the button whose label IS the right answer, as you write it; never leave a quiz with no delta 1; Stackyard shuffles the order, so don't move answers or repeat one.
+
+**Why the server does not repair it.** Marking "the first answer" right would be a guess at the answer key: the inventing we must not do, and the wrong-key cases above show the guess can be wrong. Dropping the card would hide the error and cost a question. On the live app, an invalid deck already gets a full retry. Tests replay each of the five exact cached cards and show that:
+
+- it fails the quiz-answer invariant;
+- the server never marks an answer right;
+- with its first answer marked right, the deck is valid.
+
+## b) The count shortfall: the story stands in for a question (25 of 55)
+
+**The parser is right.** `parseRequestedCounts` reads quiz 5 and flash 2 from all 55 sentences (a test checks every one).
+
+What the model wrote, before our trim:
+
+| Quiz cards written | Decks |
+|---|---|
+| 3 | 3 |
+| 4 | 25 |
+| 5 | 20 |
+| 6 | 7 (trimmed to 5) |
+
+Flash cards: 2 in 52 decks, 4 in 2 (trimmed to 2), 1 in 1 (y5-materials-6).
+
+**Every deck** has the story trio: a choice card whose text asks the class a question, plus 2 consequence cards.
+
+- 20 of the 25 four-quiz decks have the same 10-card shape: 2 flash, 3 quiz, the story trio, 1 quiz, the end card.
+- The story's question stands in for the fifth question.
+- Two decks padded a quiz with a question about the lesson itself:
+  - y3-light-3: "How many of the 5 questions in this set have you tried so far?"
+  - y4-living-things-1: "How many living things groups are in this stack's main example…?"
+
+Of the 25 valid decks off-count:
+
+- 22 have 4 quiz cards. The other three four-quiz decks (y3-animals-2, y3-forces-magnets-3, y5-materials-6) failed validation.
+- 3 have 3 quiz cards: y3-plants-3, y4-electricity-3, y4-sound-4.
+
+The four-quiz decks:
+
+- **Year 3:** y3-plants-1, y3-plants-2, y3-animals-1, y3-light-1, y3-light-2, y3-light-3, y3-light-5, y3-forces-magnets-1, y3-forces-magnets-2, y3-forces-magnets-4, y3-forces-magnets-5.
+- **Year 4:** y4-animals-1, y4-animals-2, y4-states-of-matter-1, y4-states-of-matter-3, y4-sound-5, y4-electricity-1.
+- **Year 5:** y5-materials-2, y5-materials-4, y5-earth-space-1, y5-earth-space-2, y5-earth-space-4.
+
+The counts were stated once, at the very end of the user message ("Write exactly 5 quiz cards and exactly 2 flash cards.").
+
+**Fix (TASK-33c10): a card plan.** The user message now opens and closes with:
+
+> Card plan: exactly 5 quiz cards, exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (11 cards in all). The story cards are not quiz cards.
+
+The system prompts gain a "Card plan" section. It says that a story card and its consequence cards never count towards the quiz cards, even when the story asks a question. All three prompts also forbid questions about the lesson itself.
+
+## c) Lesson warnings (14 of 50 first-try decks)
+
+Some decks had more than one kind of warning.
+
+| Warning | Cards | Objectives |
+|---|---|---|
+| two-answers | 7 cards in 5 decks | y3-light-3 (3: a yes/no "Can the sun hurt your eyes…?", UV vs infrared, and the lesson-itself question), y3-light-4, y4-electricity-2, y4-sound-1, y4-sound-3 |
+| restates-flash | 6 | y3-rocks-2, y3-light-4, y4-states-of-matter-3, y5-earth-space-2, y5-forces-1, y5-forces-3 |
+| answer-inside-answer | 4 | y3-plants-1 ("Sunlight" / "Sunlight and air"), y3-forces-magnets-2 ("Contact force" / "Non-contact force"), y4-sound-5, y5-materials-3 ("Sieve" / "Sieve with larger holes") |
+
+- **Two answers.** These are mostly a yes/no question or a "which of A or B" question written without an "or". y4-sound-1's two answers come from a duplicate: "A bell" was written twice, once as the key.
+- **Restates a flash card.** All 6 are the first or second quiz (card 3 or 4), straight after the two flash cards at the start of the deck. They ask the term back ("What is a fossil?") or a fact from its explanation ("about 27 days").
+
+**Fix (TASK-33c11): sharper prompt rules, and no server change.**
+
+- A yes/no question is not a comparison: ask it with 3 or 4 answers.
+- In the three cards after a flash card, no quiz may have its term as the right answer, ask "What is <term>?", or ask for a fact its explanation states.
+- No answer may be another answer with words added or taken away (with the "Sieve" example).
+
+## Next
+
+We re-record with `npm run bench:record -- --force` and replay. The v1 table stays at the top of `RESULTS.md`, and `check:claims` checks the new `results.json`.

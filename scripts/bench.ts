@@ -28,6 +28,7 @@ import {
   runPool,
   serialiseCache,
   type BenchCache,
+  type BenchSummary,
   type DeckResult,
   type Objective,
 } from "./bench-lib.js";
@@ -64,8 +65,8 @@ export interface Replay {
   decks: DeckResult[];
 }
 
-/** Replay every cache, in objective order, one at a time. */
-export async function replayAll(objectives: Objective[], caches: Map<string, BenchCache>): Promise<Replay> {
+/** Replay every cache, in objective order, one at a time. `v1` is the kept v1 summary (TASK-33c12), shown at the top of RESULTS.md. */
+export async function replayAll(objectives: Objective[], caches: Map<string, BenchCache>, v1: BenchSummary | null = null): Promise<Replay> {
   const decks: DeckResult[] = [];
   const files = new Map<string, string>();
   for (const obj of objectives) {
@@ -77,7 +78,13 @@ export async function replayAll(objectives: Objective[], caches: Map<string, Ben
   }
   if (decks.length === 0) return { recorded: 0, resultsJson: null, resultsMd: null, files, decks };
   const results = buildResults(objectives.length, decks);
-  return { recorded: decks.length, resultsJson: JSON.stringify(results, null, 2) + "\n", resultsMd: resultsMarkdown(results), files, decks };
+  return { recorded: decks.length, resultsJson: JSON.stringify(results, null, 2) + "\n", resultsMd: resultsMarkdown(results, v1), files, decks };
+}
+
+/** The v1 summary kept in `<out>/results-v1.json`, or null when there is none (TASK-33c12). */
+export function loadV1Summary(out: string): BenchSummary | null {
+  const p = path.join(out, "results-v1.json");
+  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as { summary: BenchSummary }).summary : null;
 }
 
 /** Write the replay to `out` (files/, results.json, RESULTS.md), removing what it no longer produces. */
@@ -119,7 +126,7 @@ async function replayMain(check: boolean): Promise<void> {
   const cacheDir = path.resolve(arg("--cache") ?? path.join(BENCH_DIR, "cache"));
   const objectives = loadObjectives();
   const t0 = Date.now();
-  const r = await replayAll(objectives, loadCaches(cacheDir, objectives));
+  const r = await replayAll(objectives, loadCaches(cacheDir, objectives), loadV1Summary(out));
   if (check) {
     const problems = staleOutputs(out, r);
     if (problems.length > 0) {

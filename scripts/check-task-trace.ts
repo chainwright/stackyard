@@ -39,7 +39,8 @@ function expandToken(tok: string): string[] {
     for (let i = Number(range[2]); i <= Number(range[4]); i++) out.push(`${range[1]}${i}`);
     return out;
   }
-  return /^[a-z]\d?$/.test(tok) ? [tok] : [];
+  // A letter with up to two digits: "c", "z3", "c10" (TASK-33c10 and on).
+  return /^[a-z]\d{0,2}$/.test(tok) ? [tok] : [];
 }
 
 /** All lettered ids declared in the specs, as "27c", "28h", "27z3". */
@@ -86,14 +87,14 @@ export function tracedIds(root: string = ROOT): Set<string> {
       // A letter list straight after the number: "TASK-27c", "TASK-27 c, j",
       // "TASK-27b/e/m". A lone spaced letter ("TASK-27 a quiz…") only counts
       // when a ":" ")" or dash follows, so ordinary prose is not read as an id.
-      const lead = /^(\s?)([a-z]\d?)((?:\s*[\/,]\s*(?:\d+)?[a-z]\d?)*)(?![A-Za-z0-9])/.exec(after);
+      const lead = /^(\s?)([a-z]\d{0,2})((?:\s*[\/,]\s*(?:\d+)?[a-z]\d{0,2})*)(?![A-Za-z0-9])/.exec(after);
       if (lead) {
         const glued = lead[1] === "";
         const listed = lead[3]!.length > 0;
         const closed = /^\s*[:)\]—–-]/.test(after.slice(lead[0].length));
         if (glued || listed || closed) {
           seen.add(`${m[1]}${lead[2]}`);
-          for (const t of lead[3]!.matchAll(/(?:\d+)?([a-z]\d?)/g)) seen.add(`${m[1]}${t[1]}`);
+          for (const t of lead[3]!.matchAll(/(?:\d+)?([a-z]\d{0,2})/g)) seen.add(`${m[1]}${t[1]}`);
         }
       }
       // Ranges such as "z1–z6" → every number between.

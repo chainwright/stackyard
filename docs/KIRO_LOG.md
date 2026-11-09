@@ -406,3 +406,20 @@ Our honest substitute for "a real teacher used it". It is **not a classroom stud
   - `tests/zz.tmp.test.ts`, written by a heredoc and deleted at once;
   - `/tmp/bench55/` (55 synthetic caches for the timing run) and `/tmp/benchneg/leak.html` (the negative offline check), both deleted.
 - **Not done yet.** The recording itself (needs our key) and the lesson-checker persona over five bench decks we name (`bench/LESSON_CHECKER.md`, after recording).
+
+## 9 Nov 2026 (late night): the curriculum bench, round 2 (TASK-33c9–c13)
+
+The coordinator recorded all 55 objectives on the live model config (`claude-haiku-5-5`, thinking off) and committed v1: 50 of 55 valid on the first try, 36 with no lesson warnings, and 25 that kept the asked-for counts. We diagnosed it offline from `bench/cache/`, with no key. Spec first: TASK-33c9–c13 in `.kiro/specs/curriculum-bench/tasks.md`. The bench is still not a classroom study.
+
+- **c9 — the five failures, and a worse finding.** All five failures (y3-animals-2, y3-rocks-3, y3-forces-magnets-3, y4-sound-2, y5-materials-6) are quizzes with 0 right answers. In 5 of 5, the right answer was written first and marked 0, after the prompt said not to make the first button right.
+  - The same rule put the key on a wrong later button in at least 5 decks that passed every check. For example, y3-rocks-2 says sediment settles "Deep inside volcanoes".
+  - Fix: the position rule is gone from all three prompts (the server already shuffles). The model is told to mark the right answer on its own button. The server does not guess a key.
+- **c10 — counts.** The parser was right: 5 and 2 for all 55. The model wrote 4 quiz cards in 25 decks; 20 of them have the same 10-card shape, with the story's question standing in for the fifth.
+  - Fix: a "Card plan: exactly 5 quiz cards, exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (11 cards in all)" line opens and closes the request.
+  - The system prompts now say story cards never count as quiz cards.
+- **c11.** New prompt rules for yes/no questions, questions about the lesson itself, flash facts asked straight back, and answers that contain each other.
+- **c12.** `bench/results-v1.json` keeps v1, and `RESULTS.md` opens with its table. `check:claims` checks the current `results.json`.
+- **c13.** The lesson-checker persona, run read-only inside this session, reviewed five decks (`bench/LESSON_CHECKER.md`). It found two wrong keys that passed every mechanical check (y3-light-3 card 9, y3-rocks-2 card 4), a story in y4-electricity-2 that teaches a misconception, and one clean deck (y5-earth-space-4).
+- **Small change.** `check:trace` reads task ids with two digits ("33c10"). The count was unchanged before the new ids.
+- **Tests and mutants.** 21 TASK-33c9–c13 tests in `tests/bench-v2.test.ts`, using the exact cached cards. Two new mutants (the position rule back; the card plan only at the end) are killed.
+- **Shell edits.** One: `cp bench/results.json bench/results-v1.json`, a byte-for-byte copy checked with `cmp`. Throwaway read-only probes `/tmp/diag.mts` and `/tmp/deck.mts`, which were deleted.
