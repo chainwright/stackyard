@@ -1,4 +1,6 @@
-# Lesson-checker review of five bench decks
+# Lesson-checker reviews of bench decks
+
+Two reviews: v1 (five decks, a full content review, just below) and v2 (a key-accuracy sample of 12 decks, [at the end](#v2-key-accuracy-sample-12-decks)).
 
 9 November 2026: run inside Kiro by the lesson-checker persona; read-only.
 
@@ -122,3 +124,52 @@ The flash cards are accurate.
 | y5-earth-space-4 | 0 | 0 | 0 | yes |
 
 The two wrong keys (y3-light-3 card 9, y3-rocks-2 card 4) passed every mechanical check, including "valid on the first try" and the lesson check. That is the case for keeping a reader in the loop.
+
+## v2 key-accuracy sample (12 decks)
+
+9 November 2026: run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's.
+
+The recording is v2: `claude-haiku-5-5`, thinking off, after the TASK-33c9–c11 prompt fixes. The reviewer read the `#stack-data` JSON of each file and changed nothing. The machine-readable verdicts are in [`key-review.json`](key-review.json).
+
+This review asks one question per quiz card: is the marked answer the one defensibly right answer? It is not a full content review, and it is not a classroom study.
+
+**Sample rule** (`keyReviewSample` in `scripts/bench-lib.ts`; deterministic):
+- every 5th objective in `objectives.json` order, starting at the 1st (positions 1, 6, 11, … 51);
+- if that objective has no first-try file, the next one in order that has one (`y4-electricity-2` failed on v2, so `y4-electricity-3` stands in);
+- plus `y3-rocks-2`, because v1 had a wrong key there.
+
+**Verdicts:**
+- **correct:** the marked answer is the one defensibly right answer;
+- **wrong:** the marked answer is false, or another answer is the right one;
+- **ambiguous:** more than one answer is defensible, or the question can't be answered as written.
+
+| Deck | Quiz cards | Correct | Wrong | Ambiguous | Not correct (card: reason) |
+|---|---|---|---|---|---|
+| y3-plants-1 | 5 | 5 | 0 | 0 | — |
+| y3-animals-2 | 5 | 5 | 0 | 0 | — |
+| y3-light-2 | 5 | 5 | 0 | 0 | — |
+| y3-forces-magnets-2 | 5 | 5 | 0 | 0 | — |
+| y4-living-things-1 | 5 | 4 | 0 | 1 | card 3: "…grouped by what they look like and how they do what? → Live" is garbled and can't be answered as written; "Sleep" is defensible |
+| y4-animals-3 | 5 | 5 | 0 | 0 | — |
+| y4-sound-2 | 5 | 4 | 0 | 1 | card 4: "Which medium can sound travel through? → Air", but sound also travels through water and glass, the two "wrong" answers |
+| y4-electricity-3 | 5 | 5 | 0 | 0 | — |
+| y5-living-things-2 | 5 | 5 | 0 | 0 | — |
+| y5-materials-4 | 5 | 5 | 0 | 0 | — |
+| y5-earth-space-3 | 5 | 5 | 0 | 0 | — |
+| y3-rocks-2 | 5 | 5 | 0 | 0 | — |
+| **Total** | **60** | **58** | **0** | **2** | |
+
+**Totals:** 60 quiz cards reviewed from 12 decks: 0 wrong keys, 2 ambiguous.
+
+**What this does and doesn't show.**
+- No wrong key in 60 cards. In v1 we found at least 5 wrong keys across the 50 valid decks (`DIAGNOSIS.md` a).
+- This is a sample of 12 of the 54 v2 decks, read by an AI. It does not prove the other 42 are clean.
+- y3-rocks-2, the v1 deck with "Deep inside volcanoes", now keys "In layers of sediment at the bottom of water".
+
+**Other notes (keys counted correct, but worth an edit):**
+- y3-animals-2 card 3: "Which body part does a muscle join to a bone?" reads backwards. Better: "What joins a muscle to a bone?"
+- y3-animals-2 card 9: "Bones and joints" is near-circular, and "Clouds and wind" / "Leaves and roots" are joke distractors.
+- y4-electricity-3 card 3: "Where does the current start?" Current flows round the loop. The KS2 model "the battery pushes it" makes the key fine, but "What pushes the current round a circuit?" is better.
+- y5-materials-4 card 10: "Ice" is a joke distractor. The story's consequence card 6 says metal "gets very cold in the sun", which is false: metal in the sun gets hot. That card is not a quiz, so it is not counted.
+- y3-light-2 cards 3 and 9 ask nearly the same question.
+- y4-electricity-3 card 10 asks the term from flash card 9 straight back ("Open"). The automatic check missed it: its flash-restatement match did not trigger.

@@ -519,7 +519,7 @@ function summaryRows(s: BenchSummary): string[] {
     "|---|---|",
     `| Objectives recorded | ${s.recorded} of ${s.objectives} |`,
     `| Valid lesson file on the first try (no retry, no fallback) | ${s.firstTry} of ${s.objectives} |`,
-    `| Passed our lesson check with no warnings | ${s.lessonClean} of ${s.objectives} |`,
+    `| Passed our automatic lesson check with no warnings | ${s.lessonClean} of ${s.objectives} |`,
     `| Asked-for counts (5 quiz, 2 flash) | ${s.countsOk} of ${s.objectives} |`,
     `| Every card reachable | ${s.allReachable} of ${s.objectives} |`,
     `| End score reachable, nothing stuck | ${s.endReachable} of ${s.objectives} |`,
@@ -565,6 +565,8 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null)
     "",
     "Times are as recorded by `bench:record` (in process, one sentence each, up to three at once); the replay itself makes no network request.",
     "",
+    "The automatic lesson check is mechanical (structure, counts, answer overlap) and does not verify facts: a wrong answer key passes it. A read-only AI review of the keys in a sample of decks is in [`LESSON_CHECKER.md`](LESSON_CHECKER.md).",
+    "",
     "| Objective | Year | Outcome | First try | Lesson check | Quiz / flash | Reachable | FK grade | Answers per quiz | Pictures | Size | First card | Done | File |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
@@ -578,4 +580,28 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null)
     );
   }
   return lines.join("\n") + "\n";
+}
+
+// ---------------------------------------------------------------------------
+// The key-accuracy sample (TASK-33c15): which decks the lesson-checker persona
+// reads. Deterministic, no randomness: every 5th objective in objectives.json
+// order starting at the 1st (positions 1, 6, 11, … 51); when that objective has
+// no first-try file, the next objective in order that has one and is not yet
+// picked; then the extras (y3-rocks-2, because v1 had a wrong key there).
+
+export const KEY_REVIEW_EXTRA = ["y3-rocks-2"] as const;
+
+export function keyReviewSample(objectives: Objective[], hasFile: (id: string) => boolean, extra: readonly string[] = KEY_REVIEW_EXTRA): string[] {
+  const picked: string[] = [];
+  for (let i = 0; i < objectives.length; i += 5) {
+    for (let j = i; j < objectives.length; j++) {
+      const id = objectives[j]!.id;
+      if (hasFile(id) && !picked.includes(id)) {
+        picked.push(id);
+        break;
+      }
+    }
+  }
+  for (const id of extra) if (hasFile(id) && !picked.includes(id)) picked.push(id);
+  return picked;
 }

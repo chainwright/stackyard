@@ -121,5 +121,41 @@ Each task: Bug (what is missing) / Fix / Acceptance criteria.
   - **Fix.** Inside the Kiro session, acting read-only as `.kiro/agents/lesson-checker.md`, review the `#stack-data` of `bench/files/y3-light-3.html`, `y3-rocks-2.html`, `y4-states-of-matter-3.html`, `y4-electricity-2.html` and `y5-earth-space-4.html`. Write the findings to `bench/LESSON_CHECKER.md`, dated and marked "run inside Kiro by the lesson-checker persona; read-only".
   - **Acceptance criteria.** A docs test checks the date, the line, the five decks in order, and a Facts / Ambiguity / Reading level / Suggested fix block in each.
 
+### TASK-33c14: say the lesson check is automatic and does not verify facts  *(round 3, item 1)*
+  - **Bug.** The bench lines say "passed our lesson check". The check is mechanical (`src/shared/lessonCheck.ts`). In v1 a wrong answer key passed every mechanical check (`DIAGNOSIS.md` a; `LESSON_CHECKER.md`), so "our lesson check" reads as more than it is.
+  - **Fix.**
+    - The README and write-up bench lines say "M passed our automatic lesson check with no warnings".
+    - The sentence after them says: "The checks are mechanical (structure, counts, answer overlap) and do not verify facts."
+    - `check:claims` reads only the new wording and requires that sentence on the line. `--fix` rewrites a line in the old wording, or one without the sentence, to the full new line.
+    - The `RESULTS.md` row and `bench/README.md` use the same words.
+  - **Acceptance criteria.**
+    - Unit tests: the new sentence passes; the old wording is not read as the claim; a line without the mechanical sentence fails; `--fix` turns an old line into the new one without adding a second line.
+    - The real README and write-up carry the new line.
+
+### TASK-33c15: a key-accuracy sample by the lesson-checker persona  *(round 3, item 2)*
+  - **Bug.** No v2 deck has had its answer keys read. The mechanical checks cannot tell a wrong key from a right one.
+  - **Fix.**
+    - Sample rule (`keyReviewSample` in `scripts/bench-lib.ts`, deterministic, no randomness):
+      - every 5th objective in `bench/objectives.json` order, starting at the 1st (positions 1, 6, 11, … 51), which gives 11;
+      - when that objective has no first-try file, take the next objective in order that has one and is not already picked;
+      - plus `y3-rocks-2`, because v1 had a wrong key there.
+    - On v2 that is 12 decks. `y4-electricity-2` (position 36) has no first-try file, so `y4-electricity-3` stands in.
+    - Inside this Kiro session, acting read-only as `.kiro/agents/lesson-checker.md`, read each deck's `#stack-data`. Give EVERY quiz card a verdict: key correct, key wrong or ambiguous, with one line of reason for any that is not correct.
+    - Write a v2 section in `bench/LESSON_CHECKER.md`, keeping v1. It has the date, "run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's", a per-deck table and the totals.
+  - **Acceptance criteria.**
+    - A test re-derives the 12 decks from the rule and `bench/results.json`.
+    - For each deck, `bench/key-review.json` lists exactly the quiz cards of its file, in order, with their questions and keys.
+    - The totals equal the sum of the verdicts, and the v2 section's totals match the JSON.
+
+### TASK-33c16: the key-review line is checked by check:claims  *(round 3, item 3)*
+  - **Fix.**
+    - `bench/key-review.json` is machine-readable: the rule, deck ids, per-card verdicts and totals.
+    - The README and the write-up each get one line: "A read-only AI review of N quiz cards from 12 generated decks found W wrong keys and A ambiguous ones (bench/LESSON_CHECKER.md)."
+    - `check:claims` checks it against totals recomputed from the verdicts in `key-review.json`. It is required while that file exists and refused while it doesn't. `--fix` inserts the line or rewrites it.
+    - If W > 0, `bench/DIAGNOSIS.md` lists the wrong keys under "v2" and says whether a prompt change could plausibly fix them. The prompt is not changed in this task.
+  - **Acceptance criteria.**
+    - Unit tests: a right line passes; a wrong N, W or A fails; no file plus a line fails; `--fix` inserts and rewrites.
+    - A mutant (the key-review line accepted whatever its numbers) is killed.
+
 ### Pending (after we record; not a task id yet)
   - **Done (TASK-33c13).** The lesson-checker persona ran over the five decks named in round 2; see `bench/LESSON_CHECKER.md`.

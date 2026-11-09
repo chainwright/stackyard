@@ -23,6 +23,9 @@
 //   - (TASK-33c7) Once bench/results.json exists: the curriculum-bench line in
 //     both files ("N of 55 … first try; M passed our lesson check …"), with its
 //     "not a classroom study"; before then, neither file may carry it.
+//     (TASK-33c14: "our automatic lesson check", plus the mechanical note.)
+//   - (TASK-33c16) Once bench/key-review.json exists: the key-review line in
+//     both files, against totals recomputed from its per-card verdicts.
 //
 // Exits 0 when every claim matches, 1 (with a report) when any has drifted.
 //
@@ -62,6 +65,11 @@ import {
   README_BENCH_ANCHOR,
   WRITEUP_BENCH_ANCHOR,
   type BenchNumbers,
+  compareKeyReview,
+  fixKeyReview,
+  keyReviewTotals,
+  type KeyNumbers,
+  type KeyReview,
   type WriteupNumbers,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
@@ -70,6 +78,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
 const WRITEUP = path.join(ROOT, "docs", "DEVPOST_WRITEUP.md");
 const BENCH_RESULTS = path.join(ROOT, "bench", "results.json");
+const KEY_REVIEW = path.join(ROOT, "bench", "key-review.json");
+
+/** The key-review totals, recomputed from the verdicts, or null while bench/key-review.json does not exist (TASK-33c16). */
+function keyNumbers(): KeyNumbers | null {
+  if (!existsSync(KEY_REVIEW)) return null;
+  return keyReviewTotals(JSON.parse(readFileSync(KEY_REVIEW, "utf8")) as KeyReview);
+}
 
 /** The bench line's numbers from bench/results.json, or null while it does not exist (TASK-33c7). */
 function benchNumbers(): BenchNumbers | null {
@@ -156,6 +171,8 @@ async function run(): Promise<void> {
   const file = await lessonFileNumbers();
   // TASK-33c7: the bench line is required only once bench/results.json exists.
   const bench = benchNumbers();
+  // TASK-33c16: the key-review line is required only once bench/key-review.json exists.
+  const keys = keyNumbers();
 
   if (fix) {
     if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0 || file.floppy <= 0) {
@@ -168,6 +185,7 @@ async function run(): Promise<void> {
     let fixed = applyFix(readme, actual);
     fixed = fixFloppyClaim(fixed, file.floppy);
     if (bench !== null) fixed = fixBench(fixed, bench, README_BENCH_ANCHOR, readmeBenchLine);
+    if (keys !== null) fixed = fixKeyReview(fixed, keys);
     if (renderCmd !== null) fixed = fixBuildCommands(fixed, renderCmd);
     if (fixed !== readme) {
       writeFileSync(README, fixed, "utf8");
@@ -182,6 +200,7 @@ async function run(): Promise<void> {
   const checks = compare(nowClaimed, actual);
   checks.push(compareFloppy(text, file.floppy));
   checks.push(...compareBench(text, "README", bench));
+  checks.push(...compareKeyReview(text, "README", keys));
   if (renderCmd !== null) {
     const ok = readmeBuildCommandsMatch(text, renderCmd);
     checks.push({
@@ -202,6 +221,7 @@ async function run(): Promise<void> {
     }
     let after = applyWriteupFix(before, writeupActual);
     if (bench !== null) after = fixBench(after, bench, WRITEUP_BENCH_ANCHOR, writeupBenchLine);
+    if (keys !== null) after = fixKeyReview(after, keys);
     if (after !== before) {
       writeFileSync(WRITEUP, after, "utf8");
       console.log("check-claims --fix: docs/DEVPOST_WRITEUP.md rewritten from measured values.");
@@ -209,6 +229,7 @@ async function run(): Promise<void> {
   }
   checks.push(...compareWriteup(readFileSync(WRITEUP, "utf8"), writeupActual));
   checks.push(...compareBench(readFileSync(WRITEUP, "utf8"), "write-up", bench));
+  checks.push(...compareKeyReview(readFileSync(WRITEUP, "utf8"), "write-up", keys));
 
   let failed = false;
   for (const c of checks) {

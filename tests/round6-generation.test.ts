@@ -16,6 +16,7 @@ import { generateStackStream } from "../src/editor/api.js";
 import { CLOSING_MESSAGE_NOTE } from "../src/editor/StartScreen.js";
 import { isLongProse, asksForClosingMessage, isShortPair, isShortTerm } from "../src/shared/endLine.js";
 import { validate } from "../src/shared/validator.js";
+import { normaliseText } from "../src/shared/lessonCheck.js";
 import type { Card, GenerateStreamMessage, Stack } from "../src/shared/types.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -263,14 +264,21 @@ describe("TASK-30a (review fix): a vocabulary card with a long back is never fol
           if (nonEnd.length !== cards.length - out.removedRepeats - trimmed) return false;
           if (trimmed > 0) return validate(out.stack).valid;
           const allTexts = out.stack.cards.flatMap((c) => textsOf(c));
-          return pairs.every(([f]) => allTexts.some((t) => t.includes(f.trim()) || t === f.trim()));
+          // A removed repeat's twin keeps its front in the dedupe's normalised
+          // form ("sq" for "SQ"), so compare normalised (seed 502611254, TASK-33 round 3).
+          const norm = allTexts.map(normaliseText);
+          return pairs.every(([f]) => allTexts.some((t) => t.includes(f.trim()) || t === f.trim()) || norm.some((t) => ` ${t} `.includes(` ${normaliseText(f)} `)));
         },
       ),
       {
         numRuns: runs,
         ...(seed !== undefined ? { seed: Number(seed) } : {}),
         // The counterexample from our gate run (seed 1135286996): a real back "Q0".
-        examples: [[[["aa", "AA"], ["Well done", "Q0"]], G2_PROMPT, false]],
+        examples: [
+          [[["aa", "AA"], ["Well done", "Q0"]], G2_PROMPT, false],
+          // Seed 502611254: "sq" and "SQ" are one card's front twice; the dedupe keeps "sq".
+          [[["sq", "Maith thú means well done."], ["Well done", LONG], ["SQ", LONG]], "", false],
+        ],
       },
     );
   }, 120_000);

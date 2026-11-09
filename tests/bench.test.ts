@@ -352,7 +352,7 @@ describe("TASK-33c7: the bench line is checked by check:claims, in the README an
 
   it("TASK-33c7: the sentence is the one the brief gives", () => {
     expect(benchSentence(b)).toBe(
-      "47 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 41 passed our lesson check with no warnings",
+      "47 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 41 passed our automatic lesson check with no warnings",
     );
     expect(readBenchClaim(readmeBenchLine(b))).toEqual(b);
   });

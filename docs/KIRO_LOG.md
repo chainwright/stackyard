@@ -423,3 +423,19 @@ The coordinator recorded all 55 objectives on the live model config (`claude-hai
 - **Small change.** `check:trace` reads task ids with two digits ("33c10"). The count was unchanged before the new ids.
 - **Tests and mutants.** 21 TASK-33c9–c13 tests in `tests/bench-v2.test.ts`, using the exact cached cards. Two new mutants (the position rule back; the card plan only at the end) are killed.
 - **Shell edits.** One: `cp bench/results.json bench/results-v1.json`, a byte-for-byte copy checked with `cmp`. Throwaway read-only probes `/tmp/diag.mts` and `/tmp/deck.mts`, which were deleted.
+
+## 9 Nov 2026 (late night): bench round 3, what the checks prove (TASK-33c14–c16)
+
+The v2 re-record (by the coordinator) gave 54 / 48 / 47 of 55, against v1's 50 / 36 / 25. The rest of this entry makes the claim honest about what that means. Spec first: TASK-33c14–c16.
+
+- **c14.** The bench lines now say "passed our **automatic** lesson check", followed by "The checks are mechanical (structure, counts, answer overlap) and do not verify facts."
+  - `check:claims` requires both. `--fix` turns an old-wording line into the new one.
+  - The `RESULTS.md` row and `bench/README.md` use the same words.
+- **c15 — key-accuracy sample.** The lesson-checker persona ran read-only inside this session; it is an AI review, not a teacher's. The 12 decks come from a deterministic rule (`keyReviewSample`): every 5th objective from the 1st, with y4-electricity-2 (no first-try file) replaced by y4-electricity-3, plus y3-rocks-2.
+  - It read every quiz card: **60 cards, 0 wrong keys, 2 ambiguous**. The ambiguous ones are y4-living-things-1 card 3 (garbled) and y4-sound-2 card 4 (water and glass are also true).
+  - The results are in `bench/LESSON_CHECKER.md` (v2 section; v1 kept) and in `bench/key-review.json`. A test checks every recorded question and key against the files.
+  - `DIAGNOSIS.md` v2 says a "fully true distractor" prompt rule could plausibly fix the second. The prompt is not changed.
+- **c16.** README and write-up: "A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md)." It is checked against totals recomputed from the verdicts.
+- **Tests and mutants.** 15 tests in `tests/bench-v3.test.ts`. Two new mutants (the key line accepted whatever its numbers; the bench line accepted without the mechanical note) are killed.
+- **A flaky property, found by the gate.** TASK-31g's fold property (random seed 502611254) failed on "sq" and "SQ" as fronts of two flash cards. The repeat pass rightly removes one, but the property compared the surviving front case-sensitively. The test now compares normalised text and keeps that case as an example. No product code changed for it.
+- **Shell edits.** None to lasting files. Read-only probe scripts in `/tmp` were deleted.

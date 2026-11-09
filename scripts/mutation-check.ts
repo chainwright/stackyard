@@ -803,6 +803,22 @@ const MUTANTS: Mutant[] = [
     replace: "return `Generate a stack for: \"${prompt}\"${counts}\\n\\n${plan}`;",
     tests: ["tests/bench-v2.test.ts"],
   },
+  {
+    name: "claims: the key-review line is accepted whatever its numbers",
+    reverts: "33c16 — the key-review line is checked against bench/key-review.json",
+    file: "scripts/claims-lib.ts",
+    find: "      ok: claimed.cards === review.cards && claimed.decks === review.decks && claimed.wrong === review.wrong && claimed.ambiguous === review.ambiguous,",
+    replace: "      ok: true,",
+    tests: ["tests/bench-v3.test.ts"],
+  },
+  {
+    name: "claims: a bench line without 'do not verify facts' is accepted",
+    reverts: "33c14 — the bench line says the checks are mechanical",
+    file: "scripts/claims-lib.ts",
+    find: "  if (!line.includes(BENCH_MECHANICAL)) {",
+    replace: "  if (false) {",
+    tests: ["tests/bench-v3.test.ts"],
+  },
 ];
 
 function run(tests: string[], gate?: string[]): { status: number; output: string } {

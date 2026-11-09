@@ -325,24 +325,31 @@ export interface BenchNumbers {
   lessonClean: number;
 }
 
+// TASK-33c14: "our AUTOMATIC lesson check" — the check is mechanical.
 const BENCH_RE =
-  /(\d+) of (\d+) England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; (\d+) passed our lesson check with no warnings/;
+  /(\d+) of (\d+) England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; (\d+) passed our automatic lesson check with no warnings/;
+/** The pre-TASK-33c14 wording, recognised only so `--fix` can replace it. */
+const OLD_BENCH_RE =
+  /\d+ of \d+ England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; \d+ passed our lesson check with no warnings/;
 
 /** Every text that reports a bench number says this. */
 export const BENCH_DISCLAIMER = "not a classroom study";
 
+/** TASK-33c14: the sentence after the bench numbers. */
+export const BENCH_MECHANICAL = "The checks are mechanical (structure, counts, answer overlap) and do not verify facts.";
+
 export function benchSentence(b: BenchNumbers): string {
-  return `${b.firstTry} of ${b.objectives} England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; ${b.lessonClean} passed our lesson check with no warnings`;
+  return `${b.firstTry} of ${b.objectives} England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; ${b.lessonClean} passed our automatic lesson check with no warnings`;
 }
 
 /** The README's bench line. */
 export function readmeBenchLine(b: BenchNumbers): string {
-  return `- Curriculum bench: ${benchSentence(b)} ([\`bench/RESULTS.md\`](bench/RESULTS.md)). It measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
+  return `- Curriculum bench: ${benchSentence(b)} ([\`bench/RESULTS.md\`](bench/RESULTS.md)). ${BENCH_MECHANICAL} It measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
 }
 
 /** The write-up's bench line ("Accomplishments"). */
 export function writeupBenchLine(b: BenchNumbers): string {
-  return `- ${benchSentence(b)} (\`bench/RESULTS.md\` in the repo, one lesson file per objective). This measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
+  return `- ${benchSentence(b)} (\`bench/RESULTS.md\` in the repo, one lesson file per objective). ${BENCH_MECHANICAL} This measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
 }
 
 /** The numbers a text's bench line states, or null when it has none. */
@@ -373,16 +380,26 @@ export function compareBench(text: string, where: string, bench: BenchNumbers | 
   if (!line.includes(BENCH_DISCLAIMER)) {
     checks.push({ name: `${name} disclaimer`, claimed: "(no disclaimer)", actual: BENCH_DISCLAIMER, ok: false, note: "the line must say it is not a classroom study" });
   }
+  if (!line.includes(BENCH_MECHANICAL)) {
+    checks.push({ name: `${name} mechanical note`, claimed: "(missing)", actual: BENCH_MECHANICAL, ok: false, note: "the line must say the checks do not verify facts" });
+  }
   return checks;
 }
 
 /**
- * Rewrite the bench line's numbers from MEASURED values, or insert `line(b)`
- * after the first line containing `anchor` when the text has none.
+ * Rewrite the bench line from MEASURED values, or insert `line(b)` after the
+ * first line containing `anchor` when the text has none. A line in the old
+ * wording, or one missing the disclaimer or the mechanical note, is replaced
+ * whole by `line(b)` (TASK-33c14); a current one only has its numbers rewritten.
  */
 export function fixBench(text: string, b: BenchNumbers, anchor: string, line: (b: BenchNumbers) => string): string {
-  if (BENCH_RE.test(text)) return text.replace(BENCH_RE, benchSentence(b));
   const lines = text.split("\n");
+  const ix = lines.findIndex((l) => BENCH_RE.test(l) || OLD_BENCH_RE.test(l));
+  if (ix >= 0) {
+    const l = lines[ix]!;
+    lines[ix] = BENCH_RE.test(l) && l.includes(BENCH_DISCLAIMER) && l.includes(BENCH_MECHANICAL) ? l.replace(BENCH_RE, benchSentence(b)) : line(b);
+    return lines.join("\n");
+  }
   const at = lines.findIndex((l) => l.includes(anchor));
   if (at < 0) return text;
   lines.splice(at + 1, 0, line(b));
@@ -392,3 +409,79 @@ export function fixBench(text: string, b: BenchNumbers, anchor: string, line: (b
 /** Where `--fix` inserts the bench line. */
 export const README_BENCH_ANCHOR = "carry photos, so they are larger.";
 export const WRITEUP_BENCH_ANCHOR = "- The player bundle is ";
+
+// ---------------------------------------------------------------------------
+// The key-review line (TASK-33c16): "A read-only AI review of N quiz cards from
+// D generated decks found W wrong keys and A ambiguous ones
+// (bench/LESSON_CHECKER.md)." in README and write-up, checked against totals
+// RECOMPUTED from the per-card verdicts in bench/key-review.json. Required while
+// that file exists; refused while it does not.
+
+export type KeyVerdict = "correct" | "wrong" | "ambiguous";
+
+export interface KeyReview {
+  decks: Array<{ id: string; cards: Array<{ card: number; question: string; key: string; verdict: KeyVerdict; reason?: string }> }>;
+  totals: KeyNumbers;
+}
+
+export interface KeyNumbers {
+  cards: number;
+  decks: number;
+  wrong: number;
+  ambiguous: number;
+}
+
+/** The totals from the verdicts themselves (never from the stored totals). */
+export function keyReviewTotals(r: KeyReview): KeyNumbers {
+  const all = r.decks.flatMap((d) => d.cards);
+  return {
+    cards: all.length,
+    decks: r.decks.length,
+    wrong: all.filter((c) => c.verdict === "wrong").length,
+    ambiguous: all.filter((c) => c.verdict === "ambiguous").length,
+  };
+}
+
+const KEY_RE =
+  /A read-only AI review of (\d+) quiz cards from (\d+) generated decks found (\d+) wrong keys? and (\d+) ambiguous ones? \(bench\/LESSON_CHECKER\.md\)\./;
+
+export function keySentence(k: KeyNumbers): string {
+  return `A read-only AI review of ${k.cards} quiz cards from ${k.decks} generated decks found ${k.wrong} wrong key${k.wrong === 1 ? "" : "s"} and ${k.ambiguous} ambiguous one${k.ambiguous === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
+}
+
+/** The line in both files (a bullet). */
+export function keyReviewLine(k: KeyNumbers): string {
+  return `- ${keySentence(k)} It is an AI review, not a teacher's.`;
+}
+
+export function readKeyClaim(text: string): KeyNumbers | null {
+  const m = KEY_RE.exec(text);
+  return m ? { cards: Number(m[1]), decks: Number(m[2]), wrong: Number(m[3]), ambiguous: Number(m[4]) } : null;
+}
+
+export function compareKeyReview(text: string, where: string, review: KeyNumbers | null): Check[] {
+  const claimed = readKeyClaim(text);
+  const name = `${where} key-review line`;
+  if (review === null) {
+    return claimed === null ? [] : [{ name, claimed: keySentence(claimed), actual: "(no bench/key-review.json)", ok: false, note: "nothing backs it" }];
+  }
+  if (claimed === null) return [{ name, claimed: "(missing)", actual: keySentence(review), ok: false, note: "bench/key-review.json exists, so the line is required" }];
+  return [
+    {
+      name,
+      claimed: keySentence(claimed),
+      actual: keySentence(review),
+      ok: claimed.cards === review.cards && claimed.decks === review.decks && claimed.wrong === review.wrong && claimed.ambiguous === review.ambiguous,
+    },
+  ];
+}
+
+/** Rewrite the key-review sentence from the verdicts, or insert the line after the bench line. */
+export function fixKeyReview(text: string, k: KeyNumbers): string {
+  if (KEY_RE.test(text)) return text.replace(KEY_RE, keySentence(k));
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => BENCH_RE.test(l));
+  if (at < 0) return text;
+  lines.splice(at + 1, 0, keyReviewLine(k));
+  return lines.join("\n");
+}

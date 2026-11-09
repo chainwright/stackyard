@@ -14,7 +14,7 @@ Kept in `bench/results-v1.json`; model: claude-haiku-5-5 (thinking off). What we
 |---|---|
 | Objectives recorded | 55 of 55 |
 | Valid lesson file on the first try (no retry, no fallback) | 50 of 55 |
-| Passed our lesson check with no warnings | 36 of 55 |
+| Passed our automatic lesson check with no warnings | 36 of 55 |
 | Asked-for counts (5 quiz, 2 flash) | 25 of 55 |
 | Every card reachable | 50 of 55 |
 | End score reachable, nothing stuck | 50 of 55 |
@@ -31,7 +31,7 @@ Written by `npm run bench` from the recorded model text in `bench/cache/`. Model
 |---|---|
 | Objectives recorded | 55 of 55 |
 | Valid lesson file on the first try (no retry, no fallback) | 54 of 55 |
-| Passed our lesson check with no warnings | 48 of 55 |
+| Passed our automatic lesson check with no warnings | 48 of 55 |
 | Asked-for counts (5 quiz, 2 flash) | 47 of 55 |
 | Every card reachable | 54 of 55 |
 | End score reachable, nothing stuck | 54 of 55 |
@@ -41,6 +41,8 @@ Written by `npm run bench` from the recorded model text in `bench/cache/`. Model
 | Time to done, p50 / p90 | 8.3 s / 9.1 s |
 
 Times are as recorded by `bench:record` (in process, one sentence each, up to three at once); the replay itself makes no network request.
+
+The automatic lesson check is mechanical (structure, counts, answer overlap) and does not verify facts: a wrong answer key passes it. A read-only AI review of the keys in a sample of decks is in [`LESSON_CHECKER.md`](LESSON_CHECKER.md).
 
 | Objective | Year | Outcome | First try | Lesson check | Quiz / flash | Reachable | FK grade | Answers per quiz | Pictures | Size | First card | Done | File |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|

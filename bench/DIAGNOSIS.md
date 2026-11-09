@@ -107,3 +107,27 @@ Some decks had more than one kind of warning.
 ## Next
 
 We re-record with `npm run bench:record -- --force` and replay. The v1 table stays at the top of `RESULTS.md`, and `check:claims` checks the new `results.json`.
+
+## v2
+
+The coordinator re-recorded all 55 objectives with the TASK-33c9–c11 prompt fixes.
+
+| Measure | v1 | v2 |
+|---|---|---|
+| Valid on the first try | 50 of 55 | 54 of 55 |
+| No lesson warnings | 36 of 55 | 48 of 55 |
+| Asked-for counts | 25 of 55 | 47 of 55 |
+
+**Wrong keys: none found in the sample** (TASK-33c15). The lesson-checker persona read every quiz card in 12 v2 decks (60 cards; `LESSON_CHECKER.md`, `key-review.json`) and found:
+- **0 wrong keys**, so there is nothing to list here;
+- **2 ambiguous** cards:
+  - y4-living-things-1 card 3, a garbled question;
+  - y4-sound-2 card 4: "Which medium can sound travel through? → Air", where water and glass are also true.
+
+This is a sample by an AI reviewer. It does not show the other 42 decks are clean.
+
+**Could a prompt change fix the two ambiguous cards?** Plausibly, at least for the second.
+- y4-sound-2 card 4 is the error the "Wrong answers" rule already forbids: a distractor that is also true. Its wording ("Never offer an option that is partly true…") is about partly true answers. A rule that names "a wrong answer that is fully true too" could catch it.
+- The garbled y4-living-things-1 question is a one-off writing slip that no rule would reliably prevent.
+
+We have not changed the prompt.

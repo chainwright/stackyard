@@ -26,7 +26,7 @@ The same template is `TEMPLATE_HEAD` / `sentenceFor` in [`scripts/bench-lib.ts`]
 For each objective, [`RESULTS.md`](RESULTS.md) and [`results.json`](results.json) report:
 
 - **Valid on the first try.** The model's streamed deck became a valid lesson with no retry and no ready-made fallback.
-- **Lesson check.** The deck passed our lesson check (`src/shared/lessonCheck.ts`, the mechanical half of the lesson-checker persona) with no warnings: no two-answer guess, no duplicate or overlapping answers, no quiz that just restates a flash card, no repeated card.
+- **Lesson check.** The deck passed our automatic lesson check (`src/shared/lessonCheck.ts`, the mechanical half of the lesson-checker persona) with no warnings: no two-answer guess, no duplicate or overlapping answers, no quiz that just restates a flash card, no repeated card. The checks are mechanical (structure, counts, answer overlap) and do not verify facts: a wrong answer key passes them. [`LESSON_CHECKER.md`](LESSON_CHECKER.md) has a read-only AI review of the keys in a sample of decks ([`key-review.json`](key-review.json)).
 - **Count fidelity.** The deck has 5 quiz cards and 2 flash cards, as asked.
 - **Reachability.** Every card can be reached, and the end score can be reached with no card stuck, trapped or a dead end.
 - **Reading level.** The Flesch-Kincaid grade of all card text and button labels, using the small syllable counter documented in `scripts/bench-lib.ts`. It is an estimate of the text, not a measurement of any pupil.

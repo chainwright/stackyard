@@ -1,0 +1,94 @@
+{
+  "about": "Key-accuracy sample of the v2 bench decks (TASK-33c15). Run inside Kiro by the lesson-checker persona (.kiro/agents/lesson-checker.md); read-only; an AI review, not a teacher's. Not a classroom study.",
+  "date": "2026-11-09",
+  "recording": "v2 (bench/results.json; claude-haiku-5-5, thinking off)",
+  "rule": "keyReviewSample in scripts/bench-lib.ts: every 5th objective in bench/objectives.json order starting at the 1st (positions 1, 6, 11, … 51); if that objective has no first-try file, the next objective in order that has one and is not already picked (y4-electricity-2 → y4-electricity-3); plus y3-rocks-2 (v1 had a wrong key there).",
+  "verdicts": "correct = the marked answer is the one defensibly right answer; wrong = the marked answer is false or another answer is the right one; ambiguous = more than one answer is defensible, or the question cannot be answered as written.",
+  "decks": [
+    {"id": "y3-plants-1", "cards": [
+      {"card": 3, "question": "Which part of the plant takes in water from the soil?", "key": "The roots", "verdict": "correct"},
+      {"card": 4, "question": "What is the main job of the leaves?", "key": "To make food using sunlight", "verdict": "correct"},
+      {"card": 8, "question": "Which part of the plant makes the seeds?", "key": "The flower", "verdict": "correct"},
+      {"card": 9, "question": "Which part of the plant carries water up from the roots to the leaves?", "key": "The stem", "verdict": "correct"},
+      {"card": 10, "question": "What is the main job of a flower?", "key": "To make seeds for new plants", "verdict": "correct"}
+    ]},
+    {"id": "y3-animals-2", "cards": [
+      {"card": 1, "question": "What is the job of a skeleton?", "key": "To support and protect the body", "verdict": "correct"},
+      {"card": 3, "question": "Which body part does a muscle join to a bone?", "key": "A tendon", "verdict": "correct"},
+      {"card": 7, "question": "Which part of the body protects the heart and lungs?", "key": "The ribcage", "verdict": "correct"},
+      {"card": 8, "question": "Which of these animals has a skeleton inside its body?", "key": "A horse", "verdict": "correct"},
+      {"card": 9, "question": "What do muscles need to pull on to make a bone move?", "key": "Bones and joints", "verdict": "correct"}
+    ]},
+    {"id": "y3-light-2", "cards": [
+      {"card": 2, "question": "What happens to light when it hits a mirror?", "key": "It bounces back off the mirror", "verdict": "correct"},
+      {"card": 3, "question": "Which surface reflects light best?", "key": "A polished metal spoon", "verdict": "correct"},
+      {"card": 8, "question": "Why can you see your face in a shiny spoon?", "key": "Light reflects off the spoon into your eyes", "verdict": "correct"},
+      {"card": 9, "question": "Which of these is the best reflector of light?", "key": "A clean mirror", "verdict": "correct"},
+      {"card": 10, "question": "What do we call light bouncing off a surface?", "key": "Reflection", "verdict": "correct"}
+    ]},
+    {"id": "y3-forces-magnets-2", "cards": [
+      {"card": 1, "question": "You push a football with your foot. Do your foot and the ball need to touch?", "key": "Yes, they must touch", "verdict": "correct"},
+      {"card": 3, "question": "A fridge magnet pulls a metal door without touching it. What kind of force is this?", "key": "A magnetic force", "verdict": "correct"},
+      {"card": 4, "question": "Which of these forces can act at a distance?", "key": "Magnetic force", "verdict": "correct"},
+      {"card": 8, "question": "A rubber ball bounces off a wall. Does the wall need to touch the ball to push it back?", "key": "Yes, they must touch", "verdict": "correct"},
+      {"card": 10, "question": "Which object can a magnet pull across a gap?", "key": "A steel paper clip", "verdict": "correct"}
+    ]},
+    {"id": "y4-living-things-1", "cards": [
+      {"card": 2, "question": "Which group does a cat belong to?", "key": "Mammals", "verdict": "correct"},
+      {"card": 3, "question": "Living things can be grouped by what they look like and how they do what?", "key": "Live", "verdict": "ambiguous", "reason": "The question is garbled and cannot be answered as written; \"how they live\" is only one reading, and a pupil could defend \"Sleep\" (grouping by behaviour)."},
+      {"card": 8, "question": "Which feature would you use to group birds together?", "key": "They have feathers", "verdict": "correct"},
+      {"card": 9, "question": "Which living thing is a plant?", "key": "Oak tree", "verdict": "correct"},
+      {"card": 10, "question": "Which group does a trout belong to?", "key": "Fish", "verdict": "correct"}
+    ]},
+    {"id": "y4-animals-3", "cards": [
+      {"card": 2, "question": "Which living thing is a producer in a food chain?", "key": "Grass", "verdict": "correct"},
+      {"card": 3, "question": "In the chain grass, then mouse, then owl, what does the mouse eat?", "key": "Grass", "verdict": "correct"},
+      {"card": 5, "question": "In the chain grass, then rabbit, then fox, which animal is the prey?", "key": "Rabbit", "verdict": "correct"},
+      {"card": 9, "question": "Which animal is a predator that eats other animals?", "key": "Fox", "verdict": "correct"},
+      {"card": 10, "question": "What gives energy to start every food chain?", "key": "Sunlight", "verdict": "correct"}
+    ]},
+    {"id": "y4-sound-2", "cards": [
+      {"card": 2, "question": "What makes a sound?", "key": "Vibrations", "verdict": "correct"},
+      {"card": 3, "question": "Sound needs something to travel through. What is this called?", "key": "A medium", "verdict": "correct"},
+      {"card": 4, "question": "Which medium can sound travel through?", "key": "Air", "verdict": "ambiguous", "reason": "Sound travels through all three options (water, air and glass), so the two \"wrong\" answers are also true."},
+      {"card": 6, "question": "Where do vibrations from sound go first in the ear?", "key": "The eardrum", "verdict": "correct"},
+      {"card": 10, "question": "What happens to the eardrum when sound vibrations reach it?", "key": "It shakes", "verdict": "correct"}
+    ]},
+    {"id": "y4-electricity-3", "cards": [
+      {"card": 2, "question": "A lamp is connected to one battery with a wire at each end. Is the loop complete?", "key": "Yes, the loop is complete", "verdict": "correct"},
+      {"card": 3, "question": "Where does the current start in a simple circuit?", "key": "At the battery", "verdict": "correct"},
+      {"card": 4, "question": "A wire has a break in it. Will the lamp light?", "key": "No, the loop is no longer complete", "verdict": "correct"},
+      {"card": 8, "question": "Which of these is a complete loop with a battery?", "key": "A battery, a lamp and wires joined end to end", "verdict": "correct"},
+      {"card": 10, "question": "Which word describes a circuit with a gap in it?", "key": "Open", "verdict": "correct"}
+    ]},
+    {"id": "y5-living-things-2", "cards": [
+      {"card": 3, "question": "Which part of a plant makes the seeds?", "key": "The flower", "verdict": "correct"},
+      {"card": 4, "question": "What does a bee help move from flower to flower?", "key": "Pollen", "verdict": "correct"},
+      {"card": 5, "question": "Frogs lay eggs in water. What is this called?", "key": "Spawning", "verdict": "correct"},
+      {"card": 9, "question": "How do many plants spread their seeds to new places?", "key": "By wind, water or animals", "verdict": "correct"},
+      {"card": 10, "question": "Which animal grows from a tiny egg into an adult in a process called metamorphosis?", "key": "Butterfly", "verdict": "correct"}
+    ]},
+    {"id": "y5-materials-4", "cards": [
+      {"card": 2, "question": "Which material would be best for a bucket that holds water?", "key": "Plastic", "verdict": "correct"},
+      {"card": 3, "question": "Why are metal saucepans used for cooking?", "key": "They let heat pass through quickly", "verdict": "correct"},
+      {"card": 7, "question": "Which material is best for a window in a house?", "key": "Glass", "verdict": "correct"},
+      {"card": 8, "question": "Why is wood used to make a table?", "key": "It is strong and does not break easily", "verdict": "correct"},
+      {"card": 10, "question": "Which material would be best for a spoon for hot soup?", "key": "Wood", "verdict": "correct"}
+    ]},
+    {"id": "y5-earth-space-3", "cards": [
+      {"card": 1, "question": "What shape is the sun?", "key": "Round like a ball", "verdict": "correct"},
+      {"card": 3, "question": "What shape is the Earth?", "key": "Round like a ball", "verdict": "correct"},
+      {"card": 4, "question": "Which word best describes the shape of the moon?", "key": "Spherical", "verdict": "correct"},
+      {"card": 8, "question": "Why are the sun, Earth and moon round?", "key": "Gravity pulls them evenly from all sides", "verdict": "correct"},
+      {"card": 9, "question": "Which one is the best example of a sphere?", "key": "A football", "verdict": "correct"}
+    ]},
+    {"id": "y3-rocks-2", "cards": [
+      {"card": 2, "question": "What is a fossil?", "key": "The remains or traces of something that once lived", "verdict": "correct"},
+      {"card": 3, "question": "What usually has to happen to a plant or animal before a fossil can form?", "key": "It is buried quickly in mud or sand", "verdict": "correct"},
+      {"card": 5, "question": "Where do most fossils form?", "key": "In layers of sediment at the bottom of water", "verdict": "correct"},
+      {"card": 6, "question": "Over millions of years, what happens to the buried sediment?", "key": "It is pressed and hardens into rock", "verdict": "correct"},
+      {"card": 10, "question": "Which part of a fossil story helps scientists know how old it is?", "key": "The layers of rock it was found in", "verdict": "correct"}
+    ]}
+  ],
+  "totals": {"cards": 60, "decks": 12, "wrong": 0, "ambiguous": 2}
+}
