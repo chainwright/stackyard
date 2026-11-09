@@ -1,0 +1,45 @@
+{
+  "note": "Live-shaped (TASK-32b): fewer quizzes than asked (4 for a 6-question quiz). They are kept, and the Maker says so.",
+  "prompt": "a 6-question quiz on volcanoes for 4th class",
+  "expect": {
+    "quiz": 4,
+    "removedRepeats": 0,
+    "notes": ["You asked for 6 questions; the model wrote 4."]
+  },
+  "stack": {
+    "id": "s",
+    "title": "Volcanoes",
+    "theme": { "background": "#FBF8F1", "foreground": "#1E2A47", "font": "sans-serif" },
+    "cards": [
+      { "id": "c1", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What comes out of a volcano when it erupts?" },
+        { "type": "button", "id": "a", "label": "Lava", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c2" }] },
+        { "type": "button", "id": "b", "label": "Snow", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c2" }] },
+        { "type": "button", "id": "c", "label": "Milk", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c2" }] }
+      ] },
+      { "id": "c2", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is hot melted rock under the ground called?" },
+        { "type": "button", "id": "a", "label": "Ash", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c3" }] },
+        { "type": "button", "id": "b", "label": "Magma", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c3" }] },
+        { "type": "button", "id": "c", "label": "Clay", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c3" }] }
+      ] },
+      { "id": "c3", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "Which of these is a volcano?" },
+        { "type": "button", "id": "a", "label": "Mount Etna", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c4" }] },
+        { "type": "button", "id": "b", "label": "Lough Neagh", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c4" }] },
+        { "type": "button", "id": "c", "label": "The Shannon", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c4" }] },
+        { "type": "image", "picto": "mountain" }
+      ] },
+      { "id": "c4", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What can a big eruption fill the sky with?" },
+        { "type": "button", "id": "a", "label": "Ash", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "button", "id": "b", "label": "Rainbows", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "button", "id": "c", "label": "Bubbles", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c5" }] }
+      ] },
+      { "id": "c5", "kind": "end", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "You finished the volcano quiz" },
+        { "type": "field", "id": "s", "variable": "score" }
+      ] }
+    ]
+  }
+}

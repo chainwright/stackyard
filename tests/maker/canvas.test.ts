@@ -63,7 +63,7 @@ describe("TASK-14: Canvas", () => {
     expect(text).toContain("Cork");
     // The reused renderer's own card class is present.
     expect(root.querySelector(".sy-card")).not.toBeNull();
-    expect(root.querySelectorAll(".sy-tile").length).toBe(2);
+    expect(root.querySelectorAll(".sy-tile").length).toBe(3);
   });
 
   it("clicking a rendered element selects it (selectedElementId set)", async () => {
@@ -95,8 +95,8 @@ describe("TASK-14: Canvas", () => {
     const store = freshStore();
     const root = mount(store);
     await flush();
-    // The quiz starts with two answer tiles.
-    expect(root.querySelectorAll(".sy-tile").length).toBe(2);
+    // The quiz starts with three answer tiles (the fixture gained one in TASK-32b).
+    expect(root.querySelectorAll(".sy-tile").length).toBe(3);
 
     // Add a plain button (no actions) to the quiz card.
     const { addButtonElement } = await import("../../src/editor/operations.js");
@@ -104,9 +104,9 @@ describe("TASK-14: Canvas", () => {
     store.apply((s) => addButtonElement(s, cardId, "New button"));
     await flush();
 
-    // The two answer tiles are STILL tiles (not restyled to generic buttons),
+    // The three answer tiles are STILL tiles (not restyled to generic buttons),
     // and the new plain button renders as a generic button, not a tile.
-    expect(root.querySelectorAll(".sy-tile").length).toBe(2);
+    expect(root.querySelectorAll(".sy-tile").length).toBe(3);
     const generic = Array.from(root.querySelectorAll<HTMLElement>(".sy-button"));
     expect(generic.some((b) => (b.textContent ?? "").includes("New button"))).toBe(true);
   });

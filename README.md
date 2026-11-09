@@ -32,7 +32,7 @@ files with the network off in Playwright's Chromium, Firefox and WebKit builds
 The default export is a **living file**: it plays exactly like the plain class
 file, and a small **Teacher** tab in the corner opens a lighter editor *inside the
 file*, built on the same validated edit operations as the Maker. A teacher can fix
-a typo, change which answer is right, add or remove a card, press **Try It**, and
+a typo, change which answer is right, add or remove a card, drag on quiz and story cards (not flash or end cards, which keep their own layout) with Undo, press **Try It**, and
 **Save a Copy** (a new file, named `<title> (copy).html`) on a class laptop with
 the Wi-Fi off. The copy is itself a living file. "Export for class (smaller)" is
 the play-only alternative.
@@ -89,8 +89,10 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 - **Hooks** — six hooks (invariants on save, living-file gate, export check,
   ready-made content check, `invariants-after-shell-edit` — a `PostToolUse` hook
   on the agent's shell commands that re-runs the invariants after a shell edit —
-  and a `pre-submit` gate that fires when a spec task is done):
-  [`.kiro/hooks/`](.kiro/hooks/).
+  and a `pre-submit` gate set to fire when a spec task is marked done (not yet recorded firing; run on demand as `/pre-submit`)):
+  [`.kiro/hooks/`](.kiro/hooks/). Kiro's session store recorded 493 hook
+  firings in our main session (5 to 9 Nov), counted per hook in
+  [`docs/kiro-sessions/`](docs/kiro-sessions/).
 - **Custom agent** — the lesson checker that reads a set of cards (we ran it on
   the ready-made decks) for factual errors, ambiguous questions and reading
   level: [`.kiro/agents/`](.kiro/agents/).
@@ -108,17 +110,14 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 HyperCard let non-programmers build clickable, branching "stacks" in 1987.
 Successors like HyperStudio and Decker exist; we have not found one that starts from a teacher's sentence. Stackyard brings that back for a teacher
 with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
-scored lesson the class plays, every stack satisfies nine validity invariants so
-it always plays to an end score, and the exported file is re-importable
+scored lesson the class plays, every stack satisfies nine validity invariants, and a 'before you share' check warns if any card can't reach the end score, and the exported file is re-importable
 (round-tripped losslessly, checked by a 1,000-run property test).
 
 ## Prior art (and what we haven't found elsewhere)
 
 - **Decker** (a modern HyperCard-tradition tool) exports one offline HTML with
   the runtime inside — but it has no generation and uses a scripting language.
-- **H5P / Lumi** export an offline interactive activity for teachers — but
-  authoring is form-based per content type, with no generation from a sentence
-  and no free-form card editing.
+- **H5P / Lumi** export an offline interactive activity for teachers, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.
 - **AI quiz makers** turn a topic into a quiz — but they usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
@@ -148,12 +147,17 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1145** passing (`npm test`).
-- Player bundle: **12.0 KB** gzipped (budget 50 KB).
+- Tests: **1200** passing (`npm test`).
+- Player bundle: **11.9 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 
 ## Development
+
+**The Devpost write-up lives in this repo** at
+[`docs/DEVPOST_WRITEUP.md`](docs/DEVPOST_WRITEUP.md) (it used to be a draft
+outside the repository). `npm run check:claims` checks its numbers the same way
+it checks this README.
 
 Install dependencies with `npm ci`, then:
 
@@ -266,6 +270,16 @@ point it at this repo, and set `STACKYARD_LLM_API_KEY` in the dashboard (it is
 `npm start`, and `/api/health` is the health check (a cheap keep-warm ping that
 makes no model call).
 
+**Keep-warm.** A ready-to-install GitHub Actions workflow is in
+[`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml). It pings `/api/health` every
+10 minutes, with one retry, no secrets and no repository permissions. It becomes
+active only once it is copied to `.github/workflows/keep-warm.yml` on GitHub (a
+token without the `workflow` scope can't push workflow files, so it is installed
+through the GitHub web editor). Until then an external pinger keeps the demo warm.
+Even when installed, GitHub may delay or skip scheduled runs when it is busy, so a
+free instance can still be cold after a quiet spell: the first load then takes up
+to a minute.
+
 ## Third-party assets
 
 Stackyard ships two open-source typefaces and three public-domain pictures (one Public Domain Mark, two CC0). The fonts are self-hosted (no CDN) as
@@ -301,7 +315,7 @@ Both fonts are also disclosed in the Devpost "libraries / assets" list.
 
 ### Pictures
 
-Generated cards can carry one small drawing too: the model names a picture from a set of 42 pictograms that we drew ourselves (sun, cloud, rain, river, ship, castle, book and so on; MIT, like the code), and the server draws it from that set. No model text ever becomes picture data, nothing is fetched, and the card credits it as "Picture: Stackyard pictogram". The teacher can swap or remove it in the Maker (Picture list) or add their own photo with Add Picture.
+Generated cards can carry one small drawing too: the model names a picture from a set of 42 pictograms that we drew ourselves (sun, cloud, rain, river, ship, castle, book and so on; MIT, like the code), and the server draws it from that set. No model text ever becomes picture data and nothing is fetched. The cards carry no credit line (the drawings are ours, so the child's card stays clean); this README is the credit: the pictograms are "Stackyard pictograms", MIT, like the code. A picture that would name a quiz's right answer is dropped. The teacher can swap or remove it in the Maker (Picture list) or add their own photo with Add Picture.
 
 Each ready-made deck carries one picture (three photographs, none showing people), inlined as a data URI and credited
 on the card (creator, licence, source domain). We found them on

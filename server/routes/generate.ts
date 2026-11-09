@@ -184,6 +184,7 @@ export async function handleGenerate(
       isFallback: result.isFallback,
     };
     if (result.movedClosingMessage === true) payload["movedClosingMessage"] = true;
+    if (typeof result.removedRepeats === "number" && result.removedRepeats > 0) payload["removedRepeats"] = result.removedRepeats;
     if (result.isFallback) {
       if (result.isReadyMadeExample) payload["isReadyMadeExample"] = true;
       if (result.fallbackReason) payload["fallbackReason"] = result.fallbackReason;

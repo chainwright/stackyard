@@ -40,7 +40,7 @@ async function attempt(
   signal?: AbortSignal,
   prompt?: string,
 ): Promise<
-  | { ok: true; stack: import("../src/shared/types.js").Stack; movedClosingMessage: boolean }
+  | { ok: true; stack: import("../src/shared/types.js").Stack; movedClosingMessage: boolean; removedRepeats: number }
   | { ok: false; errors: string[] }
 > {
   // LlmUnavailableError and ConfigurationError are intentionally NOT caught here —
@@ -67,7 +67,7 @@ async function attempt(
     // a way forward, and vary which tile is right. Each step only re-positions,
     // retargets or adds, so the invariants hold (TASK-26 b, c, j).
     const fin = finaliseGeneratedStackDetailed(result.stack, prompt === undefined ? {} : { prompt });
-    return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage };
+    return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage, removedRepeats: fin.removedRepeats };
   }
   return { ok: false, errors: result.errors };
 }
@@ -139,7 +139,7 @@ export async function generate(
     const first = await attempt(firstMessages, 0.7, opts.onModelCall, opts.signal, request.prompt);
 
     if (first.ok) {
-      return { ok: true, stack: first.stack, isFallback: false, ...(first.movedClosingMessage ? { movedClosingMessage: true } : {}) };
+      return { ok: true, stack: first.stack, isFallback: false, ...(first.movedClosingMessage ? { movedClosingMessage: true } : {}), ...(first.removedRepeats > 0 ? { removedRepeats: first.removedRepeats } : {}) };
     }
 
     // Nobody is listening any more: do not pay for a retry.
@@ -150,7 +150,7 @@ export async function generate(
     const retry = await attempt(retryMessages, 0.2, opts.onModelCall, opts.signal, request.prompt);
 
     if (retry.ok) {
-      return { ok: true, stack: retry.stack, isFallback: false, ...(retry.movedClosingMessage ? { movedClosingMessage: true } : {}) };
+      return { ok: true, stack: retry.stack, isFallback: false, ...(retry.movedClosingMessage ? { movedClosingMessage: true } : {}), ...(retry.removedRepeats > 0 ? { removedRepeats: retry.removedRepeats } : {}) };
     }
 
     // Both attempts failed — return a plain-language error.

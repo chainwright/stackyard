@@ -36,7 +36,8 @@ function makeStorage() {
   };
 }
 
-/** A flash card (with a back) that already carries the sun pictogram and its credit. */
+/** A flash card (with a back) that carries the sun pictogram — and an OLD credit line
+ *  from before TASK-32c, which must never be drawn. */
 function flashWithPicture(): Stack {
   const flash: Card = {
     id: u(1), kind: "flash", actions: [],
@@ -62,7 +63,7 @@ afterEach(() => {
 });
 
 describe("TASK-31h: the player draws the picture", () => {
-  it("TASK-31h: a flash card shows the picture and its credit, the term is still the term, and the credit is never the back", () => {
+  it("TASK-32c: a flash card shows the picture with NO credit line (even an old one), the term is still the term", () => {
     const stack = flashWithPicture();
     const root = document.createElement("div");
     document.body.appendChild(root);
@@ -71,34 +72,32 @@ describe("TASK-31h: the player draws the picture", () => {
     expect(img).not.toBeNull();
     expect(img.getAttribute("src")).toBe(pictogramDataUri("sun"));
     expect(img.getAttribute("alt")).toBe("Picture: sun");
-    expect(root.textContent).toContain(PICTOGRAM_CREDIT);
+    expect(root.textContent).not.toContain(PICTOGRAM_CREDIT);
     expect(root.querySelector(".sy-flash-term")?.textContent).toBe("Evaporation");
     // Tapping flips to the real back, not to the credit.
     root.querySelector<HTMLElement>(".sy-flash")!.click();
     expect(root.querySelector(".sy-flash-back")?.textContent).toBe("Water turns into vapour when the sun heats it.");
+    expect(root.textContent).not.toContain(PICTOGRAM_CREDIT);
     expect(root.querySelector(".sy-image")).not.toBeNull();
     // The picture takes no tap: it sits over the card with pointer-events off.
     expect((img.closest(".sy-element") as HTMLElement).style.pointerEvents).toBe("none");
   });
 
-  it("TASK-31h: a quiz card shows the picture and the credit as small text under the question", () => {
-    const stack = quizStack();
+  it("TASK-32c: a quiz card made by setPictogram shows the picture and no credit text", () => {
+    const stack = setPictogram(quizStack(), quizStack().cards[0]!.id, "book") as Stack;
     const card = stack.cards[0]!;
-    card.elements.push(
-      { type: "image", id: u(31), ...PICTURE_SLOT, src: pictogramDataUri("book"), alt: "Picture: book" },
-      { type: "text", id: u(32), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT },
-    );
     const root = document.createElement("div");
     document.body.appendChild(root);
     renderCard(card, root, createRuntime(stack), () => {}, () => {}, { position: 1, total: 2 });
     expect(root.querySelector(".sy-image")?.getAttribute("src")).toBe(pictogramDataUri("book"));
     expect(root.querySelectorAll(".sy-question")).toHaveLength(1);
-    expect(root.querySelector(".sy-text")?.textContent).toBe(PICTOGRAM_CREDIT);
+    expect(root.textContent).not.toContain(PICTOGRAM_CREDIT);
+    expect(card.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false);
   });
 });
 
 describe("TASK-31h: the Maker's flash preview draws the picture on both sides", () => {
-  it("TASK-31h: front and back both show the picture and the credit", async () => {
+  it("TASK-32c: front and back both show the picture, and no credit line", async () => {
     const stack = flashWithPicture();
     const ref = { draw: (): void => {} };
     const store = new EditorStore({ stack, screen: "editor" }, { storage: makeStorage(), onChange: () => ref.draw() });
@@ -111,27 +110,29 @@ describe("TASK-31h: the Maker's flash preview draws the picture on both sides", 
       ref.draw();
       await flush();
       expect(root.querySelector(".sy-image")?.getAttribute("src"), side).toBe(pictogramDataUri("sun"));
-      expect(root.textContent, side).toContain(PICTOGRAM_CREDIT);
+      expect(root.textContent, side).not.toContain(PICTOGRAM_CREDIT);
     }
   });
 });
 
 describe("TASK-31h: setPictogram — add, swap, remove", () => {
-  it("TASK-31h: adds a picture and its credit, swaps it without doubling, and removes both", () => {
+  it("TASK-32c: adds a picture with no credit line, swaps it without doubling, removes it — and clears an OLD credit line too", () => {
     const stack = quizStack();
     const id = stack.cards[0]!.id;
     const added = setPictogram(stack, id, "sun");
     expect(isRejected(added as never)).toBe(false);
     const a = added as Stack;
     expect(pictogramOf(a.cards[0]!)).toBe("sun");
+    expect(a.cards[0]!.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false);
     expect(validate(a).valid).toBe(true);
+    // An older file's credit line comes off when the picture is swapped.
+    a.cards[0]!.elements.push({ type: "text", id: u(51), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT });
     const swapped = setPictogram(a, id, "moon") as Stack;
     expect(pictogramOf(swapped.cards[0]!)).toBe("moon");
     expect(swapped.cards[0]!.elements.filter((e) => e.type === "image")).toHaveLength(1);
-    expect(swapped.cards[0]!.elements.filter((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toHaveLength(1);
+    expect(swapped.cards[0]!.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false);
     const removed = setPictogram(swapped, id, null) as Stack;
     expect(removed.cards[0]!.elements.some((e) => e.type === "image")).toBe(false);
-    expect(removed.cards[0]!.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false);
     expect(validate(removed).valid).toBe(true);
   });
 

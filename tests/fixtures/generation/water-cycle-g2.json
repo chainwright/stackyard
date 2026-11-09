@@ -1,0 +1,88 @@
+{
+  "note": "Live-shaped (TASK-32b): the organiser's water-cycle run at 1ce7395 — a second identical Evaporation flash card, 7 quizzes for a 6-question quiz, 6 of 7 quizzes with only two answers, and an ambiguous key ('Rivers and lakes that lead to the sea' vs 'The sea'). Written by us in the model's own shape (c1… ids, no coordinates).",
+  "prompt": "A 6-question quiz on the water cycle for 4th class, two flash cards (evaporation, condensation) and a short choose-your-path story about a raindrop, the right answer plays a cheer",
+  "expect": {
+    "quiz": 6,
+    "flash": 2,
+    "removedRepeats": 1,
+    "warnings": ["two-answers", "answer-inside-answer"],
+    "notes": ["We removed 1 repeated card."]
+  },
+  "stack": {
+    "id": "s",
+    "title": "The water cycle",
+    "theme": { "background": "#FBF8F1", "foreground": "#1E2A47", "font": "sans-serif" },
+    "cards": [
+      { "id": "c1", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "c1-t", "content": "Evaporation" },
+        { "type": "text", "id": "c1-b", "content": "Evaporation is when the sun heats water and it turns into vapour that rises into the air." },
+        { "type": "button", "id": "c1-n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c2" }] },
+        { "type": "image", "picto": "sun" }
+      ] },
+      { "id": "c2", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "c2-t", "content": "Evaporation" },
+        { "type": "text", "id": "c2-b", "content": "Evaporation is when the sun heats water and it turns into vapour that rises into the air." },
+        { "type": "button", "id": "c2-n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c3" }] }
+      ] },
+      { "id": "c3", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "c3-t", "content": "Condensation" },
+        { "type": "text", "id": "c3-b", "content": "Condensation is when water vapour cools down and turns back into tiny drops that make clouds." },
+        { "type": "button", "id": "c3-n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c4" }] }
+      ] },
+      { "id": "c4", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c4-q", "content": "What heats water so it evaporates?" },
+        { "type": "button", "id": "c4-a", "label": "The sun", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "button", "id": "c4-b", "label": "The moon", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "image", "picto": "sun" }
+      ] },
+      { "id": "c5", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c5-q", "content": "What do tiny drops of water make high in the sky?" },
+        { "type": "button", "id": "c5-a", "label": "Clouds", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "button", "id": "c5-b", "label": "Stars", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c6" }] }
+      ] },
+      { "id": "c6", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c6-q", "content": "What falls from clouds when the drops get heavy?" },
+        { "type": "button", "id": "c6-a", "label": "Rain", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "c6-b", "label": "Sand", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "c6-c", "label": "Leaves", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] }
+      ] },
+      { "id": "c7", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "c7-t", "content": "You are a raindrop on a hill. Do you roll down to the river or soak into the ground?" },
+        { "type": "button", "id": "c7-a", "label": "Roll to the river", "actions": [{ "type": "goto", "cardId": "c8" }] },
+        { "type": "button", "id": "c7-b", "label": "Soak into the ground", "actions": [{ "type": "goto", "cardId": "c9" }] }
+      ] },
+      { "id": "c8", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "c8-t", "content": "You rush down the hill and join the river on its way to the sea." },
+        { "type": "button", "id": "c8-a", "label": "Continue", "actions": [{ "type": "goto", "cardId": "c10" }] }
+      ] },
+      { "id": "c9", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "c9-t", "content": "You sink into the soil and a tree drinks you up through its roots." },
+        { "type": "button", "id": "c9-a", "label": "Continue", "actions": [{ "type": "goto", "cardId": "c10" }] }
+      ] },
+      { "id": "c10", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c10-q", "content": "Where does rain eventually flow back to?" },
+        { "type": "button", "id": "c10-a", "label": "Rivers and lakes that lead to the sea", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c11" }] },
+        { "type": "button", "id": "c10-b", "label": "The sea", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c11" }] }
+      ] },
+      { "id": "c11", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c11-q", "content": "What does the sun do to start the water cycle?" },
+        { "type": "button", "id": "c11-a", "label": "It warms the water", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c12" }] },
+        { "type": "button", "id": "c11-b", "label": "It freezes the water", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c12" }] }
+      ] },
+      { "id": "c12", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c12-q", "content": "What do we call water that falls from the sky?" },
+        { "type": "button", "id": "c12-a", "label": "Precipitation", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c13" }] },
+        { "type": "button", "id": "c12-b", "label": "Erosion", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c13" }] }
+      ] },
+      { "id": "c13", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "c13-q", "content": "Which happens first in the water cycle?" },
+        { "type": "button", "id": "c13-a", "label": "Evaporation", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c14" }] },
+        { "type": "button", "id": "c13-b", "label": "Rain", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c14" }] }
+      ] },
+      { "id": "c14", "kind": "end", "actions": [], "elements": [
+        { "type": "text", "id": "c14-t", "content": "You finished the water cycle" },
+        { "type": "field", "id": "c14-s", "variable": "score" }
+      ] }
+    ]
+  }
+}

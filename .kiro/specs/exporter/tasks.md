@@ -735,3 +735,10 @@ change in Play.
   - **31b.** Below 700 px the card list collapses behind a "Cards" toggle, the preview takes the full width and the inspector goes below it. Desktop is unchanged.
   - **31d.** The living preview moves an element by dragging, through the shared `moveElement` operation (clamped to the canvas, button overlap guard), as one reversible step in the Teacher tab's history. Preview nodes carry element ids.
   - **Acceptance criteria.** See `maker/tasks.md` TASK-31b and TASK-31d. `scripts/check-living-file.ts` gains the 390 px check and the drag-and-save check.
+
+
+### TASK-32b / 32c / 32d: the Teacher tab and the exported file  *(J04 Extra B, Extra D)*
+  - **32b.** The Teacher tab's "Before you share" (Save a Copy) shows the same lesson warnings as the Maker (`lessonWarnings`): two-answer quizzes, duplicate answers, an answer that contains another, a quiz that just restates a flash card. They are warnings only; OK still saves.
+  - **32c.** Neither the exported player nor the Teacher tab draws a "Picture: Stackyard pictogram" line. Re-placing, swapping or removing a picture also removes an old one.
+  - **32d.** Drag works on quiz and story cards, not on flash or end cards. Those keep their own layout: the flip surface draws the term in two places, and the end card is a centred column. The inspector says so on those cards.
+  - **Acceptance criteria.** A living test that the Save a Copy confirm lists a lesson warning. DOM tests for no credit line and for the inspector hint. `check-living-file` stays green.

@@ -5,8 +5,8 @@
 // living), opens them from disk in headless Chrome with the network BLOCKED, and
 // measures the first card in real layout:
 //   - the picture is an <img> with one of our data:image/svg+xml URIs and it DECODES,
-//   - it lies inside the card and overlaps no other element, nor the credit,
-//   - the credit "Picture: Stackyard pictogram" is on the card, inside it,
+//   - it lies inside the card and overlaps no other element,
+//   - (TASK-32c) the card does NOT print a "Picture: Stackyard pictogram" credit line,
 //   - the page made no network request (the picture is inline, nothing is fetched).
 //
 //   node --import tsx/esm scripts/check-pictograms.ts
@@ -95,15 +95,11 @@ const DRIVER = `
     var ir = rect(wrapper);
     if (ir.left < cr.left - 1 || ir.right > cr.right + 1 || ir.top < cr.top - 1 || ir.bottom > cr.bottom + 1) problems.push("the picture lies outside the card");
     if (ir.width < 40 || ir.height < 40) problems.push("the picture is tiny: " + Math.round(ir.width) + "x" + Math.round(ir.height));
-    // The credit line is on the card and inside it.
+    // TASK-32c: no credit line on the child's card.
     var creditEl = null;
-    Array.prototype.forEach.call(card.querySelectorAll("p"), function (p) { if ((p.textContent || "").trim() === CREDIT) creditEl = p; });
-    if (!creditEl) problems.push("the credit line is missing");
-    var crw = creditEl ? creditEl.closest(".sy-element") : null;
-    if (crw) {
-      var kr = rect(crw);
-      if (kr.left < cr.left - 1 || kr.right > cr.right + 1 || kr.bottom > cr.bottom + 1) problems.push("the credit lies outside the card");
-    }
+    Array.prototype.forEach.call(card.querySelectorAll("p, span"), function (p) { if ((p.textContent || "").trim() === CREDIT) creditEl = p; });
+    if (creditEl) problems.push("TASK-32c: the card prints the credit line \\"" + CREDIT + "\\"");
+    var crw = null;
     // Nothing else overlaps the picture or the credit.
     var others = [];
     Array.prototype.forEach.call(card.querySelectorAll(".sy-element"), function (w) { if (w !== wrapper && w !== crw) others.push(w); });
@@ -138,7 +134,9 @@ async function main(): Promise<void> {
     return;
   }
   const dir = mkdtempSync(path.join(os.tmpdir(), "stackyard-picto-"));
-  const cases: Array<[Kind, string]> = [["quiz", "rain"], ["flash", "sun"], ["story", "ship"]];
+  // A cloud, not rain: on this quiz "Rain" is the right answer, and a picture that
+  // names it is dropped on purpose (TASK-32b.4).
+  const cases: Array<[Kind, string]> = [["quiz", "cloud"], ["flash", "sun"], ["story", "ship"]];
   let failed = false;
   try {
     for (const [kind, name] of cases) {

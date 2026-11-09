@@ -13,10 +13,11 @@ const FLAT = (s: string): string => s.replace(/\s+/g, " ");
 describe("TASK-31f: the log's two hook-firing counts say what they count", () => {
   const log = FLAT(read("docs/KIRO_LOG.md"));
   it("TASK-31f: the TASK-28 count (79, 6 Nov) and the TASK-30 count (98, 9 Nov) are each scoped and point at each other", () => {
-    expect(log).toContain("79 `ContextualHookInvoked` records for `invariants-after-shell-edit` by the end of the TASK-28 work (6 Nov, 18:44Z");
-    expect(log).toContain("a different window from the TASK-30 count of 98 below");
-    expect(log).toContain("98 `invariants-after-shell-edit` and 2 `invariants-on-save` `ContextualHookInvoked` firings after 16:10Z (9 Nov, the TASK-30 prompt and its review round only; not cumulative");
-    // "98" appears once, with its date and scope beside it.
+    // TASK-32e reworded both to the recount from the session store.
+    expect(log).toContain("79 `ContextualHookInvoked` records for `invariants-after-shell-edit` by the end of the TASK-28 work (6 Nov, 17:30–18:44Z");
+    expect(log).toContain("not the same \"98\" as the TASK-30 after-shell count");
+    expect(log).toContain("98 `invariants-after-shell-edit` and 2 `invariants-on-save` `ContextualHookInvoked` firings in the TASK-30 window (9 Nov, 16:10–17:21Z; 100 in all");
+    // "98 after-shell" appears once, with its date and scope beside it.
     expect(log.match(/\b98 `invariants-after-shell-edit`/g)).toHaveLength(1);
   });
 

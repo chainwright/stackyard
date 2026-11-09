@@ -15,14 +15,13 @@ import type {
 import { reject, type Rejected } from "./types.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds, isChoiceFork, nearestReachableBefore, canSplice } from "../shared/flow.js";
 import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
-import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY, PICTURE_SLOT, PICTURE_CREDIT } from "../shared/layout.js";
+import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY, PICTURE_SLOT } from "../shared/layout.js";
 import {
   pictogramName,
   pictogramNameOfSrc,
   pictogramDataUri,
   pictogramAlt,
   isPictogramCredit,
-  PICTOGRAM_CREDIT,
 } from "../shared/pictograms.js";
 
 // ---------------------------------------------------------------------------
@@ -902,11 +901,11 @@ export function pictogramOf(card: Card): string | null {
 
 /**
  * Add, swap or remove a card's pictogram (TASK-31h). `name` is one of the names
- * in src/shared/pictograms.ts, or null to remove the picture. Any pictogram and
- * its credit line already on the card are taken off first, so a card never has two.
- * The picture and its credit go in the template's slots. Pictures the teacher added
- * with Add Picture are left alone. Not on the last card; a flash card needs its back
- * first (the credit would otherwise be read as the back).
+ * in src/shared/pictograms.ts, or null to remove the picture. Any pictogram (and an
+ * old credit line from before TASK-32c) already on the card is taken off first, so
+ * a card never has two. The picture goes in the template's slot, with no on-card
+ * credit (TASK-32c). Pictures the teacher added with Add Picture are left alone.
+ * Not on the last card; a flash card needs its back first.
  */
 export function setPictogram(stack: Stack, cardId: string, name: string | null): Stack | Rejected {
   const card = stack.cards.find((c) => c.id === cardId);
@@ -925,7 +924,6 @@ export function setPictogram(stack: Stack, cardId: string, name: string | null):
   }
   const added: Element[] = [
     { type: "image", id: newId(), ...PICTURE_SLOT, src: pictogramDataUri(picked), alt: pictogramAlt(picked) },
-    { type: "text", id: newId(), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT },
   ];
   return mapCard(stack, cardId, (c) => ({ ...c, elements: [...kept, ...added] }));
 }

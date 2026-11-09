@@ -109,6 +109,8 @@ export type GenerateSuccess = {
   fallbackReason?: FallbackReason;
   /** True when a closing message was moved onto the last card (TASK-30a); the Maker says so. */
   movedClosingMessage?: boolean;
+  /** Repeated cards the generator removed (TASK-32b.2); present only when > 0. */
+  removedRepeats?: number;
 };
 
 export type GenerateError = {
@@ -161,6 +163,8 @@ export type GenerateStreamDone = {
   fallbackReason?: FallbackReason;
   /** True when a closing message was moved onto the last card (TASK-30a). */
   movedClosingMessage?: boolean;
+  /** Repeated cards the generator removed (TASK-32b.2); present only when > 0. */
+  removedRepeats?: number;
 };
 
 export type GenerateStreamError = {

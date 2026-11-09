@@ -215,7 +215,7 @@ function parseCardLine(line: string): unknown | null {
 // so the caller knows whether a `reset` is needed before falling back.
 
 type StreamAttemptResult =
-  | { ok: true; stack: Stack; movedClosingMessage: boolean }
+  | { ok: true; stack: Stack; movedClosingMessage: boolean; removedRepeats: number }
   | { ok: false; dealtCards: number };
 
 async function attemptStreamedLlm(
@@ -343,7 +343,7 @@ async function attemptStreamedLlm(
   // shuffle which tile is right. The final `done` stack the editor loads carries
   // all of it; the per-card previews already dealt are animation only.
   const fin = finaliseGeneratedStackDetailed(whole.stack, { prompt: request.prompt });
-  return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage };
+  return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage, removedRepeats: fin.removedRepeats };
 }
 
 /** One operator log line for a failed streamed attempt (never a key or URL). */
@@ -506,7 +506,7 @@ export async function streamGenerate(
   );
 
   if (attempt.ok) {
-    sink.write({ type: "done", stack: attempt.stack, isFallback: false, ...(attempt.movedClosingMessage ? { movedClosingMessage: true } : {}) });
+    sink.write({ type: "done", stack: attempt.stack, isFallback: false, ...(attempt.movedClosingMessage ? { movedClosingMessage: true } : {}), ...(attempt.removedRepeats > 0 ? { removedRepeats: attempt.removedRepeats } : {}) });
     sink.end();
     return;
   }

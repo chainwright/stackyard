@@ -1704,3 +1704,91 @@ Source: `judge_v2_2026-11-09_app/SUMMARY.md`, `J04_engineering.md` (4.4, 4.6, 7)
   - **Acceptance criteria.** A unit test that "Q0", "Q1", "A4" and "No 5" survive as a flash back while "Question 3 of 6" and "Card 2" headers are still dropped; the property passes over several seeds and 5,000 runs once.
 
 **Gate (TASK-31):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.
+
+---
+
+## Phase 18 - v2 round-2 fixes (TASK-32)
+
+Source: `judge_v2_2026-11-09_app_r2/SUMMARY.md`, `J04_engineering.md` (Extra B, C, D, section 6) and `J05_hound.md` (R14, R20, E32, section 6), on commit 1ce7395, plus our own measurements on the live model config. Spec first, then code, then a test that fails without each fix, with the TASK-32x id in its title (`check:trace` counts it). Source is edited with Kiro's file tools.
+
+### TASK-32a: the wait copy says what we measured  *(J04 Extra C, SUMMARY P0)*
+  - **Bug.** The building screen says "Usually 20–45 seconds" and its comment says "real builds take 30–45 s". Measured at 1ce7395 the editor opens in about 10 s. The 26f mutant pins only "not 20 seconds", not the truth.
+  - **Fix.** The copy becomes "Each card appears as it's ready. Usually about 10–20 seconds." The comment gives the measured numbers:
+    - live 1ce7395: first card 1.5–2.3 s, editor 9.5–9.7 s;
+    - our local runs on the live config: 7.7–9.4 s;
+    - before TASK-31: 30–34 s.
+  - **Acceptance criteria.** DOM tests assert the new copy and that neither "20–45" nor "about 20 seconds" appears. Mutant 26f restores the old copy and is killed; a second mutant writes "About 20 seconds." and is killed.
+
+### TASK-32b: generation quality  *(J04 Extra D, SUMMARY P1; our live runs: 3 sentences x 2)*
+Measured: the quiz count was off the request in 4 of 6 decks; one deck had 4 of 7 quizzes with only 2 answers; "the right answer is a substring of a wrong one" in 2 of 6; the organiser's run had a duplicated "Evaporation" flash card and 6 of 7 two-answer quizzes. Five fixes, sharing `src/shared/lessonCheck.ts` (pure, used by the server, the Maker and the Teacher tab):
+  - **b1 — three or four answers.**
+    - **Bug.** The prompt says "at least one button that does not" score, so two answers are allowed everywhere, and a 50 % guess reaches the class.
+    - **Fix.** All three prompts say: every quiz card has 3 or 4 answer buttons, exactly one right; a two-way comparison ("A or B?") is the only exception, at most one per deck. A quiz card with 2 answers whose question is not a two-way "A or B" comparison is never changed; it is flagged by `lessonWarnings` and shown in "Before you share" as "Card N has only two answers: add one."
+    - **Acceptance criteria.** Prompt tests (no "at least one button"). Unit tests for `isTwoWayComparison`. A property test: the share check flags every two-answer non-comparison quiz card and no other quiz card for this reason.
+  - **b2 — no repeated cards.**
+    - **Bug.** The model repeats a card (the same "Evaporation" front and back), and nothing in `server/` detects it.
+    - **Fix.** In `finaliseGeneratedStackDetailed`, before linking, drop any non-end card whose kind and normalised front text equal an earlier card's. Every goto that pointed at the dropped card points where the dropped card led, or at the earlier twin. The result reports `removedRepeats`; the Maker note says "We removed N repeated card(s)."
+    - **Acceptance criteria.** Unit tests (the measured Evaporation shape). A property over random stacks with injected duplicates: no duplicate (kind, front) survives, the stack validates, and every originally reachable non-duplicate card stays reachable.
+  - **b3 — the counts the teacher asked for.**
+    - **Bug.** The model wrote 4 or 7 quizzes for "a 6-question quiz" and 6 or 4 for "a 5-question quiz".
+    - **Fix.** `parseRequestedCounts(sentence)` → `{ quiz?, flash?, total? }`. It reads digits and number words one to twelve ("6-question quiz", "two flash cards", "a 10-card …") and returns `{}` when nothing is found. All three prompts carry hard numbers ("Write exactly 6 quiz cards and exactly 2 flash cards."). After finalising, extra quiz or flash cards are dropped from the end, relinked as in b2. When there are fewer, they are kept and the Maker note says "You asked for 6 questions; the model wrote 4."
+    - **Acceptance criteria.** Parser unit tests, including "none found". A property: trimming keeps the stack valid, every remaining originally reachable card reachable, and the counts at or below the request.
+  - **b4 — a picture never gives the answer away.**
+    - **Bug.** On 2–3 cards per deck the pictogram names the right answer (a "sun" on "What heats the water?" → "The sun").
+    - **Fix.** A pictogram whose name (or alt word) is a word of its quiz card's right answer is dropped (case- and punctuation-insensitive, plural "s" folded).
+    - **Acceptance criteria.** Unit tests and a property: no surviving pictogram name is a word of its card's right answer.
+  - **b5 — a cheap lesson check.**
+    - **Bug.** The lesson-checker persona (`.kiro/agents/lesson-checker.md`) is dev-time only; generated decks are never checked.
+    - **Fix.** The mechanical rules run on every deck in "Before you share" (Maker and Teacher tab), naming the card, as non-blocking warnings. "Export anyway" still exports.
+      - duplicate answer labels on a card;
+      - the right answer is a substring of a wrong one, or the reverse (case- and punctuation-insensitive);
+      - a quiz within 3 cards after a flash card whose question just asks for that flash card's term (the right answer is the term and the question carries most of the definition's words) or its definition (the question names the term and the right answer is mostly the definition's words).
+    - **Acceptance criteria.** Unit tests with the measured shape ("Rivers and lakes that lead to the sea" / "The sea"). The three ready-made decks raise no warning (`check:decks`).
+  - **Gate.** `scripts/check-generation-quality.ts` runs the whole finalise path over the live-shaped fixtures in `tests/fixtures/generation/` (duplicate Evaporation, two-answer quizzes, 7 quizzes for 6 requested, an ambiguous key). It asserts 0 duplicates, the counts trimmed, and the expected warnings present. Wired into `pre-submit` as `check:generation-quality`. Mutants for b1–b5.
+
+### TASK-32c: no credit line on the child's card  *(SUMMARY P1)*
+  - **Bug.** Every generated card with a pictogram prints "Picture: Stackyard pictogram" on the card the child reads. The pictograms are ours (MIT) and need no on-card credit.
+  - **Fix.** The normaliser and `setPictogram` add only the image. An old credit line (from an earlier export) is still recognised and removed when the picture is re-placed, swapped or removed. The player and the Maker's flash preview no longer draw it. The README keeps the credit. Photo credits on the ready-made decks stay.
+  - **Acceptance criteria.**
+    - Tests: no generated card, exported file or rendered card carries the line.
+    - `check:pictograms` asserts its absence.
+    - A mutant that re-adds the credit is killed.
+
+### TASK-32d: drag on flash and end cards — not feasible; the docs say so  *(J04 Extra B)*
+  - **Finding.** The flash card's term and back have no single position. The front draws the term centred at y 264; the back draws it small at the top with the explanation under it. Both are laid out by the flip surface, not by the elements' x / y, and the end card is a centred flex layout. Making them draggable would mean the player honours their x / y, which breaks the flip design on every flash card and changes every exported end card. A drag would also fight the tap that flips.
+  - **Decision.** Keep the layout. Every doc says "drag on quiz and story cards (not flash or end cards)": the README, `docs/DEVPOST_WRITEUP.md`, KIRO_LOG and the exporter spec. The Teacher tab's inspector says so on a flash card and on the last card ("This card keeps its own layout, so its words can't be dragged.").
+  - **Acceptance criteria.** A DOM test for the inspector hint on flash and end cards (and not on quiz cards). A docs test for the wording.
+
+### TASK-32e: README truth, and the hook counts recounted  *(J05 R14, R20, E32; README:92)*
+  - **Bug.** README:111-112 says the invariants mean every stack "always plays to an end score" (reachability is the share check's job). README:119-121's H5P line is refutable. README:92 says the pre-submit hook "fires" (it has never fired). "98 hook firings" names two different counts: the TASK-28 total of three hooks, and TASK-30's after-shell count alone.
+  - **Fix.** The exact README sentences given. The recount from the session store, as a table in `docs/kiro-sessions/README.md` ("Hook firings, recounted from the session store (9 Nov)"). KIRO_LOG, kiro-sessions and README use those numbers and say which "98" they mean.
+  - **Acceptance criteria.** Docs tests for each string and for every "98" being qualified.
+
+### TASK-32f: keep-warm in the repo  *(J04 section 6 P0)*
+  - **Bug.** The keep-warm pinger runs only on a Mac, so it is a single point of failure.
+  - **Fix.** A ready-to-install workflow: `schedule` every 10 minutes plus `workflow_dispatch`, `permissions: {}`, one job that runs `curl -fsS --max-time 90` on `/api/health` with one retry, and no secrets. The README "Deploy" section says GitHub may delay scheduled runs and a free instance can still be cold.
+  - **Amended (push blocked).** GitHub refused the push: a Personal Access Token without the `workflow` scope can't create or update `.github/workflows/*`. So the workflow lives at `docs/ops/keep-warm.yml` and `.github/workflows/keep-warm.yml` is removed. The coordinator installs it through the GitHub web editor. The README says it becomes active only once copied to `.github/workflows/keep-warm.yml`, and that until then an external pinger keeps the demo warm. It never claims the workflow is running.
+  - **Acceptance criteria.**
+    - A test reads `docs/ops/keep-warm.yml`: the schedule, the URL, `workflow_dispatch`, `permissions: {}`, and no `secrets.`.
+    - The README says the workflow must be installed.
+    - If `.github/workflows/keep-warm.yml` exists, it is byte-identical to the docs copy.
+
+### TASK-32g: the write-up is checked like the README  *(J04 section 6 P0, root fix)*
+  - **Bug.** The Devpost write-up lives outside the repo and drifted: 9 FALSE claims in the last hound pass, mostly stale numbers.
+  - **Fix.** `docs/DEVPOST_WRITEUP.md` is the write-up, copied from `../WRITEUP_DRAFT.md` without its draft heading wording, its "Status" paragraph and its "Notes for the judge loop" section. It is then corrected only where this task makes a sentence false. `scripts/check-claims.ts` (and `--fix`) also checks it, failing with a clear line per drift:
+    - traced ids ("N of N" vs `check:trace`);
+    - tests, if it states a count;
+    - mutants ("N-mutant script", "N of N killed" vs the mutants defined in `scripts/mutation-check.ts`);
+    - fast-check properties ("N fast-check properties" vs a scripted count of `fc.property` / `fc.asyncProperty` in `tests/`);
+    - player KB;
+    - the generated lesson-file size ("about N KB" vs a living export of a fixed fixture deck, ±10 %).
+
+    The README says where the write-up lives.
+  - **Acceptance criteria.** A test with a temp copy proves each check goes red on a wrong number. A mutant (the write-up check skipped) is killed.
+
+### TASK-32h: the write-up's "Where it sits" is current, and "an 86-mutant"  *(our review of TASK-32)*
+  - **Bug.** `docs/DEVPOST_WRITEUP.md` was copied before the coordinator rewrote "## Where it sits" in `../WRITEUP_DRAFT.md` (14:51 local), so it kept the old "Decker already keeps its editor…" paragraph and the closing "Stackyard joins these…" sentence. And `check:claims --fix` wrote "a 86-mutant script": the pattern only knew "a".
+  - **Fix.** The two "Where it sits" paragraphs are taken from the draft verbatim. A diff of the rest against the draft shows only the differences TASK-32 made true. The mutant-script pattern accepts "a" or "an", and `--fix` writes the article the number is spoken with: "an" for 8, 11, 18, 80–89, 800–899, 8,000–8,999, 11,000 and 18,000, otherwise "a".
+  - **Acceptance criteria.** A docs test pins the new paragraphs and the absence of the old ones. A unit test covers `articleFor` and `--fix` turning "a 86-mutant" into "an 86-mutant" (and "an 72" into "a 72"). The write-up says "an 86-mutant script".
+
+**Gate (TASK-32):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.

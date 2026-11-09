@@ -14,7 +14,7 @@ import { Inspector } from "./Inspector.js";
 import { Toolbar } from "./Toolbar.js";
 import { ExportDone } from "./ExportDone.js";
 import { ShareCheck } from "./ShareCheck.js";
-import { checkReachability, describeProblems, firstProblemCard, type ReachabilityReport } from "../shared/reachability.js";
+import { beforeYouShare } from "../shared/shareCheck.js";
 import { cardRefLabel } from "../shared/cardTitle.js";
 import { PlayerPreview } from "./PlayerPreview.js";
 import { fallbackMessage } from "./fallbackMessages.js";
@@ -82,13 +82,11 @@ export function EditorScreen({
     // download only happens when the teacher chooses "Export anyway" (or there is
     // nothing to warn about).
     if (opts.skipCheck !== true) {
-      const report: ReachabilityReport = checkReachability(current);
-      if (!report.ok) {
-        const lines = describeProblems(report, (c) => cardRefLabel(current, c));
-        const first = firstProblemCard(report, current);
-        const flowProblem =
-          report.unreachable.length + report.deadEndQuiz.length + report.deadEndOther.length + report.stuck.length > 0;
-        setShareCheck({ lines, firstCardId: first?.id ?? null, canFix: flowProblem, kind });
+      // Flow problems plus the lesson warnings (TASK-32b), in one list.
+      const check = beforeYouShare(current, (c) => cardRefLabel(current, c));
+      if (!check.ok) {
+        const lines = check.lines;
+        setShareCheck({ lines, firstCardId: check.first?.id ?? null, canFix: check.flowProblem, kind });
         announce(`Before you share: ${lines.join(" ")}`);
         return;
       }

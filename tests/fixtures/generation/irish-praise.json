@@ -1,0 +1,66 @@
+{
+  "note": "Live-shaped (TASK-32b): our Irish praise run at 1ce7395 — four flash cards and a 3-question quiz asked for; the model wrote 4 quizzes, and one quiz just asks for a flash card's term again.",
+  "prompt": "Irish praise phrases for 4th class: four flash cards for Hello, Thank you, Brilliant and Well done, then a 3-question quiz",
+  "expect": {
+    "quiz": 3,
+    "flash": 4,
+    "removedRepeats": 0,
+    "warnings": ["restates-flash"],
+    "notes": []
+  },
+  "stack": {
+    "id": "s",
+    "title": "Irish praise phrases",
+    "theme": { "background": "#FBF8F1", "foreground": "#1E2A47", "font": "sans-serif" },
+    "cards": [
+      { "id": "c1", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "Hello" },
+        { "type": "text", "id": "b", "content": "Dia dhuit (dee-ah gwit) means hello in Irish. Say it when you meet someone." },
+        { "type": "button", "id": "n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c2" }] }
+      ] },
+      { "id": "c2", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "Thank you" },
+        { "type": "text", "id": "b", "content": "Go raibh maith agat (guh rev mah ag-ut) means thank you in Irish." },
+        { "type": "button", "id": "n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c3" }] }
+      ] },
+      { "id": "c3", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "Brilliant" },
+        { "type": "text", "id": "b", "content": "Iontach (UN-tuch) means brilliant or wonderful in Irish." },
+        { "type": "button", "id": "n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c4" }] }
+      ] },
+      { "id": "c4", "kind": "flash", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "Well done" },
+        { "type": "text", "id": "b", "content": "Maith thú (mah hoo) means well done to one person in Irish." },
+        { "type": "button", "id": "n", "label": "Next Card", "actions": [{ "type": "goto", "cardId": "c5" }] }
+      ] },
+      { "id": "c5", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "Which Irish phrase means brilliant or wonderful?" },
+        { "type": "button", "id": "a", "label": "Iontach", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "button", "id": "b", "label": "Slán", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "button", "id": "c", "label": "Dia dhuit", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c6" }] }
+      ] },
+      { "id": "c6", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What do you say to a friend who helps you?" },
+        { "type": "button", "id": "a", "label": "Go raibh maith agat", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "b", "label": "Slán", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "c", "label": "Maith thú", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] }
+      ] },
+      { "id": "c7", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "How do you say hello in Irish?" },
+        { "type": "button", "id": "a", "label": "Dia dhuit", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c8" }] },
+        { "type": "button", "id": "b", "label": "Iontach", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c8" }] },
+        { "type": "button", "id": "c", "label": "Slán", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c8" }] }
+      ] },
+      { "id": "c8", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "Which phrase do you say to one person who did well?" },
+        { "type": "button", "id": "a", "label": "Maith thú", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c9" }] },
+        { "type": "button", "id": "b", "label": "Go raibh maith agat", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c9" }] },
+        { "type": "button", "id": "c", "label": "Dia dhuit", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c9" }] }
+      ] },
+      { "id": "c9", "kind": "end", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "You learned four Irish praise phrases" },
+        { "type": "field", "id": "s", "variable": "score" }
+      ] }
+    ]
+  }
+}

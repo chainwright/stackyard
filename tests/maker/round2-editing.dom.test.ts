@@ -209,8 +209,8 @@ describe("TASK-26o: the Inspector and Toolbar", () => {
     btn.click();
     await flush();
     const buttons = store.getStack()!.cards[0]!.elements.filter((e): e is ButtonElement => e.type === "button");
-    expect(buttons).toHaveLength(3);
-    const added = buttons[2]!;
+    expect(buttons).toHaveLength(4); // three in the fixture + the new one
+    const added = buttons[3]!;
     expect(gotoOf(added.actions)).not.toBeNull();
     expect(store.getState().selectedElementId).toBe(added.id);
   });
@@ -381,10 +381,11 @@ describe("TASK-26f: an honest wait screen", () => {
     render(h(StartScreen, { store, ...props }), root);
   };
 
-  it("never promises 20 seconds flat; it says 20–45 (TASK-28f: measured live 20–30 s)", () => {
+  it("TASK-32a (was TASK-28f): says what we measured — about 10–20 seconds — and never the old 20–45 or a flat 20 seconds", () => {
     mountWait({ __demoDealt: [], __demoTotal: 0 });
-    expect(root.textContent).toContain("20–45 seconds");
-    expect(root.textContent).not.toContain("20 seconds");
+    expect(root.textContent).toContain("Each card appears as it's ready. Usually about 10–20 seconds.");
+    expect(root.textContent).not.toContain("20–45");
+    expect(root.textContent).not.toMatch(/about 20 seconds/i);
   });
 
   it("before the stream's start event, a moving seconds counter proves it is working", async () => {

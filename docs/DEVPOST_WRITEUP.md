@@ -1,0 +1,62 @@
+# Stackyard: Devpost write-up
+
+Video (public, AI disclosure set on YouTube, v7 uploaded 09.11): https://youtu.be/G5aNDWg8UGY
+
+The video (v7) was cut before our last three fix rounds. It shows 84 of 84 traced task ids, 1,003 tests, a 170 KB file, a longer wait, and no pictures or dragging in the Teacher tab. The commit we submit reports 110 of 110 and 1,200 tests; a generated lesson file is now about 185 KB, a generation reaches the editor in about 10 s, generated cards can carry a small drawn picture, and the Teacher tab can drag on quiz and story cards (not flash or end cards).
+
+## Try it in 10 seconds
+- Live app: https://stackyard-sdqt.onrender.com (free instance; the first load can take a few seconds).
+- Open a lesson file without generating anything: https://stackyard-sdqt.onrender.com/samples/vikings-in-ireland.html (also `times-tables.html`, `irish-words.html`). Press Teacher in its corner to edit it; Save a Copy writes a new file that plays with the Wi-Fi off.
+- The README's screens and GIF use the ready-made Vikings deck, not a live generation.
+
+## Inspiration
+In 1987 HyperCard let a teacher who couldn't code build a clickable stack of cards for tomorrow's lesson. Today she can fill in forms in H5P and Lumi, use a quiz platform that keeps the quiz in its own app or site, usually with accounts and a connection, or ask a chatbot for a one-off HTML quiz she can't easily edit. Stackyard brings the stack back. The editor is a sentence now, and the result is one file that works with the Wi-Fi off.
+
+## What it does
+- Ms. Brennan types one sentence, for example "A 6-question quiz on the water cycle for 4th class, two flash cards (evaporation, condensation) and a short choose-your-path story about a raindrop, the right answer plays a cheer". Stackyard deals the cards as the model writes them: quiz questions, flash cards and a branching story card.
+- In the Maker she edits any card HyperCard-style: drag a button, change a word, "If they pick this, show card…". Try It flips the card over and plays it in place.
+- Export gives one HTML file. The class opens it on a laptop in a browser (checked in headless Chrome by the repo's gates at this commit; on 6 Nov an earlier export also played offline in Playwright's Firefox and WebKit builds), with no account, no install and no internet, and the last card shows the score.
+- The file is alive: a small Teacher tab inside it opens a lighter editor (text, answers, links and cards, plus drag on quiz and story cards (not flash or end cards), with Undo and Redo; no adding or swapping pictures), offline, built on the same validated edit operations, and Save a Copy writes a new file that can edit itself too. That is the self-saving single-file trick of TiddlyWiki and Decker, brought to a lesson.
+- No AI available? She picks a ready-made deck or types her own questions. Every path ends in the same playable file.
+
+## Where it sits
+Other Kiroween 2026 entries revive HyperCard's editor too, and at least one also builds a stack from a description. Their stacks travel as JSON or as a link back to their tool. Caramel, made by two teachers, turns a subject, level and objective into H5P activities that need a host or Lumi. Stackyard brings back the stack you could hand on: a teacher's sentence becomes a checked quiz-and-story lesson in one HTML file that plays, scores and edits itself offline.
+Decker revives HyperCard's decks and saves one self-contained HTML file that keeps its editor, but it has no AI generation. Lumi's desktop app exports most H5P activities as an all-in-one HTML file for teachers, and H5P.com's Smart Import drafts activities from a document, web page, video or at least 500 characters of pasted text, rather than a one-line request. AI quiz makers start from a topic, a document or a link, and either keep the quiz on their own platform (Kahoot, Wayground) or hand it to Google Forms or an LMS through an export or a third-party converter; general AI chat tools such as Claude can write a single offline HTML quiz, which arrives without an editor inside unless you ask for one, and nothing in them checks that the class can't get stuck.
+
+## How we built it: Kiro, feature by feature
+| Kiro feature | How we used it | Numbers |
+|---|---|---|
+| Steering | Product, tech, audience and stack format, written before any code; the design system came on day 2, before the UI; plus an on-demand pre-submit steering file. The stack format's invariants became the contract for every part. | 6 steering files; 9 stack invariants |
+| Specs | Three specs (generator, exporter + player, Maker) in EARS form; every lettered task id is traced into a test, a gate or a hook (110 of 110 by `npm run check:trace`). The exporter and Maker specs were reviewed like pull requests and sent back with fixes. | 3 specs; 25+ Maker tasks; TASK-22–32 added after our AI review panel's rounds on the live app (TASK-21g after our own live probe) |
+| Property-based testing | fast-check on every invariant, a stack → HTML → stack round trip over 1,000 random stacks, edit sequences that must stay valid, undo that restores exactly, and the living file's lossless Save a Copy. We broke the code on purpose: several hand mutation checks while building, and an 87-mutant script (`npm run check:mutants`, 87 of 87 killed on 9 Nov at this commit) that reverts 87 of the review fixes and demands a red test. | 63 fast-check properties; tests: from `check:claims` |
+| Hooks | invariants-on-save, the living-file gate (export, edit, Save a Copy and replay the copy with the network blocked), ready-made deck content check, export-opens-in-a-real-browser check, a pre-submit hook set to fire when a spec task is marked done (PostTaskExec; kiro.dev lists Manual hooks as not invocable in the CLI) (not yet recorded firing; we run the same gate as /pre-submit), and an after-shell-command hook that re-checks the invariants when Kiro writes files through the shell. All four file-save hooks are recorded firing in our Kiro session (5 firings in 4 s after small real edits); the deck-content hook also fired 11 times on 5 Nov (16:07–16:25 UTC); in the TASK-28 window (6 Nov) the store records 98 hook firings (79 after-shell-command, 12 invariants-on-save, 7 living-file gate), and 493 across the whole session (5 to 9 Nov). | 6 hooks |
+| Custom agent | `lesson-checker`, a read-only reviewer for 8–10-year-old content, run as a sub-agent in the Kiro session. It caught an ambiguous Vikings question that our own fix had introduced. | 1 agent, 1 real content bug |
+| MCP | A local Openverse server: public-domain image search plus a fetch with a host allowlist, per-hop redirect checks, a size cap and a timeout. Its search and allowlisted-fetch code, run as a script outside Kiro (Kiro's sandbox was offline), found the Viking ship picture and fetched the two CC0 photos we chose by eye. Its allowlist also caught us: the first picks pointed at Flickr, so we went through Openverse's own thumbnail proxy rather than widening the list. | 1 MCP server, 17 tests |
+| CLI | Kiro (CLI) wrote the steering and specs and built almost all of the code, in many Kiro sessions resumed across throttles (TASK-26 to TASK-31 ran as one resumed session; KIRO_LOG). A few late fixes (the live-deploy model switches, the picture swap) were made outside Kiro and are logged in KIRO_LOG. | many sessions |
+| Spec vs vibe | We used Kiro's spec format as the plan of record: requirements → design → tasks for three features, each written by Kiro from a chat request, reviewed and sent back, and the lettered task ids are checked by `npm run check:trace` (110 of 110 appear in test titles, gates or hooks). The sessions themselves ran in vibe mode; visual fixes were vibe turns written back into the spec. | 110 of 110 lettered task ids traced |
+| Powers | None used. | |
+
+**The line that set the architecture** (REQ-EXP-01 as amended in TASK-28, `.kiro/specs/exporter/requirements.md`): "When the Maker exports a stack, the system shall produce a single HTML file in which every asset — player runtime JavaScript, card images, fonts, and sounds — is inlined; the file shall load nothing from the network at runtime; inert licence source URLs inside comments are allowed."
+
+## Challenges we ran into (the honest ones)
+- 113 green tests still let a real defect through: fallback ids that weren't UUID v4. A 30-second live run caught it, and the fix went back into the spec as a new invariant.
+- All jsdom tests were green while real Chrome showed five problems, including a stamp that never appeared. Since then, every review happens in a real browser.
+- On the live deploy, our own limit could be dodged by a visitor-set header. We read Render's real header chain and keyed the limit on the address Cloudflare sets.
+- The living file worked locally and failed live, because Render's build skipped its bundle. A test now fails if any bundle the server reads is missing from the build.
+
+## Accomplishments we're proud of
+- A file a teacher can email to the class laptop that plays offline and edits itself offline.
+- The four numbers in the README are checked by a script, and the pre-submit gate fails if they drift.
+- The player bundle is 11.9 KB gzipped against a 50 KB budget.
+
+## What we learned
+Spec-driven work with Kiro was fastest when we argued with the spec before any code was written. The bugs that mattered were found by running the real thing: a live run, a real browser, a real deploy. More tests in the same place didn't find them.
+
+## What's next
+Adding and swapping pictures inside the Teacher tab, a class results sheet the teacher can collect from the files, and printing a stack as worksheet cards.
+
+## Built with
+Kiro (CLI, specs, steering, hooks, agents, MCP), TypeScript, Preact, Vite, Vitest, fast-check, Node, Render, Anthropic model (OpenAI-compatible endpoint), Openverse. Fonts: Bricolage Grotesque and Atkinson Hyperlegible (SIL OFL 1.1; the Atkinson subset renamed "Stackyard Reading" as the OFL requires). Pictures: three photos found on Openverse (one Public Domain Mark, two CC0), credited on the cards. Generated cards can carry one of 42 pictograms we drew ourselves (MIT), chosen by name; the model never supplies picture data. Every answer tile pairs its colour with a permanent shape, so a colour-blind pupil can say "the triangle"; shape-plus-colour coding is a common accessibility pattern, and our palette, type and rubber-stamp feedback are our own. Development used our own AI review panel (AI agents) for judging rounds; disclosed in KIRO_LOG.
+
+
+**Credits.** Music in the demo video: generated by the team with ElevenLabs Music (paid plan), made on 27 Oct 2026 for an earlier project of ours and reused here. The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated footage (about 28 s in five sequences, ten shots in all), each tagged 'AI-generated' on screen, as the on-screen tags and the end card say; the app screens in them are real recordings composited in. The narration is a synthetic voice; the cursor, sounds and the network-request badge were added in editing.

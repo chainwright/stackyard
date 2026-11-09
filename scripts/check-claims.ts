@@ -14,6 +14,10 @@
 //   - Build command: every `npm ci && npm run build:…` chain in the README is
 //     exactly render.yaml's buildCommand (it once described a build that no
 //     longer matched what Render runs).
+//   - (TASK-32g) docs/DEVPOST_WRITEUP.md: traced ids vs `check:trace`, tests,
+//     mutants vs the entries in scripts/mutation-check.ts, fast-check
+//     properties vs a count of fc.property / fc.asyncProperty in tests/, player
+//     KB, and "about N KB" vs a living export of the water-cycle fixture (±10 %).
 //
 // Exits 0 when every claim matches, 1 (with a report) when any has drifted.
 //
@@ -24,7 +28,7 @@
 // `--fix` never invents a number: it only writes what it just measured, and it
 // refuses to write at all if the test run did not pass cleanly.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
 import path from "node:path";
@@ -38,10 +42,17 @@ import {
   fixBuildCommands,
   type Numbers,
   parseTestTotal,
+  compareWriteup,
+  applyWriteupFix,
+  countProperties,
+  countMutants,
+  parseTraceCount,
+  type WriteupNumbers,
 } from "./claims-lib.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
+const WRITEUP = path.join(ROOT, "docs", "DEVPOST_WRITEUP.md");
 const PLAYER = path.join(ROOT, "dist", "player", "player.iife.js");
 const VALIDATOR = path.join(ROOT, "src", "shared", "validator.ts");
 const ROUNDTRIP = path.join(ROOT, "tests", "roundtrip.property.test.ts");
@@ -87,7 +98,11 @@ function actualRoundtripRuns(): number {
   return m ? Number(m[1]) : -1;
 }
 
-function main(): void {
+function main(): Promise<void> {
+  return run();
+}
+
+async function run(): Promise<void> {
   const fix = process.argv.includes("--fix");
   const readme = readFileSync(README, "utf8");
   const claimed = readClaims(readme);
@@ -144,22 +159,84 @@ function main(): void {
     });
   }
 
+  // TASK-32g: the Devpost write-up is checked (and fixed) like the README.
+  const writeupActual = await measureWriteupNumbers(actual);
+  if (fix) {
+    const before = readFileSync(WRITEUP, "utf8");
+    if (writeupActual.traced <= 0 || writeupActual.fileKb <= 0) {
+      console.error("check-claims --fix: could not measure the write-up's numbers; not touching docs/DEVPOST_WRITEUP.md.");
+      process.exit(1);
+    }
+    const after = applyWriteupFix(before, writeupActual);
+    if (after !== before) {
+      writeFileSync(WRITEUP, after, "utf8");
+      console.log("check-claims --fix: docs/DEVPOST_WRITEUP.md rewritten from measured values.");
+    }
+  }
+  checks.push(...compareWriteup(readFileSync(WRITEUP, "utf8"), writeupActual));
+
   let failed = false;
   for (const c of checks) {
     const mark = c.ok ? "OK " : "DRIFT";
     const note = c.note ? ` (${c.note})` : "";
-    console.log(`  [${mark}] ${c.name}: README ${c.claimed} vs actual ${c.actual}${note}`);
+    const where = c.name.startsWith("write-up ") ? "DEVPOST_WRITEUP" : "README";
+    console.log(`  [${mark}] ${c.name}: ${where} ${c.claimed} vs actual ${c.actual}${note}`);
     if (!c.ok) failed = true;
   }
 
   if (failed) {
     console.error(
-      "check-claims: a README number has drifted from reality." +
+      "check-claims: a README or write-up number has drifted from reality." +
         (fix ? "" : " Run `npm run check:claims -- --fix` to rewrite them from measured values."),
     );
     process.exit(1);
   }
-  console.log("check-claims: OK — every README number matches the code.");
+  console.log("check-claims: OK — every README and write-up number matches the code.");
 }
 
-main();
+/** The numbers docs/DEVPOST_WRITEUP.md is checked against (TASK-32g). */
+async function measureWriteupNumbers(readme: Numbers): Promise<WriteupNumbers> {
+  let traceOut = "";
+  try {
+    traceOut = execFileSync("node", ["--import", "tsx/esm", path.join(ROOT, "scripts", "check-task-trace.ts")], {
+      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (err) {
+    traceOut = String((err as { stdout?: string }).stdout ?? "");
+  }
+  const trace = parseTraceCount(traceOut);
+  const testSources: string[] = [];
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.ts$/.test(e.name)) testSources.push(readFileSync(p, "utf8"));
+    }
+  };
+  walk(path.join(ROOT, "tests"));
+  return {
+    traced: trace !== null && trace.traced === trace.total ? trace.traced : -1,
+    tests: readme.tests,
+    mutants: countMutants(readFileSync(path.join(ROOT, "scripts", "mutation-check.ts"), "utf8")),
+    properties: countProperties(testSources),
+    kb: readme.kb,
+    fileKb: await lessonFileKb(),
+  };
+}
+
+/** A living export of a fixed generated-shape deck (the water-cycle fixture), in KB. */
+async function lessonFileKb(): Promise<number> {
+  const { exportLivingStack } = await import("../server/exporter.js");
+  const { sanitizeRawStack, finaliseGeneratedStack } = await import("../server/normalizeGenerated.js");
+  const { validate } = await import("../src/shared/validator.js");
+  const fx = JSON.parse(readFileSync(path.join(ROOT, "tests", "fixtures", "generation", "water-cycle-g2.json"), "utf8")) as { prompt: string; stack: unknown };
+  const v = validate(sanitizeRawStack(fx.stack));
+  if (!v.valid) return -1;
+  const html = await exportLivingStack(finaliseGeneratedStack(v.stack, { prompt: fx.prompt }));
+  return Math.round(Buffer.byteLength(html) / 1024);
+}
+
+main().catch((err) => {
+  console.error("check-claims:", err instanceof Error ? err.message : err);
+  process.exit(1);
+});

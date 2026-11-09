@@ -6,6 +6,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import type { Card, Stack } from "../shared/types.js";
 import { pictogramNameOfSrc } from "../shared/pictograms.js";
+import { qualityNotes } from "../shared/qualityNotes.js";
 import type { EditorStore } from "./store.js";
 import { generateStackStream } from "./api.js";
 import { announce } from "./a11y.js";
@@ -63,6 +64,9 @@ export function hasPictograms(stack: Stack): boolean {
 
 /** Shown when the builder moved a closing message onto the last card (TASK-30a). */
 export const CLOSING_MESSAGE_NOTE = "We moved your closing message onto the last card.";
+
+/** Plain notes about what the generator did (TASK-32b; see src/shared/qualityNotes.ts). */
+export { qualityNotes };
 
 const EXAMPLES: ReadonlyArray<{ label: string; sentence: string }> = [
   {
@@ -184,6 +188,7 @@ export function StartScreen({
             notes.push(hasPictograms(outcome.stack) ? PICTURES_ADDED_NOTE : PICTURES_NOTE);
           }
           if (outcome.movedClosingMessage === true) notes.push(CLOSING_MESSAGE_NOTE);
+          if (!outcome.isFallback) notes.push(...qualityNotes(sentence, outcome.stack, outcome.removedRepeats ?? 0));
           return notes.length > 0 ? { note: notes.join(" ") } : {};
         })(),
       });
@@ -477,8 +482,10 @@ export function GeneratingScreen({
   title: string | null;
 }): JSX.Element {
   // Whole seconds since this screen appeared. A counter that always moves is the
-  // difference between "working" and "hung": real builds take 30–45 s and the
-  // first card can be 25 s away (TASK-26f).
+  // difference between "working" and "hung" (TASK-26f). Measured (TASK-32a): on
+  // the live app at 1ce7395 the first card came at 1.5–2.3 s and the editor at
+  // 9.5–9.7 s; our local runs on the live config took 7.7–9.4 s; before TASK-31
+  // (model thinking on) it was 30–34 s.
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setElapsed((n) => n + 1), 1000);
@@ -529,7 +536,7 @@ export function GeneratingScreen({
           <p>
             {offline
               ? "Each card appears as it's ready."
-              : "Each card appears as it's ready. Usually 20–45 seconds."}
+              : "Each card appears as it's ready. Usually about 10–20 seconds."}
           </p>
           <p class="counter" aria-live="polite">
             {counter}

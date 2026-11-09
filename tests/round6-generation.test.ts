@@ -149,9 +149,11 @@ describe("TASK-30a: the fold never deletes a real vocabulary card", () => {
           const stack = deck([...cards, end(pairs.length, "Finished!", endBody ? "A body." : undefined)]);
           if (!validate(stack).valid) return true;
           const before = cards.filter((c) => (textsOf(c)[1] ?? "").length <= 120).length;
-          const out = finaliseGeneratedStack(stack, prompt === undefined ? {} : { prompt });
+          const detailed = finaliseGeneratedStackDetailed(stack, prompt === undefined ? {} : { prompt });
+          const out = detailed.stack;
           const after = out.cards.filter((c) => c.kind === "flash" && (textsOf(c)[1] ?? "").length <= 120).length;
-          return after >= before;
+          // TASK-32b.2: a repeated card is removed on purpose (its twin stays).
+          return after >= before - detailed.removedRepeats;
         },
       ),
       { numRuns: 400 },
@@ -252,8 +254,14 @@ describe("TASK-30a (review fix): a vocabulary card with a long back is never fol
           if (!validate(stack).valid) return true;
           const out = finaliseGeneratedStackDetailed(stack, { prompt });
           if (out.movedClosingMessage) return true; // a fold is the one allowed removal
+          // TASK-32b: a repeated card (its twin keeps the same front) and cards
+          // beyond a count the sentence named are the other allowed removals.
+          const trimmed =
+            (out.requested.flash !== undefined ? Math.max(0, out.written.flash - out.requested.flash) : 0) +
+            (out.requested.quiz !== undefined ? Math.max(0, out.written.quiz - out.requested.quiz) : 0);
           const nonEnd = out.stack.cards.filter((c) => c.kind !== "end");
-          if (nonEnd.length !== cards.length) return false;
+          if (nonEnd.length !== cards.length - out.removedRepeats - trimmed) return false;
+          if (trimmed > 0) return validate(out.stack).valid;
           const allTexts = out.stack.cards.flatMap((c) => textsOf(c));
           return pairs.every(([f]) => allTexts.some((t) => t.includes(f.trim()) || t === f.trim()));
         },

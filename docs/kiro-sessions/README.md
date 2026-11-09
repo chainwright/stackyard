@@ -52,7 +52,7 @@ Findings (prioritised):
 
 ## 4. TASK-28: hooks fire when the agent edits with its file tools (6 Nov)
 
-In the TASK-28 session, source files were edited with `fs_write` / `str_replace` (rule added to `.kiro/steering/tech.md`), and the new `PostToolUse` hook on `execute_bash` re-runs the invariants after shell edits. The session store (`messages.jsonl`) recorded, for that one session, up to 18:44Z (the end of the TASK-28 work): 79 `invariants-after-shell-edit`, 12 `invariants-on-save` and 7 `living-file-gate` `ContextualHookInvoked` records, all `completed`. First of each:
+In the TASK-28 session, source files were edited with `fs_write` / `str_replace` (rule added to `.kiro/steering/tech.md`), and the new `PostToolUse` hook on `execute_bash` re-runs the invariants after shell edits. The session store (`messages.jsonl`) recorded, for that one session, in the TASK-28 window (6 Nov, 17:30–18:44Z): 79 `invariants-after-shell-edit`, 12 `invariants-on-save` and 7 `living-file-gate` `ContextualHookInvoked` records, 98 in all, all `completed`. (This "98" is the three-hook TASK-28 total; the "98" in KIRO_LOG's TASK-30 entry is the after-shell count alone of a different window. Both are in the recount table in section 5.) First of each:
 
 ```text
 2026-11-06T17:36:45.575Z  invariants-after-shell-edit.json#hook-0  completed
@@ -63,3 +63,18 @@ In the TASK-28 session, source files were edited with `fs_write` / `str_replace`
 ```
 
 `pre-submit` (`PostTaskExec`) still has no recorded firing: it needs a spec task to be marked complete, which this kind of session does not do.
+
+## 5. Hook firings, recounted from the session store (9 Nov)
+
+Recounted for TASK-32 from session `sess_4ead26b8`'s `messages.jsonl`: every record with `payload.type == "ContextualHookInvoked"`, grouped by hook and by window. These are the numbers the README, KIRO_LOG and the Devpost write-up use.
+
+| Window | Total | invariants-after-shell-edit | invariants-on-save | living-file-gate | ready-made-content-check | export-regression-check | pre-submit |
+|---|---|---|---|---|---|---|---|
+| Whole session (5 Nov 16:07Z to 9 Nov 19:19Z) | **493** | 417 | 39 | 23 | 12 | 2 | 0 |
+| 5 Nov 16:07–16:26Z | 11 | — | — | — | 11 | — | — |
+| 6 Nov 01:37–01:38Z | 5 | — | 2 | 1 | 1 | 1 | — |
+| TASK-28 window, 6 Nov 17:30–18:44Z | **98** | 79 | 12 | 7 | — | — | — |
+| TASK-30 window, 9 Nov 16:10–17:21Z | 100 | **98** | 2 | — | — | — | — |
+| TASK-31 window, 9 Nov 18:12–19:21Z | 147 | 132 | 6 | 9 | — | — | — |
+
+So "98" means two different things in older notes: the TASK-28 total of three hooks (79 + 12 + 7), and TASK-30's after-shell count alone (100 firings in all in that window). `pre-submit` (`PostTaskExec`) has never fired: no spec task was marked done in these sessions.

@@ -123,12 +123,12 @@ describe("TASK-12: Start screen generate flow", () => {
     document.body.appendChild(root);
     mounted = root;
 
-    // Online (live model) path: the generating screen shows an honest estimate.
-    // Real builds took 37–40 s, so it must not say "20 seconds" (TASK-26f).
+    // The estimate is what we measured (TASK-32a: editor at ~10 s on the live app).
     const onlineStore = new EditorStore({ status: "generating" });
     render(h(StartScreen, { store: onlineStore, __demoDealt: [], __demoTotal: 0 }), root);
     await flush(1);
-    expect(root.textContent).toContain("20–45 seconds");
+    expect(root.textContent).toContain("Usually about 10–20 seconds.");
+    expect(root.textContent).not.toContain("20–45");
     expect(root.textContent).not.toContain("About 20 seconds");
 
     render(null, root);

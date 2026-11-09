@@ -944,11 +944,10 @@ function renderFlashCard(
   ariaLive: HTMLElement,
   nextCardId?: string,
 ): void {
-  const allTexts = card.elements.filter(
-    (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
-  );
-  // The credit line of a pictogram is a caption, never the term or the back (TASK-31h).
-  const texts = allTexts.filter((t) => !isPictogramCredit(t.content));
+  // The credit line of an older pictogram is a caption, never the term or the back.
+  const texts = card.elements
+    .filter((e): e is Extract<StackElement, { type: "text" }> => e.type === "text")
+    .filter((t) => !isPictogramCredit(t.content));
   const termText = texts[0]?.content ?? "";
   const backText = texts[1]?.content ?? "";
   // Every button gets a way on (a missing goto falls back to the next card), and
@@ -983,8 +982,8 @@ function renderFlashCard(
   }
   cardEl.appendChild(surface);
 
-  // A picture on a flash card (TASK-31h): drawn over the card in its own slot, with
-  // its credit line (the third text). It never takes a tap, so the card still flips.
+  // A picture on a flash card (TASK-31h): drawn over the card in its own slot. It
+  // never takes a tap, so the card still flips.
   const pictures = card.elements.filter((e): e is Extract<StackElement, { type: "image" }> => e.type === "image");
   for (const pic of pictures) {
     const wrapper = document.createElement("div");
@@ -1001,20 +1000,7 @@ function renderFlashCard(
     wrapper.appendChild(img);
     cardEl.appendChild(wrapper);
   }
-  const credit = pictures.length > 0 ? allTexts.find((t) => isPictogramCredit(t.content)) : undefined;
-  if (credit !== undefined) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "sy-element";
-    wrapper.setAttribute("data-element-id", credit.id);
-    positionElement(wrapper, credit);
-    wrapper.style.pointerEvents = "none";
-    const p = document.createElement("p");
-    p.className = "sy-text";
-    p.textContent = credit.content;
-    applyFit(p, fitBody(credit.content, credit.w, credit.h), 22);
-    wrapper.appendChild(p);
-    cardEl.appendChild(wrapper);
-  }
+  // No credit line on the child's card (TASK-32c); an old one is not drawn either.
 
   let side: "front" | "back" = "front";
 

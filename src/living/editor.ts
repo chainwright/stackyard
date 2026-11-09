@@ -365,6 +365,15 @@ export class LivingEditor {
     h.textContent = "Edit this card";
     insp.appendChild(h);
 
+    // TASK-32d: a flash card's front and back, and the last card, are laid out by
+    // the card itself (the flip draws the term in two places; the score card is a
+    // centred column), so they have no position to drag to. Say so plainly.
+    if (card.kind === "flash" || card.kind === "end") {
+      const note = el("p", "sy-living-hint sy-no-drag");
+      note.textContent = "This card keeps its own layout, so its words can't be dragged.";
+      insp.appendChild(note);
+    }
+
     if (selected && selected.type === "text") {
       insp.appendChild(this.textField(selected));
     } else if (selected && selected.type === "button") {

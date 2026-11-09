@@ -471,3 +471,22 @@ reached the class (J2 P1-2).
   - **Bug.** `sanitizeRawElement` keeps any model image whose `src` is a `data:` URI, so model-controlled bytes could reach `src`; the prompts forbid images altogether, so generated decks never have a picture.
   - **Fix.** The prompts (one-shot, streaming, retry) gain a "Pictures" section that lists the allowed names and says: at most one picture per card, only when it helps a 9-year-old, never on the end card, `{ "type": "image", "picto": "<name>" }`, and nothing else about images (the "Do NOT output image elements" sentence goes). `sanitizeRawElement` / `sanitizeRawCard`: a known name becomes an image built from `src/shared/pictograms.ts`; everything else that is an image is dropped; the end card keeps none; the first per card wins. `normalizeGeneratedCard` lifts the pictogram out, lays the card out, then adds the picture and its "Picture: Stackyard pictogram" credit in the template slots (idempotent: a known-pictogram image and a credit text are recognised and re-placed).
   - **Acceptance criteria.** See `maker/tasks.md` TASK-31h. Plus: the prompt tests list the names and no longer say "Do NOT output image elements"; the 26d tests (invented pictures never reach the editor or the export) now also assert that a model `data:` picture is dropped.
+
+
+### TASK-32b (generator half): quality rules on every generated deck  *(J04 Extra D)*
+  - **Bug.** Two-answer quizzes, repeated cards, quiz counts that ignore the request, pictures that name the answer, and ambiguous keys all reached the editor with no warning.
+  - **Fix.**
+    - **Prompts** (one-shot, streaming, retry): "every quiz card has 3 or 4 answer buttons, exactly one right; a two-way comparison is the only exception and the deck has at most one". When the sentence names counts, "Write exactly N quiz cards and exactly M flash cards" (from `parseRequestedCounts`). The retry prompt carries the same numbers.
+    - **`finaliseGeneratedStackDetailed`** (after the fold, before linking): `removeRepeatedCards` drops a non-end card whose kind and normalised front equal an earlier one's, relinking its incoming gotos to where it led (or to its twin). `trimToRequestedCounts` drops the extra quiz or flash cards from the end the same way. `dropGiveawayPictograms` removes a pictogram whose name is a word of the right answer.
+    - **Result fields:** `removedRepeats`, `requested`, `written`.
+    - **Plumbing:** the stream `done` and the one-shot response carry them as `quality`, and the Maker turns them into one plain note.
+    - **Two-answer quizzes** are never changed. The share check flags them (`src/shared/lessonCheck.ts`).
+  - **Acceptance criteria.**
+    - Parser tests.
+    - Properties for b2 (no duplicates, valid, reachable), b3 (trimming keeps validity and reachability) and b4 (no giveaway pictogram).
+    - `check:generation-quality` over live-shaped fixtures.
+    - One mutant each for b1–b5.
+
+### TASK-32c (generator half): no on-card credit for our pictograms
+  - **Fix.** `withPictogram` adds only the image. `splitPictogram` still strips an old credit line, so older decks are cleaned when they are re-normalised.
+  - **Acceptance criteria.** See `maker/tasks.md` TASK-32c.

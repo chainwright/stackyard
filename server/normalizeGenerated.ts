@@ -31,6 +31,8 @@ import type { Stack, Card, Element, TextElement, ButtonElement, Action } from ".
 import { validate } from "../src/shared/validator.js";
 import { fitBody, STORY_BODY_MAX } from "../src/shared/fitText.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
+import { parseRequestedCounts, type RequestedCounts } from "../src/shared/requestedCounts.js";
+import { removeRepeatedCards, trimToRequestedCounts, pictureGivesAnswerAway, countKinds } from "./deckQuality.js";
 import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
 import { isStockEndLine, soundsLikeEnding, isLongProse, isShortPair, isShortTerm, asksForClosingMessage } from "../src/shared/endLine.js";
@@ -40,11 +42,9 @@ import {
   pictogramDataUri,
   pictogramAlt,
   isPictogramCredit,
-  PICTOGRAM_CREDIT,
 } from "../src/shared/pictograms.js";
 import {
   PICTURE_SLOT,
-  PICTURE_CREDIT,
   QUIZ_QUESTION,
   QUIZ_TILES,
   FLASH_TERM,
@@ -734,7 +734,11 @@ export function normalizeGeneratedCard(card: Card, ctx: Ctx = {}): Card {
     rest.kind === "quiz" ? normalizeQuiz(rest, ctx)
     : rest.kind === "flash" ? normalizeFlash(rest, ctx)
     : normalizeStory(rest, ctx);
-  return name === null ? laid : withPictogram(laid, name);
+  if (name === null) return laid;
+  const withPicture = withPictogram(laid, name);
+  // TASK-32b.4: a picture that names the right answer gives it away — drop it.
+  // Per card, so the streamed preview never shows it either.
+  return pictureGivesAnswerAway(withPicture) ? laid : withPicture;
 }
 
 /** The first pictogram on a card (by its exact data URI), and the card without any pictogram or credit. */
@@ -752,14 +756,14 @@ function splitPictogram(card: Card): { name: string | null; rest: Card } {
   return { name, rest: { ...card, elements } };
 }
 
-/** Add the picture and its credit line, in their template slots, to a laid-out card. */
+/** Add the picture, in its template slot, to a laid-out card. No on-card credit:
+ *  the pictograms are ours (MIT) and the child's card stays clean (TASK-32c). */
 function withPictogram(card: Card, name: string): Card {
   return {
     ...card,
     elements: [
       ...card.elements,
       { type: "image", id: newId(), ...PICTURE_SLOT, src: pictogramDataUri(name), alt: pictogramAlt(name) },
-      { type: "text", id: newId(), ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT },
     ],
   };
 }
@@ -775,6 +779,12 @@ export interface FinaliseResult {
   stack: Stack;
   /** True when a closing message was moved onto the end card (the Maker says so). */
   movedClosingMessage: boolean;
+  /** Repeated cards removed (TASK-32b.2; the Maker says how many). */
+  removedRepeats: number;
+  /** Quiz / flash cards the model wrote, before any extra was trimmed (TASK-32b.3). */
+  written: { quiz: number; flash: number };
+  /** The counts the teacher's sentence asked for ({} when none). */
+  requested: RequestedCounts;
 }
 
 export function finaliseGeneratedStackDetailed(input: Stack, ctx: FoldContext = {}): FinaliseResult {
@@ -787,13 +797,23 @@ export function finaliseGeneratedStackDetailed(input: Stack, ctx: FoldContext = 
   const cards = stack.cards.map((card, i) =>
     normalizeGeneratedCard(card, { next: nextCardAfter(stack, i), ids }),
   );
-  const normalised = shuffleQuizAnswers(
-    ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards })),
-  );
-  if (validate(normalised).valid) return { stack: normalised, movedClosingMessage: didFold };
+  // TASK-32b: stack-level quality, before the answers are linked forward. Each
+  // pass only removes, and never strands a reachable card.
+  const requested = ctx.prompt === undefined ? {} : parseRequestedCounts(ctx.prompt);
+  const laid = { ...stack, cards };
+  const laidValid = validate(laid).valid;
+  const deduped = laidValid ? removeRepeatedCards(laid) : { stack: laid, removed: 0 };
+  const written = countKinds(deduped.stack);
+  const trimmed = laidValid ? trimToRequestedCounts(deduped.stack, requested) : deduped.stack;
+  const normalised = shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(trimmed)));
+  const meta = { removedRepeats: deduped.removed, written, requested };
+  if (validate(normalised).valid) return { stack: normalised, movedClosingMessage: didFold, ...meta };
   return {
     stack: shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(stack))),
     movedClosingMessage: didFold,
+    removedRepeats: 0,
+    written: countKinds(stack),
+    requested,
   };
 }
 

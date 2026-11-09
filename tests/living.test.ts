@@ -702,3 +702,22 @@ describe("TASK-30g: the Teacher tab edits the last card's heading and message", 
     expect(texts).toEqual(["Brilliant work!", "See you on Monday."]);
   });
 });
+
+describe("TASK-32b: the Teacher tab's Save a Copy shows the lesson warnings too", () => {
+  it("TASK-32b: a two-answer quiz is named in the Before-you-share confirm; OK still saves", async () => {
+    const messages: string[] = [];
+    vi.spyOn(window, "confirm").mockImplementation((m?: string) => {
+      messages.push(String(m ?? ""));
+      return true;
+    });
+    const cap = captureDownloads();
+    openFile(exportedFile(twoCardStack()));
+    teardown = bootLivingFile();
+    tab().click();
+    barButton("Save a Copy").click();
+    const share = messages.find((m) => m.startsWith("Before you share:"));
+    expect(share, "the share check should list the two-answer quiz").toBeDefined();
+    expect(share).toContain("has only two answers: add one.");
+    expect(cap.blobs.length).toBe(1); // a warning, not a block
+  });
+});

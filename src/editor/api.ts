@@ -24,6 +24,8 @@ export type GenerateOutcome =
       fallbackReason?: FallbackReason;
       /** True when the server moved a closing message onto the last card (TASK-30a). */
       movedClosingMessage?: boolean;
+      /** Repeated cards the server removed (TASK-32b.2). */
+      removedRepeats?: number;
     }
   | {
       ok: false;
@@ -68,6 +70,7 @@ export async function generateStack(
     isFallback?: boolean;
     isReadyMadeExample?: boolean;
     movedClosingMessage?: boolean;
+    removedRepeats?: number;
     message?: string;
   };
 
@@ -78,6 +81,7 @@ export async function generateStack(
       isFallback: body.isFallback === true,
       isReadyMadeExample: body.isReadyMadeExample === true,
       ...(body.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
+      ...(typeof body.removedRepeats === "number" && body.removedRepeats > 0 ? { removedRepeats: body.removedRepeats } : {}),
     };
   }
   return {
@@ -201,6 +205,7 @@ export async function generateStackStream(
           isReadyMadeExample: msg.isReadyMadeExample === true || isReadyMadeExample,
           ...(reason ? { fallbackReason: reason } : {}),
           ...(msg.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
+          ...(typeof msg.removedRepeats === "number" && msg.removedRepeats > 0 ? { removedRepeats: msg.removedRepeats } : {}),
         };
       }
       case "error":

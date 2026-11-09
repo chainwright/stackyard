@@ -8,7 +8,7 @@
 
 import type { Stack } from "../shared/types.js";
 import { mountPlayer } from "../player/mount.js";
-import { checkReachability, describeProblems, firstProblemCard } from "../shared/reachability.js";
+import { beforeYouShare } from "../shared/shareCheck.js";
 import { cardRefLabel } from "../shared/cardTitle.js";
 import { ensureLivingStyles } from "./styles.js";
 import { LivingEditor } from "./editor.js";
@@ -123,14 +123,14 @@ export function mountLivingApp(
     // way on, and cards still holding the words they started with. It runs BEFORE
     // anything is written. OK saves anyway; Cancel writes nothing and takes the
     // teacher to the first card with a problem.
-    const report = checkReachability(edited);
-    if (!report.ok) {
-      const lines = describeProblems(report, (c) => cardRefLabel(edited, c));
+    const check = beforeYouShare(edited, (c) => cardRefLabel(edited, c));
+    if (!check.ok) {
+      const lines = check.lines;
       const proceed = window.confirm(
         `Before you share:\n• ${lines.join("\n• ")}\n\nPress OK to save the copy anyway, or Cancel to go to the card.`,
       );
       if (!proceed) {
-        const first = firstProblemCard(report, edited);
+        const first = check.first;
         if (first) editor.selectCard(first.id);
         return;
       }

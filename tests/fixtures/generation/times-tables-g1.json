@@ -1,0 +1,72 @@
+{
+  "note": "Live-shaped (TASK-32b): our 7-times-table run at 1ce7395 — 6 quizzes for a 5-question quiz, and a picture that names the right answer ('coin' on '… 21 coins').",
+  "prompt": "A 5-question quiz on the 7 times table for 4th class, then a short story about a bake sale where you work out the money",
+  "expect": {
+    "quiz": 5,
+    "removedRepeats": 0,
+    "noGiveawayPictures": true,
+    "notes": []
+  },
+  "stack": {
+    "id": "s",
+    "title": "The 7 times table",
+    "theme": { "background": "#FBF8F1", "foreground": "#1E2A47", "font": "sans-serif" },
+    "cards": [
+      { "id": "c1", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is 7 × 3?" },
+        { "type": "button", "id": "a", "label": "21", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c2" }] },
+        { "type": "button", "id": "b", "label": "24", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c2" }] },
+        { "type": "button", "id": "c", "label": "17", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c2" }] },
+        { "type": "button", "id": "d", "label": "27", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c2" }] }
+      ] },
+      { "id": "c2", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is 7 × 6?" },
+        { "type": "button", "id": "a", "label": "36", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c3" }] },
+        { "type": "button", "id": "b", "label": "42", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c3" }] },
+        { "type": "button", "id": "c", "label": "48", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c3" }] }
+      ] },
+      { "id": "c3", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is 7 × 9?" },
+        { "type": "button", "id": "a", "label": "56", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c4" }] },
+        { "type": "button", "id": "b", "label": "72", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c4" }] },
+        { "type": "button", "id": "c", "label": "63", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c4" }] }
+      ] },
+      { "id": "c4", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is 7 × 5?" },
+        { "type": "button", "id": "a", "label": "35", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "button", "id": "b", "label": "30", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c5" }] },
+        { "type": "button", "id": "c", "label": "45", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c5" }] }
+      ] },
+      { "id": "c5", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "A cupcake costs 7 coins. How much do 3 cupcakes cost?" },
+        { "type": "button", "id": "a", "label": "21 coins", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "button", "id": "b", "label": "10 coins", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "button", "id": "c", "label": "14 cakes", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c6" }] },
+        { "type": "image", "picto": "coin" }
+      ] },
+      { "id": "c6", "kind": "quiz", "actions": [], "elements": [
+        { "type": "text", "id": "q", "content": "What is 7 × 4?" },
+        { "type": "button", "id": "a", "label": "28", "actions": [{ "type": "score", "delta": 1 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "b", "label": "24", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] },
+        { "type": "button", "id": "c", "label": "32", "actions": [{ "type": "score", "delta": 0 }, { "type": "goto", "cardId": "c7" }] }
+      ] },
+      { "id": "c7", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "At the bake sale you sell cupcakes for 7 coins each. Do you sell 2 or 3 to the first family?" },
+        { "type": "button", "id": "a", "label": "Sell 2", "actions": [{ "type": "goto", "cardId": "c8" }] },
+        { "type": "button", "id": "b", "label": "Sell 3", "actions": [{ "type": "goto", "cardId": "c9" }] }
+      ] },
+      { "id": "c8", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "2 cupcakes make 14 coins in the tin." },
+        { "type": "button", "id": "a", "label": "Continue", "actions": [{ "type": "goto", "cardId": "c10" }] }
+      ] },
+      { "id": "c9", "kind": "story", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "3 cupcakes make 21 coins in the tin." },
+        { "type": "button", "id": "a", "label": "Continue", "actions": [{ "type": "goto", "cardId": "c10" }] }
+      ] },
+      { "id": "c10", "kind": "end", "actions": [], "elements": [
+        { "type": "text", "id": "t", "content": "You finished the 7 times table" },
+        { "type": "field", "id": "s", "variable": "score" }
+      ] }
+    ]
+  }
+}

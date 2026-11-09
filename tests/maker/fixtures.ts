@@ -43,6 +43,19 @@ export function quizStack(): Stack {
               { type: "goto", cardId: "30000000-0000-4000-8000-000000000003" },
             ],
           },
+          // A third answer (TASK-32b.1): a healthy quiz has 3 or 4, and the
+          // "Before you share" check flags a two-answer one.
+          {
+            type: "button",
+            id: "61000000-0000-4000-8000-000000000061",
+            x: 40, y: 300, w: 340, h: 80,
+            label: "Galway",
+            actions: [
+              { type: "score", delta: 0 },
+              { type: "sound", sound: "buzz" },
+              { type: "goto", cardId: "30000000-0000-4000-8000-000000000003" },
+            ],
+          },
         ],
         actions: [],
       },

@@ -164,28 +164,25 @@ describe("TASK-31h: the template puts the picture and its credit where nothing e
   ];
 
   for (const [kind, raw] of kinds) {
-    it(`TASK-31h: a ${kind} card gets the picture in the picture slot and the credit in the caption slot, overlapping nothing`, () => {
+    it(`TASK-32c: a ${kind} card gets the picture in the picture slot, overlapping nothing, and NO credit line`, () => {
       const card = normalizeGeneratedCard(sanitised(raw));
       const img = card.elements.find((e) => e.type === "image")!;
-      const credit = card.elements.find((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)!;
       expect(img && rect(img)).toEqual(PICTURE_SLOT);
-      expect(credit && rect(credit)).toEqual(PICTURE_CREDIT);
+      expect(card.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false);
       for (const e of card.elements) {
-        if (e === img || e === credit) continue;
+        if (e === img) continue;
         expect(overlaps(rect(img), rect(e)), `${kind}: picture vs ${e.type}`).toBe(false);
-        expect(overlaps(rect(credit), rect(e)), `${kind}: credit vs ${e.type}`).toBe(false);
       }
       for (const e of card.elements) expect(e.x >= 0 && e.y >= 0 && e.x + e.w <= 800 && e.y + e.h <= 600).toBe(true);
-      // The credit is the SECOND text at most after the question/term/back: nothing it displaces.
-      const texts = card.elements.filter((e) => e.type === "text");
-      expect(texts[texts.length - 1]).toBe(credit);
     });
 
-    it(`TASK-31h: normalising a ${kind} card twice keeps one picture and one credit, and its words`, () => {
+    it(`TASK-31h: normalising a ${kind} card twice keeps one picture, no credit, and its words — and clears an old credit line`, () => {
       const once = normalizeGeneratedCard(sanitised(raw));
-      const twice = normalizeGeneratedCard(JSON.parse(JSON.stringify(once)) as Card);
+      const legacy = JSON.parse(JSON.stringify(once)) as Card;
+      legacy.elements.push({ type: "text", id: "abcd0000-0000-4000-8000-0000000000ff", ...PICTURE_CREDIT, content: PICTOGRAM_CREDIT });
+      const twice = normalizeGeneratedCard(legacy);
       expect(twice.elements.filter((e) => e.type === "image")).toHaveLength(1);
-      expect(twice.elements.filter((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toHaveLength(1);
+      expect(twice.elements.filter((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toHaveLength(0);
       const words = (c: Card): string[] => c.elements.filter((e) => e.type === "text").map((e) => (e.type === "text" ? e.content : ""));
       expect(words(twice)).toEqual(words(once));
     });
@@ -202,7 +199,7 @@ describe("TASK-31h: the whole pipeline and the export", () => {
   const rawDeck = (): Record<string, unknown> => ({
     id: "s", title: "Water", theme: { background: "#fff", foreground: "#000", font: "sans-serif" },
     cards: [
-      quizCard("c2", [picto("rain")]),
+      quizCard("c2", [picto("cloud")]),
       { id: "c2", kind: "flash", actions: [], elements: [text("Evaporation"), text("Water turns into vapour."), btn("Next Card", [{ type: "goto", cardId: "c3" }]), picto("sun")] },
       { id: "c3", kind: "story", actions: [], elements: [text("A drop falls."), btn("Continue", [{ type: "goto", cardId: "c4" }]), picto("drop"), picto("wave")] },
       { id: "c4", kind: "end", actions: [], elements: [text("Done"), picto("star"), { type: "field", id: "f", variable: "score" }] },
@@ -216,7 +213,7 @@ describe("TASK-31h: the whole pipeline and the export", () => {
     const out = finaliseGeneratedStack(v.stack);
     expect(validate(out).valid).toBe(true);
     const pics = out.cards.map((c) => c.elements.filter((e) => e.type === "image").map((e) => (e.type === "image" ? e.src : "")));
-    expect(pics[0]).toEqual([pictogramDataUri("rain")]);
+    expect(pics[0]).toEqual([pictogramDataUri("cloud")]);
     expect(pics[1]).toEqual([pictogramDataUri("sun")]);
     expect(pics[2]).toEqual([pictogramDataUri("drop")]);
     expect(pics[3]).toEqual([]);
@@ -228,7 +225,10 @@ describe("TASK-31h: the whole pipeline and the export", () => {
     const out = finaliseGeneratedStack(v.stack);
     for (const html of [await exportStack(out), await exportLivingStack(out)]) {
       expect(html).toContain(encodeURIComponent('viewBox="0 0 64 64"').slice(0, 20)); // the SVG is embedded as data
-      expect(html).toContain("Picture: Stackyard pictogram");
+      // TASK-32c: no credit on the card (the bundle may carry the words as code,
+      // to recognise an OLD line; the deck data must not).
+      const data = html.match(/<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/)![1]!;
+      expect(data).not.toContain("Picture: Stackyard pictogram");
       expect(html).not.toMatch(/src="https?:/);
     }
   });
@@ -278,7 +278,7 @@ describe("TASK-31h: a streamed preview card shows the picture too", () => {
     const imgs = dealt.card.elements.filter((e) => e.type === "image");
     expect(imgs).toHaveLength(1);
     expect(imgs[0]!.type === "image" && imgs[0]!.src).toBe(pictogramDataUri("cloud"));
-    expect(dealt.card.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(true);
+    expect(dealt.card.elements.some((e) => e.type === "text" && e.content === PICTOGRAM_CREDIT)).toBe(false); // TASK-32c
     const done = lines.find((l) => l.type === "done") as Extract<GenerateStreamMessage, { type: "done" }>;
     expect(done.stack.cards[0]!.elements.filter((e) => e.type === "image")).toHaveLength(1);
   });

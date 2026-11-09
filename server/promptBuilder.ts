@@ -4,6 +4,7 @@
 
 import type { GenerateRequest } from "../src/shared/types.js";
 import { PICTOGRAM_NAMES } from "../src/shared/pictograms.js";
+import { parseRequestedCounts, countsInstruction } from "../src/shared/requestedCounts.js";
 
 // ---------------------------------------------------------------------------
 // System prompt (constant)
@@ -52,7 +53,7 @@ Action types:
 1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a cardId that exists in the stack.
 3. **Exactly one end card** — The cards array must contain exactly one card with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
+4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — stack.title must not be blank or whitespace only.
 7. **At least one non-end card** — The stack must contain at least one card that is not kind "end".
@@ -152,7 +153,7 @@ Action types:
 1. **Unique IDs** — Give the stack, every card and every element a short, unique id string (for example "c1", "c1-q", "c1-a"). Any unique string will do; do not try to write UUIDs.
 2. **Valid goto targets** — Every "goto" action must reference a card id you emit on some line.
 3. **Exactly one end card** — Emit exactly one card line with kind "end".
-4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
+4. **Quiz answer rule** — Every card with kind "quiz" has 3 or 4 answer buttons, exactly one of them right: its actions include { "type": "score", "delta": 1 }, and every other answer has { "type": "score", "delta": 0 }. A two-way comparison question ("Is 7 × 8 bigger or smaller than 50?") is the only quiz that may have 2 answers, and the deck has at most one such question. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
 5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — The header title must not be blank or whitespace only.
 7. **At least one non-end card** — Emit at least one card line whose kind is not "end".
@@ -232,13 +233,16 @@ function extractCardCount(prompt: string): number | null {
 
 function buildUserBody(prompt: string): string {
   const detected = extractCardCount(prompt);
+  // TASK-32b.3: the counts the teacher named, as hard numbers.
+  const exact = countsInstruction(parseRequestedCounts(prompt));
+  const counts = exact.length > 0 ? `\n\n${exact}` : "";
   if (detected !== null && detected > MAX_CARDS) {
     return (
       `Generate a stack for: "${prompt}"\n\n` +
       `Note: you requested ${detected} cards — cap the stack at ${MAX_CARDS} cards maximum.`
     );
   }
-  return `Generate a stack for: "${prompt}"`;
+  return `Generate a stack for: "${prompt}"${counts}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,9 +272,11 @@ export function buildRetry(
   errors: string[]
 ): { system: string; user: string } {
   const bulletList = errors.map((e) => `  • ${e}`).join("\n");
+  const exact = countsInstruction(parseRequestedCounts(request.prompt));
   const user =
     `The previous stack had these validation errors:\n\n${bulletList}\n\n` +
-    `Fix all of them and return the corrected stack for: "${request.prompt}"`;
+    `Fix all of them and return the corrected stack for: "${request.prompt}"` +
+    (exact.length > 0 ? `\n\n${exact}` : "");
   return {
     system: SYSTEM_PROMPT,
     user,
