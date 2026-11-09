@@ -14,7 +14,7 @@
 // Pure: reads the stack, returns a report.
 
 import type { Stack, Card, Action } from "./types.js";
-import { buttonsWithoutGoto, cardHasForward } from "./flow.js";
+import { buttonsWithoutGoto, cardHasForward, blockingFork } from "./flow.js";
 import { primaryText } from "./cardTitle.js";
 
 /**
@@ -86,6 +86,12 @@ export interface ReachabilityReport {
    * play, so the class would meet them (TASK-27f).
    */
   placeholders: Card[];
+  /**
+   * TASK-30i: unreachable card id → the story card with several choices that
+   * "Link these in for me" will not touch. The teacher chooses which choice leads
+   * to the unreachable card.
+   */
+  blockedByFork?: Map<string, Card>;
   /** True when nothing is wrong. */
   ok: boolean;
 }
@@ -170,6 +176,13 @@ export function checkReachability(stack: Stack): ReachabilityReport {
 
   const placeholders = placeholderCards(stack);
 
+  const blockedByFork = new Map<string, Card>();
+  stack.cards.forEach((c, ix) => {
+    if (ix === 0 || reachable.has(c.id)) return;
+    const fork = blockingFork(stack, ix, reachable);
+    if (fork !== null) blockedByFork.set(c.id, fork);
+  });
+
   return {
     reachable,
     unreachable,
@@ -178,6 +191,7 @@ export function checkReachability(stack: Stack): ReachabilityReport {
     stuck,
     trapped,
     placeholders,
+    blockedByFork,
     ok:
       unreachable.length === 0 &&
       deadEndQuiz.length === 0 &&
@@ -197,7 +211,10 @@ export function describeProblems(
   // A card name may already end in "." / "?" / "…": end the sentence once, never "..".
   const finish = (s: string): string => (/[.!?…]$/.test(s) ? s : s + ".");
   const mid = (s: string): string => s.replace(/\.+$/, (m) => (m.length > 1 ? "." : m));
-  for (const c of report.unreachable) lines.push(finish(`The class can't reach ${mid(label(c))}`));
+  for (const c of report.unreachable) {
+    const line = finish(`The class can't reach ${mid(label(c))}`);
+    lines.push(report.blockedByFork?.has(c.id) === true ? `${line} Choose which story choice should lead here.` : line);
+  }
   for (const c of report.deadEndQuiz) lines.push(`${mid(label(c))} has an answer that goes nowhere.`);
   for (const c of report.deadEndOther) lines.push(`${mid(label(c))} has a button that goes nowhere.`);
   for (const c of report.stuck) lines.push(`${mid(label(c))} has no way to move on.`);
@@ -221,5 +238,7 @@ export function firstProblemCard(report: ReachabilityReport, stack: Stack): Card
       ...report.placeholders,
     ].map((c) => c.id),
   );
-  return stack.cards.find((c) => bad.has(c.id));
+  const first = stack.cards.find((c) => bad.has(c.id));
+  // An unreachable card that needs a story choice: open the fork, where the choice is made.
+  return first === undefined ? undefined : (report.blockedByFork?.get(first.id) ?? first);
 }

@@ -183,6 +183,7 @@ export async function handleGenerate(
       stack: result.stack,
       isFallback: result.isFallback,
     };
+    if (result.movedClosingMessage === true) payload["movedClosingMessage"] = true;
     if (result.isFallback) {
       if (result.isReadyMadeExample) payload["isReadyMadeExample"] = true;
       if (result.fallbackReason) payload["fallbackReason"] = result.fallbackReason;

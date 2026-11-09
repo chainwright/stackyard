@@ -13,6 +13,7 @@ import type { Card, Stack, Element as StackElement, ButtonElement } from "../sha
 import type { EditorStore } from "./store.js";
 import {
   editText,
+  setEndMessage,
   editLabel,
   markCorrect,
   changeKind,
@@ -202,6 +203,9 @@ export function Inspector({
     const heading = card.elements.find(
       (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
     );
+    const endMessage = card.elements.filter(
+      (e): e is Extract<StackElement, { type: "text" }> => e.type === "text",
+    )[1];
     return (
       <aside class="inspector" aria-label="Edit">
         <h2>Edit the last card</h2>
@@ -220,6 +224,20 @@ export function Inspector({
             The last card shows the class their score. You can't remove it —
             every set of cards needs one.
           </p>
+        </div>
+        <div class="field-group">
+          <label for="end-message">Message (optional)</label>
+          <textarea
+            id="end-message"
+            rows={4}
+            maxLength={300}
+            value={endMessage?.content ?? ""}
+            onInput={(e) => {
+              const value = (e.target as HTMLTextAreaElement).value;
+              dispatch((s) => setEndMessage(s, card.id, value));
+            }}
+          />
+          <p class="hint">A few words for the class to read under the heading.</p>
         </div>
         <div class="field-group">
           <label for="score-preview">Score line (shown to the class)</label>

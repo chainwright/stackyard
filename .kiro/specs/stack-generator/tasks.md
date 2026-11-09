@@ -452,3 +452,10 @@ reached the class (J2 P1-2).
 ### TASK-29p (prompt half): options fit the question's form  *(J2 #5)*
   - **Fix.** General prompt rule: the answer options must fit the form of the question; a "which is bigger, A or B?" question offers only A and B.
   - **Acceptance criteria.** The rule is in every prompt and no prompt carries the review's example.
+
+
+### TASK-30a (generator half): fold a closing message only when it really is one  *(J4 P1-1, P1)*
+  - **Bug.** `foldEndLikeCard` + `soundsLikeEnding` deleted a vocabulary card whose term was a praise word ("Well done → Maith thú", "Congratulations → Félicitations") and replaced the end card's text with it.
+  - **Fix.** `foldEndLikeCard(stack, { prompt })` folds only if (1) the candidate's longer text is more than 120 characters and at least two sentences, (2) the deck's other flash cards are not mostly short term → translation pairs (back ≤ 60, front ≤ 40 characters), and (3) the sentence asked for a closing message/ending OR the end card has no body. `finaliseGeneratedStackDetailed` also returns `movedClosingMessage`; the stream `done` and the one-shot response carry it. The prompt is passed to both.
+  - **Review fix.** Guard (0): a candidate with a short-term front (≤ 4 words, no `. ! ? ; : …`) in a deck whose other non-end cards are all flash cards with short-term fronts is vocabulary and is never folded. `asksForClosingMessage` needs a message word tied to the last/final/end card ("then the last card" alone is not asking).
+  - **Acceptance criteria.** See `maker/tasks.md` TASK-30a. Plus: with the prompt asking for "a long encouraging message on the last card" the 29k repro folds; the same deck with a sentence that does not ask and an end card that already has a body is left exactly as it is.

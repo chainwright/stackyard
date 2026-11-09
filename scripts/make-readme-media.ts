@@ -1,7 +1,7 @@
 // scripts/make-readme-media.ts
 // TASK-28t: real screenshots (and a short GIF) of the CURRENT build for the
 // README — sentence → cards deal in → edit → Try It (the CORRECT stamp) →
-// export → THAT exported file opened with the network OFF → Teacher: change the
+// export → THAT exported file opened with the network OFF → Teacher: make the
 // right answer → Try It (CORRECT stamp) → Save a Copy → the copy opens and plays
 // (TASK-29f). Nothing is mocked: it starts the real
 // server (no model key, so the ready-made offline path answers, which is what
@@ -249,31 +249,30 @@ async function main(): Promise<void> {
     await sleep(900);
     await keep(cdp, "6-offline-file.png", 2.5);
 
-    // 7. Teacher → change the right answer (all offline, inside the file).
+    // 7. Teacher → a TRUE edit inside the file (TASK-30b): the tile already marked
+    //    right keeps its place and gets a more exact label. We never tick another
+    //    answer as right — the demo must not stamp a wrong fact.
     await cdp.eval(`window.confirm = () => true`);
     await cdp.eval(`document.querySelector(".sy-teacher-tab").click()`);
     await cdp.until(`document.querySelector(".sy-living-canvas .sy-tile")`, 10000);
     await sleep(500);
     const newRight = await cdp.eval<string>(`(() => {
-      const tiles = [...document.querySelectorAll(".sy-living-canvas .sy-tile")];
-      // pick a tile that is NOT currently marked right in the inspector: select it and tick it
-      for (const t of tiles) {
-        t.click();
-        const radio = document.querySelector(".sy-living-inspector .sy-living-radio input");
-        if (radio && !radio.checked) {
-          const label = (t.querySelector(".sy-tile-label") || t).textContent.trim();
-          radio.click();
-          return label;
-        }
-      }
-      return "";
+      const tile = document.querySelector(".sy-living-canvas .sy-tile[data-correct='true']");
+      if (!tile) return "";
+      tile.click();
+      const box = document.querySelector(".sy-living-inspector input[type=text]");
+      if (!box) return "";
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+      set.call(box, box.value + " from Norway");
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+      return box.value;
     })()`);
-    if (newRight === "") throw new Error("could not change the right answer in the Teacher tab");
+    if (newRight === "") throw new Error("could not edit the right answer's label in the Teacher tab");
     await sleep(500);
     await badge(cdp, "Wi-Fi off — editing inside the file");
     await keep(cdp, "7-teacher-edit.png", 2.5);
 
-    // 8. Try It → the CORRECT stamp lands on the answer just chosen.
+    // 8. Try It → the CORRECT stamp lands on that same tile.
     await cdp.eval(`[...document.querySelectorAll(".sy-living-inspector button")].find((b) => /Try It/.test(b.textContent)).click()`);
     await cdp.until(`document.querySelector(".sy-card .sy-tile")`, 8000);
     await sleep(900);

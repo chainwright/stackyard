@@ -24,6 +24,7 @@ import { handleGenerate, preflightGenerate } from "./routes/generate.js";
 import { handleExport } from "./routes/export.js";
 import { applySecurityHeaders } from "./securityHeaders.js";
 import { serveStatic } from "./staticFiles.js";
+import { isSamplesPath, serveSample } from "./samples.js";
 import { RateLimiter } from "./rateLimiter.js";
 import { DailyBudget } from "./dailyBudget.js";
 import {
@@ -50,6 +51,8 @@ export interface ServerConfig {
   serveStatic?: boolean;
   /** Build root for the static Maker. Defaults to "dist/maker". */
   staticRoot?: string;
+  /** Folder holding the three sample lesson files. Defaults to ./samples. */
+  samplesDir?: string;
   /** Trust forwarding headers for client identity. Defaults from TRUST_PROXY=1. */
   trustProxy?: boolean;
   /**
@@ -105,6 +108,7 @@ export function createServer(config: ServerConfig = {}): Server {
   const env = process.env;
   const serveStaticEnabled = config.serveStatic ?? shouldServeStatic(env);
   const staticRoot = config.staticRoot ?? "dist/maker";
+  const samplesDir = config.samplesDir;
   const trustProxy = config.trustProxy ?? trustProxyFromEnv(env);
   const clientIpHeader =
     config.clientIpHeader !== undefined ? config.clientIpHeader : clientIpHeaderFromEnv(env);
@@ -238,6 +242,12 @@ export function createServer(config: ServerConfig = {}): Server {
       }
       applySecurityHeaders(res);
       await handleExport(req, res).catch((err) => onUnhandled(res, err));
+      return;
+    }
+
+    // ---- The three sample lesson files (TASK-30c): allowlisted, own CSP ----
+    if (isSamplesPath(pathname)) {
+      await serveSample(req, res, pathname, samplesDir).catch((err) => onUnhandled(res, err));
       return;
     }
 

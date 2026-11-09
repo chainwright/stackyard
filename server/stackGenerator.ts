@@ -16,7 +16,7 @@ import type {
   FallbackReason,
 } from "../src/shared/types.js";
 import { validate } from "../src/shared/validator.js";
-import { sanitizeRawStack, finaliseGeneratedStack } from "./normalizeGenerated.js";
+import { sanitizeRawStack, finaliseGeneratedStackDetailed } from "./normalizeGenerated.js";
 import { build as buildPrompt, buildRetry } from "./promptBuilder.js";
 import { buildReadyMade } from "./fallback.js";
 import { call, LlmUnavailableError, ConfigurationError } from "./llmGateway.js";
@@ -38,8 +38,9 @@ async function attempt(
   temperature: number,
   onModelCall?: () => void,
   signal?: AbortSignal,
+  prompt?: string,
 ): Promise<
-  | { ok: true; stack: import("../src/shared/types.js").Stack }
+  | { ok: true; stack: import("../src/shared/types.js").Stack; movedClosingMessage: boolean }
   | { ok: false; errors: string[] }
 > {
   // LlmUnavailableError and ConfigurationError are intentionally NOT caught here —
@@ -65,7 +66,8 @@ async function attempt(
     // end card, which ends the game on the first click), make sure every card has
     // a way forward, and vary which tile is right. Each step only re-positions,
     // retargets or adds, so the invariants hold (TASK-26 b, c, j).
-    return { ok: true, stack: finaliseGeneratedStack(result.stack) };
+    const fin = finaliseGeneratedStackDetailed(result.stack, prompt === undefined ? {} : { prompt });
+    return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage };
   }
   return { ok: false, errors: result.errors };
 }
@@ -134,10 +136,10 @@ export async function generate(
   try {
     // --- First attempt (temperature 0.7) ---
     const firstMessages = buildPrompt(request);
-    const first = await attempt(firstMessages, 0.7, opts.onModelCall, opts.signal);
+    const first = await attempt(firstMessages, 0.7, opts.onModelCall, opts.signal, request.prompt);
 
     if (first.ok) {
-      return { ok: true, stack: first.stack, isFallback: false };
+      return { ok: true, stack: first.stack, isFallback: false, ...(first.movedClosingMessage ? { movedClosingMessage: true } : {}) };
     }
 
     // Nobody is listening any more: do not pay for a retry.
@@ -145,10 +147,10 @@ export async function generate(
 
     // --- Retry attempt (temperature 0.2) ---
     const retryMessages = buildRetry(request, first.errors);
-    const retry = await attempt(retryMessages, 0.2, opts.onModelCall, opts.signal);
+    const retry = await attempt(retryMessages, 0.2, opts.onModelCall, opts.signal, request.prompt);
 
     if (retry.ok) {
-      return { ok: true, stack: retry.stack, isFallback: false };
+      return { ok: true, stack: retry.stack, isFallback: false, ...(retry.movedClosingMessage ? { movedClosingMessage: true } : {}) };
     }
 
     // Both attempts failed — return a plain-language error.

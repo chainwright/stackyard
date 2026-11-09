@@ -20,6 +20,7 @@ import {
   removeCard,
   markCorrect,
   setFlashSide,
+  setEndMessage,
 } from "../editor/operations.js";
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
@@ -229,6 +230,10 @@ export class LivingEditor {
         insp.appendChild(this.rightAnswerField(card, selected));
       }
       insp.appendChild(this.gotoField(card, selected));
+    } else if (card.kind === "end") {
+      // The last card draws no clickable wrappers, so its heading and message are
+      // edited here (TASK-30g).
+      insp.appendChild(this.endFields(card));
     } else if (card.kind === "flash") {
       // A flash card plays as a flip surface, so there is nothing to click in
       // the preview: edit the front and back right here.
@@ -325,6 +330,42 @@ export class LivingEditor {
         : "No answer is right yet. Choose one.";
     field.appendChild(hint);
     return field;
+  }
+
+  /** Heading and optional message boxes for the last card (TASK-30g). */
+  private endFields(card: Card): HTMLElement {
+    const wrap = el("div", "");
+    const texts = card.elements.filter(
+      (e): e is Extract<Element, { type: "text" }> => e.type === "text",
+    );
+    const heading = texts[0];
+    if (heading) {
+      const field = el("div", "sy-living-field");
+      const label = document.createElement("label");
+      label.textContent = "Heading";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = heading.content;
+      input.addEventListener("input", () => {
+        if (this.apply((s) => editText(s, heading.id, input.value))) this.refreshPreviewOnly();
+      });
+      field.appendChild(label);
+      field.appendChild(input);
+      wrap.appendChild(field);
+    }
+    const field = el("div", "sy-living-field");
+    const label = document.createElement("label");
+    label.textContent = "Message (optional)";
+    const ta = document.createElement("textarea");
+    ta.maxLength = 300;
+    ta.value = texts[1]?.content ?? "";
+    ta.addEventListener("input", () => {
+      if (this.apply((s) => setEndMessage(s, card.id, ta.value))) this.refreshPreviewOnly();
+    });
+    field.appendChild(label);
+    field.appendChild(ta);
+    wrap.appendChild(field);
+    return wrap;
   }
 
   /** Front (term) and Back (explanation) boxes for a flash card. */

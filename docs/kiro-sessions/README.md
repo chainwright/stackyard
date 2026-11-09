@@ -27,7 +27,7 @@ Five `ContextualHookInvoked` records from the same session, 2026-11-06, after sm
 2026-11-06T01:37:48.377Z  living-file-gate.json  completed
 ```
 
-The `pre-submit` hook is a `PostTaskExec` hook (it fires when a spec task is marked done; `Manual` is not used, because kiro.dev lists Manual hooks as not invocable in CLI v3 and the IDE no longer creates them). It has not been recorded firing in a Kiro session; the same gate runs on demand as `/pre-submit` (the steering file) or `npm run pre-submit`. The `/pre-submit` path was run once from kiro-cli 3.1.0 (`kiro-cli chat --no-interactive "/pre-submit"`, 6 Nov): it read the steering file and ran `npm test`, `npx tsc --noEmit`, `npm run pre-submit` and `CI=true npm run check:claims`, all exit 0. That is a slash-command run, not a `PostTaskExec` firing.
+The `pre-submit` hook is a `PostTaskExec` hook (it fires when a spec task is marked done; `Manual` is not used, because kiro.dev lists Manual hooks as not invocable in CLI v3 and the IDE no longer creates them). It has not been recorded firing in a Kiro session; the same gate runs on demand as `/pre-submit` (the steering file) or `npm run pre-submit`. The `/pre-submit` path was run once from kiro-cli 3.1.0 (`kiro-cli chat --no-interactive "/pre-submit"`, 6 Nov; session `2028064e-7d31-4c17-a0db-e0d22ecc728e` in the kiro-cli v2 store, 20:27Z, title "/pre-submit"): it read the steering file and ran `npm test`, `npx tsc --noEmit`, `npm run pre-submit` and `CI=true npm run check:claims`, all exit 0. That is a slash-command run, not a `PostTaskExec` firing.
 
 ## 3. The lesson-checker agent reviewing the ready-made decks
 

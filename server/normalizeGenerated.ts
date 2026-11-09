@@ -33,7 +33,7 @@ import { fitBody, STORY_BODY_MAX } from "../src/shared/fitText.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
-import { isStockEndLine, soundsLikeEnding } from "../src/shared/endLine.js";
+import { isStockEndLine, soundsLikeEnding, isLongProse, isShortPair, isShortTerm, asksForClosingMessage } from "../src/shared/endLine.js";
 import {
   QUIZ_QUESTION,
   QUIZ_TILES,
@@ -573,7 +573,12 @@ function normalizeEnd(card: Card): Card {
  * its front becomes the heading (unless the model wrote its own heading) and its
  * longer text becomes the body. Links that pointed at it now point at the end card.
  */
-export function foldEndLikeCard(stack: Stack): Stack {
+export interface FoldContext {
+  /** The teacher's sentence, when the server has it (TASK-30a). */
+  prompt?: string;
+}
+
+export function foldEndLikeCard(stack: Stack, ctx: FoldContext = {}): Stack {
   const endIx = stack.cards.findIndex((c) => c.kind === "end");
   if (endIx < 1) return stack;
   const end = stack.cards[endIx]!;
@@ -584,7 +589,35 @@ export function foldEndLikeCard(stack: Stack): Stack {
   const front = (fakeTexts[0]?.content ?? "").trim();
   if (front.length === 0 || !soundsLikeEnding(front)) return stack;
 
+  // (0) A short-term front in a deck of short-term flash cards is vocabulary:
+  //     never folded, whatever its back length or the prompt (TASK-30a review fix).
+  const rest = stack.cards.filter((c) => c.id !== fake.id && c.kind !== "end");
+  const isVocabulary =
+    isShortTerm(front) &&
+    rest.length > 0 &&
+    rest.every((c) => c.kind === "flash" && isShortTerm(textsOf(c)[0]?.content ?? ""));
+  if (isVocabulary) return stack;
+
+  // (1) The candidate's longer text must be long prose — a term, a translation or
+  //     a one-line definition ("Well done → Maith thú") is a real card (TASK-30a).
+  const prose = (fakeTexts[1]?.content ?? (fakeTexts.length === 1 ? front : "")).trim();
+  if (!isLongProse(prose)) return stack;
+
+  // (2) The deck's other flash cards must not be short term → translation pairs.
+  const others = stack.cards.filter((c) => c.id !== fake.id && c.kind === "flash");
+  if (others.length > 0) {
+    const pairs = others.filter((c) => {
+      const t = textsOf(c);
+      return t.length >= 2 && isShortPair(t[0]!.content, t[1]!.content);
+    });
+    if (pairs.length >= Math.ceil(others.length / 2)) return stack;
+  }
+
+  // (3) The teacher asked for a closing message, or the model's end card has no body.
   const endTexts = textsOf(end);
+  const endHasBody = endTexts.slice(1).some((t) => t.content.trim().length > 0);
+  if (!asksForClosingMessage(ctx.prompt) && endHasBody) return stack;
+
   const ownHeading = (endTexts[0]?.content ?? "").trim();
   const headingText = ownHeading.length === 0 || isStockEndLine(ownHeading) ? front : ownHeading;
   const longText = (fakeTexts[1]?.content ?? "").trim();
@@ -647,10 +680,18 @@ export function normalizeGeneratedCard(card: Card, ctx: Ctx = {}): Card {
  * validation (it should not — every step only re-positions, retargets or adds),
  * the un-normalised stack is returned linked and shuffled, never a broken one.
  */
-export function finaliseGeneratedStack(input: Stack): Stack {
-  // One ending: fold a fake sign-off card into the end card first (TASK-29k).
-  const folded = foldEndLikeCard(input);
-  const stack = validate(folded).valid ? folded : input;
+export interface FinaliseResult {
+  stack: Stack;
+  /** True when a closing message was moved onto the end card (the Maker says so). */
+  movedClosingMessage: boolean;
+}
+
+export function finaliseGeneratedStackDetailed(input: Stack, ctx: FoldContext = {}): FinaliseResult {
+  // One ending: fold a fake sign-off card into the end card first (TASK-29k) —
+  // only when it really is a closing message (TASK-30a).
+  const folded = foldEndLikeCard(input, ctx);
+  const didFold = folded !== input && validate(folded).valid;
+  const stack = didFold ? folded : input;
   const ids = new Set(stack.cards.map((c) => c.id));
   const cards = stack.cards.map((card, i) =>
     normalizeGeneratedCard(card, { next: nextCardAfter(stack, i), ids }),
@@ -658,6 +699,13 @@ export function finaliseGeneratedStack(input: Stack): Stack {
   const normalised = shuffleQuizAnswers(
     ensureForwardLinks(linkQuizAnswersForward({ ...stack, cards })),
   );
-  if (validate(normalised).valid) return normalised;
-  return shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(stack)));
+  if (validate(normalised).valid) return { stack: normalised, movedClosingMessage: didFold };
+  return {
+    stack: shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(stack))),
+    movedClosingMessage: didFold,
+  };
+}
+
+export function finaliseGeneratedStack(input: Stack, ctx: FoldContext = {}): Stack {
+  return finaliseGeneratedStackDetailed(input, ctx).stack;
 }

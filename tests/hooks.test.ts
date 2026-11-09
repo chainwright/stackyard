@@ -128,6 +128,23 @@ describe("TASK-26k: .kiro/hooks files match the Kiro 1.x hook schema", () => {
     expect(script).toContain("after-bash.patterns");
   });
 
+  it("TASK-30j: the shell-edit guard also catches python3 file.py, cp, mv and git apply, and still ignores reads", async () => {
+    const { spawnSync } = await import("node:child_process");
+    const run = (command: string): string =>
+      spawnSync("sh", ["scripts/after-bash.sh"], {
+        cwd: process.cwd(),
+        input: JSON.stringify({ tool_input: { command } }),
+        env: { ...process.env, AFTER_BASH_DRY_RUN: "1" },
+        encoding: "utf8",
+      }).stdout.trim();
+    for (const c of ["python3 scripts/fix.py", "python fix.py --all", "cp a.ts src/b.ts", "mv a.ts b.ts", "git apply fix.patch", "cd x && cp -r a b"]) {
+      expect(run(c), c).toBe("would-run");
+    }
+    for (const c of ["ls -la src", "git status --short", "git diff --stat", "npm test", "grep -rn cpu src"]) {
+      expect(run(c), c).toBe("skip");
+    }
+  });
+
   it("TASK-29d: the shell-edit guard catches echo/printf/cat/tee writes and ignores reads", async () => {
     const { spawnSync } = await import("node:child_process");
     const run = (command: string): string =>

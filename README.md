@@ -4,7 +4,7 @@ Make a clickable lesson from one sentence. The **lesson file works offline**.
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
-**Live app:** https://stackyard-sdqt.onrender.com
+**Demo video (2:35):** https://youtu.be/xQvUPdifiVE · **Live app:** https://stackyard-sdqt.onrender.com
 
 ## What it is
 
@@ -24,7 +24,10 @@ Two halves:
 - **The Player** is the exported file. It is fully offline: all fonts and the
   runtime are inlined; it makes **zero network requests**.
 
-"Works offline" means the **exported lesson file**, not the Maker.
+"Works offline" means the **exported lesson file**, not the Maker. We ran those
+files with the network off in Playwright's Chromium, Firefox and WebKit builds
+(0 requests, 0 errors; real Safari and Windows were not tried): see
+[`docs/cross-browser/`](docs/cross-browser/).
 
 ### The living file
 
@@ -41,10 +44,9 @@ the play-only alternative.
 <!-- The screens below are real: `scripts/make-readme-media.ts` drives the built
      Maker in headless Chrome and writes docs/media/ (re-run it after a UI change). -->
 
-![From one sentence to an offline file and its edited copy: the sentence, the cards dealing in, the editor, Try It, the export, the exported file opened with the network off, the Teacher tab changing the right answer, the stamp, and the saved copy playing](docs/media/demo.gif)
+![From one sentence to an offline file and its edited copy: the sentence, the cards dealing in, the editor, Try It, the export, the exported file opened with the network off, the Teacher tab making the right answer more exact, the stamp, and the saved copy playing](docs/media/demo.gif)
 
-Screens from the current build (`npm run media` regenerates them; the run has no
-model key, so the ready-made Vikings deck answers — the live app uses the model):
+The README screens and the GIF use the ready-made Vikings deck (no live generation): `npm run media` regenerates them against a server with no model key, so the ready-made deck answers. The live app uses the model.
 
 | 1. The sentence | 2. Cards deal in | 3. Edit any card |
 |---|---|---|
@@ -54,9 +56,9 @@ model key, so the ready-made Vikings deck answers — the live app uses the mode
 |---|---|---|
 | ![CORRECT stamp on the right answer](docs/media/4-correct-stamp.png) | ![The EXPORTED stamp and the saved file](docs/media/5-exported.png) | ![The exported file playing with the network switched off](docs/media/6-offline-file.png) |
 
-| 7. Teacher: change the right answer | 8. Try It: the stamp lands there | 9. Save a Copy: the copy plays |
+| 7. Teacher: make the right answer more exact | 8. Try It: the stamp lands there | 9. Save a Copy: the copy plays |
 |---|---|---|
-| ![Inside the exported file with Wi-Fi off: the Teacher tab, a different answer ticked as right](docs/media/7-teacher-edit.png) | ![The CORRECT stamp on the answer just chosen, inside the file](docs/media/8-teacher-stamp.png) | ![The saved copy, opened from disk with the network off, playing](docs/media/9-copy-plays.png) |
+| ![Inside the exported file with Wi-Fi off: the Teacher tab, the right answer's label made more exact ("Vikings from Norway")](docs/media/7-teacher-edit.png) | ![The CORRECT stamp on the answer just chosen, inside the file](docs/media/8-teacher-stamp.png) | ![The saved copy, opened from disk with the network off, playing](docs/media/9-copy-plays.png) |
 
 The GIF ends the same way: the file exported in screen 5 is opened from disk with
 the network switched off (screen 6), edited in its own Teacher tab, and the copy it
@@ -86,9 +88,10 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
   fails if a lettered task id in the specs is not mentioned by a test, a gate
   script or a hook; today it reports the true count (see its output, not a
   claim in this file).
-- **Hooks** — five hooks (invariants on save, living-file gate, export check,
-  ready-made content check, and a `pre-submit` gate that fires when a spec
-  task is done):
+- **Hooks** — six hooks (invariants on save, living-file gate, export check,
+  ready-made content check, `invariants-after-shell-edit` — a `PostToolUse` hook
+  on the agent's shell commands that re-runs the invariants after a shell edit —
+  and a `pre-submit` gate that fires when a spec task is done):
   [`.kiro/hooks/`](.kiro/hooks/).
 - **Custom agent** — the lesson checker that reads a set of cards (we ran it on
   the ready-made decks) for factual errors, ambiguous questions and reading
@@ -103,8 +106,8 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 
 ## Why HyperCard
 
-HyperCard let non-programmers build clickable, branching "stacks" in 1987 and
-nothing really replaced it for them. Stackyard brings that back for a teacher
+HyperCard let non-programmers build clickable, branching "stacks" in 1987.
+Successors like HyperStudio and Decker exist, but none starts from a teacher's sentence. Stackyard brings that back for a teacher
 with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
 scored lesson the class plays, every stack satisfies nine validity invariants so
 it always plays to an end score, and the exported file is re-importable
@@ -117,9 +120,7 @@ it always plays to an end score, and the exported file is re-importable
 - **H5P / Lumi** export an offline interactive activity for teachers — but
   authoring is form-based per content type, with no generation from a sentence
   and no free-form card editing.
-- **AI quiz makers** turn a topic into a quiz — but they export to
-  PDF/Word/platform links, need accounts, and give one-shot output you can't
-  edit card by card.
+- **AI quiz makers** turn a topic into a quiz — but they usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
 always-playable stack → direct card editing → one self-contained offline file that
@@ -148,7 +149,7 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1003** passing (`npm test`).
+- Tests: **1069** passing (`npm test`).
 - Player bundle: **11.7 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
@@ -321,9 +322,7 @@ full link.
 
 The demo video is not part of the app. Its music was generated by the team with
 ElevenLabs Music on a paid plan, on 27 Oct 2026 for an earlier project of ours,
-and reused here. The classroom hands, laptop and room in two short shots are
-AI-generated footage, labelled on screen; the screen shown in them is a real
-recording of Stackyard.
+and reused here. The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 28 s, ten shots), each tagged on screen; app screens in them are real recordings composited in.
 
 ### Design reference image (AI-generated)
 

@@ -111,6 +111,73 @@ function withForward(card: Card, target: string): Card {
   return { ...card, elements };
 }
 
+/** A story card with two or more choices: a fork. Nothing is ever added to one by a repair (TASK-30i). */
+export function isChoiceFork(card: Card): boolean {
+  return card.kind === "story" && buttonsOf(card).length >= 2;
+}
+
+/** Every card reachable from `startId` (itself included) by following any goto. */
+function reachableFrom(stack: Stack, startId: string): Set<string> {
+  const byId = new Map(stack.cards.map((c) => [c.id, c]));
+  const seen = new Set<string>([startId]);
+  const queue = [startId];
+  while (queue.length > 0) {
+    const card = byId.get(queue.shift()!);
+    if (card === undefined) continue;
+    for (const t of outTargets(card)) {
+      if (!seen.has(t) && byId.has(t)) {
+        seen.add(t);
+        queue.push(t);
+      }
+    }
+  }
+  return seen;
+}
+
+/**
+ * The card all of a fork's branches come back together at, if there is exactly
+ * one: among the cards every branch can reach, the one from which all the other
+ * shared cards can be reached. Null when there is none or it is not unique.
+ */
+export function rejoinCard(stack: Stack, fork: Card, exclude: string): string | null {
+  const branches = outTargets(fork).filter((t) => t !== exclude);
+  if (branches.length < 2) return null;
+  const sets = branches.map((b) => reachableFrom(stack, b));
+  const shared = [...sets[0]!].filter((id) => id !== exclude && sets.every((set) => set.has(id)));
+  const nearest = shared.filter((c) => {
+    const from = reachableFrom(stack, c);
+    return shared.every((o) => from.has(o));
+  });
+  return nearest.length === 1 ? nearest[0]! : null;
+}
+
+/** The nearest reachable non-end card before index `ix`, or null. */
+export function nearestReachableBefore(stack: Stack, ix: number, reachable: Set<string>): Card | null {
+  let pIx = ix - 1;
+  while (pIx >= 0 && (!reachable.has(stack.cards[pIx]!.id) || stack.cards[pIx]!.kind === "end")) pIx--;
+  return pIx < 0 ? null : stack.cards[pIx]!;
+}
+
+/** True when linking `stranded` in after `p` is a pure splice (p has one exit that stranded also takes). */
+export function canSplice(p: Card, stranded: Card): boolean {
+  const pTargets = outTargets(p);
+  const x = pTargets.length === 1 ? pTargets[0]! : null;
+  return x !== null && x !== stranded.id && outTargets(stranded).includes(x);
+}
+
+/**
+ * When "Link these in for me" could only fix the unreachable card at `ix` by
+ * adding a button to a story card with several choices, that fork card — the
+ * teacher has to choose which choice leads here. Otherwise null.
+ */
+export function blockingFork(stack: Stack, ix: number, reachable: Set<string>): Card | null {
+  const stranded = stack.cards[ix];
+  if (stranded === undefined) return null;
+  const p = nearestReachableBefore(stack, ix, reachable);
+  if (p === null || !isChoiceFork(p) || canSplice(p, stranded)) return null;
+  return p;
+}
+
 export interface SpliceResult {
   stack: Stack;
   /** True when the card before the new one leads to several cards: the new card is left unlinked. */
@@ -151,7 +218,11 @@ export function spliceNewCard(stack: Stack, index: number): SpliceResult {
       ),
     };
   } else if (targets.length >= 2) {
+    // A fork (TASK-30i): the new card does NOT inherit a link to deck-next (that
+    // is one branch's card). It leads on only to the card the branches rejoin at,
+    // when there is exactly one; otherwise nowhere, until the teacher chooses.
     fork = true;
+    x = rejoinCard(stack, before, fresh.id) ?? undefined;
   }
   const patchedFresh = x !== undefined && x !== fresh.id ? withForward(fresh, x) : fresh;
   return {

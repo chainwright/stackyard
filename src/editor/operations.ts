@@ -13,9 +13,9 @@ import type {
   Action,
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
-import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds } from "../shared/flow.js";
+import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds, isChoiceFork, nearestReachableBefore, canSplice } from "../shared/flow.js";
 import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
-import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS } from "../shared/layout.js";
+import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY } from "../shared/layout.js";
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -72,6 +72,34 @@ export function editText(
       el.id === elementId && el.type === "text" ? { ...el, content } : el
     )
   );
+}
+
+/** The longest message the last card keeps (matches the generator's cap). */
+export const MAX_END_MESSAGE = 300;
+
+/**
+ * TASK-30g: set the last card's optional message — the SECOND text element on the
+ * end card (the first is the heading; the player draws the second as the body).
+ * Creates it when absent, removes it when the text is cleared, caps it at 300.
+ */
+export function setEndMessage(stack: Stack, cardId: string, text: string): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined || card.kind !== "end") return reject("That isn't the last card.");
+  const value = text.slice(0, MAX_END_MESSAGE);
+  const texts = card.elements.filter((e) => e.type === "text");
+  const body = texts[1];
+  if (value.trim().length === 0) {
+    if (body === undefined) return stack;
+    return mapCard(stack, cardId, (c) => ({ ...c, elements: c.elements.filter((e) => e.id !== body.id) }));
+  }
+  if (body !== undefined) return editText(stack, body.id, value);
+  return mapCard(stack, cardId, (c) => ({
+    ...c,
+    elements: [
+      ...c.elements,
+      { type: "text", id: newId(), x: END_BODY.x, y: END_BODY.y, w: END_BODY.w, h: END_BODY.h, content: value },
+    ],
+  }));
 }
 
 /**
@@ -280,7 +308,12 @@ export function addCardAfter(
   lastInsertNote = spliced.fork
     ? "This card is added, but nothing leads to it yet. Choose where this card leads: open a button on the card before it and use Go to card…"
     : null;
-  return ensureForwardLinks(spliced.stack);
+  const linked = ensureForwardLinks(spliced.stack);
+  if (!spliced.fork) return linked;
+  // At a fork the new card keeps exactly the links the splice gave it (TASK-30i):
+  // ensureForwardLinks would point its buttons at deck-next, one branch's card.
+  const kept = spliced.stack.cards.find((c) => c.id === card.id)!;
+  return { ...linked, cards: linked.cards.map((c) => (c.id === card.id ? kept : c)) };
 }
 
 /** A note for the teacher about the card just inserted (e.g. "Choose where this card leads"). */
@@ -317,13 +350,23 @@ export function repairFlow(stack: Stack): Stack | Rejected {
   // Keep the end card last; everything else stays in its current relative order.
   const reordered: Card[] = [...before, ...after, end];
   let repaired = ensureForwardLinks({ ...stack, cards: reordered });
-  for (let guard = 0; guard < repaired.cards.length; guard++) {
+  // A card that cannot be linked in (no room, or it would need a button on a
+  // story fork) stays flagged; the others are still repaired.
+  const flagged = new Set<string>();
+  // Every success may unblock a card tried earlier (a splice changes which card
+  // is "nearest"), so flagged cards are retried after progress — that is also what
+  // makes a second repair change nothing.
+  for (let guard = 0; guard < repaired.cards.length * repaired.cards.length + 1; guard++) {
     const seen = reachableIds(repaired);
-    const strandedIx = repaired.cards.findIndex((c, i) => i > 0 && !seen.has(c.id));
+    const strandedIx = repaired.cards.findIndex((c, i) => i > 0 && !seen.has(c.id) && !flagged.has(c.id));
     if (strandedIx < 0) break;
     const next = linkStranded(repaired, strandedIx, seen);
-    if (next === null) break; // no room on the card before it: leave it flagged
+    if (next === null) {
+      flagged.add(repaired.cards[strandedIx]!.id);
+      continue;
+    }
     repaired = next;
+    flagged.clear();
   }
   return repaired;
 }
@@ -331,20 +374,19 @@ export function repairFlow(stack: Stack): Stack | Rejected {
 /** Link the unreachable card at `ix` in from the nearest reachable card before it, never overwriting. */
 function linkStranded(stack: Stack, ix: number, reachable: Set<string>): Stack | null {
   const stranded = stack.cards[ix]!;
-  // The stranded card leads into the card play starts on, and nothing leads to
-  // it: it was the FIRST card before it got moved. Put it back at the front —
-  // a pure reorder; no link changes at all.
-  if (outTargets(stranded).includes(stack.cards[0]!.id)) {
+  // A stranded card whose ONLY way on is the card play starts on was the first
+  // card before it got moved: put it back at the front (a pure reorder). A card
+  // that merely has a "Start again" among other exits is NOT moved (TASK-30i).
+  const outs = outTargets(stranded);
+  if (outs.length === 1 && outs[0] === stack.cards[0]!.id) {
     return { ...stack, cards: [stranded, ...stack.cards.filter((c) => c.id !== stranded.id)] };
   }
-  let pIx = ix - 1;
-  while (pIx >= 0 && (!reachable.has(stack.cards[pIx]!.id) || stack.cards[pIx]!.kind === "end")) pIx--;
-  if (pIx < 0) return null;
-  const p = stack.cards[pIx]!;
+  const p = nearestReachableBefore(stack, ix, reachable);
+  if (p === null) return null;
 
   const pTargets = outTargets(p);
   const x = pTargets.length === 1 ? pTargets[0]! : null;
-  if (x !== null && x !== stranded.id && outTargets(stranded).includes(x)) {
+  if (x !== null && canSplice(p, stranded)) {
     // A pure splice: p → x becomes p → stranded, and stranded already goes on to x.
     const patched: Card = {
       ...p,
@@ -353,6 +395,9 @@ function linkStranded(stack: Stack, ix: number, reachable: Set<string>): Stack |
     };
     return { ...stack, cards: stack.cards.map((c) => (c.id === p.id ? patched : c)) };
   }
+  // Never add a button to a story card with two or more choices: the teacher
+  // chooses which choice leads here (TASK-30i). The card stays flagged.
+  if (isChoiceFork(p)) return null;
   // Otherwise ADD a way in: a plain button in free space (existing links untouched).
   const y = freeY(p, NEW_BUTTON_SIZE.h);
   if (y === null) return null;

@@ -722,3 +722,10 @@ change in Play.
 ### TASK-29n (Teacher tab) / 29a (living half): the Teacher tab follows the same rules  *(J2, J4)*
   - "+ Add an answer" focuses and selects the new Answer box. "Add a card after this" uses the same non-rewiring splice (a fork leaves the new card unlinked and says "Choose where this card leads"). A copy of a branching file saved after an insert keeps every existing choice's target.
   - **Acceptance criteria.** Living tests: focus after Add an answer; a branching deck keeps its choices after "Add a card after this" and shows the fork note.
+
+
+### TASK-30g (Teacher tab half) / 30i (living half): the Teacher tab  *(J2, J3, J4)*
+  - **30g.** In the Teacher tab the end card's heading and message are editable (fields in the inspector, backed by the same text operations as the Maker; the message is created when absent and removed when cleared, max 300). A saved copy keeps the edited message.
+  - **30i.** The Teacher tab's "Add a card after this" and repair use the same fork-aware path as the Maker.
+  - **Drag (optional, not done this round).** Drag in the Teacher tab through the same `moveElement` operation as the Maker, on an 8 px grid.
+  - **Acceptance criteria.** Living tests: editing the end heading/message changes the preview; Save a Copy keeps them; clearing the message removes the text element. 30i/30k as in `maker/tasks.md`.

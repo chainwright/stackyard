@@ -52,6 +52,9 @@ export function asksForPictures(sentence: string): boolean {
 /** The plain note shown when pictures were asked for and were not added. */
 export const PICTURES_NOTE = "Pictures aren't added automatically yet. Use Add Picture.";
 
+/** Shown when the builder moved a closing message onto the last card (TASK-30a). */
+export const CLOSING_MESSAGE_NOTE = "We moved your closing message onto the last card.";
+
 const EXAMPLES: ReadonlyArray<{ label: string; sentence: string }> = [
   {
     label: "Vikings quiz",
@@ -164,8 +167,14 @@ export function StartScreen({
         ...(outcome.fallbackReason ? { fallbackReason: outcome.fallbackReason } : {}),
         fallbackOnline: online,
         // A teacher who asked for pictures and got a deck without any should be
-        // told, in one line, instead of wondering where they went (TASK-27t).
-        ...(!outcome.isFallback && asksForPictures(sentence) ? { note: PICTURES_NOTE } : {}),
+        // told, in one line, instead of wondering where they went (TASK-27t). A folded
+        // closing message is told too (TASK-30a).
+        ...(() => {
+          const notes: string[] = [];
+          if (!outcome.isFallback && asksForPictures(sentence)) notes.push(PICTURES_NOTE);
+          if (outcome.movedClosingMessage === true) notes.push(CLOSING_MESSAGE_NOTE);
+          return notes.length > 0 ? { note: notes.join(" ") } : {};
+        })(),
       });
       store.setStatus("idle");
       announce(
@@ -307,6 +316,17 @@ export function StartScreen({
                       {i < READY_MADE_DECKS.length - 1 ? <span aria-hidden="true"> · </span> : null}
                     </span>
                   ))}
+                </p>
+                <p class="lesson-file-line">
+                  <a
+                    class="lesson-file-link"
+                    href="/samples/vikings-in-ireland.html"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Open a lesson file (works with Wi-Fi off)
+                  </a>
+                  <span class="lesson-file-hint"> Try the Teacher tab in its corner.</span>
                 </p>
                 <button
                   class="link-btn type-own-toggle"

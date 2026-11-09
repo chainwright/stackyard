@@ -107,6 +107,8 @@ export type GenerateSuccess = {
   isReadyMadeExample?: boolean;
   /** Why the fallback happened (only present when isFallback is true). */
   fallbackReason?: FallbackReason;
+  /** True when a closing message was moved onto the last card (TASK-30a); the Maker says so. */
+  movedClosingMessage?: boolean;
 };
 
 export type GenerateError = {
@@ -157,6 +159,8 @@ export type GenerateStreamDone = {
   isReadyMadeExample?: boolean;
   /** Why the fallback happened (only present when isFallback is true). */
   fallbackReason?: FallbackReason;
+  /** True when a closing message was moved onto the last card (TASK-30a). */
+  movedClosingMessage?: boolean;
 };
 
 export type GenerateStreamError = {

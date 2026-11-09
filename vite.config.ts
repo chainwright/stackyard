@@ -34,6 +34,11 @@ export default defineConfig({
   build: {
     outDir: "dist/maker",
     emptyOutDir: true,
+    // TASK-30h: never inline a font as a data: URI. The Maker's CSP is
+    // `font-src 'self'`, so an inlined digits.woff2 is blocked and the plain-zero
+    // digits font silently fails to load. Returning undefined keeps Vite's default
+    // for everything else.
+    assetsInlineLimit: (file: string) => (file.endsWith(".woff2") ? false : undefined),
     rollupOptions: {
       input: {
         main: "index.html",

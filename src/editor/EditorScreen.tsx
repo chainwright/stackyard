@@ -254,6 +254,8 @@ export function EditorScreen({
             const kind = shareCheck.kind;
             setShareCheck(null);
             const res = store.apply((s) => repairFlow(s));
+            // The "choose where this card leads" note is stale once the flow is repaired (TASK-30i).
+            if (res.ok) setNotice(null);
             if (res.ok) void onExport(kind);
             else setNotice(res.message);
           }}
@@ -279,6 +281,7 @@ export function EditorScreen({
             // Link unreachable cards into the flow, then export the fixed stack.
             const res = store.apply((s) => repairFlow(s));
             setExportedName(null);
+            if (res.ok) setNotice(null);
             if (res.ok) void onExport();
             else setNotice(res.message);
           }}

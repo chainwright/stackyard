@@ -13,7 +13,7 @@
 //
 //   node --import tsx/esm scripts/check-maker-fit.ts      (builds the Maker to a temp dir)
 
-import { writeFileSync, mkdtempSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdtempSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -220,6 +220,18 @@ const DRIVER = `
     return true;
   }
   function finish() {
+    // TASK-30h: every FontFace the page declares must be loaded (none "error").
+    var faces = [];
+    try { document.fonts.forEach(function (f) { faces.push(f); }); } catch (e) {}
+    var pending = faces.map(function (f) { return f.load().catch(function () {}); });
+    Promise.all(pending).then(function () { return document.fonts.ready; }).then(function () {
+      faces.forEach(function (f) {
+        if (f.status !== "loaded") problems.push("TASK-30h: font " + f.family + " is " + f.status + ", not loaded");
+      });
+      done();
+    }, function () { done(); });
+  }
+  function done() {
     var node = document.createElement("div");
     node.id = "mk-fitcheck";
     node.setAttribute("data-vp", window.innerWidth + "x" + window.innerHeight);
@@ -261,6 +273,21 @@ function main(): void {
   const out = mkdtempSync(path.join(os.tmpdir(), "stackyard-maker-"));
   execFileSync("npx", ["vite", "build", "--base=./", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { stdio: "inherit" });
   const indexHtml = readFileSync(path.join(out, "index.html"), "utf8");
+
+  // TASK-30h: the Maker's CSP is `font-src 'self'`, which a file:// page cannot
+  // enforce, so check the cause directly: no built stylesheet may carry a font as
+  // a data: URI (it would be blocked in the real app).
+  {
+    const assets = path.join(out, "assets");
+    const bad = readdirSync(assets)
+      .filter((f) => f.endsWith(".css"))
+      .filter((f) => /url\(\s*["']?data:(font|application\/(font|x-font))/i.test(readFileSync(path.join(assets, f), "utf8")));
+    if (bad.length > 0) {
+      console.error(`check-maker-fit: FAIL — TASK-30h: ${bad.join(", ")} inlines a font as a data: URI, which the Maker's font-src 'self' CSP blocks.`);
+      process.exit(1);
+    }
+    console.log("check-maker-fit: OK — TASK-30h: no font is inlined as a data: URI in the Maker CSS");
+  }
 
   const scenarios: Array<{ name: string; mode: string; stack: Stack | null; win: [number, number]; fold?: boolean }> = [
     // Window = viewport + 143 px of Chrome: 1366×768 -> a 1366×625 viewport (the hard case).

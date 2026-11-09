@@ -22,6 +22,8 @@ export type GenerateOutcome =
       isReadyMadeExample: boolean;
       /** Why a ready-made deck was served (only when isFallback). */
       fallbackReason?: FallbackReason;
+      /** True when the server moved a closing message onto the last card (TASK-30a). */
+      movedClosingMessage?: boolean;
     }
   | {
       ok: false;
@@ -65,6 +67,7 @@ export async function generateStack(
     stack?: Stack;
     isFallback?: boolean;
     isReadyMadeExample?: boolean;
+    movedClosingMessage?: boolean;
     message?: string;
   };
 
@@ -74,6 +77,7 @@ export async function generateStack(
       stack: body.stack,
       isFallback: body.isFallback === true,
       isReadyMadeExample: body.isReadyMadeExample === true,
+      ...(body.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
     };
   }
   return {
@@ -196,6 +200,7 @@ export async function generateStackStream(
           isFallback: msg.isFallback || isFallback,
           isReadyMadeExample: msg.isReadyMadeExample === true || isReadyMadeExample,
           ...(reason ? { fallbackReason: reason } : {}),
+          ...(msg.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
         };
       }
       case "error":

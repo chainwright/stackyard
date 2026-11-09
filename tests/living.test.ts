@@ -663,3 +663,42 @@ describe("TASK-29n and TASK-29a: the Teacher tab follows the same rules", () => 
     expect(labels).toHaveLength(5);
   });
 });
+
+describe("TASK-30g: the Teacher tab edits the last card's heading and message", () => {
+  beforeEach(() => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  it("TASK-30g: heading and message edits survive Save a Copy", async () => {
+    const stack = twoCardStack();
+    const end = stack.cards[1]!;
+    end.elements.unshift({ type: "text", id: "cccccccc-0000-4000-8000-0000000000e1", x: 48, y: 120, w: 704, h: 72, content: "Well done!" });
+    const cap = captureDownloads();
+    openFile(exportedFile(stack));
+    teardown = bootLivingFile();
+    tab().click();
+    const items = document.querySelectorAll<HTMLButtonElement>(".sy-living-list button");
+    items[items.length - 1]!.click();
+
+    const insp = (): HTMLElement => document.querySelector<HTMLElement>(".sy-living-inspector")!;
+    const heading = insp().querySelector<HTMLInputElement>("input[type=text]")!;
+    expect(heading.value).toBe("Well done!");
+    heading.value = "Brilliant work!";
+    heading.dispatchEvent(new Event("input", { bubbles: true }));
+    const msg = insp().querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(insp().textContent).toContain("Message (optional)");
+    msg.value = "See you on Monday.";
+    msg.dispatchEvent(new Event("input", { bubbles: true }));
+    // The preview shows both.
+    expect(document.querySelector(".sy-living-canvas .sy-end-heading")?.textContent).toBe("Brilliant work!");
+    expect(document.querySelector(".sy-living-canvas .sy-end-body")?.textContent).toBe("See you on Monday.");
+
+    barButton("Save a Copy").click();
+    const saved = await blobText(cap.blobs[cap.blobs.length - 1]!);
+    const m = saved.match(/<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/)!;
+    const reopened = JSON.parse(m[1]!) as Stack;
+    expect(validate(reopened).valid).toBe(true);
+    const texts = reopened.cards[1]!.elements.filter((e) => e.type === "text").map((e) => (e.type === "text" ? e.content : ""));
+    expect(texts).toEqual(["Brilliant work!", "See you on Monday."]);
+  });
+});

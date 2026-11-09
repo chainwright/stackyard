@@ -1575,3 +1575,63 @@ Source: `judge_2026-11-06_r5/J1–J5`. Spec first, then code, then a test that f
   - **Acceptance criteria.** Unit test with "What is one quarter of 20?"; prompt test for the general rule, with no topic example.
 
 **Gate (TASK-29):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `check-living-file`, `check-text-fit`, `check-maker-fit`, `check:samples`, `check:trace` pass.
+
+
+## Phase 16 — Round-6 review fixes (TASK-30)
+
+Source: `judge_2026-11-09_r6/FIX_LIST.md` + `J1–J5`, and the video hound's README items R1–R4. Spec first, then code, then a test that fails without each fix (the TASK-30x id is in the test title so `check:trace` counts it). Source is edited with Kiro's file tools.
+
+### TASK-30a: the end-card fold never deletes a real card  *(J4 P1-1, live data loss; P1)*
+  - **Bug.** `foldEndLikeCard` treated any non-quiz card right before the end card whose front *starts with* a praise word as a fake sign-off and deleted it. Praise words are ordinary vocabulary in language decks: a live Irish praise deck lost "Well done → Maith thú", and a French deck's "Congratulations → Félicitations" became the end heading. Nothing told the teacher.
+  - **Fix.** Fold only when ALL hold: the candidate's longer text is long prose (more than 120 characters and at least two sentences — not a term, translation or definition); the deck's other flash cards are not short term → translation pairs; and either the teacher's sentence asked for a message or ending on the last card (the prompt is passed in as optional context) or the model's end card has no body. Otherwise the deck is left exactly as it is. When a fold happens, the stream `done` / one-shot response carries `movedClosingMessage: true` and the Maker shows "We moved your closing message onto the last card."
+  - **Acceptance criteria.** The A / A2 repros (`p_r6.mts`) keep every card and leave the end card unchanged; the TASK-29k repro (flash "You did it!" + long back) still folds; a fast-check property: `finaliseGeneratedStack` never reduces the number of flash cards whose back is ≤ 120 characters; the notice shows on the Start screen after a fold; a mutant that restores the keyword-only rule is killed. (Spec for the generator side is in `stack-generator/tasks.md`.)
+
+  - **Review fix (our review of the first pass; probe on the live G2 deck).** Two holes remained. (i) `asksForClosingMessage` matched "then the last card", which only names the end card. It now needs a message word (message, note, words, encouragement, sign-off, goodbye, farewell, ending message…) tied to the last/final/end card; "then the last card" / "end with the last card" alone is NOT asking. (ii) The short-pair test (back ≤ 60) missed real vocabulary backs of 75–100+ characters. A candidate whose front is a short term (≤ 4 words, no sentence punctuation) in a deck where every other non-end card is a flash card with a short-term front is vocabulary and is NEVER folded, whatever its back length or the prompt.
+  - **Review acceptance criteria.** The G2 probe with a 153-character, three-sentence "Well done" back keeps 5 cards and `movedClosingMessage` false, for the prompt "…then the last card." and for a prompt that asks for a goodbye message on the last card; a fast-check property: for any deck whose flash fronts are all short terms, no flash card is removed for any prompt string; the 29k repro still folds; one mutant per new guard is killed.
+
+### TASK-30b: the README demo never stamps a wrong fact  *(J1/J2/J5 P1-3; P1)*
+  - **Bug.** `make-readme-media.ts` step 7 made "Romans" the right answer to "Which people began raiding Ireland around the year 795?", then stamped CORRECT on it.
+  - **Fix.** The Teacher-tab edit is a TRUE edit: retype the label of the tile already marked right ("Vikings" → "Vikings from Norway"), then Try It stamps CORRECT on that same tile. The script never ticks a different radio. Media regenerated.
+  - **Acceptance criteria.** A test reads the script and asserts it edits the label of the right tile and never clicks a radio; the regenerated frames 7–9 and the GIF tail are looked at and described.
+
+### TASK-30c: the live app serves the sample lesson files  *(J1, J5; P1)*
+  - **Bug.** `/samples/*.html` returned 404 on the live app, so the "open a sample" claim could not be followed.
+  - **Fix.** The server serves exactly three names from an allowlist — `irish-words.html`, `times-tables.html`, `vikings-in-ireland.html` — at `/samples/<name>.html` (no URL text reaches the filesystem), `text/html`, `nosniff`, with a CSP for an offline lesson file: `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`. The Maker's own CSP is unchanged. `samples/` ships in the repo checkout, which the Render build already has.
+  - **Acceptance criteria.** 200 for each name; 404 for anything else, including `..`, encoded and case variants and a trailing path; the CSP header; a headless check that a served sample renders a card and Save a Copy works under that CSP.
+
+### TASK-30d: the living file first on the Start screen  *(J1 Innovation, P1-5; P1)*
+  - **Fix.** One quiet line near the ready-made row: "Open a lesson file (works with Wi-Fi off)" (opens `/samples/vikings-in-ireland.html` in a new tab) with the hint "Try the Teacher tab in its corner." No stamp red.
+  - **Acceptance criteria.** DOM test: the link, its `target="_blank"` + `rel="noopener"`, and the hint exist; `check-maker-fit` stays green at 1366×768 and 1366×657 (Build Cards above the fold).
+
+### TASK-30e: README truth  *(video hound R1–R4, J5 P1-3; P1)*
+  - **Fix.** R1 the AI-footage sentence; R2 six hooks including `invariants-after-shell-edit`; R3 "Successors like HyperStudio and Decker exist, but none starts from a teacher's sentence."; R4 AI quiz makers "usually live on a platform that needs accounts, or export to forms, LMS formats or PDF."; the demo video link (https://youtu.be/xQvUPdifiVE, 2:35) at the top next to the live app; a line that the README screens and GIF use the ready-made Vikings deck (no live generation).
+  - **Acceptance criteria.** A test names the exact replacements and that the README's hook count equals the number of files in `.kiro/hooks/`.
+
+### TASK-30f: the cross-browser record is committed  *(video hound; P1)*
+  - **Fix.** `docs/cross-browser/` holds `README.md` (the 6 Nov write-up with its limits, plus a line that it ran before TASK-29/30), `result.json`, and `cross_browser.py` (the script with the one `go_offline` function inlined). The README's offline claim links to it.
+  - **Acceptance criteria.** A test checks the three files exist, the script has no `from ui import`, and the README links the folder.
+
+### TASK-30g (Maker half): the last card's message is editable  *(J2 #7, J3 N2, J4 P2-4; P2)*
+  - **Fix.** The end-card panel gets a "Message (optional)" textarea under Heading (max 300), backed by the existing text operations on the END_BODY text: created when absent, removed when cleared.
+  - **Acceptance criteria.** DOM tests: typing creates the second text, clearing removes it, the 300 limit holds. (Teacher tab half: `exporter/tasks.md`.)
+
+### TASK-30h: the plain-zero font loads in the Maker  *(J4 P2-3, J5 P1-1; P2)*
+  - **Bug.** Vite inlined `digits.woff2` as `data:`, the Maker CSP is `font-src 'self'`, so `document.fonts` reported "Stackyard Digits error" and the Maker kept a slashed zero.
+  - **Fix.** `build.assetsInlineLimit` never inlines `.woff2`. The CSP is not widened. The exported file still embeds its fonts.
+  - **Acceptance criteria.** `check-maker-fit` asserts every `FontFace` in `document.fonts` is `loaded` (after `document.fonts.ready`) on the Start screen and in the editor, and goes red with the old config (a mutant).
+  - **Review fix.** The file:// check cannot see the real failure (the server's `font-src 'self'`). A new `scripts/check-maker-fonts.ts` starts the real server (`createServer` serving `dist/maker`, so `applySecurityHeaders` sends the real CSP), opens the Maker over `http://127.0.0.1` in headless Chrome (own CDP client, throwaway profile, never ports 9222/9224), waits for `document.fonts.ready` and fails naming every FontFace whose status is not `loaded`, on the Start screen and in the editor (ready-made deck). It is part of `pre-submit` (`npm run check:maker-fonts`); a mutant restoring the old `assetsInlineLimit` turns it red.
+
+### TASK-30i: fork-aware "Link these in for me"  *(J4 P2-1/P2-2, J2 #8, J3 N1; P2)*
+  - **Bug.** After inserting a card at a fork, the new card still led to deck-next (another branch), the repair added a third "Next Card" choice to the fork, a stale "nothing leads to it yet" notice stayed on screen, and a stranded card with a "Start again → card 1" button was moved to the front, changing where the deck starts.
+  - **Fix.** At a fork the new card gets no outgoing link (or one to the branches' common rejoin card if there is exactly one). `repairFlow` never adds a button to a story card that has two or more choices; such a card stays flagged with "Choose which story choice should lead here", and "Take me to the card" opens the fork card. The insert notice clears after a successful repair. `repairFlow` never moves a card to the front just because it links to card 1.
+  - **Review fix.** "The insert notice clears after a successful repair" is pinned by a rendered DOM test (jsdom): insert after a fork, see the notice, run "Link these in for me" in the share check, the notice is gone — not by a source-text check.
+  - **Acceptance criteria.** Unit tests for repros B and C; the branching property test also asserts no story card with ≥ 2 choices gains a button; the notice clears after repair; the share check names the fork.
+
+### TASK-30j: docs leftovers  *(J4, J5; P2)*
+  - **Fix.** KIRO_LOG says `/pre-submit` (not `#pre-submit`) at the TASK-23 and TASK-27 hook bullets; the kiro-cli `/pre-submit` claim cites session `2028064e-7d31-4c17-a0db-e0d22ecc728e`; `scripts/after-bash.patterns` also matches `python3 <file>.py`, `cp`, `mv`, `git apply`.
+  - **Acceptance criteria.** Doc tests for the strings; the dry-run test for each new command.
+
+### Optional, NOT done this round: drag in the Teacher tab  *(FIX P2-1; was lettered k)*
+  - Left open on purpose: the Teacher tab still edits by clicking and typing; dragging an element there is not built. See `exporter/tasks.md`.
+
+**Gate (TASK-30):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed.

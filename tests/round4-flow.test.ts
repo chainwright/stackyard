@@ -128,13 +128,15 @@ describe("TASK-28h: 'Link these in for me' (repairFlow) splices unreachable card
     expect(flowProblems(fixed)).toEqual([]);
   });
 
-  it("clears an unreachable card that follows a story card", () => {
+  it("an unreachable card that follows a story card with CHOICES is not clipped on: the fork keeps its buttons (TASK-30i)", () => {
     const base = vikingsStack();
-    const storyIx = base.cards.findIndex((c) => c.kind === "story");
+    // The story card with two choices.
+    const storyIx = base.cards.findIndex((c) => c.kind === "story" && c.elements.filter((e) => e.type === "button").length >= 2);
     const broken = strand(base, storyIx, "flash");
+    const forkBefore = broken.cards[storyIx]!.elements.filter((e) => e.type === "button").length;
     const fixed = asStack(repairFlow(broken));
     expect(validate(fixed).valid).toBe(true);
-    expect(checkReachability(fixed).unreachable).toEqual([]);
+    expect(fixed.cards[storyIx]!.elements.filter((e) => e.type === "button")).toHaveLength(forkBefore);
   });
 });
 
