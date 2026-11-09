@@ -39,6 +39,14 @@ services:
       # and pretty-prints a 10-card stack past 4096 output tokens.
       - key: STACKYARD_LLM_MAX_TOKENS
         value: "12000"
+      # Thinking off. Measured 9 Nov with this exact config (claude-haiku-5-5, a 12-card
+      # water-cycle sentence, local server): with thinking on, Build Cards to editor took
+      # 30.5 s and 33.5 s because the model is silent for 20 to 24 s before its first text;
+      # with "thinking": {"type": "disabled"} the first text arrived at 0.58 s and the whole
+      # stack at 11.0 s. (reasoning_effort "low" did not help.) This is also the default
+      # for the host api.anthropic.com; it is set here so the choice is explicit.
+      - key: STACKYARD_LLM_THINKING
+        value: "off"
       - key: TRUST_PROXY
         value: "1"
       # Render sits behind Cloudflare. Measured on the live service (5 Nov): the

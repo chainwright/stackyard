@@ -190,9 +190,10 @@ describe("TASK-26: the generation prompts", () => {
     }
   });
 
-  it("(c) both prompts reserve the top band for the card counter", () => {
+  it("(c) TASK-31c replaced the counter-band note: the prompts leave every position to the server", () => {
     for (const [name, sys] of both()) {
-      expect(sys, name).toMatch(/start text at y 104 or lower/);
+      expect(sys, name).toContain("You do not set positions or sizes");
+      expect(sys, name).not.toMatch(/start text at y 104 or lower/);
     }
   });
 });

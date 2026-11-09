@@ -5,7 +5,7 @@
 **What was tested**
 - The files exported from the live app in take `live_maker3`, i.e. the files used in the v2 video: `raw/exports_live_maker3/The-water-cycle-4th-class-quiz-flash-cards-and-a-raindrop-story-class.html` and the living file next to it.
 - They were copied to `scratch/xb2/` for the run.
-- Script: `tools/cross_browser.py`. Raw result: `scratch/xb2/result.json`. An earlier run on the v1 exports (`scratch/xb1/result.json`) gave the same result: all three passed.
+- Script: `cross_browser.py` (next to this file). Raw result: `scratch/xb2/result.json`. An earlier run on the v1 exports (`scratch/xb1/result.json`) gave the same result: all three passed.
 
 **How each browser was run**
 - Each browser engine is Playwright's own build, headless, at a 1366×768 viewport. Each file is opened from disk (`file://`).
@@ -29,4 +29,3 @@
 **Limits (stated plainly):**
 - These are Playwright's engine builds, not the branded browsers. **WebKit ≠ Safari.app**: the download and file-access behaviour of real Safari, including its sandbox prompts, was not tested. **Edge was not run separately.** It uses the Chromium engine, which passes.
 - Only macOS was used, with no Windows or ChromeOS laptop. There was no touch input, and the files were not opened from a USB stick.
-- Under the rule the coordinator set, the VO keeps "any laptop" ("The class opens it on any laptop, with nothing to install"). A cautious reading would add a real Safari and Windows Edge check before submission.

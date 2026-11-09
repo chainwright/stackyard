@@ -1233,6 +1233,7 @@ export function renderCard(
   for (const el of card.elements) {
     const wrapper = document.createElement("div");
     wrapper.className = "sy-element";
+    wrapper.setAttribute("data-element-id", el.id);
     positionElement(wrapper, el);
 
     switch (el.type) {

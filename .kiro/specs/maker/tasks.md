@@ -1635,3 +1635,46 @@ Source: `judge_2026-11-09_r6/FIX_LIST.md` + `J1–J5`, and the video hound's REA
   - Left open on purpose: the Teacher tab still edits by clicking and typing; dragging an element there is not built. See `exporter/tasks.md`.
 
 **Gate (TASK-30):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed.
+
+---
+
+## Phase 17 - v2 panel fixes (TASK-31)
+
+Source: `judge_v2_2026-11-09_app/SUMMARY.md`, `J04_engineering.md` (4.4, 4.6, 7) and `J05_hound.md` (4 README table, 6), on commit ee37ab7. Spec first, then code, then a test that fails without each fix, with the TASK-31x id in its title (`check:trace` counts it). Source is edited with Kiro's file tools.
+
+### TASK-31a: README and docs say only what is true  *(J05 R2/R3/R6/R19, MCP bullet, music; P0/P1)*
+  - **Bug.** README line 7 links the old video (`xQvUPdifiVE`, 2:35), not the submitted one (v7, 2:52). The README says the file plays "in any current browser on a school laptop" (tested only in headless Chrome by our gates and once in Playwright's Firefox and WebKit builds). The cross-browser sentence omits that the run was on 6 Nov before TASK-29/30. The MCP bullet implies Kiro ran it (it was run as a script outside Kiro). "Successors like HyperStudio and Decker … none starts from a teacher's sentence" has no backing for HyperStudio. The video's music has no licence note. `docs/cross-browser/README.md` carries an internal process line and a wrong script path. `.kiro/steering/pre-submit.md` lists a stale part of the gate.
+  - **Fix.** Exact README replacements for line 7 (video `G5aNDWg8UGY`, 2:52, plus the live app), the ES2018 sentence, the cross-browser parenthesis, the MCP bullet and the Decker sentence. The "Demo video: music and generated footage" section links a new `docs/MUSIC_LICENCE.md` that states only the facts the team gave. `docs/cross-browser/README.md` loses the "Under the rule the coordinator set" line and names the script next to it. The steering file says `npm run pre-submit` is the whole gate in `package.json`.
+  - **Acceptance criteria.** A test: README line 7 links `G5aNDWg8UGY` and `docs/MUSIC_LICENCE.md` exists and is linked from the README; tests for each exact string; `check:claims` and the docs tests stay green.
+
+### TASK-31b: the Teacher tab fits a phone  *(J01/J03/J04, SUMMARY product P1-3)*
+  - **Bug.** At 390x844 the Teacher tab clips the card and the card list takes about 60% of the width.
+  - **Fix.** Below 700 px the list collapses into a one-line "Cards" toggle that opens it, the card preview gets the full width (scaled to fit, nothing clipped) and the inspector sits below the card. The desktop layout is unchanged.
+  - **Acceptance criteria.** `scripts/check-living-file.ts` opens a sample living file at 390x844, opens the Teacher tab and asserts the card's box is inside the viewport horizontally and not clipped by any ancestor's overflow; it saves `docs/media/teacher-390.png`. A mutant that removes the media query is killed.
+
+### TASK-31c: the wait  *(J04 4.4/4.6c, SUMMARY product P1-2; P0)*
+  - **Bug.** Measured on the live model config (claude-haiku-5-5, water-cycle sentence, 12 cards): Build Cards to editor 30.5 s and 33.5 s; first card 20 to 24 s. A raw stream shows the role chunk at 0.7 s and then nothing until the first text at 20 to 24 s: the model thinks before it writes. With `"thinking": {"type": "disabled"}` the first text arrived at 0.58 s and the whole stack at 11.0 s (`reasoning_effort: low` did not help). The prompt also asks the model to "decide all card ids up front", the requested schema carries x/y/w/h the server re-lays out anyway, the deal area is empty while waiting and shows empty answer tiles on a preview card, and `STREAM_IDLE_DEADLINE_MS` (20 s) is armed before the first chunk, so a slow first token falls into the 2 x 45 s retry path.
+  - **Fix.** (1) `STACKYARD_LLM_THINKING=on|off`; when off both gateway calls send `"thinking": {"type": "disabled"}`; default off for host `api.anthropic.com`, nothing sent for other hosts; `render.yaml` sets it off with a comment; README env table gains the row. (2) The prompt numbers cards `c1, c2, …` in order instead of planning ids. (3) x/y/w/h leave the requested schema if the server fills them before validation on every path (one-shot, stream, retry, preview card). (4) Outlined ghost cards while waiting for the first card; a dealt preview card never shows empty answer tiles. (5) `STREAM_FIRST_TOKEN_DEADLINE_MS` (45 s) applies until the first content delta; the 20 s idle deadline applies only after it. (6) The `stream timing` log line gains `thinking=on|off`.
+  - **Acceptance criteria.** Gateway tests (field present by default for the Anthropic host, absent for another host, env overrides both ways, the key never in an error); prompt tests; a property test that coordinate-free model output always finalises to a valid stack; a DOM test for the ghost cards and the preview tiles; fake-timer tests (first content at 30 s succeeds; a 21 s stall after content aborts as idle; the total deadline is unchanged); the timing line carries `thinking=`.
+
+### TASK-31d: drag in the Teacher tab  *(J04 4.6b, FIX P2-1; P2)*
+  - **Bug.** The living preview cannot move an element; the Maker can.
+  - **Fix.** The Maker's pointer handler (pointer capture, screen to canvas by dividing by the scale, one coalesced undo step) is ported into the living preview, through the shared `moveElement` operation (canvas clamp, button overlap guard). Preview nodes carry element ids for hit-testing. A drag is one reversible step in the Teacher tab's history.
+  - **Acceptance criteria.** A jsdom drag moves the element and the stack stays valid; a fast-check property: any sequence of drags (random deltas, including off-canvas) keeps `validate(stack)` ok and every element inside 800 x 600; `check-living-file` drags a tile, saves a copy and asserts the copy holds the new x/y; a mutant that skips the clamp is killed.
+
+### TASK-31e: the "word for word" rule  *(FIX P2-6)*
+  - **Bug.** `promptBuilder.ts` told the model to repeat definitions "word for word".
+  - **Fix.** The one-shot, streaming and retry prompts carry: "Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else."
+  - **Acceptance criteria.** A prompt test covers all three prompts and finds no "word for word".
+
+### TASK-31f: log and gate honesty  *(J04 P1, J04 P2)*
+  - **Bug.** KIRO_LOG has two different "98" counts that look like one; `check:mutants` hides why a baseline failed.
+  - **Fix.** Each "98" carries its date and scope; a TASK-31 entry is added; `scripts/mutation-check.ts` prints the tail of the failing vitest output on a baseline failure.
+  - **Acceptance criteria.** A test of the KIRO_LOG strings; a test that the baseline-failure path prints the tail.
+
+### TASK-31g: the fold property states the real invariant  *(our gate run, seed 1135286996)*
+  - **Bug.** `tests/round6-generation.test.ts` "TASK-30a: property — when every flash front is a short term…" failed on a random seed: the deck `aa / AA`, `Well done / Q0` kept all its cards (no fold, `movedClosingMessage` false) but the second flash card came out a story card "Well done" with no back. Cause: `isCounterOnly` in `normalizeGenerated.ts` treats ANY text that is just `q`/`question`/`card` plus digits as the model's own "Question 3 of 6" header and drops it, so a real back such as "Q0" vanished and the one-text flash repair turned the card into a story. The property counted flash cards, so it was flaky since TASK-30 (green only for lucky seeds) and asserted the wrong thing.
+  - **Fix.** Code: only a counter that is clearly chrome is dropped — the words `question` / `card` with a number, or `q` with "of N" — and a bare `Q0`, `Q1` is kept as real text; a prefix is still stripped only when text FOLLOWS it (`stripQuestionPrefix` already leaves a bare label alone). Test: the property now states the invariant — finalising never removes a card (the non-end card count is unchanged) and every original front is still on some card, for any prompt, unless `movedClosingMessage` is true — and the counterexample runs as an explicit `examples` entry every time.
+  - **Acceptance criteria.** A unit test that "Q0", "Q1", "A4" and "No 5" survive as a flash back while "Question 3 of 6" and "Card 2" headers are still dropped; the property passes over several seeds and 5,000 runs once.
+
+**Gate (TASK-31):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.

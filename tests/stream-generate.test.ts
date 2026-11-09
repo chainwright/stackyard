@@ -327,15 +327,16 @@ describe("streamGenerate — streamed attempt fails → reset + fallback", () =>
     const stack = validStack();
     const header = JSON.stringify({ kind: "stack", id: stack.id, title: stack.title, theme: stack.theme });
     const good = JSON.stringify({ kind: "card", card: stack.cards[0] });
-    // Shape-parseable JSON but a card validateCard() must REJECT: the element's
-    // `x` is a string, not a number. Without the per-card check this would be
-    // dealt to the client before the whole-stack check.
+    // Shape-parseable JSON but a card validateCard() must REJECT: the text's
+    // `content` is a number, not a string. Without the per-card check this would be
+    // dealt to the client before the whole-stack check. (A broken x / y / w / h is
+    // no longer a rejection: the server fills coordinates in, TASK-31c.)
     const invalidQuizId = "aaaaaaaa-0000-4000-8000-00000000bad0";
     const invalidCard = {
       id: invalidQuizId,
       kind: "quiz",
       elements: [
-        { type: "text", id: "aaaaaaaa-0000-4000-8000-00000000bad1", x: "nope", y: 104, w: 704, h: 128, content: "Bad element" },
+        { type: "text", id: "aaaaaaaa-0000-4000-8000-00000000bad1", x: 48, y: 104, w: 704, h: 128, content: 42 },
         { type: "button", id: "aaaaaaaa-0000-4000-8000-00000000bad2", x: 48, y: 296, w: 344, h: 96, label: "A", actions: [{ type: "score", delta: 1 }] },
         { type: "button", id: "aaaaaaaa-0000-4000-8000-00000000bad3", x: 408, y: 296, w: 344, h: 96, label: "B", actions: [{ type: "score", delta: 0 }] },
       ],

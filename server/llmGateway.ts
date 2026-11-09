@@ -10,6 +10,8 @@
 //   - The API key value never appears in any thrown error message or return value.
 //   - No other module reads these env vars.
 
+import { llmThinking } from "./llmThinking.js";
+
 // ---------------------------------------------------------------------------
 // Error types
 
@@ -64,6 +66,8 @@ interface ChatCompletionRequest {
   response_format?: { type: "json_object" };
   max_tokens: number;
   temperature?: number;
+  /** Anthropic's OpenAI-compatible endpoint thinks before it writes unless told not to (TASK-31c). */
+  thinking?: { type: "disabled" };
 }
 
 interface ChatCompletionResponse {
@@ -84,6 +88,7 @@ interface ChatCompletionStreamRequest {
   messages: ChatMessage[];
   max_tokens: number;
   temperature?: number;
+  thinking?: { type: "disabled" };
   stream: true;
 }
 
@@ -110,8 +115,20 @@ export const CALL_TOTAL_DEADLINE_MS = 45_000;
 /** Streaming `callStream`: whole stream must finish within this budget. */
 export const STREAM_TOTAL_DEADLINE_MS = 90_000;
 
-/** Streaming `callStream`: abort if no chunk arrives for this long. */
+/**
+ * Streaming `callStream`: abort if no chunk arrives for this long. Armed only
+ * AFTER the first content delta (TASK-31c): before that the first-token
+ * deadline applies, because a model that thinks first is silent for a while.
+ */
 export const STREAM_IDLE_DEADLINE_MS = 20_000;
+
+/**
+ * Streaming `callStream`: how long to wait for the FIRST content delta. A role-only
+ * chunk or a ": ping" comment line does not count as content. Measured on the
+ * live model with thinking on, the first text arrived at 20 to 24 s; 20 s was
+ * too short to start counting before it (TASK-31c).
+ */
+export const STREAM_FIRST_TOKEN_DEADLINE_MS = 45_000;
 
 // ---------------------------------------------------------------------------
 // Config helpers (read env vars once per call to support test overrides)
@@ -164,6 +181,13 @@ function getMaxTokens(): number {
   return Math.min(32000, Math.max(1000, Math.floor(n)));
 }
 
+/** Thinking mode (TASK-31c): see server/llmThinking.ts for the measurement and the rules. */
+export { llmThinking };
+
+function thinkingField(): { thinking?: { type: "disabled" } } {
+  return llmThinking() === "off" ? { thinking: { type: "disabled" as const } } : {};
+}
+
 function getModel(): string {
   return (
     (process.env["STACKYARD_LLM_MODEL"] ?? "").trim() || "gpt-4o-mini"
@@ -209,6 +233,7 @@ export async function call(
     ...(jsonModeEnabled() ? { response_format: { type: "json_object" as const } } : {}),
     max_tokens: getMaxTokens(),
     ...(temperatureEnabled() ? { temperature } : {}),
+    ...thinkingField(),
   };
 
   // Abort the upstream request if the whole call outlasts its total deadline.
@@ -345,6 +370,7 @@ export async function* callStream(
     ],
     max_tokens: getMaxTokens(),
     ...(temperatureEnabled() ? { temperature } : {}),
+    ...thinkingField(),
     stream: true,
   };
 
@@ -353,16 +379,23 @@ export async function* callStream(
   // disconnect). We track WHY so the thrown message is accurate; none of these
   // reasons ever includes the URL or key.
   const controller = new AbortController();
-  let abortReason: "total" | "idle" | "client" | null = null;
+  let abortReason: "total" | "idle" | "first" | "client" | null = null;
 
   const totalTimer = setTimeout(() => {
     if (abortReason === null) abortReason = "total";
     controller.abort();
   }, STREAM_TOTAL_DEADLINE_MS);
 
-  // The idle timer is reset after every chunk; if it ever fires, no chunk has
+  // Until the first CONTENT delta arrives, only the first-token deadline runs
+  // (role-only chunks and ": ping" lines do not count and do not reset it). After
+  // it, the idle timer is reset by every chunk; if it ever fires, no chunk has
   // arrived for STREAM_IDLE_DEADLINE_MS and we give up on the stall.
-  let idleTimer: ReturnType<typeof setTimeout>;
+  let sawContent = false;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  const firstTokenTimer = setTimeout(() => {
+    if (abortReason === null) abortReason = "first";
+    controller.abort();
+  }, STREAM_FIRST_TOKEN_DEADLINE_MS);
   const armIdle = (): void => {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
@@ -370,7 +403,6 @@ export async function* callStream(
       controller.abort();
     }, STREAM_IDLE_DEADLINE_MS);
   };
-  armIdle();
 
   const external = options.signal;
   const onExternalAbort = (): void => {
@@ -384,6 +416,7 @@ export async function* callStream(
 
   const clearTimers = (): void => {
     clearTimeout(totalTimer);
+    clearTimeout(firstTokenTimer);
     clearTimeout(idleTimer);
     if (external) external.removeEventListener("abort", onExternalAbort);
   };
@@ -464,8 +497,9 @@ export async function* callStream(
             "dropped",
           );
         }
-        // A chunk (or stream end) arrived — restart the idle clock.
-        armIdle();
+        // A chunk (or stream end) arrived — restart the idle clock, but only once
+        // content has started (before that the first-token deadline governs).
+        if (sawContent) armIdle();
         if (value) buffer += decoder.decode(value, { stream: true });
 
         // SSE events are separated by a blank line; each event may hold one or
@@ -490,6 +524,11 @@ export async function* callStream(
           }
           const delta = chunk.choices?.[0]?.delta?.content;
           if (typeof delta === "string" && delta.length > 0) {
+            if (!sawContent) {
+              sawContent = true;
+              clearTimeout(firstTokenTimer);
+              armIdle();
+            }
             yield delta;
           }
         }

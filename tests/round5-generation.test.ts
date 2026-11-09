@@ -27,9 +27,9 @@ describe("TASK-29g / 29p: prompt rules are general", () => {
     ];
   };
 
-  it("29g: a quiz must not repeat a flash card's term-and-definition pair word for word", () => {
+  it("29g (superseded by TASK-31e): the flash/quiz rule no longer says 'word for word'", () => {
     for (const [name, sys] of all()) {
-      expect(sys, name).toMatch(/must not simply repeat a flash card's term-and-definition pair word for word/);
+      expect(sys, name).not.toMatch(/word for word/);
       expect(sys, name).toMatch(/ask about it differently, or about something else/);
     }
   });

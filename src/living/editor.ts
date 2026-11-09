@@ -21,6 +21,7 @@ import {
   markCorrect,
   setFlashSide,
   setEndMessage,
+  moveElement,
 } from "../editor/operations.js";
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
@@ -29,11 +30,21 @@ import { primaryText, truncateLabel, distinctCardLabels } from "../shared/cardTi
 
 type ApplyFn = (s: Stack) => Stack | import("../editor/types.js").Rejected;
 
+/** The most steps Undo remembers. */
+const HISTORY_LIMIT = 200;
+
 export class LivingEditor {
   private stack: Stack;
   private selectedCardId: string;
   private selectedElementId: string | null = null;
   private tryingTeardown: (() => void) | null = null;
+  /** The card preview's current fit scale (screen px per canvas px). */
+  private scale = 1;
+  /** Undo / redo (TASK-31d): every committed edit is one step; a whole drag is one step. */
+  private undoStack: Stack[] = [];
+  private redoStack: Stack[] = [];
+  private cardsListOpen = false;
+  private drag: { id: string; startX: number; startY: number; elX: number; elY: number; pushed: boolean } | null = null;
 
   constructor(
     stack: Stack,
@@ -69,8 +80,95 @@ export class LivingEditor {
       this.onNotice("That change would break the cards, so it wasn't applied.");
       return false;
     }
-    this.stack = next;
+    this.commit(next);
     return true;
+  }
+
+  /** Commit a validated stack as ONE undo step. */
+  private commit(next: Stack): void {
+    this.undoStack.push(this.stack);
+    if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
+    this.redoStack = [];
+    this.stack = next;
+    this.updateHistoryButtons();
+  }
+
+  /** Step back one edit (a whole drag is one step). */
+  undo(): boolean {
+    const prev = this.undoStack.pop();
+    if (prev === undefined) return false;
+    this.redoStack.push(this.stack);
+    this.stack = prev;
+    this.afterHistoryMove();
+    return true;
+  }
+
+  /** Step forward again after an Undo. */
+  redo(): boolean {
+    const next = this.redoStack.pop();
+    if (next === undefined) return false;
+    this.undoStack.push(this.stack);
+    this.stack = next;
+    this.afterHistoryMove();
+    return true;
+  }
+
+  private afterHistoryMove(): void {
+    this.selectedCardId = this.card().id;
+    if (!this.card().elements.some((e) => e.id === this.selectedElementId)) this.selectedElementId = null;
+    this.render();
+  }
+
+  private updateHistoryButtons(): void {
+    const u = this.host.querySelector<HTMLButtonElement>(".sy-undo");
+    const r = this.host.querySelector<HTMLButtonElement>(".sy-redo");
+    if (u) u.disabled = this.undoStack.length === 0;
+    if (r) r.disabled = this.redoStack.length === 0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Drag an element in the preview (TASK-31d)
+  //
+  // The Maker's handler, ported: pointerdown selects an element and starts a drag
+  // (pointer capture); pointermove moves it through the SHARED moveElement op
+  // (canvas clamp, button overlap guard) with the screen→canvas conversion
+  // dividing by the fit scale; the whole drag is ONE undo step. The element's
+  // wrapper is moved in place so the captured pointer is never lost to a re-render.
+
+  /** Begin dragging element `id` from screen point (x, y). False when it cannot be dragged. */
+  startDrag(id: string, clientX: number, clientY: number): boolean {
+    const el = this.card().elements.find((e) => e.id === id);
+    if (!el) return false;
+    this.selectedElementId = id;
+    this.drag = { id, startX: clientX, startY: clientY, elX: el.x, elY: el.y, pushed: false };
+    return true;
+  }
+
+  /** Move the dragged element to follow the pointer at screen point (x, y). */
+  dragTo(clientX: number, clientY: number, wrapper?: HTMLElement | null): void {
+    const d = this.drag;
+    if (d === null) return;
+    const x = Math.round(d.elX + (clientX - d.startX) / this.scale);
+    const y = Math.round(d.elY + (clientY - d.startY) / this.scale);
+    const next = moveElement(this.stack, d.id, x, y);
+    // A blocked drop (on top of another answer) just stays where it was.
+    if (isRejected(next) || !validate(next).valid) return;
+    if (!d.pushed) {
+      this.commit(next); // the first move records the step …
+      d.pushed = true;
+    } else {
+      this.stack = next; // … the rest of the drag only updates it
+    }
+    const moved = this.card().elements.find((e) => e.id === d.id);
+    if (moved && wrapper) {
+      wrapper.style.left = `${moved.x}px`;
+      wrapper.style.top = `${moved.y}px`;
+    }
+  }
+
+  /** Finish the drag. */
+  endDrag(): void {
+    this.drag = null;
   }
 
   private card(): Card {
@@ -86,6 +184,9 @@ export class LivingEditor {
     this.host.innerHTML = "";
     const body = el("div", "sy-living-body");
 
+    // On a phone the card list folds behind a one-line "Cards" toggle (TASK-31b);
+    // the toggle is hidden by CSS on a wide screen.
+    body.appendChild(this.renderCardsToggle());
     body.appendChild(this.renderList());
     const main = el("div", "sy-living-main");
     main.appendChild(this.renderCanvas());
@@ -94,8 +195,20 @@ export class LivingEditor {
     this.host.appendChild(body);
   }
 
+  private renderCardsToggle(): HTMLElement {
+    const idx = this.stack.cards.findIndex((c) => c.id === this.card().id) + 1;
+    const btn = this.button(`Cards — ${idx} of ${this.stack.cards.length}`, "sy-living-btn sy-cards-toggle", () => {
+      this.cardsListOpen = !this.cardsListOpen;
+      btn.setAttribute("aria-expanded", this.cardsListOpen ? "true" : "false");
+      this.host.querySelector(".sy-living-list")?.classList.toggle("sy-open", this.cardsListOpen);
+    });
+    btn.setAttribute("aria-expanded", this.cardsListOpen ? "true" : "false");
+    return btn;
+  }
+
   private renderList(): HTMLElement {
     const list = el("nav", "sy-living-list");
+    if (this.cardsListOpen) list.classList.add("sy-open");
     const labels = distinctCardLabels(this.stack.cards);
     this.stack.cards.forEach((c, i) => {
       const b = document.createElement("button");
@@ -111,6 +224,7 @@ export class LivingEditor {
       b.addEventListener("click", () => {
         this.selectedCardId = c.id;
         this.selectedElementId = null;
+        this.cardsListOpen = false;
         this.render();
       });
       list.appendChild(b);
@@ -173,6 +287,32 @@ export class LivingEditor {
       },
       true,
     );
+    // Drag an element (TASK-31d). pointerdown selects it and starts the drag;
+    // moves follow through moveElement; up / cancel end it (one undo step).
+    const wrapperOf = (id: string): HTMLElement | null =>
+      stackWrap.querySelector<HTMLElement>(`.sy-element[data-element-id="${id}"]`);
+    stackWrap.addEventListener(
+      "pointerdown",
+      (e) => {
+        const id = this.elementIdFromClick(card, stackWrap, e.target);
+        if (id === null || !this.startDrag(id, e.clientX, e.clientY)) return;
+        try {
+          (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        } catch {
+          /* a synthetic pointer has nothing to capture */
+        }
+        e.preventDefault();
+      },
+      true,
+    );
+    stackWrap.addEventListener("pointermove", (e) => {
+      if (this.drag === null) return;
+      this.dragTo(e.clientX, e.clientY, wrapperOf(this.drag.id));
+      e.preventDefault();
+    });
+    const stop = (): void => this.endDrag();
+    stackWrap.addEventListener("pointerup", stop);
+    stackWrap.addEventListener("pointercancel", stop);
     // Fit the 800×600 card into the available area.
     this.fit(area, stackWrap);
   }
@@ -183,6 +323,9 @@ export class LivingEditor {
     let node: Node | null = target;
     while (node && node !== root) {
       if (node instanceof HTMLElement && node.classList.contains("sy-element")) {
+        // Preferred: the wrapper names its element (TASK-31d).
+        const named = node.getAttribute("data-element-id");
+        if (named !== null && card.elements.some((e) => e.id === named)) return named;
         const wrappers = Array.from(root.querySelectorAll<HTMLElement>(".sy-element"));
         const i = wrappers.indexOf(node);
         if (i >= 0 && i < card.elements.length) return card.elements[i]!.id;
@@ -199,6 +342,7 @@ export class LivingEditor {
       const h = area.clientHeight - 32;
       if (w <= 0 || h <= 0) return;
       const s = Math.min(w / 820, h / 640, 1.4);
+      this.scale = s;
       const inner = stackWrap.querySelector<HTMLElement>(".sy-card-stack");
       if (inner) {
         inner.style.transform = `scale(${s})`;
@@ -257,6 +401,12 @@ export class LivingEditor {
       }
     });
     row.appendChild(addBtn);
+    const undoBtn = this.button("Undo", "sy-living-btn sy-undo", () => void this.undo());
+    const redoBtn = this.button("Redo", "sy-living-btn sy-redo", () => void this.redo());
+    (undoBtn as HTMLButtonElement).disabled = this.undoStack.length === 0;
+    (redoBtn as HTMLButtonElement).disabled = this.redoStack.length === 0;
+    row.appendChild(undoBtn);
+    row.appendChild(redoBtn);
     if (card.kind !== "end") {
       const rm = this.button("Remove this card", "sy-living-btn", () => {
         // An instant, un-undoable delete is a trap for a child who taps Teacher →
@@ -519,7 +669,7 @@ function makeAreaScaler(area: HTMLElement): (root: HTMLElement) => () => void {
       if (!area.isConnected) return;
       const w = area.clientWidth;
       const hh = area.clientHeight - 48;
-      const s = Math.max(0.5, Math.min(Math.min((w - 48) / 812, (hh - 48) / 612), 1.35));
+      const s = Math.max(0.3, Math.min(Math.min((w - 48) / 812, (hh - 48) / 612), 1.35));
       const stackEl = root.querySelector<HTMLElement>(".sy-card-stack");
       if (stackEl) {
         stackEl.style.transform = `scale(${s})`;

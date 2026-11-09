@@ -278,13 +278,59 @@ const MODE_PLAYTHROUGH = `
   }
 `;
 
+/** Mode E (TASK-31d): Teacher → drag a tile → Undo → Redo → Save a Copy. */
+const MODE_DRAG = `
+  function run() {
+    try {
+      if (!openTeacher()) { report("FAIL", "the Teacher tab did not open the editor"); return; }
+      var canvas = q(".sy-living-canvas");
+      var wrappers = canvas.querySelectorAll(".sy-element[data-element-id]");
+      var wrapper = null;
+      for (var i = 0; i < wrappers.length; i++) { if (wrappers[i].querySelector(".sy-tile")) wrapper = wrappers[i]; }
+      if (!wrapper) { report("FAIL", "no answer tile with an element id in the Teacher preview"); return; }
+      var tile = wrapper.querySelector(".sy-tile");
+      facts.id = wrapper.getAttribute("data-element-id");
+      facts.x0 = parseFloat(wrapper.style.left);
+      facts.y0 = parseFloat(wrapper.style.top);
+      var r = wrapper.getBoundingClientRect();
+      var scale = r.width / parseFloat(wrapper.style.width);
+      var sx = r.left + r.width / 2, sy = r.top + r.height / 2;
+      function fire(type, x, y) {
+        tile.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", isPrimary: true }));
+      }
+      fire("pointerdown", sx, sy);
+      fire("pointermove", sx + 12 * scale, sy);
+      fire("pointermove", sx + 24 * scale, sy);
+      fire("pointerup", sx + 24 * scale, sy);
+      facts.moved = parseFloat(wrapper.style.left);
+      if (facts.moved !== facts.x0 + 24) { report("FAIL", "the drag moved the tile to x=" + facts.moved + ", wanted " + (facts.x0 + 24)); return; }
+      // The whole drag is ONE undo step.
+      var undo = q(".sy-undo");
+      if (!undo || undo.disabled) { report("FAIL", "no Undo after a drag"); return; }
+      undo.click();
+      var back = q(".sy-living-canvas .sy-element[data-element-id='" + facts.id + "']");
+      facts.afterUndo = back ? parseFloat(back.style.left) : -1;
+      if (facts.afterUndo !== facts.x0) { report("FAIL", "Undo left the tile at x=" + facts.afterUndo + ", wanted " + facts.x0); return; }
+      var redo = q(".sy-redo");
+      if (!redo || redo.disabled) { report("FAIL", "no Redo after an Undo"); return; }
+      redo.click();
+      var again = q(".sy-living-canvas .sy-element[data-element-id='" + facts.id + "']");
+      facts.afterRedo = again ? parseFloat(again.style.left) : -1;
+      if (facts.afterRedo !== facts.x0 + 24) { report("FAIL", "Redo left the tile at x=" + facts.afterRedo); return; }
+      saveAndReport(function () { report("PASS", "dragged a tile, undid and redid it, and saved a copy"); });
+    } catch (err) { report("FAIL", "driver error: " + (err && err.message)); }
+  }
+`;
+
 const TAIL = `
   if (document.readyState === "complete" || document.readyState === "interactive") { setTimeout(run, 80); }
   else { document.addEventListener("DOMContentLoaded", function () { setTimeout(run, 80); }); }
 `;
 
-function driverSource(mode: "edit" | "verify" | "playthrough"): string {
-  const body = mode === "edit" ? MODE_EDIT : mode === "verify" ? MODE_VERIFY : MODE_PLAYTHROUGH;
+type Mode = "edit" | "verify" | "playthrough" | "drag";
+
+function driverSource(mode: Mode): string {
+  const body = mode === "edit" ? MODE_EDIT : mode === "verify" ? MODE_VERIFY : mode === "drag" ? MODE_DRAG : MODE_PLAYTHROUGH;
   const prelude = PRELUDE.replace("__NEW_Q__", JSON.stringify(NEW_QUESTION));
   return `(function () {\n${prelude}\n${body}\n${TAIL}\n})();`;
 }
@@ -295,7 +341,7 @@ function driverSource(mode: "edit" | "verify" | "playthrough"): string {
  * driver is in the pristine snapshot, so it is in the copy, and the byte-size
  * comparison needs it gone).
  */
-function injectDriver(html: string, mode: "edit" | "verify" | "playthrough"): string {
+function injectDriver(html: string, mode: Mode): string {
   const tag = `<script id="${DRIVER_ID}">${driverSource(mode)}</script>`;
   const idx = html.lastIndexOf("</body>");
   return idx < 0 ? html + tag : html.slice(0, idx) + tag + html.slice(idx);
@@ -381,7 +427,7 @@ async function main(): Promise<void> {
   const run = (
     label: string,
     html: string,
-    mode: "edit" | "verify" | "playthrough",
+    mode: Mode,
     budgetMs: number,
   ): Verdict => {
     const file = path.join(dir, `${label}.html`);
@@ -433,6 +479,23 @@ async function main(): Promise<void> {
   const sameCopy = (x: string, y: string): boolean => withCopyCount(x, 0) === withCopyCount(y, 0);
   if (!sameCopy(copy1, copy2) || !sameCopy(copy2, copy3)) {
     fail("copies 1, 2 and 3 should be byte-identical (nothing was edited between saves).");
+  }
+
+  // ---- E (TASK-31d): drag a tile, undo, redo, Save a Copy → the copy holds the new x/y ----
+  const e = run("E-drag", livingHtml, "drag", 20_000);
+  if (e.copy === null) fail("E: no copy was captured after the drag.");
+  {
+    const m = stripDriver(e.copy).match(/<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/);
+    const parsed = m ? (JSON.parse(m[1]!) as Stack) : null;
+    const id = String(e.facts["id"]);
+    const x0 = Number(e.facts["x0"]);
+    const y0 = Number(e.facts["y0"]);
+    const el = parsed?.cards.flatMap((c) => c.elements).find((x) => x.id === id);
+    if (!el) fail("E: the dragged element is missing from the copy.");
+    if (el.x !== x0 + 24 || el.y !== y0) {
+      fail(`E: the copy holds the dragged tile at (${el.x}, ${el.y}); wanted (${x0 + 24}, ${y0}).`);
+    }
+    console.log(`check-living-file: E OK — TASK-31d: dragged a tile (${x0} → ${el.x}), undid and redid it, and the saved copy holds the new x/y.`);
   }
 
   // ---- D: play copy 3 through to the end ----

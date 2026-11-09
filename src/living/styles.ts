@@ -91,6 +91,30 @@ export const LIVING_STYLES = `
 .sy-living-tryit .sy-back {
   position: absolute; top: 2px; left: 8px; z-index: 5;
 }
+
+/* Dragging an element in the preview (TASK-31d). */
+.sy-living-canvas .sy-element { touch-action: none; cursor: grab; }
+.sy-living-canvas .sy-element:active { cursor: grabbing; }
+
+/* The "Cards" toggle only exists on a phone (TASK-31b). */
+.sy-cards-toggle { display: none; }
+
+/* TASK-31b: on a phone the card list folds behind a one-line "Cards" toggle,
+   the preview gets the full width (scaled to fit by the editor) and the
+   inspector sits BELOW the card. Desktop is untouched. */
+@media (max-width: 699px) {
+  .sy-living-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+  .sy-living-bar h1 { font-size: 18px; flex: 1 1 100%; }
+  .sy-living-bar .sy-spacer { display: none; }
+  .sy-living-body { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+  .sy-cards-toggle { display: block; flex: 0 0 auto; width: 100%; text-align: left; border-radius: 0; border-width: 0 0 1px; }
+  .sy-living-list { display: none; flex: 0 0 auto; border-right: 0; border-bottom: 1px solid #C9D3E3; max-height: 40vh; }
+  .sy-living-list.sy-open { display: block; }
+  .sy-living-main { flex: 0 0 auto; flex-direction: column; min-height: auto; }
+  .sy-living-canvas { flex: 0 0 auto; width: 100%; height: calc(78vw + 40px); padding: 16px; }
+  .sy-living-inspector { flex: 0 0 auto; width: 100%; border-left: 0; border-top: 1px solid #C9D3E3; overflow: visible; }
+  .sy-living-canvas.sy-living-tryit { height: auto; min-height: calc(78vw + 40px); }
+}
 `.trim();
 
 /**

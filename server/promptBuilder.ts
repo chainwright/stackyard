@@ -31,10 +31,10 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
   ]
 }
 
-Element types:
-- { "type": "text", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
-- { "type": "button", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "field", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+Element types (do NOT write x, y, w or h — Stackyard places every element itself):
+- { "type": "text", "id": "<short unique id>", "content": "..." }
+- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
+- { "type": "field", "id": "<short unique id>", "variable": "score" }
 
 Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
@@ -50,9 +50,11 @@ Action types:
 2. **Valid goto targets** — Every "goto" action must reference a cardId that exists in the stack.
 3. **Exactly one end card** — The cards array must contain exactly one card with kind "end".
 4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
-5. **Canvas bounds** — Every element must fit within an 800×600 canvas: x + w ≤ 800 and y + h ≤ 600.
+5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — stack.title must not be blank or whitespace only.
 7. **At least one non-end card** — The stack must contain at least one card that is not kind "end".
+
+Number the cards c1, c2, c3 … in play order as you write them, so a card can link to the next number ("c3" after "c2") without any planning. (Stackyard replaces your ids with its own afterwards.)
 
 ## Card flow
 
@@ -71,11 +73,11 @@ Never put the explanation in the first text. Give it exactly one button, labelle
 
 ## Layout
 
-Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+You do not set positions or sizes. Stackyard lays every card out from its own template, so write only the words, the answers and the links.
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. A quiz question must not simply repeat a flash card's term-and-definition pair word for word: ask about it differently, or about something else.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else.
 
 ## The end card
 
@@ -127,10 +129,10 @@ Emit the header line first, then every card line. Nothing follows the last card.
   "actions": [ ...Action ]
 }
 
-Element types:
-- { "type": "text", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "content": "..." }
-- { "type": "button", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "label": "...", "actions": [...] }
-- { "type": "field", "id": "<short unique id>", "x": n, "y": n, "w": n, "h": n, "variable": "score" }
+Element types (do NOT write x, y, w or h — Stackyard places every element itself):
+- { "type": "text", "id": "<short unique id>", "content": "..." }
+- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
+- { "type": "field", "id": "<short unique id>", "variable": "score" }
 
 Do NOT output "image" elements. Pictures cannot be created here, and a picture file path that does not exist makes the whole set impossible to save.
 
@@ -146,12 +148,11 @@ Action types:
 2. **Valid goto targets** — Every "goto" action must reference a card id you emit on some line.
 3. **Exactly one end card** — Emit exactly one card line with kind "end".
 4. **Quiz answer rule** — Every card with kind "quiz" must have exactly one button whose actions include { "type": "score", "delta": 1 } (the correct answer) and at least one button that does not. VARY which position the correct answer sits in across the quiz cards — do NOT always make the first button the right one. Mix it up (sometimes second, third or fourth), and write plausible wrong answers, never joke options.
-5. **Canvas bounds** — Every element must fit within an 800×600 canvas: x + w ≤ 800 and y + h ≤ 600.
+5. **Canvas bounds** — Positions are filled in for you, so leave out x, y, w and h. Keep each text short enough to fit on a card.
 6. **Non-empty title** — The header title must not be blank or whitespace only.
 7. **At least one non-end card** — Emit at least one card line whose kind is not "end".
 
-Because goto targets must reference card ids, decide all card ids up front so an
-earlier card can link to a later one.
+Number the cards c1, c2, c3 … in play order as you write them, and give each card's elements ids that start with its number ("c2-q", "c2-a"). Then an earlier card can link forward to the next number without any planning: the card after "c2" is "c3". (Stackyard replaces your ids with its own afterwards.)
 
 ## Card flow
 
@@ -179,11 +180,11 @@ Never put the explanation in the first text. Give it exactly one button, labelle
 
 ## Layout
 
-Coordinates are tidied afterwards, so do not fuss over them, but keep every element inside the 800×600 canvas and start text at y 104 or lower (the top 96 px is reserved for the card counter).
+You do not set positions or sizes. Stackyard lays every card out from its own template, so write only the words, the answers and the links.
 
 ## Wrong answers
 
-Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. A quiz question must not simply repeat a flash card's term-and-definition pair word for word: ask about it differently, or about something else.
+Every wrong answer must be clearly false for the age group, and also plausible: from the same topic as the question, the kind of thing a child who has not learned it yet might believe. Never jokes or absurd options, and never an option from an unrelated subject. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else.
 
 ## The end card
 

@@ -230,7 +230,12 @@ label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bo
 .deal-num { position: relative; z-index: 1; font-family: var(--font-body); font-weight: 400; font-size: var(--text-meta); color: #4a5878; margin-bottom: 10px; }
 .deal-q { position: relative; z-index: 1; font-family: var(--font-head); font-weight: 800; font-size: 26px; line-height: 1.25; color: var(--color-ink); margin-bottom: 14px; }
 .deal-tiles { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.deal-tile { height: 40px; border-radius: 8px; }
+.deal-tile { height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 0 10px; font-family: var(--font-body); font-weight: 700; font-size: 18px; overflow: hidden; }
+.deal-tile svg { flex: 0 0 auto; width: 18px; height: 18px; }
+.deal-tile-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* TASK-31c: until a card has been written the pile is OUTLINES only — no fake text, no empty tiles. */
+.deal-card.deal-ghost { background: transparent; border: 2px dashed var(--color-ink); box-shadow: none; }
+.deal-card.deal-ghost::after { display: none; }
 .deal-rings { position: absolute; top: -18px; left: 0; width: 100%; display: flex; justify-content: center; gap: 200px; z-index: 2; }
 .deal-rings svg { display: block; }
 .deal-card.c1 { transform: translate(40px,40px) rotate(-5deg); z-index: 1; }

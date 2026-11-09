@@ -729,3 +729,9 @@ change in Play.
   - **30i.** The Teacher tab's "Add a card after this" and repair use the same fork-aware path as the Maker.
   - **Drag (optional, not done this round).** Drag in the Teacher tab through the same `moveElement` operation as the Maker, on an 8 px grid.
   - **Acceptance criteria.** Living tests: editing the end heading/message changes the preview; Save a Copy keeps them; clearing the message removes the text element. 30i/30k as in `maker/tasks.md`.
+
+
+### TASK-31b / 31d: the Teacher tab on a phone, and drag  *(J04 4.6b, SUMMARY product P1-3 and P1-5)*
+  - **31b.** Below 700 px the card list collapses behind a "Cards" toggle, the preview takes the full width and the inspector goes below it. Desktop is unchanged.
+  - **31d.** The living preview moves an element by dragging, through the shared `moveElement` operation (clamped to the canvas, button overlap guard), as one reversible step in the Teacher tab's history. Preview nodes carry element ids.
+  - **Acceptance criteria.** See `maker/tasks.md` TASK-31b and TASK-31d. `scripts/check-living-file.ts` gains the 390 px check and the drag-and-save check.

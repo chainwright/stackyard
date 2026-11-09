@@ -533,7 +533,7 @@ export function GeneratingScreen({
             const label =
               card != null ? `Card ${card.index + 1} · ready` : "";
             return (
-              <div class={`deal-card c${slot + 1}`} key={`behind-${slot}`}>
+              <div class={`deal-card c${slot + 1}${card == null ? " deal-ghost" : ""}`} key={`behind-${slot}`}>
                 {label ? <p class="deal-num">{label}</p> : null}
               </div>
             );
@@ -555,12 +555,17 @@ export function GeneratingScreen({
             </p>
             {top?.question ? <p class="deal-q">{top.question}</p> : null}
             {!top && sentence.length > 0 ? <p class="deal-q deal-sentence">{sentence}</p> : null}
-            {top && top.kind === "quiz" ? (
+            {top && top.kind === "quiz" && top.answers.length > 0 ? (
               <div class="deal-tiles">
-                <span class="deal-tile" style="background:var(--color-tile-a);"></span>
-                <span class="deal-tile" style="background:var(--color-tile-b);"></span>
-                <span class="deal-tile" style="background:var(--color-tile-c);"></span>
-                <span class="deal-tile" style="background:var(--color-tile-d);"></span>
+                {top.answers.slice(0, 4).map((label, i) => (
+                  <span
+                    class="deal-tile"
+                    key={i}
+                    style={`background:var(--color-tile-${"abcd"[i]}); color:${i === 3 ? "var(--color-white)" : "var(--color-ink)"};`}
+                  >
+                    <TileShape slot={i} /> <span class="deal-tile-label">{label}</span>
+                  </span>
+                ))}
               </div>
             ) : null}
           </div>

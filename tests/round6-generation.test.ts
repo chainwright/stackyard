@@ -224,29 +224,63 @@ describe("TASK-30a (review fix): a vocabulary card with a long back is never fol
     expect(finaliseGeneratedStackDetailed(d, { prompt: "a quiz about Vikings, with a long encouraging message on the last card" }).movedClosingMessage).toBe(true);
   });
 
-  it("TASK-30a: property — when every flash front is a short term, no card is ever removed, for any prompt string", () => {
+  it("TASK-31g: property — finalising never removes a card, and every original front is still on some card, for any prompt (unless a closing message was moved)", () => {
     const word = fc.stringMatching(/^[A-Za-z]{2,10}$/);
     const term = fc.oneof(
       fc.constantFrom("Well done", "Congratulations", "Brilliant", "Great job", "Thank you", "The end", "Bravo", "All done"),
       fc.array(word, { minLength: 1, maxLength: 4 }).map((w) => w.join(" ")),
     );
-    const back = fc.oneof(word, fc.constant(LONG), fc.constant(WELL_DONE_BACK), fc.string({ minLength: 0, maxLength: 200 }));
+    const back = fc.oneof(
+      word,
+      fc.constantFrom("Q0", "Q1", "A4", "No 5", "Q12"),
+      fc.constant(LONG),
+      fc.constant(WELL_DONE_BACK),
+      fc.string({ minLength: 0, maxLength: 200 }),
+    );
+    const promptArb = fc.oneof(fc.string(), fc.constantFrom(G2_PROMPT, G2_GOODBYE_PROMPT, "a long encouraging message on the last card"));
+    // Seeds and run counts can be set from the environment to hammer it (FC_SEED=… FC_RUNS=5000).
+    const seed = process.env["FC_SEED"];
+    const runs = Number(process.env["FC_RUNS"] ?? 500);
     fc.assert(
       fc.property(
         fc.array(fc.tuple(term, back), { minLength: 2, maxLength: 6 }),
-        fc.oneof(fc.string(), fc.constantFrom(G2_PROMPT, G2_GOODBYE_PROMPT, "a long encouraging message on the last card")),
+        promptArb,
         fc.boolean(),
         (pairs, prompt, endBody) => {
           const cards: Card[] = pairs.map(([f, b], i) => flash(i, f, b.trim().length === 0 ? "x" : b, i + 1));
           const stack = deck([...cards, end(pairs.length, "Finished!", endBody ? "A body." : undefined)]);
           if (!validate(stack).valid) return true;
-          const out = finaliseGeneratedStack(stack, { prompt });
-          return out.cards.filter((c) => c.kind === "flash").length === cards.length;
+          const out = finaliseGeneratedStackDetailed(stack, { prompt });
+          if (out.movedClosingMessage) return true; // a fold is the one allowed removal
+          const nonEnd = out.stack.cards.filter((c) => c.kind !== "end");
+          if (nonEnd.length !== cards.length) return false;
+          const allTexts = out.stack.cards.flatMap((c) => textsOf(c));
+          return pairs.every(([f]) => allTexts.some((t) => t.includes(f.trim()) || t === f.trim()));
         },
       ),
-      { numRuns: 500 },
+      {
+        numRuns: runs,
+        ...(seed !== undefined ? { seed: Number(seed) } : {}),
+        // The counterexample from our gate run (seed 1135286996): a real back "Q0".
+        examples: [[[["aa", "AA"], ["Well done", "Q0"]], G2_PROMPT, false]],
+      },
     );
-  }, 30_000);
+  }, 120_000);
+
+  it("TASK-31g: a short real back such as 'Q0', 'Q1', 'A4' or 'No 5' is kept; a real header is still dropped", () => {
+    for (const back of ["Q0", "Q1", "A4", "No 5", "Q12"]) {
+      const d = deck([flash(0, "aa", back, 1), end(1)]);
+      const card = finaliseGeneratedStack(d).cards[0]!;
+      expect(card.kind, back).toBe("flash");
+      expect(textsOf(card), back).toEqual(["aa", back]);
+    }
+    for (const header of ["Question 3 of 6", "Card 2", "Q3 of 6"]) {
+      const d = deck([flash(0, "aa", "AA", 1), end(1)]);
+      d.cards[0]!.elements.unshift({ type: "text", id: id(777), x: 48, y: 20, w: 300, h: 40, content: header });
+      const card = finaliseGeneratedStack(d).cards[0]!;
+      expect(textsOf(card), header).toEqual(["aa", "AA"]);
+    }
+  });
 });
 
 describe("TASK-30a: the stream `done` carries the flag, and the Maker says so", () => {

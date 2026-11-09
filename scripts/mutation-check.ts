@@ -17,6 +17,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { baselineFailureMessage } from "./mutation-lib.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -34,6 +35,8 @@ interface Mutant {
    * NON-zero with the fix reverted. Used for the CSS fixes only a browser can see.
    */
   gate?: string[];
+  /** Run after the mutant is reverted (e.g. rebuild a bundle the gate had built from the mutated source). */
+  rebuild?: string[];
 }
 
 const MUTANTS: Mutant[] = [
@@ -312,6 +315,81 @@ const MUTANTS: Mutant[] = [
     tests: [],
     gate: ["node", "--import", "tsx/esm", "scripts/check-maker-fonts.ts"],
   },
+  // ---- v2 panel fixes (TASK-31) ----
+  {
+    name: "normalizer: a bare 'Q0' back is treated as a counter header and erased again",
+    reverts: "31g — only clear chrome is dropped",
+    file: "server/normalizeGenerated.ts",
+    find: "/^\\s*(?:question|card)\\s*#?\\d+\\s*(?:of\\s*\\d+)?\\s*[:.)\\-–—]?\\s*$/i.test(text) ||",
+    replace: "/^\\s*(?:question|q|card)\\s*#?\\d+\\s*(?:of\\s*\\d+)?\\s*[:.)\\-–—]?\\s*$/i.test(text) ||",
+    tests: ["tests/round6-generation.test.ts"],
+  },  {
+    name: "gateway: the idle deadline is armed from the first chunk again (a role chunk starts the 20 s clock)",
+    reverts: "31c — first-token deadline",
+    file: "server/llmGateway.ts",
+    find: "if (sawContent) armIdle();",
+    replace: "armIdle();",
+    tests: ["tests/llmGateway-wait.test.ts"],
+  },
+  {
+    name: "gateway: the Anthropic host no longer defaults to thinking off",
+    reverts: "31c — thinking off for api.anthropic.com",
+    file: "server/llmThinking.ts",
+    find: '=== "api.anthropic.com" ? "off" : "on";',
+    replace: '=== "api.anthropic.com" ? "on" : "on";',
+    tests: ["tests/llmGateway-wait.test.ts"],
+  },
+  {
+    name: "normalizer: a model element with no coordinates is no longer given a default box",
+    reverts: "31c — coordinate-free model output",
+    file: "server/normalizeGenerated.ts",
+    find: "    return fallback?.[key];",
+    replace: "    return undefined;",
+    tests: ["tests/round7-generation.test.ts"],
+  },
+  {
+    name: "prompt: the flash-definition rule is reversed in the prompts",
+    reverts: "31e — don't ask for the definition just given",
+    file: "server/promptBuilder.ts",
+    find: "Don't ask for the definition just given",
+    replace: "Do ask for the definition just given",
+    tests: ["tests/round7-generation.test.ts"],
+  },
+  {
+    name: "start screen: empty slots in the deal pile are filled paper again (no ghost outlines)",
+    reverts: "31c — ghost cards while planning",
+    file: "src/editor/StartScreen.tsx",
+    find: '${card == null ? " deal-ghost" : ""}',
+    replace: '${""}',
+    tests: ["tests/maker/round7-ui.dom.test.ts"],
+  },
+  {
+    name: "start screen: a quiz preview card with no answers yet shows an empty tile grid",
+    reverts: "31c — never empty answer tiles",
+    file: "src/editor/StartScreen.tsx",
+    find: 'top.kind === "quiz" && top.answers.length > 0 ?',
+    replace: 'top.kind === "quiz" ?',
+    tests: ["tests/maker/round7-ui.dom.test.ts"],
+  },
+  {
+    name: "living (browser): the phone media query is gone (list beside a clipped card at 390 px)",
+    reverts: "31b — Teacher tab fits a phone",
+    file: "src/living/styles.ts",
+    find: "@media (max-width: 699px) {",
+    replace: "@media (max-width: 1px) {",
+    tests: [],
+    // The gate opens the BUILT bundle, so it builds the mutated source first.
+    gate: ["sh", "-c", "npx vite build --config vite.living.config.ts --logLevel error && node --import tsx/esm scripts/check-living-mobile.ts"],
+    rebuild: ["npx", "vite", "build", "--config", "vite.living.config.ts", "--logLevel", "error"],
+  },
+  {
+    name: "operations: moveElement stops clamping x to the canvas (drag off the right edge)",
+    reverts: "31d — drags stay on the canvas",
+    file: "src/editor/operations.ts",
+    find: "const clampedX = clamp(x, 0, 800 - moving.w);",
+    replace: "const clampedX = x;",
+    tests: ["tests/living-drag.dom.test.ts"],
+  },
   // ---- Round-6 fixes (TASK-30 g, i) ----
   {
     name: "flow: a card added after a fork leads to deck-next again",
@@ -500,7 +578,7 @@ const MUTANTS: Mutant[] = [
   },
 ];
 
-function run(tests: string[], gate?: string[]): number {
+function run(tests: string[], gate?: string[]): { status: number; output: string } {
   const r =
     gate !== undefined
       ? spawnSync(gate[0]!, gate.slice(1), { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 600_000 })
@@ -510,7 +588,7 @@ function run(tests: string[], gate?: string[]): number {
           stdio: ["ignore", "pipe", "pipe"],
           timeout: 300_000,
         });
-  return r.status ?? 1;
+  return { status: r.status ?? 1, output: `${r.stdout ?? ""}\n${r.stderr ?? ""}` };
 }
 
 function main(): void {
@@ -523,13 +601,20 @@ function main(): void {
 
   // Sanity: the guarding tests must be GREEN before we break anything.
   const all = [...new Set(chosen.flatMap((m) => m.tests))];
-  if (all.length > 0 && run(all) !== 0) {
-    console.error("mutation-check: the guarding tests are not green on the unmodified code; fix that first.");
-    process.exit(1);
+  if (all.length > 0) {
+    const base = run(all);
+    if (base.status !== 0) {
+      console.error(baselineFailureMessage("tests", base.output));
+      process.exit(1);
+    }
   }
-  if (chosen.some((m) => m.gate !== undefined) && run([], chosen.find((m) => m.gate !== undefined)!.gate) !== 0) {
-    console.error("mutation-check: the browser gate is not green on the unmodified code; fix that first.");
-    process.exit(1);
+  const firstGate = chosen.find((m) => m.gate !== undefined);
+  if (firstGate !== undefined) {
+    const base = run([], firstGate.gate);
+    if (base.status !== 0) {
+      console.error(baselineFailureMessage("gate", base.output));
+      process.exit(1);
+    }
   }
 
   const survived: Mutant[] = [];
@@ -542,7 +627,7 @@ function main(): void {
     }
     try {
       writeFileSync(abs, original.replace(m.find, m.replace), "utf8");
-      const status = run(m.tests, m.gate);
+      const { status } = run(m.tests, m.gate);
       if (status !== 0) {
         console.log(`  KILLED    ${m.name}   [reverts ${m.reverts}]`);
       } else {
@@ -551,6 +636,8 @@ function main(): void {
       }
     } finally {
       writeFileSync(abs, original, "utf8");
+      // A gate that runs a BUILT bundle must not leave the mutated build behind.
+      if (m.rebuild !== undefined) spawnSync(m.rebuild[0]!, m.rebuild.slice(1), { cwd: ROOT, stdio: "ignore" });
     }
   }
 

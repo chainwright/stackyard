@@ -37,6 +37,7 @@ import {
   finaliseGeneratedStackDetailed,
 } from "./normalizeGenerated.js";
 import { callStream as defaultCallStream, LlmUnavailableError } from "./llmGateway.js";
+import { llmThinking } from "./llmThinking.js";
 import { buildStream as defaultBuildStream } from "./promptBuilder.js";
 
 /** A sink for NDJSON lines. The HTTP route passes a writer backed by the
@@ -330,7 +331,7 @@ async function attemptStreamedLlm(
   // One operator line: where the time went (no key, no URL, no text from the model).
   console.log(
     `[generate] stream timing: header=${headerMs ?? -1}ms ttfc=${firstCardMs ?? -1}ms ` +
-      `total=${now() - t0}ms cards=${cards.length}`,
+      `total=${now() - t0}ms cards=${cards.length} thinking=${llmThinking()}`,
   );
   const whole = validate(sanitizeRawStack(assembled));
   if (!whole.valid) {

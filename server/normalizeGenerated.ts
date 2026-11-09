@@ -72,17 +72,34 @@ function sanitizeRawElement(el: unknown): unknown | null {
   // by id, so there is nothing to remap.
   const withId: Record<string, unknown> = { ...el, id: mintId() };
 
-  const { x, y, w, h } = el;
-  if (
-    typeof x === "number" && typeof y === "number" &&
-    typeof w === "number" && typeof h === "number" &&
-    Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h)
-  ) {
+  // (TASK-31c) The model is no longer asked for x / y / w / h (the layout is ours),
+  // so any missing or non-numeric coordinate is filled from a default box for the
+  // element's kind before clamping. Text and buttons are then re-laid from the
+  // card template anyway; this only makes the raw element valid and on the canvas.
+  const fallback = DEFAULT_BOX[typeof el["type"] === "string" ? el["type"] : ""];
+  const pick = (key: "x" | "y" | "w" | "h"): number | undefined => {
+    const v = el[key];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    return fallback?.[key];
+  };
+  const x = pick("x");
+  const y = pick("y");
+  const w = pick("w");
+  const h = pick("h");
+  if (x !== undefined && y !== undefined && w !== undefined && h !== undefined) {
     const c = clampToCanvas({ x, y, w, h });
     return { ...withId, x: c.x, y: c.y, w: c.w, h: c.h };
   }
   return withId;
 }
+
+/** Where an element goes when the model gave no (or broken) coordinates. */
+const DEFAULT_BOX: Record<string, { x: number; y: number; w: number; h: number }> = {
+  text: { x: 48, y: 104, w: 704, h: 120 },
+  button: { x: 48, y: 260, w: 344, h: 72 },
+  field: { x: 48, y: 420, w: 704, h: 60 },
+  image: { x: 48, y: 104, w: 320, h: 240 },
+};
 
 /**
  * Sanitise one parsed card (a raw JSON value) before validateCard: strip
@@ -247,7 +264,13 @@ export function stripQuestionPrefix(text: string): string {
 
 /** A text that is only a counter ("Question 3 of 6", "Card 2") — chrome, not content. */
 function isCounterOnly(text: string): boolean {
-  return /^\s*(?:question|q|card)\s*#?\d+\s*(?:of\s*\d+)?\s*[:.)\-–—]?\s*$/i.test(text);
+  // Only text that is clearly the model's own header: "Question 3", "Card 2 of 8",
+  // "Q3 of 6". A bare "Q0" / "Q1" can be a real answer or term, so it is kept
+  // (TASK-31g).
+  return (
+    /^\s*(?:question|card)\s*#?\d+\s*(?:of\s*\d+)?\s*[:.)\-–—]?\s*$/i.test(text) ||
+    /^\s*q\s*#?\d+\s*of\s*\d+\s*[:.)\-–—]?\s*$/i.test(text)
+  );
 }
 
 const SMALL_WORDS = new Set([
