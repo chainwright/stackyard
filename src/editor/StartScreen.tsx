@@ -45,6 +45,8 @@ function summariseCard(card: Card, index: number, total: number): DealtCard {
 }
 
 const PROMISE = "Make a clickable lesson from one sentence. The lesson file works offline.";
+/** TASK-33b: "the lesson is the file", under the h1 (the exported file is offline; the Maker is not). */
+export const FILE_PROMISE = "The lesson is the file: it plays, scores and edits itself, with the Wi-Fi off.";
 
 /** True when the teacher's sentence asks for pictures, which the builder does not add. */
 export function asksForPictures(sentence: string): boolean {
@@ -268,6 +270,8 @@ export function StartScreen({
                 <p class="lede">
                   Describe your lesson in a sentence. Stackyard builds a set of
                   cards you can play with the class.
+                  {/* TASK-33b: the promise — the FILE is offline, not the Maker. */}
+                  <span class="lede-promise">{FILE_PROMISE}</span>
                 </p>
               )}
 

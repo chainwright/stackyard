@@ -179,7 +179,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 .start-card h1 { font-family: var(--font-head); font-weight: 800; font-size: var(--text-question); line-height: 1.2; margin-bottom: 10px; background: var(--color-paper); }
 .start-card p.lede { background: var(--color-paper); }
-.start-card p.lede { font-size: var(--text-body); line-height: 1.5; margin-bottom: 22px; color: var(--color-ink); }
+.start-card p.lede { font-size: var(--text-body); line-height: 1.5; margin-bottom: 14px; color: var(--color-ink); }
+/* TASK-33b: the file promise, its own line in the lede; ink on paper, bold, --text-meta
+   (no new colour). The lede's bottom margin (22px → 14px) gives back the room it takes,
+   so Build Cards stays above the fold at 1366×657 (check-maker-fit). */
+.start-card p.lede .lede-promise { display: block; font-weight: 700; font-size: var(--text-meta); }
 
 label.field-label { display: block; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .sentence { width: 100%; min-height: 80px; resize: vertical; font-family: var(--font-body); font-size: var(--text-body); line-height: 1.5; color: var(--color-ink); background: #fff; border: 1.5px solid var(--color-ink); border-radius: var(--radius-button); padding: 14px 16px; }

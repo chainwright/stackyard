@@ -1,6 +1,6 @@
 # Stackyard
 
-Make a clickable lesson from one sentence. The **lesson file works offline**.
+Make a clickable lesson from one sentence. The **lesson is the file**: one HTML file you can hand to a class, which plays, scores and edits itself offline. HyperCard revivals usually bring back the editor; Stackyard brings back the stack you could hand to someone. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
@@ -147,10 +147,14 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1200** passing (`npm test`).
+- Tests: **1211** passing (`npm test`).
 - Player bundle: **11.9 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
+- Floppy test: **7** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
+  (1,457,664 bytes). That is a living export of
+  `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
+  The ready-made samples in `samples/` carry photos, so they are larger.
 
 ## Development
 
@@ -270,15 +274,14 @@ point it at this repo, and set `STACKYARD_LLM_API_KEY` in the dashboard (it is
 `npm start`, and `/api/health` is the health check (a cheap keep-warm ping that
 makes no model call).
 
-**Keep-warm.** A ready-to-install GitHub Actions workflow is in
-[`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml). It pings `/api/health` every
-10 minutes, with one retry, no secrets and no repository permissions. It becomes
-active only once it is copied to `.github/workflows/keep-warm.yml` on GitHub (a
-token without the `workflow` scope can't push workflow files, so it is installed
-through the GitHub web editor). Until then an external pinger keeps the demo warm.
-Even when installed, GitHub may delay or skip scheduled runs when it is busy, so a
-free instance can still be cold after a quiet spell: the first load then takes up
-to a minute.
+**Keep-warm.** The GitHub Actions workflow is installed as
+`.github/workflows/keep-warm.yml` on GitHub and runs every 10 minutes: it pings
+`/api/health`, with one retry, no secrets and no repository permissions.
+[`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml) is the reviewed copy (a token
+without the `workflow` scope can't push workflow files, so it was installed through
+the GitHub web editor; a test checks the two are byte-identical when both are
+present). GitHub may delay scheduled runs, so a free instance can still be cold
+after a quiet spell: the first load then takes up to a minute.
 
 ## Third-party assets
 

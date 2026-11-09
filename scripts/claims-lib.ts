@@ -68,6 +68,53 @@ export function fixBuildCommands(readme: string, command: string): string {
   return readme.replace(BUILD_CHAIN_RE, command);
 }
 
+// ---------------------------------------------------------------------------
+// The floppy count (TASK-33b): "**N** lesson files like the water-cycle test
+// deck fit on a 1.44 MB floppy", where N = floor(1,457,664 / bytes of a living
+// export of tests/fixtures/generation/water-cycle-g2.json). Never rounded up.
+
+/** A 1.44 MB floppy's real FAT12 capacity, in bytes (2,847 clusters of 512). */
+export const FLOPPY_BYTES = 1_457_664;
+
+/** The phrase both files use; the claim names the fixture, not the samples. */
+export const FLOPPY_PHRASE = "lesson files like the water-cycle test deck fit on a 1.44 MB floppy";
+
+const FLOPPY_README_RE = /(\*\*)(\d+)(\*\* lesson files like the water-cycle test deck fit on a 1\.44 MB floppy)/;
+
+/** How many files of `bytes` fit on the floppy: floor, never round up (0 for a bad size). */
+export function floppyCount(bytes: number): number {
+  if (!(bytes > 0)) return 0;
+  return Math.floor(FLOPPY_BYTES / bytes);
+}
+
+/** The largest file that still lets `n` fit on the floppy, in bytes. */
+export function floppyBudget(n: number): number {
+  return Math.floor(FLOPPY_BYTES / n);
+}
+
+/** The README's claimed floppy count, or null when the sentence is missing. */
+export function readFloppyClaim(readme: string): number | null {
+  const m = FLOPPY_README_RE.exec(readme);
+  return m ? Number(m[2]) : null;
+}
+
+/** Rewrite the README's floppy count from the MEASURED count. */
+export function fixFloppyClaim(readme: string, count: number): string {
+  return readme.replace(FLOPPY_README_RE, (_m, a: string, _n: string, c: string) => `${a}${count}${c}`);
+}
+
+/** The README floppy check: present, and exactly the measured count. */
+export function compareFloppy(readme: string, measured: number): Check {
+  const claimed = readFloppyClaim(readme);
+  return {
+    name: "floppy count",
+    claimed: claimed ?? "(missing)",
+    actual: measured,
+    ok: claimed !== null && measured > 0 && claimed === measured,
+    note: `floor(${withCommas(FLOPPY_BYTES)} / living export bytes)`,
+  };
+}
+
 /** Strip ANSI colour/cursor escapes (Vitest colours its output in CI). */
 export function stripAnsi(text: string): string {
   // eslint-disable-next-line no-control-regex
@@ -136,6 +183,8 @@ export interface WriteupNumbers {
   kb: number;
   /** A living export of a fixed generated-shape deck, KB. */
   fileKb: number;
+  /** floor(FLOPPY_BYTES / bytes of that same export) (TASK-33b). */
+  floppy: number;
 }
 
 interface WriteupPattern {
@@ -175,6 +224,7 @@ const WRITEUP_PATTERNS: WriteupPattern[] = [
   { name: "properties", label: "fast-check properties", re: /()(\d+)( fast-check properties)/g, format: int },
   { name: "kb", label: "player KB (gzip)", re: /(is )([\d.]+)( KB gzipped)/g, format: (n) => n.toFixed(1) },
   { name: "fileKb", label: "lesson file size (about N KB)", re: /(lesson file is now about )(\d+)( KB)/g, format: int },
+  { name: "floppy", label: "floppy count (N lesson files … fit on a 1.44 MB floppy)", re: /(\b)(\d+)( lesson files like the water-cycle test deck fit on a 1\.44 MB floppy)/g, format: int },
 ];
 
 /** Every number the write-up claims, per pattern, in text order. */
@@ -208,7 +258,7 @@ export function compareWriteup(text: string, actual: WriteupNumbers): Check[] {
     ok: c.values.every((v) => close(c.name, v, actual[c.name])),
     ...(c.name === "kb" ? { note: "±0.5 KB" } : c.name === "fileKb" ? { note: "±10 %" } : {}),
   }));
-  for (const name of ["traced", "mutants", "properties", "kb", "fileKb"] as const) {
+  for (const name of ["traced", "mutants", "properties", "kb", "fileKb", "floppy"] as const) {
     if (!claims.some((c) => c.name === name)) {
       checks.push({ name: `write-up ${name}`, claimed: "(missing)", actual: actual[name], ok: false, note: "the write-up no longer states it" });
     }

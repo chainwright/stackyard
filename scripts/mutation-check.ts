@@ -761,6 +761,15 @@ const MUTANTS: Mutant[] = [
     replace: "      clearTimeout(timer);\n      const location = redirectLocation(res);",
     tests: ["mcp/openverse/openverse.test.ts"],
   },
+  // ---- the lesson is the file (TASK-33) ----
+  {
+    name: "claims: the floppy count rounds up (7.68 → 8 lessons on a floppy)",
+    reverts: "33b — floor(1,457,664 / bytes), never rounded up",
+    file: "scripts/claims-lib.ts",
+    find: "  return Math.floor(FLOPPY_BYTES / bytes);",
+    replace: "  return Math.ceil(FLOPPY_BYTES / bytes);",
+    tests: ["tests/export-size.test.ts"],
+  },
 ];
 
 function run(tests: string[], gate?: string[]): { status: number; output: string } {

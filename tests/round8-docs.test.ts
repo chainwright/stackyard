@@ -96,15 +96,17 @@ describe("TASK-32f: keep-warm is in the repo, ready to install", () => {
     const installed = path.join(process.cwd(), ".github", "workflows", "keep-warm.yml");
     if (existsSync(installed)) expect(readFileSync(installed, "utf8")).toBe(wf);
   });
-  it("TASK-32f: the README says it must be installed, doesn't claim it runs, and says runs can be late", () => {
+  it("TASK-33a: the README says the workflow is installed and runs every 10 minutes, names the reviewed copy, and says runs can be late", () => {
     const readme = FLAT(read("README.md"));
-    expect(readme).toContain("docs/ops/keep-warm.yml");
-    expect(readme).toContain("It becomes active only once it is copied to `.github/workflows/keep-warm.yml` on GitHub");
-    expect(readme).toContain("a token without the `workflow` scope can't push workflow files");
-    expect(readme).toContain("Until then an external pinger keeps the demo warm.");
-    expect(readme).not.toMatch(/`\.github\/workflows\/keep-warm\.yml` pings/);
-    expect(readme).toContain("GitHub may delay or skip scheduled runs");
-    expect(readme).toContain("a free instance can still be cold after a quiet spell");
+    expect(readme).toContain(
+      "The GitHub Actions workflow is installed as `.github/workflows/keep-warm.yml` on GitHub and runs every 10 minutes",
+    );
+    expect(readme).toContain("[`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml) is the reviewed copy");
+    expect(readme).toContain("GitHub may delay scheduled runs, so a free instance can still be cold after a quiet spell");
+    // The TASK-32f "not yet installed" wording is gone.
+    expect(readme).not.toContain("becomes active only once");
+    expect(readme).not.toContain("Until then an external pinger keeps the demo warm.");
+    expect(readme).not.toContain("ready-to-install");
   });
 });
 
@@ -123,12 +125,13 @@ describe("TASK-32g: the write-up is checked like the README", () => {
     expect(FLAT(read("README.md"))).toContain("docs/DEVPOST_WRITEUP.md");
   });
 
-  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 84, properties: 63, kb: 12.0, fileKb: 190 };
+  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 84, properties: 63, kb: 12.0, fileKb: 190, floppy: 7 };
   const good = [
     "The commit we submit reports 109 of 109 and 1,180 tests; a generated lesson file is now about 185 KB.",
     "(109 of 109 by `npm run check:trace`) and (109 of 109 appear in test titles) | 109 of 109 lettered task ids traced",
     "an 84-mutant script (`npm run check:mutants`, 84 of 84 killed on 9 Nov) that reverts 84 of the review fixes",
     "63 fast-check properties. The player bundle is 12.0 KB gzipped.",
+    "It is small: 7 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
     "It shows 84 of 84 traced task ids, 1,003 tests (the video: history, not a claim).",
   ].join("\n");
 
@@ -215,13 +218,14 @@ describe("TASK-32h: a / an before a number", () => {
     for (const n of [1, 7, 9, 10, 12, 17, 19, 72, 79, 90, 100, 108, 111, 180, 1000, 1100, 1800, 9000, 12000]) expect(articleFor(n), String(n)).toBe("a");
   });
 
-  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 86, properties: 63, kb: 12.0, fileKb: 190 };
+  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 86, properties: 63, kb: 12.0, fileKb: 190, floppy: 7 };
   const text = (article: string, n: number): string =>
     [
       "The commit we submit reports 109 of 109 and 1,180 tests; a generated lesson file is now about 185 KB.",
       "(109 of 109 by `npm run check:trace`) (109 of 109 appear in test titles) | 109 of 109 lettered task ids traced",
       `${article} ${n}-mutant script (\`npm run check:mutants\`, ${n} of ${n} killed) that reverts ${n} of the review fixes`,
       "63 fast-check properties. The bundle is 12.0 KB gzipped.",
+      "7 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
     ].join("\n");
 
   it("TASK-32h: the pattern accepts 'a' and 'an'; the wrong one for the number is a drift with a clear line", () => {

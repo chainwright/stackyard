@@ -1792,3 +1792,36 @@ Measured: the quiz count was off the request in 4 of 6 decks; one deck had 4 of 
   - **Acceptance criteria.** A docs test pins the new paragraphs and the absence of the old ones. A unit test covers `articleFor` and `--fix` turning "a 86-mutant" into "an 86-mutant" (and "an 72" into "a 72"). The write-up says "an 86-mutant script".
 
 **Gate (TASK-32):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.
+
+## Phase 19 - TASK-33
+
+From the coordinator's note (keep-warm installed) and the teardown of the other HyperCard entries (`../CLONES_TEARDOWN_2026-11-09.md` §3a item 1 and §4 row 6).
+
+### TASK-33a: keep-warm is installed; the README says so
+  - **Bug.** The coordinator installed `.github/workflows/keep-warm.yml` on GitHub (commit c65e138, byte-identical to `docs/ops/keep-warm.yml`). The README still says the workflow "becomes active only once it is copied" and that "until then an external pinger keeps the demo warm", which is now false.
+  - **Fix.** The README "Keep-warm" paragraph says the workflow is installed and runs every 10 minutes. GitHub may delay scheduled runs, so a free instance can still be cold after a quiet spell. `docs/ops/keep-warm.yml` is the reviewed copy. One KIRO_LOG line.
+  - **Acceptance criteria.**
+    - The TASK-32f docs test that required "must be installed" now requires the "installed" wording and the absence of the old "becomes active only once" and "Until then" sentences.
+    - The byte-identical check stays: if `.github/workflows/keep-warm.yml` exists, it equals `docs/ops/keep-warm.yml`.
+
+### TASK-33b: "the lesson is the file" (with a number you can check)
+  - **Finding.** Every other HyperCard revival in this contest brings back the editor. Stackyard brings back the stack you could hand to someone: one HTML lesson that plays, scores and edits itself offline. The README, the write-up and the Start screen don't lead with that, and no checkable number backs it.
+  - **Fix.**
+    - **README opening.** One or two sentences carry the reframe. Keep "Inspired by HyperCard. Built for Kiroween 2026 with Kiro." and the video and live links. Name no other entries. Say that the file is offline and the Maker is not.
+    - **Write-up.** The Inspiration paragraph's last two sentences and one "What it does" bullet carry it. "Where it sits", the Credits and the numbers that check:claims manages stay untouched. "The four numbers in the README" becomes "five", because the README now has five.
+    - **Start screen.** One short promise line under the h1: "The lesson is the file: it plays, scores and edits itself, with the Wi-Fi off." It uses existing ink-on-paper styles, with no stamp red and no new colours. `check-maker-fit` stays green at 1366×768 and 1366×657 (Build Cards above the fold). At 390 px nothing changes.
+    - **The number.**
+      - `scripts/lesson-size.ts` measures the bytes of a LIVING export of the fixed water-cycle fixture (`tests/fixtures/generation/water-cycle-g2.json`).
+      - The floppy count is `floor(1,457,664 / bytes)` (FAT12 capacity of a 1.44 MB floppy; never rounded up).
+      - The count goes in README "By the numbers" and in the write-up. check:claims checks it in both files, and `--fix` rewrites it.
+      - The claim names the fixture, not the samples: the samples carry photos and are larger.
+  - **Acceptance criteria.**
+    - `tests/export-size.test.ts`:
+      - the fixture's living export is at most `floor(1,457,664 / N)` bytes, where N is the README's claimed count;
+      - every sample in `samples/` has its size stated and is under its budget;
+      - the claim names the water-cycle fixture.
+    - Unit tests for `floppyCount` (floor, never ceil) and for the README and write-up floppy checks and `--fix` (temp copies).
+    - A DOM test for the Start screen promise line.
+    - A mutant that rounds the floppy count up is killed.
+
+**Gate (TASK-33):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.

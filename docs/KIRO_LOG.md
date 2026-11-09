@@ -361,3 +361,21 @@ The v2 round-2 panel (our own AI agents, on 1ce7395: `judge_v2_2026-11-09_app_r2
 - **Shell edits this time.** One `mkdir -p tests/fixtures/generation`. Every source, test, doc and fixture edit went through the file tools. Debug probes were throwaway scripts in `/tmp`.
 - **Not done.** Real-teacher evidence. Drag on flash and end cards (see d). Adding pictures in the Teacher tab. Re-measuring the live wait after this change (we have no model key; the copy uses the panel's and our earlier measurements).
 - **Measured outside Kiro, by us (this paragraph written outside Kiro).** Kiro runs: TASK-32 20:23–21:02Z and our review follow-up (write-up sync, article rule), both resuming `sess_4ead26b8-…`. Generation quality on the live model config, three sentences (the video's water cycle, a 7-times-table + bake-sale story, Irish praise four flash cards + 3-question quiz), two runs each, local server: before (1ce7395) quiz/flash counts off the request in 4 of 6 decks, 4 of 27 quizzes with fewer than three answers, an ambiguous key (right answer inside a wrong one) in 2 of 6 decks; after, counts off in 1 of 6 (a shortfall, 5 of 6 questions, with the notice), 1 of 27 quizzes with two answers (a genuine "bigger or smaller" comparison, allowed), no ambiguous key, no repeated cards. Live cold-start check: with our Mac pinger paused for 25 minutes the live instance was still awake (page ready 1.1 s), and Build Cards to editor took 10.5 s on the live 1ce7395 deploy, so the new "about 10–20 seconds" copy matches a live run; a truly cold free instance was not observed.
+
+## 9 Nov 2026 (late night): the lesson is the file (TASK-33 a–b)
+
+From the coordinator's note and our teardown of the other HyperCard entries (`../CLONES_TEARDOWN_2026-11-09.md` §3a item 1 and §4 row 6). Spec first: "Phase 19 - TASK-33" in `.kiro/specs/maker/tasks.md`, plus a TASK-33b note in the exporter spec.
+
+- **a — keep-warm is installed.** The coordinator installed `.github/workflows/keep-warm.yml` on GitHub (commit c65e138, byte-identical to `docs/ops/keep-warm.yml`), so the README now says it is installed and runs every 10 minutes, that GitHub may delay scheduled runs, and that `docs/ops/keep-warm.yml` is the reviewed copy; the old "becomes active only once copied" and "until then" sentences are gone, and the byte-identical test stays.
+- **b — "the lesson is the file".**
+  - The README's opening, the write-up's Inspiration close and its Export bullet, and a new line under the Start screen's h1 ("The lesson is the file: it plays, scores and edits itself, with the Wi-Fi off.") say it.
+  - The Start screen line is bold ink on paper at `--text-meta`, with no new colour and no stamp red. The lede's bottom margin went from 22px to 14px, so Build Cards stays above the fold at 1366×657.
+  - The README still says the Maker needs the internet and only the file is offline. It names no other entry; "Where it sits" and the Credits are untouched.
+  - The write-up's "four numbers in the README" became "five", because the README now has five.
+- **The number.** `scripts/lesson-size.ts` measures a living export of `tests/fixtures/generation/water-cycle-g2.json`.
+  - Measured: 189,754 bytes. floor(1,457,664 / 189,754) = 7 (7.68, not rounded up).
+  - README "By the numbers" and the write-up say "7 lesson files like the water-cycle test deck fit on a 1.44 MB floppy". `check:claims` checks the count exactly in both files, and `--fix` rewrites it.
+  - `tests/export-size.test.ts` fails if the export passes floor(1,457,664 / 7) = 208,237 bytes.
+  - It states each sample's size and keeps each under 300 KB: irish-words 252,776 B, times-tables 248,187 B, vikings-in-ireland 238,930 B. Each carries a JPEG photo and is larger than the fixture, which is why the claim names the fixture.
+  - A new mutant (the count rounds up) is killed.
+- **Shell edits this time.** No lasting file was edited through the shell. Two throwaway measuring probes were written with shell heredocs and deleted at once: `/tmp/m.ts` (it failed to run) and `tests/zz-measure.tmp.test.ts` (it printed the 189,754 bytes). Every source, test, doc and spec edit went through the file tools.

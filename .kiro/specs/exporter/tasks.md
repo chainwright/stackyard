@@ -742,3 +742,7 @@ change in Play.
   - **32c.** Neither the exported player nor the Teacher tab draws a "Picture: Stackyard pictogram" line. Re-placing, swapping or removing a picture also removes an old one.
   - **32d.** Drag works on quiz and story cards, not on flash or end cards. Those keep their own layout: the flip surface draws the term in two places, and the end card is a centred column. The inspector says so on those cards.
   - **Acceptance criteria.** A living test that the Save a Copy confirm lists a lesson warning. DOM tests for no credit line and for the inspector hint. `check-living-file` stays green.
+
+### TASK-33b: the size of a living file, as a budget  *(teardown §4 row 6)*
+  - **33b.** The living export of the fixed water-cycle fixture (`tests/fixtures/generation/water-cycle-g2.json`) is measured in bytes by `scripts/lesson-size.ts`. The README and write-up claim `floor(1,457,664 / bytes)` such files fit on a 1.44 MB floppy. `tests/export-size.test.ts` fails if the export grows past `floor(1,457,664 / N)` bytes for the claimed N, and states and budgets the size of each file in `samples/` (they carry photos, so the claim names the fixture, not the samples).
+  - **Acceptance criteria.** See `maker/tasks.md` TASK-33b.

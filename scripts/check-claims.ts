@@ -18,6 +18,8 @@
 //     mutants vs the entries in scripts/mutation-check.ts, fast-check
 //     properties vs a count of fc.property / fc.asyncProperty in tests/, player
 //     KB, and "about N KB" vs a living export of the water-cycle fixture (±10 %).
+//   - (TASK-33b) The floppy count in both files: floor(1,457,664 / bytes of
+//     that same living export), exact (scripts/lesson-size.ts measures it).
 //
 // Exits 0 when every claim matches, 1 (with a report) when any has drifted.
 //
@@ -47,8 +49,12 @@ import {
   countProperties,
   countMutants,
   parseTraceCount,
+  floppyCount,
+  fixFloppyClaim,
+  compareFloppy,
   type WriteupNumbers,
 } from "./claims-lib.js";
+import { fixtureLivingExportBytes } from "./lesson-size.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
@@ -127,9 +133,12 @@ async function run(): Promise<void> {
   };
 
   const renderCmd = existsSync(RENDER_YAML) ? renderBuildCommand(readFileSync(RENDER_YAML, "utf8")) : null;
+  // TASK-33b: one living export of the water-cycle fixture backs "about N KB"
+  // and the floppy count in both files.
+  const file = await lessonFileNumbers();
 
   if (fix) {
-    if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0) {
+    if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0 || file.floppy <= 0) {
       console.error(
         "check-claims --fix: could not measure every number (are the tests failing, or is the player not built?). " +
           "Not touching the README.",
@@ -137,6 +146,7 @@ async function run(): Promise<void> {
       process.exit(1);
     }
     let fixed = applyFix(readme, actual);
+    fixed = fixFloppyClaim(fixed, file.floppy);
     if (renderCmd !== null) fixed = fixBuildCommands(fixed, renderCmd);
     if (fixed !== readme) {
       writeFileSync(README, fixed, "utf8");
@@ -149,6 +159,7 @@ async function run(): Promise<void> {
   const text = fix ? readFileSync(README, "utf8") : readme;
   const nowClaimed = readClaims(text)!;
   const checks = compare(nowClaimed, actual);
+  checks.push(compareFloppy(text, file.floppy));
   if (renderCmd !== null) {
     const ok = readmeBuildCommandsMatch(text, renderCmd);
     checks.push({
@@ -160,7 +171,7 @@ async function run(): Promise<void> {
   }
 
   // TASK-32g: the Devpost write-up is checked (and fixed) like the README.
-  const writeupActual = await measureWriteupNumbers(actual);
+  const writeupActual = await measureWriteupNumbers(actual, file);
   if (fix) {
     const before = readFileSync(WRITEUP, "utf8");
     if (writeupActual.traced <= 0 || writeupActual.fileKb <= 0) {
@@ -195,7 +206,7 @@ async function run(): Promise<void> {
 }
 
 /** The numbers docs/DEVPOST_WRITEUP.md is checked against (TASK-32g). */
-async function measureWriteupNumbers(readme: Numbers): Promise<WriteupNumbers> {
+async function measureWriteupNumbers(readme: Numbers, file: { fileKb: number; floppy: number }): Promise<WriteupNumbers> {
   let traceOut = "";
   try {
     traceOut = execFileSync("node", ["--import", "tsx/esm", path.join(ROOT, "scripts", "check-task-trace.ts")], {
@@ -220,20 +231,15 @@ async function measureWriteupNumbers(readme: Numbers): Promise<WriteupNumbers> {
     mutants: countMutants(readFileSync(path.join(ROOT, "scripts", "mutation-check.ts"), "utf8")),
     properties: countProperties(testSources),
     kb: readme.kb,
-    fileKb: await lessonFileKb(),
+    ...file,
   };
 }
 
-/** A living export of a fixed generated-shape deck (the water-cycle fixture), in KB. */
-async function lessonFileKb(): Promise<number> {
-  const { exportLivingStack } = await import("../server/exporter.js");
-  const { sanitizeRawStack, finaliseGeneratedStack } = await import("../server/normalizeGenerated.js");
-  const { validate } = await import("../src/shared/validator.js");
-  const fx = JSON.parse(readFileSync(path.join(ROOT, "tests", "fixtures", "generation", "water-cycle-g2.json"), "utf8")) as { prompt: string; stack: unknown };
-  const v = validate(sanitizeRawStack(fx.stack));
-  if (!v.valid) return -1;
-  const html = await exportLivingStack(finaliseGeneratedStack(v.stack, { prompt: fx.prompt }));
-  return Math.round(Buffer.byteLength(html) / 1024);
+/** A living export of a fixed generated-shape deck (the water-cycle fixture): KB and the floppy count. */
+async function lessonFileNumbers(): Promise<{ fileKb: number; floppy: number }> {
+  const bytes = await fixtureLivingExportBytes();
+  if (bytes <= 0) return { fileKb: -1, floppy: -1 };
+  return { fileKb: Math.round(bytes / 1024), floppy: floppyCount(bytes) };
 }
 
 main().catch((err) => {
