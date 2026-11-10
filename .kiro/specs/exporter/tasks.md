@@ -746,3 +746,25 @@ change in Play.
 ### TASK-33b: the size of a living file, as a budget  *(teardown §4 row 6)*
   - **33b.** The living export of the fixed water-cycle fixture (`tests/fixtures/generation/water-cycle-g2.json`) is measured in bytes by `scripts/lesson-size.ts`. The README and write-up claim `floor(1,457,664 / bytes)` such files fit on a 1.44 MB floppy. `tests/export-size.test.ts` fails if the export grows past `floor(1,457,664 / N)` bytes for the claimed N, and states and budgets the size of each file in `samples/` (they carry photos, so the claim names the fixture, not the samples).
   - **Acceptance criteria.** See `maker/tasks.md` TASK-33b.
+
+### TASK-33d2: screen-reader semantics in the exported file and the Teacher tab  *(teardown §4 row 7)*
+  - **Bug.** A screen reader hears an answer tile by its words only, while sighted pupils say "the triangle". The flash card's label hid its words. A wrong answer was silent. On a card change, focus fell to the page body.
+  - **Fix.**
+    - Answer tiles are named "Triangle: Vikings" (and Diamond, Circle, Square).
+    - The card is a named group, "Card N of M: <question>". On a card change the pupil caused, focus moves to it, so it is read; focus elsewhere on the page is never taken.
+    - The live region says "Correct" or "Not quite — the right answer was …".
+    - The flash card is a button named by its words, with `aria-expanded` for its side. Its Next Card button sits beside it, not inside it.
+    - The end card is named by its heading and "Score N of M". The stamp row is one image ("N of M stamps earned").
+    - Every stamp and mark is `aria-hidden`.
+    - The exported file's card area is a `<main>`, and the deck title is a hidden `h1`.
+  - **Acceptance criteria.** A DOM test for each, in `tests/a11y-player.dom.test.ts`.
+
+### TASK-33d4: one-switch scanning in the file  *(teardown §3b AfterStack, row 7 option)*
+  - **Fix.**
+    - A small "Scan" toggle (bottom left; `aria-pressed`) and the S key (not while typing) turn scanning on.
+    - The highlight, which is the keyboard focus, then steps across the current card's choices every 1.5 s. A speed box sets 1–4 s.
+    - Space or Enter picks the highlighted choice, using the browser's own button activation, so nothing else is needed.
+    - Off by default. The setting is kept in `sessionStorage` only. The class export and the living file's Play have it; the Maker's Try It does not.
+  - **Acceptance criteria.**
+    - Fake-timer tests: the step and the wrap; disabled controls are skipped; the 1–4 s clamp; the S key; the session setting.
+    - `check-a11y` finishes `samples/vikings-in-ireland.html` in a real browser with the Space key only.

@@ -147,8 +147,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1271** passing (`npm test`).
-- Player bundle: **11.9 KB** gzipped (budget 50 KB).
+- Tests: **1296** passing (`npm test`).
+- Player bundle: **13.6 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 - Floppy test: **7** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
@@ -157,6 +157,7 @@ These figures are checked against the code by `scripts/check-claims` (run by the
   The ready-made samples in `samples/` carry photos, so they are larger.
 - Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 48 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
 - A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
+- Accessibility: axe-core 4.14.0 audited 14 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
 
 The **curriculum bench** ([`bench/`](bench/README.md)) runs all 55 statutory Years 3–5
 objectives of England's KS2 science programme of study through the generator. It

@@ -97,7 +97,7 @@ const PLAY_FIRST = `(() => {
   const tile = root.querySelector(".sy-tile[data-correct='true']") || root.querySelector(".sy-tile");
   if (tile) { tile.click(); return "tile"; }
   const flash = root.querySelector(".sy-flash");
-  if (flash) { const nb = flash.querySelector(".sy-flash-next button"); (nb || flash).click(); return "flash"; }
+  if (flash) { const nb = root.querySelector(".sy-flash-next button"); (nb || flash).click(); return "flash"; }
   const b = root.querySelector(".sy-button");
   if (b) { b.click(); return "button"; }
   return "none";

@@ -71,7 +71,7 @@ async function main(): Promise<void> {
   const expected = firstText(stack);
   const renderedCard = dom.includes('class="sy-card"') || dom.includes("sy-card-stack");
   const renderedQuestion = expected.length > 0 && dom.includes(expected.slice(0, 20));
-  const emptyRoot = /<div id="player-root"><\/div>/.test(dom);
+  const emptyRoot = /<(?:div|main) id="player-root"><\/(?:div|main)>/.test(dom);
 
   if (emptyRoot || !renderedCard || !renderedQuestion) {
     console.error("check-export-opens: FAIL — the exported file opened to a blank/empty player.");

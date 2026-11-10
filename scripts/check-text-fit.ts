@@ -260,8 +260,9 @@ const DRIVER = `
     var plan = PLAN[steps];
     var flash = root.querySelector(".sy-flash");
     if (flash) {
-      var nb = flash.querySelector(".sy-flash-next button");
-      if (nb) { nb.click(); } else { flash.click(); setTimeout(function () { finishAnimations(); measure(); var nb2 = flash.querySelector(".sy-flash-next button"); if (nb2) nb2.click(); }, 50); }
+      // TASK-33d1: Next Card sits beside the flash surface, not inside it.
+      var nb = root.querySelector(".sy-flash-next button");
+      if (nb) { nb.click(); } else { flash.click(); setTimeout(function () { finishAnimations(); measure(); var nb2 = root.querySelector(".sy-flash-next button"); if (nb2) nb2.click(); }, 50); }
     } else if (plan) {
       var tiles = root.querySelectorAll(".sy-tile");
       var target = plan.click === "right" ? root.querySelector(".sy-tile[data-correct='true']") : tiles[plan.click];

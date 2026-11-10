@@ -60,6 +60,9 @@ describe("TASK-32e: the hook firings, recounted from the session store", () => {
     for (const [file, text] of [["KIRO_LOG", log], ["kiro-sessions", FLAT(sessions)], ["README", FLAT(read("README.md"))], ["write-up", FLAT(read("docs/DEVPOST_WRITEUP.md"))]] as const) {
       for (const m of text.matchAll(/\b98\b/g)) {
         const around = text.slice(Math.max(0, m.index! - 200), m.index! + 200);
+        // The mutant count check:claims keeps (it reached 98 in TASK-33d) is a different number.
+        const near = text.slice(Math.max(0, m.index! - 30), m.index! + 40);
+        if (/-mutant script|of 98 killed|reverts 98 of the review fixes/.test(near)) continue;
         expect(/TASK-28|TASK-30|after-shell/.test(around), `${file}: an unqualified 98 near "${around.slice(150, 260)}"`).toBe(true);
       }
     }

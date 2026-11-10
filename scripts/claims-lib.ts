@@ -485,3 +485,90 @@ export function fixKeyReview(text: string, k: KeyNumbers): string {
   lines.splice(at + 1, 0, keyReviewLine(k));
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// The accessibility line (TASK-33d6), in README and write-up, checked against
+// docs/accessibility/axe-report.json (written by scripts/check-a11y.ts).
+// Required while that file exists; refused while it does not.
+
+export interface A11yNumbers {
+  axeVersion: string;
+  pages: number;
+  /** Serious + critical violation nodes over every page. */
+  seriousOrCritical: number;
+  keyboard: boolean;
+  scan: boolean;
+}
+
+interface AxeReportShape {
+  axeVersion: string;
+  totals: { pages: number; serious: number; critical: number };
+  pages: unknown[];
+  keyboard: { playThrough: boolean; teacherEditAndSave?: boolean };
+  scan: { playThrough: boolean };
+}
+
+/** The line's numbers from the report (pages counted from the list, not the total). */
+export function a11yFromReport(r: AxeReportShape): A11yNumbers {
+  return {
+    axeVersion: r.axeVersion,
+    pages: r.pages.length,
+    seriousOrCritical: r.totals.serious + r.totals.critical,
+    keyboard: r.keyboard.playThrough === true && r.keyboard.teacherEditAndSave === true,
+    scan: r.scan.playThrough === true,
+  };
+}
+
+const A11Y_RE =
+  /axe-core (\d+\.\d+\.\d+) audited (\d+) pages \(the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files\) and found (\d+) serious or critical violations; the keyboard-only play-through (passes|fails) and the one-switch scan play-through (passes|fails)/;
+
+export const A11Y_DISCLAIMER = "No screen-reader user or disabled pupil has tested it.";
+
+export function a11ySentence(a: A11yNumbers): string {
+  return `axe-core ${a.axeVersion} audited ${a.pages} pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found ${a.seriousOrCritical} serious or critical violations; the keyboard-only play-through ${a.keyboard ? "passes" : "fails"} and the one-switch scan play-through ${a.scan ? "passes" : "fails"}`;
+}
+
+export function a11yLine(a: A11yNumbers): string {
+  return `- Accessibility: ${a11ySentence(a)} ([\`docs/accessibility/\`](docs/accessibility/README.md)). ${A11Y_DISCLAIMER}`;
+}
+
+/** The write-up's version (Devpost does not follow repo-relative links). */
+export function writeupA11yLine(a: A11yNumbers): string {
+  return `- Accessibility: ${a11ySentence(a)} (\`docs/accessibility/README.md\` in the repo). ${A11Y_DISCLAIMER}`;
+}
+
+export function readA11yClaim(text: string): A11yNumbers | null {
+  const m = A11Y_RE.exec(text);
+  return m ? { axeVersion: m[1]!, pages: Number(m[2]), seriousOrCritical: Number(m[3]), keyboard: m[4] === "passes", scan: m[5] === "passes" } : null;
+}
+
+export function compareA11y(text: string, where: string, a: A11yNumbers | null): Check[] {
+  const claimed = readA11yClaim(text);
+  const name = `${where} accessibility line`;
+  if (a === null) {
+    return claimed === null ? [] : [{ name, claimed: a11ySentence(claimed), actual: "(no docs/accessibility/axe-report.json)", ok: false, note: "nothing backs it" }];
+  }
+  if (claimed === null) return [{ name, claimed: "(missing)", actual: a11ySentence(a), ok: false, note: "axe-report.json exists, so the line is required" }];
+  const checks: Check[] = [
+    {
+      name,
+      claimed: a11ySentence(claimed),
+      actual: a11ySentence(a),
+      ok: claimed.axeVersion === a.axeVersion && claimed.pages === a.pages && claimed.seriousOrCritical === a.seriousOrCritical && claimed.keyboard === a.keyboard && claimed.scan === a.scan,
+    },
+  ];
+  const line = text.split("\n").find((l) => A11Y_RE.test(l)) ?? "";
+  if (!line.includes(A11Y_DISCLAIMER)) checks.push({ name: `${name} disclaimer`, claimed: "(missing)", actual: A11Y_DISCLAIMER, ok: false, note: "the line must say no disabled user has tested it" });
+  return checks;
+}
+
+/** Rewrite the line's numbers, or insert it after the key-review line (else the bench line). */
+export function fixA11y(text: string, a: A11yNumbers, line: (a: A11yNumbers) => string = a11yLine): string {
+  if (A11Y_RE.test(text)) return text.replace(A11Y_RE, a11ySentence(a));
+  const lines = text.split("\n");
+  let at = lines.findIndex((l) => KEY_RE.test(l));
+  if (at < 0) at = lines.findIndex((l) => BENCH_RE.test(l));
+  if (at < 0) return text;
+  lines.splice(at + 1, 0, line(a));
+  return lines.join("\n");
+}

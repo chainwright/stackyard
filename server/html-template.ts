@@ -91,7 +91,7 @@ ${SHELL_CSS}
 ${fontBlock}  </style>
 </head>
 <body>
-  <div id="player-root"></div>
+  <main id="player-root"></main>
 
   <!-- Stack data: parsed by the player runtime at startup -->
   <script id="stack-data" type="application/json">
@@ -143,7 +143,7 @@ ${SHELL_CSS}
 ${fontBlock}  </style>
 </head>
 <body>
-  <div id="player-root"></div>
+  <main id="player-root"></main>
 
   <!-- Stack data: parsed by the living runtime at startup -->
   <script id="stack-data" type="application/json">

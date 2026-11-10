@@ -1825,3 +1825,53 @@ From the coordinator's note (keep-warm installed) and the teardown of the other 
     - A mutant that rounds the floppy count up is killed.
 
 **Gate (TASK-33):** `npm test`, `npx tsc --noEmit`, `CI=true npm run pre-submit` exit 0; `npm run check:mutants` reports every mutant killed; `npm run check:claims:fix` if counts moved.
+
+### TASK-33d1: an automated accessibility audit, fixed rather than excused  *(teardown §4 row 7; §3b AfterStack)*
+  - **Bug.** Stackyard has never been audited for accessibility. The teardown's AfterStack row shows a rival with one-switch scanning, and we can't show anything comparable.
+  - **Fix.**
+    - axe-core is a pinned devDependency (exact `4.14.0`, in `package.json` and the lockfile).
+    - `scripts/check-a11y.ts` injects it by DevTools evaluation (never a `<script src>`, so every page keeps its real CSP) into headless Chrome on its own port (9351).
+    - It runs the WCAG 2.0, 2.1 and 2.2 A and AA rules plus best practice on 14 pages:
+      - the Maker Start screen and the editor with a ready-made deck (the real server, the real CSP);
+      - the 3 samples in Play and in the Teacher tab;
+      - a class export;
+      - the first 5 bench files.
+    - It writes `docs/accessibility/axe-report.json` and fails on any serious or critical violation.
+    - What it finds is fixed in our code:
+      - labels tied to the Teacher tab's boxes;
+      - a flash card named by its own words;
+      - no button inside a button (the Maker's card list, the flash card's Next Card);
+      - `<main>`, an `h1` and named landmarks;
+      - no `aria-label` without a role.
+    - Any excluded rule is listed, with the reason, in `docs/accessibility/README.md`. None is excluded.
+  - **Acceptance criteria.**
+    - `check:a11y` is in pre-submit and reports 0 serious and 0 critical.
+    - DOM tests for each fix.
+
+### TASK-33d3: keyboard only  *(row 7)*
+  - **Fix.**
+    - Every control is reachable by Tab in reading order: on every card, the card's choices come before the Teacher tab.
+    - The focus ring is 3px solid ink (13.4:1 on paper).
+    - Enter and Space activate.
+    - Escape leaves Try It (in the Maker and the Teacher tab), leaves the Teacher editor back to Play, and closes "Before you share" without exporting.
+    - The Teacher tab's preview words are keyboard buttons ("Edit: …"). Enter selects one and moves the cursor into its box.
+  - **Acceptance criteria.**
+    - `check-a11y` plays `samples/vikings-in-ireland.html` to the end score with real key events only: no mouse and no `element.click()`.
+    - Then, by keyboard, it opens the Teacher tab, changes a question, saves a copy that carries the change, and presses Escape.
+    - DOM tests for the editor's keyboard selection and Escape.
+
+### TASK-33d5: contrast, computed  *(row 7)*
+  - **Fix.**
+    - `scripts/check-contrast.ts` reads every text/background colour pair the player and the Maker use out of the source and computes the WCAG ratio.
+    - It writes the table into `docs/accessibility/README.md`.
+    - It fails under 4.5:1 for body text and 3:1 for large text and UI, and fails if the table is stale.
+  - **Acceptance criteria.** Unit tests for the formula against known pairs, and for the thresholds. The gate is in `check:a11y`.
+
+### TASK-33d6: say exactly what was and wasn't checked, with a checked number  *(row 7)*
+  - **Fix.**
+    - `docs/accessibility/README.md` states the axe version, the pages, the keyboard path, the scan mode and the contrast table.
+    - It also states what was NOT done: no screen-reader user test, no VoiceOver or NVDA recording, no testing with disabled pupils.
+    - One README line and one write-up line ("Accomplishments") are checked by `check:claims` against `axe-report.json`: the axe version, the pages audited, serious + critical = N, and whether the keyboard-only and scan play-throughs pass. `--fix` inserts or rewrites them.
+  - **Acceptance criteria.**
+    - Unit tests: a right line passes; a wrong number fails; a line without the disclaimer fails; a line with no report fails; `--fix` inserts and rewrites.
+    - Mutants: a tile without its accessible name, the live region turned off, and a scan that never advances are each killed.

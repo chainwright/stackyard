@@ -103,6 +103,19 @@ export function TryItCanvas({ store }: { store: EditorStore }): JSX.Element {
     store.setScreen("editor");
   }
 
+  // TASK-33d3: Escape leaves Try It, like "Back to Editing".
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        backToEditing();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <main class="canvas-area tryit-area" aria-label="Trying the card" ref={areaRef}>
       <button class="try-pill" type="button" onClick={backToEditing} aria-label="Stop trying and go back to editing">

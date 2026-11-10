@@ -58,7 +58,7 @@ export function mountLivingApp(
   function startPlay(): void {
     stopPlay();
     teacherTab.style.display = "";
-    playTeardown = mountPlayer(current, root);
+    playTeardown = mountPlayer(current, root, { scan: true });
   }
 
   function stopPlay(): void {
@@ -77,10 +77,17 @@ export function mountLivingApp(
 
     overlay = document.createElement("div");
     overlay.className = "sy-living-overlay";
+    // TASK-33d1/d3: the editor is a modal dialog named by its title; Escape
+    // leaves it (or leaves Try It first), and focus starts on the title.
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-labelledby", "sy-living-title");
 
     const bar = document.createElement("div");
     bar.className = "sy-living-bar";
     const title = document.createElement("h1");
+    title.id = "sy-living-title";
+    title.tabIndex = -1;
     title.textContent = "Editing — no internet needed";
     bar.appendChild(title);
     const spacer = document.createElement("div");
@@ -99,15 +106,26 @@ export function mountLivingApp(
 
     editor = new LivingEditor(current, editorHost, showToast);
     editor.render();
+    title.focus({ preventScroll: true });
+    document.addEventListener("keydown", onEscape);
+  }
+
+  /** Escape: out of Try It first, else out of the editor back to Play. */
+  function onEscape(e: KeyboardEvent): void {
+    if (e.key !== "Escape" || !editor) return;
+    e.preventDefault();
+    if (!editor.leaveTryIt()) returnToPlay();
   }
 
   function returnToPlay(): void {
     if (editor) current = editor.getStack();
     closeOverlay();
     startPlay();
+    teacherTab.focus({ preventScroll: true });
   }
 
   function closeOverlay(): void {
+    document.removeEventListener("keydown", onEscape);
     if (overlay) {
       overlay.remove();
       overlay = null;

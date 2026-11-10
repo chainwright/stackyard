@@ -9,6 +9,7 @@
 // words — let Stackyard link the cards in for her.
 
 import type { JSX } from "preact";
+import { useEffect } from "preact/hooks";
 import { Ring } from "./icons.js";
 
 export function ShareCheck({
@@ -26,6 +27,18 @@ export function ShareCheck({
   onExportAnyway: () => void;
   onFix: () => void;
 }): JSX.Element {
+  // TASK-33d3: Escape closes the dialog the safe way — nothing is exported, and
+  // the teacher is taken to the card (the same as "Take Me There").
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onTakeMe();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onTakeMe]);
   return (
     <div class="desk-overlay">
       <section class="done-card share-dialog" role="alertdialog" aria-labelledby="share-title" aria-label="Before you share">

@@ -76,18 +76,24 @@ export function CardList({
       <div class="cardlist-scroll">
         {stack.cards.map((card, i) => {
           const current = card.id === selectedId;
+          // TASK-33d1: the move buttons sit BESIDE the card's button, not inside
+          // it (a button inside a button is "nested-interactive" for axe, and a
+          // screen reader can't reach the inner one).
           return (
-            <button
-              class="card-entry"
-              type="button"
-              aria-current={current ? "true" : undefined}
-              onClick={() => select(card.id)}
-            >
-              <span class="num">{i + 1}</span>
-              <span class="kshape"><KindShape kind={card.kind} /></span>
-              <span class="label">{cardLabel(card)}</span>
+            <div class="card-entry-row">
+              <button
+                class="card-entry"
+                type="button"
+                aria-current={current ? "true" : undefined}
+                onClick={() => select(card.id)}
+              >
+                <span class="num">{i + 1}</span>
+                <span class="kshape"><KindShape kind={card.kind} /></span>
+                <span class="label">{cardLabel(card)}</span>
+                {current ? null : <span class="grip" aria-hidden="true">⋮⋮</span>}
+              </button>
               {current ? (
-                <span class="reorder" onClick={(e) => e.stopPropagation()}>
+                <span class="reorder">
                   <button
                     type="button"
                     aria-label={`Move card ${i + 1} up`}
@@ -105,10 +111,8 @@ export function CardList({
                     ↓
                   </button>
                 </span>
-              ) : (
-                <span class="grip" aria-hidden="true">⋮⋮</span>
-              )}
-            </button>
+              ) : null}
+            </div>
           );
         })}
       </div>

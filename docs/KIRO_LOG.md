@@ -439,3 +439,27 @@ The v2 re-record (by the coordinator) gave 54 / 48 / 47 of 55, against v1's 50 /
 - **Tests and mutants.** 15 tests in `tests/bench-v3.test.ts`. Two new mutants (the key line accepted whatever its numbers; the bench line accepted without the mechanical note) are killed.
 - **A flaky property, found by the gate.** TASK-31g's fold property (random seed 502611254) failed on "sq" and "SQ" as fronts of two flash cards. The repeat pass rightly removes one, but the property compared the surviving front case-sensitively. The test now compares normalised text and keeps that case as an example. No product code changed for it.
 - **Shell edits.** None to lasting files. Read-only probe scripts in `/tmp` were deleted.
+
+## 9 Nov 2026 (late night): accessibility evidence, stated honestly (TASK-33d)
+
+From the teardown's §4 row 7 and the AfterStack row (one-switch scanning). Spec first: TASK-33d1, d3, d5 and d6 in `maker/tasks.md`; d2 and d4 in `exporter/tasks.md`. Everything is in `docs/accessibility/README.md`, including what was **not** done: no screen-reader user test, no VoiceOver or NVDA recording, no testing with disabled pupils.
+
+- **d1 — axe-core 4.14.0** (pinned devDependency). `scripts/check-a11y.ts` injects it through the DevTools protocol (port 9351), so pages keep their real CSP. It audits 14 pages: the Maker Start screen and editor on the real server, the 3 samples in Play and in the Teacher tab, a class export, and 5 bench files.
+  - **Before:** 2 critical nodes (`label`, the Teacher tab's flash-card boxes), 5 serious nodes (`label-content-name-mismatch` on the flash card ×4, `nested-interactive` in the Maker card list ×1), and 3 moderate rules on most pages (`landmark-one-main`, `page-has-heading-one`, `region`).
+  - **After:** 0 of any impact on all 14 pages. Every rule was fixed in code; none was excluded.
+- **d2 — screen-reader semantics.**
+  - Tiles are named "Triangle: Vikings".
+  - The card is a named group, "Card N of M: question", and takes focus on a card change.
+  - The live region says "Correct" or "Not quite — the right answer was …".
+  - The flash card is named by its words, with `aria-expanded`, and its Next Card button is beside it, not inside it.
+  - The end card is named by its heading and score. The stamps are hidden; the stamp row is one image.
+  - The exported file's card area is now a `<main>`, so the samples and bench files were regenerated (`npm run samples`, `npm run bench`).
+- **d3 — keyboard only.** Real key events play the Vikings sample to "Score 6 of 6". By keyboard, the Teacher tab then opens, a question is edited, Save a Copy writes the change, and Escape returns to Play.
+  - The ring is 3px ink on every stop.
+  - Escape also leaves Try It (Maker and Teacher tab) and closes "Before you share".
+  - The Teacher tab's preview words became keyboard buttons.
+- **d4 — one-switch scanning, feasible and in.** A Scan toggle and the S key, off by default, kept for the session only. The focus steps every 1.5 s (1–4 s), and Space or Enter picks. A real-browser run finishes the Vikings sample with the Space key only (12 presses).
+- **d5 — contrast.** `scripts/check-contrast.ts` reads 25 colour pairs from the source and computes their WCAG ratios. All pass; the lowest is teal tile text at 4.74:1.
+- **d6 — the claim.** The README and the write-up ("Accomplishments") each carry a line checked against `axe-report.json`: 14 pages, 0 serious or critical, both play-throughs pass, and "No screen-reader user or disabled pupil has tested it."
+- **Wiring.** `check:a11y` (contrast, then the browser gate, about 46 s) runs in pre-submit. Four new mutants are killed: the tile's name dropped, the live region off, the scan not advancing, the a11y line unchecked.
+- **Shell edits.** `npm install --save-dev --save-exact axe-core@4.14.0` (package.json, package-lock.json). `npm run samples` and `npm run bench` regenerated their outputs. No source file was edited through the shell.

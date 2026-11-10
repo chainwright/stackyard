@@ -123,6 +123,14 @@ const TILE_SLOTS = [
   },
 ] as const;
 
+/** TASK-33d2: the spoken name of each tile's shape, in slot order ("Triangle: Vikings"). */
+export const TILE_SHAPE_NAMES = ["Triangle", "Diamond", "Circle", "Square"] as const;
+
+/** The accessible name of an answer tile: its shape, then its words. */
+export function tileAccessibleName(slotIndex: number, label: string): string {
+  return `${TILE_SHAPE_NAMES[slotIndex % 4]}: ${label}`;
+}
+
 // ---------------------------------------------------------------------------
 // Timing constants (ms)
 
@@ -402,6 +410,7 @@ const PLAYER_STYLES = `
   top: 496px;
   width: 344px;
   height: 56px;
+  z-index: 2;
 }
 
 /* ---- Meta text (Card N of M) ---- */
@@ -723,6 +732,23 @@ const PLAYER_STYLES = `
 }
 
 /* ---- Aria-live region (visually hidden) ---- */
+/* TASK-33d: the card itself takes focus on a card change (so a screen reader
+   reads "Card N of M" and the question); it is not a control, so no ring. Tab
+   moves on to the card's first choice, which has the ink ring. */
+.sy-card:focus { outline: none; }
+/* TASK-33d4: one-switch scanning — the highlighted choice gets a heavier ink ring. */
+.sy-scanning .sy-scan-focus { outline: 5px solid var(--color-ink) !important; outline-offset: 3px !important; }
+.sy-scan-bar {
+  position: fixed; bottom: 12px; left: 12px; z-index: 60;
+  display: flex; gap: 8px; align-items: center;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif; font-size: 18px;
+}
+.sy-scan-bar button, .sy-scan-bar select {
+  font: inherit; color: #FBF8F1; background: #1E2A47; border: 0;
+  border-radius: 10px; min-height: 44px; padding: 8px 14px; cursor: pointer;
+}
+.sy-scan-bar button[aria-pressed="true"] { outline: 3px solid #FBF8F1; outline-offset: -6px; }
+.sy-scan-bar button:focus-visible, .sy-scan-bar select:focus-visible { outline: 3px solid #1E2A47; outline-offset: 2px; box-shadow: 0 0 0 2px #FBF8F1; }
 .sy-sr-only {
   position: absolute;
   width: 1px;
@@ -755,7 +781,12 @@ function ensureStyles(): void {
 let ariaLiveEl: HTMLElement | null = null;
 
 function ensureAriaLive(): HTMLElement {
-  if (ariaLiveEl) return ariaLiveEl;
+  if (ariaLiveEl && ariaLiveEl.isConnected) return ariaLiveEl;
+  if (ariaLiveEl) {
+    // Detached (the page body was replaced): put it back, it is the page's only one.
+    document.body.appendChild(ariaLiveEl);
+    return ariaLiveEl;
+  }
   const el = document.createElement("div");
   el.setAttribute("aria-live", "polite");
   el.setAttribute("aria-atomic", "true");
@@ -840,6 +871,7 @@ function renderEndCard(
   if (total > 0) {
     const stampsRow = document.createElement("div");
     stampsRow.className = "sy-end-stamps";
+    stampsRow.setAttribute("role", "img"); // an aria-label needs a role (TASK-33d1)
     stampsRow.setAttribute(
       "aria-label",
       `${score} of ${total} stamp${total !== 1 ? "s" : ""} earned`,
@@ -866,6 +898,8 @@ function renderEndCard(
   // reads "journey.. Score" (TASK-27l).
   const spoken = headingText.trim().replace(/[.!?…]+$/, "");
   ariaLive.textContent = total > 0 ? `${spoken}. Score ${score} of ${total}.` : `${spoken}.`;
+  // TASK-33d2: the card, when it takes focus, reads its heading and the score.
+  cardEl.setAttribute("aria-label", total > 0 ? `${spoken}. Score ${score} of ${total}` : spoken);
 
   // "Play Again" — a paper tab under the stamp grid that restarts the whole
   // deck from card 1 with the score reset (built-app review round 3, P2 #5). A
@@ -969,18 +1003,21 @@ function renderFlashCard(
 
   // A single tappable surface over the whole card (except the Next Card button)
   // that flips front ↔ back. Keyboard-focusable so a pupil on a laptop can flip
-  // with Enter/Space.
+  // with Enter/Space. TASK-33d2: its name is the words it shows (no aria-label
+  // that hides them), and aria-expanded says whether the explanation is shown.
   const surface = document.createElement("div");
   surface.className = "sy-flash";
   if (hasBack) {
     surface.setAttribute("role", "button");
     surface.setAttribute("tabindex", "0");
-    surface.setAttribute(
-      "aria-label",
-      "Flash card. Tap to flip between the word and its explanation.",
-    );
+    surface.setAttribute("aria-expanded", "false");
   }
   cardEl.appendChild(surface);
+  // The Next Card button lives BESIDE the surface, never inside it: a button in
+  // a button can't be reached by a screen reader (axe "nested-interactive").
+  const nextHost = document.createElement("div");
+  nextHost.className = "sy-flash-next-host";
+  cardEl.appendChild(nextHost);
 
   // A picture on a flash card (TASK-31h): drawn over the card in its own slot. It
   // never takes a tap, so the card still flips.
@@ -1006,6 +1043,9 @@ function renderFlashCard(
 
   const paint = (): void => {
     surface.innerHTML = "";
+    nextHost.innerHTML = "";
+    if (hasBack) surface.setAttribute("aria-expanded", side === "back" ? "true" : "false");
+    surface.classList.toggle("sy-flash-back-side", side === "back");
 
     if (side === "front") {
       const term = document.createElement("p");
@@ -1070,7 +1110,7 @@ function renderFlashCard(
           dispatch(el.actions, state, (id) => navigate(id, false), playSound);
         });
         wrapper.appendChild(btn);
-        surface.appendChild(wrapper);
+        nextHost.appendChild(wrapper);
       }
     }
   };
@@ -1143,6 +1183,20 @@ export function renderCard(
   // ---- Active card ----
   const cardEl = document.createElement("div");
   cardEl.className = "sy-card";
+  // TASK-33d2: the card is a named group, focusable from script only, so on a
+  // card change a screen reader reads "Card N of M" and the question.
+  cardEl.setAttribute("role", "group");
+  cardEl.setAttribute("tabindex", "-1");
+  if (card.kind !== "end") {
+    const front = card.elements.find((e) => e.type === "text" && !isPictogramCredit(e.content));
+    const words = front && front.type === "text" ? front.content.trim() : "";
+    const where =
+      typeof chrome.position === "number" && typeof chrome.total === "number" && chrome.total > 0
+        ? `Card ${chrome.position} of ${chrome.total}`
+        : "";
+    const name = [where, words].filter((s) => s.length > 0).join(": ");
+    if (name.length > 0) cardEl.setAttribute("aria-label", name);
+  }
 
   // Ring holes (the punched hole beneath each standing ring loop).
   const ringHoles = document.createElement("div");
@@ -1169,6 +1223,13 @@ export function renderCard(
     root.appendChild(stackWrapper);
     return;
   }
+
+  // TASK-33d1: one heading per page — the deck's title, for screen readers (the
+  // end card's own heading is its h1).
+  const deckTitle = document.createElement("h1");
+  deckTitle.className = "sy-sr-only sy-deck-title";
+  deckTitle.textContent = state.stack.title;
+  root.appendChild(deckTitle);
 
   // ---- Derived chrome (not stored in the stack) ----
   // "Card N of M" meta line above the question, for content cards only.
@@ -1201,7 +1262,6 @@ export function renderCard(
   if (typeof liveScore === "number" && hasQuiz && scoreStarted) {
     const scoreWrap = document.createElement("div");
     scoreWrap.className = "sy-score-chrome";
-    scoreWrap.setAttribute("aria-label", `Score ${liveScore}`);
     scoreWrap.textContent = `Score ${liveScore}`;
     cardEl.appendChild(scoreWrap);
   }
@@ -1429,6 +1489,9 @@ function buildButtonElement(
     // inside it instead of overflowing (TASK-26c, J1/J2).
     applyFit(labelSpan, fitTileLabel(el.label, el.w, el.h), 32);
     btn.appendChild(labelSpan);
+    // TASK-33d2: the name says the shape as well as the words ("Triangle: Vikings"),
+    // so a screen-reader user can talk about "the triangle" like everyone else.
+    btn.setAttribute("aria-label", tileAccessibleName(slotIndex, el.label));
   } else {
     // ---- Generic button ----
     btn.className = "sy-button";
@@ -1509,6 +1572,10 @@ function handleButtonClick(
       triggerTileShake(btn);
       const hasSoundAction = el.actions.some((a) => a.type === "sound");
       if (!hasSoundAction) playSound("buzz");
+      // TASK-33d2: say it, and say which one was right.
+      const rightTile = cardEl?.querySelector<HTMLElement>('.sy-tile[data-correct="true"]');
+      const rightWords = rightTile?.querySelector(".sy-tile-label")?.textContent?.trim() ?? "";
+      announce(ariaLive, rightWords.length > 0 ? `Not quite — the right answer was ${rightWords}.` : "Not quite.");
 
       // Reveal the right answer with a faint ink outline during the hold, so a
       // pupil learns which one it was before the card advances (built-app
@@ -1558,10 +1625,23 @@ function showCorrectStamp(tileBtn: HTMLButtonElement, ariaLive: HTMLElement): vo
   tileBtn.appendChild(stamp);
 
   // Announce via aria-live.
+  announce(ariaLive, "Correct");
+}
+
+/**
+ * Put `text` in the live region. It is emptied first and written on the next
+ * frame, so the same words twice in a row are still announced (TASK-33d2).
+ */
+export function announce(ariaLive: HTMLElement, text: string): void {
   ariaLive.textContent = "";
   requestAnimationFrame(() => {
-    ariaLive.textContent = "Correct";
+    ariaLive.textContent = text;
   });
+}
+
+/** The page's one polite live region (created on first use). */
+export function liveRegion(): HTMLElement {
+  return ensureAriaLive();
 }
 
 // ---------------------------------------------------------------------------

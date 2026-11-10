@@ -70,9 +70,22 @@ import {
   keyReviewTotals,
   type KeyNumbers,
   type KeyReview,
+  compareA11y,
+  fixA11y,
+  writeupA11yLine,
+  a11yFromReport,
+  type A11yNumbers,
   type WriteupNumbers,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
+
+const AXE_REPORT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs", "accessibility", "axe-report.json");
+
+/** The accessibility line's numbers, or null while the axe report does not exist (TASK-33d6). */
+function a11yNumbers(): A11yNumbers | null {
+  if (!existsSync(AXE_REPORT)) return null;
+  return a11yFromReport(JSON.parse(readFileSync(AXE_REPORT, "utf8")) as Parameters<typeof a11yFromReport>[0]);
+}
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
@@ -173,6 +186,8 @@ async function run(): Promise<void> {
   const bench = benchNumbers();
   // TASK-33c16: the key-review line is required only once bench/key-review.json exists.
   const keys = keyNumbers();
+  // TASK-33d6: the accessibility line, once docs/accessibility/axe-report.json exists.
+  const a11y = a11yNumbers();
 
   if (fix) {
     if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0 || file.floppy <= 0) {
@@ -186,6 +201,7 @@ async function run(): Promise<void> {
     fixed = fixFloppyClaim(fixed, file.floppy);
     if (bench !== null) fixed = fixBench(fixed, bench, README_BENCH_ANCHOR, readmeBenchLine);
     if (keys !== null) fixed = fixKeyReview(fixed, keys);
+    if (a11y !== null) fixed = fixA11y(fixed, a11y);
     if (renderCmd !== null) fixed = fixBuildCommands(fixed, renderCmd);
     if (fixed !== readme) {
       writeFileSync(README, fixed, "utf8");
@@ -201,6 +217,7 @@ async function run(): Promise<void> {
   checks.push(compareFloppy(text, file.floppy));
   checks.push(...compareBench(text, "README", bench));
   checks.push(...compareKeyReview(text, "README", keys));
+  checks.push(...compareA11y(text, "README", a11y));
   if (renderCmd !== null) {
     const ok = readmeBuildCommandsMatch(text, renderCmd);
     checks.push({
@@ -222,6 +239,7 @@ async function run(): Promise<void> {
     let after = applyWriteupFix(before, writeupActual);
     if (bench !== null) after = fixBench(after, bench, WRITEUP_BENCH_ANCHOR, writeupBenchLine);
     if (keys !== null) after = fixKeyReview(after, keys);
+    if (a11y !== null) after = fixA11y(after, a11y, writeupA11yLine);
     if (after !== before) {
       writeFileSync(WRITEUP, after, "utf8");
       console.log("check-claims --fix: docs/DEVPOST_WRITEUP.md rewritten from measured values.");
@@ -230,6 +248,7 @@ async function run(): Promise<void> {
   checks.push(...compareWriteup(readFileSync(WRITEUP, "utf8"), writeupActual));
   checks.push(...compareBench(readFileSync(WRITEUP, "utf8"), "write-up", bench));
   checks.push(...compareKeyReview(readFileSync(WRITEUP, "utf8"), "write-up", keys));
+  checks.push(...compareA11y(readFileSync(WRITEUP, "utf8"), "write-up", a11y));
 
   let failed = false;
   for (const c of checks) {

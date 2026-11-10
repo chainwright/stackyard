@@ -15,6 +15,7 @@ import { renderCard, FLIP_EXIT_MS, FLIP_ENTER_MS } from "./renderer.js";
 import { applyScaling } from "./scaler.js";
 import { playSound } from "./audio.js";
 import { showFatalError } from "./errors.js";
+import { installScan } from "./scan.js";
 
 /** Flip timing — the exit lift and the heavier enter settle (renderer.ts). */
 const FLIP_MS = FLIP_EXIT_MS;
@@ -35,6 +36,12 @@ export interface MountOptions {
    * Returns a cleanup run on teardown.
    */
   scaler?: (root: HTMLElement) => () => void;
+  /**
+   * TASK-33d4: put the one-switch "Scan" control (and the S key) in the page.
+   * The exported file and the living file's Play turn it on; the Maker's Try It
+   * leaves it off.
+   */
+  scan?: boolean;
 }
 
 /** True when the user asked for reduced motion. */
@@ -90,7 +97,7 @@ export function mountPlayer(
   let flipTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Render `card` and, when flipping, run the enter animation on it. */
-  function renderWithEnter(cardId: string, automatic: boolean): void {
+  function renderWithEnter(cardId: string, automatic: boolean, first = false): void {
     const card = stack.cards.find((c) => c.id === cardId);
     if (!card) {
       showFatalError(root);
@@ -129,6 +136,17 @@ export function mountPlayer(
         cardEl.style.transformOrigin = "top center";
         cardEl.style.animation = `card-enter ${FLIP_ENTER_MS}ms ease-out`;
       }
+    }
+
+    // TASK-33d2: after a card change the pupil was on (focus left with the old
+    // card), move focus to the new card, so a screen reader reads "Card N of M"
+    // and the question, and Tab goes on to its first choice. Focus elsewhere
+    // (the Teacher tab, the Maker's toolbar) is never taken.
+    if (!first) {
+      const active = document.activeElement;
+      const lost = active === null || active === document.body || root.contains(active);
+      const cardEl = root.querySelector<HTMLElement>(".sy-card");
+      if (lost && cardEl) cardEl.focus({ preventScroll: true });
     }
 
     // Fire card-level actions (e.g., auto-advance goto) with automatic=true.
@@ -171,10 +189,14 @@ export function mountPlayer(
 
   // 4. Render the first card. The initial mount has no outgoing card, so it
   //    runs only the enter half of the flip (no exit).
-  renderWithEnter(state.currentCardId, false);
+  renderWithEnter(state.currentCardId, false, true);
+
+  // TASK-33d4: one-switch scanning, opt-in.
+  const stopScan = options.scan === true ? installScan(root) : null;
 
   // 5. Teardown.
   return function teardown(): void {
+    stopScan?.();
     if (flipTimer !== null) {
       clearTimeout(flipTimer);
       flipTimer = null;

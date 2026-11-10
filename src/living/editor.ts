@@ -281,12 +281,20 @@ export class LivingEditor {
         if (id !== null) {
           this.selectedElementId = id;
           this.render();
+          // A keyboard "click" (Enter / Space on a tile: detail 0) goes on to the box.
+          if ((e as MouseEvent).detail === 0) this.focusInspectorField();
         }
         e.preventDefault();
         e.stopPropagation();
       },
       true,
     );
+    // TASK-33d3: the card's words can be chosen by keyboard too.
+    makePreviewKeyboardSelectable(stackWrap, (id) => {
+      this.selectedElementId = id;
+      this.render();
+      this.focusInspectorField();
+    });
     // Drag an element (TASK-31d). pointerdown selects it and starts the drag;
     // moves follow through moveElement; up / cancel end it (one undo step).
     const wrapperOf = (id: string): HTMLElement | null =>
@@ -454,9 +462,10 @@ export class LivingEditor {
     insp.appendChild(row);
 
     const tryRow = el("div", "sy-living-row");
-    tryRow.appendChild(this.button("Try It", "sy-living-btn", () => this.tryIt()));
+    tryRow.appendChild(this.button("Try It", "sy-living-btn sy-try", () => this.tryIt()));
     insp.appendChild(tryRow);
 
+    linkLabels(insp);
     return insp;
   }
 
@@ -636,6 +645,19 @@ export class LivingEditor {
   // -------------------------------------------------------------------------
   // Try It
 
+  /** Put the cursor in the inspector's first box (after a keyboard selection). */
+  private focusInspectorField(): void {
+    this.host.querySelector<HTMLElement>(".sy-living-inspector textarea, .sy-living-inspector input[type=text]")?.focus();
+  }
+
+  /** TASK-33d3: Escape leaves Try It. True when it was trying (the key is used). */
+  leaveTryIt(): boolean {
+    if (this.tryingTeardown === null) return false;
+    this.render();
+    this.host.querySelector<HTMLElement>(".sy-living-inspector .sy-try")?.focus();
+    return true;
+  }
+
   private tryIt(): void {
     this.stopTrying();
     const area = this.host.querySelector<HTMLElement>(".sy-living-canvas");
@@ -704,4 +726,41 @@ function el(tag: string, className: string): HTMLElement {
   const e = document.createElement(tag);
   if (className) e.className = className;
   return e;
+}
+
+let fieldSeq = 0;
+
+/**
+ * TASK-33d1: tie each inspector label to its box (`for` / `id`), so a screen
+ * reader names the box and a click on the label focuses it (axe "label").
+ */
+export function linkLabels(root: HTMLElement): void {
+  for (const field of Array.from(root.querySelectorAll<HTMLElement>(".sy-living-field"))) {
+    const label = Array.from(field.children).find((c): c is HTMLLabelElement => c instanceof HTMLLabelElement && c.querySelector("input, textarea, select") === null);
+    const control = field.querySelector<HTMLElement>(":scope > input, :scope > textarea, :scope > select");
+    if (!label || !control) continue;
+    if (control.id === "") control.id = `sy-field-${++fieldSeq}`;
+    label.htmlFor = control.id;
+  }
+}
+
+/**
+ * TASK-33d3: make the preview's words selectable by keyboard. A text on the
+ * card (not already a button) gets tabindex 0 and the button role, named
+ * "Edit: <its words>"; Enter or Space selects it like a click.
+ */
+export function makePreviewKeyboardSelectable(previewRoot: HTMLElement, select: (elementId: string) => void): void {
+  for (const w of Array.from(previewRoot.querySelectorAll<HTMLElement>(".sy-element[data-element-id]"))) {
+    if (w.querySelector("button, [role='button'], [tabindex]") !== null) continue;
+    const words = (w.textContent ?? "").trim();
+    if (words.length === 0 && w.querySelector("img") === null) continue;
+    w.tabIndex = 0;
+    w.setAttribute("role", "button");
+    w.setAttribute("aria-label", words.length > 0 ? `Edit: ${words}` : `Edit: ${w.querySelector("img")?.getAttribute("alt") ?? "picture"}`);
+    w.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      select(w.getAttribute("data-element-id")!);
+    });
+  }
 }

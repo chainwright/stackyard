@@ -261,7 +261,7 @@ const MODE_PLAYTHROUGH = `
         if (++steps > 45) { report("FAIL", "did not reach the end card in 45 steps: " + rootText().slice(0, 80)); return; }
         var flash = root.querySelector(".sy-flash");
         if (flash) {
-          var nb = flash.querySelector(".sy-flash-next button");
+          var nb = root.querySelector(".sy-flash-next button");
           if (nb) nb.click(); else flash.click();
         } else {
           var tile = root.querySelector(".sy-tile[data-correct='true']");
