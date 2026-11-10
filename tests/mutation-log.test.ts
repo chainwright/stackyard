@@ -96,7 +96,7 @@ describe("TASK-37b: the credits count the v8 footage", () => {
 describe("TASK-37c: the write-up's video note describes v8", () => {
   it("TASK-37c: two or three sentences naming what v8 shows; check:claims still reads its numbers; the link line is untouched", () => {
     const lines = read("docs/DEVPOST_WRITEUP.md").split("\n");
-    expect(lines[2]).toBe("Video (public, AI disclosure set on YouTube, v7 uploaded 09.11): https://youtu.be/G5aNDWg8UGY");
+    expect(lines[2]).toBe("Video (public, AI disclosure set on YouTube, v8b uploaded 10.11): https://youtu.be/x6W2BzhpAyU");
     const p = lines[4]!;
     for (const s of [
       "recorded on the live app at commit 4703964",

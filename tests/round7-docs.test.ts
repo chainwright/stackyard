@@ -35,8 +35,8 @@ describe("TASK-31a: README and docs say only what is true", () => {
   const readme = FLAT(read("README.md"));
 
   it("TASK-31a: README line 7 links the submitted video and the live app", () => {
-    expect(readmeLines[6]).toBe("**Demo video (2:52):** https://youtu.be/G5aNDWg8UGY · **Live app:** https://stackyard-sdqt.onrender.com");
-    expect(readmeLines[6]).toContain("G5aNDWg8UGY");
+    expect(readmeLines[6]).toBe("**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com");
+    expect(read("README.md")).not.toContain("G5aNDWg8UGY");
     expect(read("README.md")).not.toContain("xQvUPdifiVE");
   });
 

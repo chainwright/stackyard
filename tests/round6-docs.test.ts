@@ -55,7 +55,8 @@ describe("TASK-30e: README truth (video hound R1–R4)", () => {
   });
   it("the demo video link sits at the very top next to the live app, and the screens' deck is named", () => {
     const top = readme.slice(0, readme.indexOf("## "));
-    expect(top).toContain("https://youtu.be/G5aNDWg8UGY");
+    expect(top).toContain("https://youtu.be/x6W2BzhpAyU");
+    expect(top).not.toContain("G5aNDWg8UGY");
     expect(top).not.toContain("xQvUPdifiVE");
     expect(top).toContain("https://stackyard-sdqt.onrender.com");
     expect(readme).toMatch(/README screens and (the )?GIF use the ready-made Vikings deck \(no live generation\)/);
