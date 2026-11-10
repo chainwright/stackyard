@@ -68,7 +68,9 @@ async function audit(cdp: Cdp, page: string, url: string): Promise<PageReport> {
   const present = await cdp.eval<boolean>("typeof window.axe !== 'undefined'");
   if (!present) await cdp.eval(readFileSync(AXE_PATH, "utf8") + "\n;true");
   const raw = JSON.parse(await cdp.eval<string>(RUN_AXE)) as AxeRaw;
-  const out: PageReport = { page, url, violations: { critical: [], serious: [], moderate: [], minor: [] }, passes: raw.passes.length };
+  // A stable name for the page (no random port, no temp folder), so the report only changes when a result does.
+  const where = url.startsWith("file:") ? `file:${path.basename(fileURLToPath(url))}` : new URL(url).pathname;
+  const out: PageReport = { page, url: where, violations: { critical: [], serious: [], moderate: [], minor: [] }, passes: raw.passes.length };
   for (const v of raw.violations) {
     const impact = (v.impact ?? "minor") as keyof PageReport["violations"];
     out.violations[impact].push({ id: v.id, nodes: v.nodes.length });

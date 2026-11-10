@@ -159,3 +159,23 @@ Each task: Bug (what is missing) / Fix / Acceptance criteria.
 
 ### Pending (after we record; not a task id yet)
   - **Done (TASK-33c13).** The lesson-checker persona ran over the five decks named in round 2; see `bench/LESSON_CHECKER.md`.
+
+### TASK-34a1: the distractor ground truth  *(TASK-34a, item 1)*
+  - **Bug.** A spot check of v2 found joke distractors ("To make the body glow in the dark", "Clouds and wind"). Nothing counts them.
+  - **Fix.**
+    - Inside the Kiro session, acting read-only as the lesson-checker persona, label every wrong answer on every quiz card of the 54 v2 bench files "plausible" or "absurd", giving a reason for each absurd one.
+    - The judgement goes in `bench/distractor-labels.json`. `scripts/build-distractor-review.ts` expands it, with every distractor from the files, into `bench/distractor-review.json`. It fails if a label matches no distractor.
+    - `bench/LESSON_CHECKER.md` gets a "v2 distractor review" summary that says it is an AI review.
+  - **Acceptance criteria.**
+    - Tests check: every distractor is labelled; every absurd one has a reason; the totals add up; while a deck is still its v2 recording, the review lists exactly its quiz cards; the summary's totals match.
+
+### TASK-34a4: re-record only the affected objectives, and keep v2  *(TASK-34a, item 4)*
+  - **Fix.**
+    - `bench:record -- --only-file <file>` reads ids from a file (`#` starts a comment).
+    - `bench/rerecord.txt` lists the decks with at least one absurd distractor, plus a `# v2-recorded-until:` cut-off.
+    - `bench/results-v2.json` is a byte-for-byte copy of the v2 `results.json`.
+    - `RESULTS.md` shows v1, v2 and the current run, and says v3 re-records only the listed objectives, with how many are re-recorded so far.
+  - **Acceptance criteria.** Tests check: `rerecord.txt` equals the ground truth's affected decks; the file parser; the v2 summary (54 / 48 / 47); the order of the three tables and the v3 sentence.
+
+### Pending (TASK-34a, item 5; not a task id yet)
+  - After the coordinator re-records the ids in `rerecord.txt` and replays, the lesson-checker labels the re-recorded decks' distractors the same way.

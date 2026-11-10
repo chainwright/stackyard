@@ -463,3 +463,23 @@ From the teardown's §4 row 7 and the AfterStack row (one-switch scanning). Spec
 - **d6 — the claim.** The README and the write-up ("Accomplishments") each carry a line checked against `axe-report.json`: 14 pages, 0 serious or critical, both play-throughs pass, and "No screen-reader user or disabled pupil has tested it."
 - **Wiring.** `check:a11y` (contrast, then the browser gate, about 46 s) runs in pre-submit. Four new mutants are killed: the tile's name dropped, the live region off, the scan not advancing, the a11y line unchecked.
 - **Shell edits.** `npm install --save-dev --save-exact axe-core@4.14.0` (package.json, package-lock.json). `npm run samples` and `npm run bench` regenerated their outputs. No source file was edited through the shell.
+
+## 9 Nov 2026 (late night): no joke distractors (TASK-34a)
+
+Spec first: TASK-34a1 and a4 in `curriculum-bench/tasks.md`; TASK-34a2 and a3 in `stack-generator/tasks.md`. Kiro had no key; the coordinator re-records.
+
+- **a1 — ground truth.** Inside this session, acting as the lesson-checker persona (read-only; an AI review, not a teacher's), I labelled every wrong answer on every quiz card of the 54 v2 bench files.
+  - **Result:** 268 quiz cards, 541 distractors, **96 absurd** (each with a reason), in **34 of 54 decks**.
+  - The judgement is in `bench/distractor-labels.json`. `scripts/build-distractor-review.ts` expands it into `bench/distractor-review.json` and fails on a label that matches no distractor.
+  - The summary is in `LESSON_CHECKER.md`. Three key notes turned up as well, among them a wrong key in y3-light-3 card 5.
+- **a2 — the check.** `jokeAnswerReason` is 15 documented markers, a warning only: "Card N: “…” may be a joke answer; use a mistake a pupil might really make."
+  - **Measured against the labels:** precision **1.00** (20 of 20), recall **0.21** (20 of 96). This is in-sample: the markers were drawn from the same data.
+  - **Dropped after measuring:** the off-topic rule the brief suggested (precision 0.25, or 0.24 on phrases of 3 or more words) and a wrong-sense rule (0.60). Plausible misconceptions are new words too.
+- **a3 — prompts.** All three prompts build each wrong answer from one neutral pattern: change the one part a pupil who half-remembers the lesson gets wrong. They say "Never silly, magic or impossible options". No bench example is quoted.
+- **a4 — bench.**
+  - `bench:record -- --only-file`; `bench/rerecord.txt` holds the 34 ids and the v2 cut-off.
+  - `bench/results-v2.json` is a byte copy of v2. `RESULTS.md` shows v1, v2 and the current run, and says v3 re-records only the listed objectives.
+  - The current run (v2 recordings, today's checks) now has 38 of 55 decks with no lesson warnings (v2 as checked then: 48). The README and write-up lines follow via `check:claims --fix`.
+- **Tests and mutants.** 15 tests in `tests/joke-answers.test.ts`. The `two-answers` bench fixture had two real joke answers ("It glows", "Only when it is hot"); both were replaced with plausible ones so the fixture tests one thing. Two new mutants (markers never fire; the "never silly…" sentence dropped) are killed.
+- **Small fix.** `docs/accessibility/axe-report.json` stored the server's random port in every URL, so it changed on every run. It now stores paths only (`/samples/…`, `file:<name>`), and two runs in a row give the same file.
+- **Shell edits.** One: `cp bench/results.json bench/results-v2.json`, checked with `cmp` and followed by `check:invariants`. `npm run bench` regenerated `results.json` and `RESULTS.md`. Read-only probe scripts in `/tmp` were deleted.

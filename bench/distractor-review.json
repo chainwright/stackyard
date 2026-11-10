@@ -1,0 +1,4423 @@
+{
+  "about": "TASK-34a1 ground truth, the judgement part. Labelled inside Kiro on 9 Nov 2026 by the lesson-checker persona (.kiro/agents/lesson-checker.md), read-only, over every wrong answer on every quiz card of the 54 v2 bench files. It is an AI review, not a teacher's. Every distractor NOT listed under 'absurd' was labelled plausible. scripts/build-distractor-review.ts expands this into bench/distractor-review.json with every distractor from the files.",
+  "definition": "absurd = off-topic, physically silly, or no 8–10-year-old would believe it; plausible = a mistake a pupil who has not learnt it yet might really make (it may still be a weak or easy option).",
+  "date": "2026-11-09",
+  "decks": [
+    {
+      "id": "y3-animals-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which of these can make its own food?",
+          "right": "A plant, using sunlight",
+          "distractors": [
+            {
+              "option": "A cow",
+              "label": "plausible"
+            },
+            {
+              "option": "A dog",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Where do animals get their nutrition from?",
+          "right": "From the food they eat",
+          "distractors": [
+            {
+              "option": "From the soil under them",
+              "label": "plausible"
+            },
+            {
+              "option": "From sunlight on their skin",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Do humans need the right amount of nutrition?",
+          "right": "Yes, to grow and stay healthy",
+          "distractors": [
+            {
+              "option": "Only when they are ill",
+              "label": "plausible"
+            },
+            {
+              "option": "No, any amount is fine",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which animal must eat food to get nutrition?",
+          "right": "A lion",
+          "distractors": [
+            {
+              "option": "A rock",
+              "label": "absurd",
+              "reason": "the question asks which animal; a rock is not alive, and no pupil thinks it eats"
+            },
+            {
+              "option": "A tree",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Can an animal make its own food from sunlight, like a plant?",
+          "right": "No, it must eat",
+          "distractors": [
+            {
+              "option": "Yes, every day",
+              "label": "plausible"
+            },
+            {
+              "option": "Yes, but only in summer",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-animals-2",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What is the job of a skeleton?",
+          "right": "To support and protect the body",
+          "distractors": [
+            {
+              "option": "To store water for the body",
+              "label": "plausible"
+            },
+            {
+              "option": "To make the body glow in the dark",
+              "label": "absurd",
+              "reason": "physically silly: skeletons do not glow"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which body part does a muscle join to a bone?",
+          "right": "A tendon",
+          "distractors": [
+            {
+              "option": "A shell",
+              "label": "absurd",
+              "reason": "off-topic: humans have no shell joining muscle to bone"
+            },
+            {
+              "option": "A feather",
+              "label": "absurd",
+              "reason": "off-topic: a feather joins nothing to a bone"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which part of the body protects the heart and lungs?",
+          "right": "The ribcage",
+          "distractors": [
+            {
+              "option": "The kneecap",
+              "label": "plausible"
+            },
+            {
+              "option": "The eyebrow",
+              "label": "absurd",
+              "reason": "no pupil believes an eyebrow protects the heart and lungs"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these animals has a skeleton inside its body?",
+          "right": "A horse",
+          "distractors": [
+            {
+              "option": "A snail",
+              "label": "plausible"
+            },
+            {
+              "option": "A jellyfish",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What do muscles need to pull on to make a bone move?",
+          "right": "Bones and joints",
+          "distractors": [
+            {
+              "option": "Clouds and wind",
+              "label": "absurd",
+              "reason": "off-topic: weather, not the body"
+            },
+            {
+              "option": "Leaves and roots",
+              "label": "absurd",
+              "reason": "off-topic: plant parts, not the body"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which surface makes a ball roll the farthest?",
+          "right": "Smooth ice",
+          "distractors": [
+            {
+              "option": "Thick carpet",
+              "label": "plausible"
+            },
+            {
+              "option": "Rough gravel",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "On which surface does a sledge slide most easily?",
+          "right": "Snow",
+          "distractors": [
+            {
+              "option": "Wet grass",
+              "label": "plausible"
+            },
+            {
+              "option": "Sandpaper",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which surface causes the most friction for a shoe?",
+          "right": "Rough concrete",
+          "distractors": [
+            {
+              "option": "Polished glass",
+              "label": "plausible"
+            },
+            {
+              "option": "Wet ice",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "How many surfaces did the toy car race across in the story?",
+          "right": "Two",
+          "distractors": [
+            {
+              "option": "Four",
+              "label": "plausible"
+            },
+            {
+              "option": "Six",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which would move a book across a table the easiest?",
+          "right": "Pushing it on a polished table",
+          "distractors": [
+            {
+              "option": "Pushing it on a rough cloth",
+              "label": "plausible"
+            },
+            {
+              "option": "Pushing it on sandpaper",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-2",
+      "cards": [
+        {
+          "card": 1,
+          "question": "You push a football with your foot. Do your foot and the ball need to touch?",
+          "right": "Yes, they must touch",
+          "distractors": [
+            {
+              "option": "No, they can be far apart",
+              "label": "plausible"
+            },
+            {
+              "option": "Only if the ball is wet",
+              "label": "absurd",
+              "reason": "silly condition no pupil would believe"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "A fridge magnet pulls a metal door without touching it. What kind of force is this?",
+          "right": "A magnetic force",
+          "distractors": [
+            {
+              "option": "A friction force",
+              "label": "plausible"
+            },
+            {
+              "option": "A gravity force",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which of these forces can act at a distance?",
+          "right": "Magnetic force",
+          "distractors": [
+            {
+              "option": "Kicking a ball",
+              "label": "plausible"
+            },
+            {
+              "option": "Pushing a pram",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "A rubber ball bounces off a wall. Does the wall need to touch the ball to push it back?",
+          "right": "Yes, they must touch",
+          "distractors": [
+            {
+              "option": "No, the wall pushes from a distance",
+              "label": "plausible"
+            },
+            {
+              "option": "Only when the ball is hot",
+              "label": "absurd",
+              "reason": "silly condition no pupil would believe"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which object can a magnet pull across a gap?",
+          "right": "A steel paper clip",
+          "distractors": [
+            {
+              "option": "A wooden ruler",
+              "label": "plausible"
+            },
+            {
+              "option": "A plastic cup",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What happens when the north pole of one magnet meets the north pole of another?",
+          "right": "They push apart",
+          "distractors": [
+            {
+              "option": "They stick and cannot move",
+              "label": "plausible"
+            },
+            {
+              "option": "They pull together",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which material will a magnet attract?",
+          "right": "A steel paperclip",
+          "distractors": [
+            {
+              "option": "A plastic cup",
+              "label": "plausible"
+            },
+            {
+              "option": "A wooden ruler",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which material is a magnet most likely to attract?",
+          "right": "Iron nail",
+          "distractors": [
+            {
+              "option": "Glass jar",
+              "label": "plausible"
+            },
+            {
+              "option": "Rubber band",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Two south poles are held near each other. What will happen?",
+          "right": "They push apart",
+          "distractors": [
+            {
+              "option": "Nothing at all happens",
+              "label": "plausible"
+            },
+            {
+              "option": "They pull together",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which of these is NOT attracted by a magnet?",
+          "right": "Plastic spoon",
+          "distractors": [
+            {
+              "option": "Iron nail",
+              "label": "plausible"
+            },
+            {
+              "option": "Steel key",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-4",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which of these materials is attracted to a magnet?",
+          "right": "Iron nail",
+          "distractors": [
+            {
+              "option": "Rubber band",
+              "label": "plausible"
+            },
+            {
+              "option": "Wooden ruler",
+              "label": "plausible"
+            },
+            {
+              "option": "Plastic cup",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which metal is magnetic?",
+          "right": "Steel",
+          "distractors": [
+            {
+              "option": "Gold",
+              "label": "plausible"
+            },
+            {
+              "option": "Copper",
+              "label": "plausible"
+            },
+            {
+              "option": "Aluminium",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Which group contains only magnetic materials?",
+          "right": "Iron, steel, nickel",
+          "distractors": [
+            {
+              "option": "Gold, copper, silver",
+              "label": "plausible"
+            },
+            {
+              "option": "Glass, wood, paper",
+              "label": "plausible"
+            },
+            {
+              "option": "Plastic, rubber, cloth",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "A magnet is held near a pencil with a steel paper clip. Which will the magnet attract?",
+          "right": "The steel paper clip",
+          "distractors": [
+            {
+              "option": "Neither of them",
+              "label": "plausible"
+            },
+            {
+              "option": "The wooden pencil",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "How many of these are magnetic: wood, nickel, glass, iron?",
+          "right": "Two",
+          "distractors": [
+            {
+              "option": "Three",
+              "label": "plausible"
+            },
+            {
+              "option": "Four",
+              "label": "plausible"
+            },
+            {
+              "option": "One",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-5",
+      "cards": [
+        {
+          "card": 4,
+          "question": "How many poles does a bar magnet have?",
+          "right": "Two",
+          "distractors": [
+            {
+              "option": "Four",
+              "label": "plausible"
+            },
+            {
+              "option": "One",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "What happens when two north poles are brought together?",
+          "right": "They push apart",
+          "distractors": [
+            {
+              "option": "Nothing happens",
+              "label": "plausible"
+            },
+            {
+              "option": "They pull together",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Where is a magnet's pull strongest?",
+          "right": "At the poles",
+          "distractors": [
+            {
+              "option": "In the middle",
+              "label": "plausible"
+            },
+            {
+              "option": "Evenly all over",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which pair of poles will attract, or pull together?",
+          "right": "North and south",
+          "distractors": [
+            {
+              "option": "North and north",
+              "label": "plausible"
+            },
+            {
+              "option": "South and south",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 11,
+          "question": "A magnet is cut in half. How many poles does each half have?",
+          "right": "Two",
+          "distractors": [
+            {
+              "option": "None",
+              "label": "plausible"
+            },
+            {
+              "option": "One",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-forces-magnets-6",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Two north poles are placed facing each other. What happens?",
+          "right": "They push apart",
+          "distractors": [
+            {
+              "option": "They stick and do not move",
+              "label": "plausible"
+            },
+            {
+              "option": "They pull together",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "A north pole and a south pole are placed facing each other. What happens?",
+          "right": "They pull together",
+          "distractors": [
+            {
+              "option": "They spin in a circle",
+              "label": "absurd",
+              "reason": "physically silly for two magnets placed facing each other"
+            },
+            {
+              "option": "They push apart",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Two south poles are placed facing each other. What happens?",
+          "right": "They push apart",
+          "distractors": [
+            {
+              "option": "They stick together",
+              "label": "plausible"
+            },
+            {
+              "option": "They pull together",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which pair of poles will attract each other?",
+          "right": "North and south",
+          "distractors": [
+            {
+              "option": "South and south",
+              "label": "plausible"
+            },
+            {
+              "option": "North and north",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "A magnet is placed near a paper clip. The magnet pulls the clip towards it. What does this show?",
+          "right": "The magnet attracts the clip",
+          "distractors": [
+            {
+              "option": "The magnet repels the clip",
+              "label": "plausible"
+            },
+            {
+              "option": "The clip makes the magnet heavier",
+              "label": "absurd",
+              "reason": "joke option: weight has nothing to do with the pull"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-light-1",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What do we need in order to see things?",
+          "right": "Light",
+          "distractors": [
+            {
+              "option": "Sound",
+              "label": "plausible"
+            },
+            {
+              "option": "Heat",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "What is dark?",
+          "right": "The absence of light",
+          "distractors": [
+            {
+              "option": "A kind of very cold air",
+              "label": "plausible"
+            },
+            {
+              "option": "A colour that is painted on objects",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Why can we not see our desk in a room with no light?",
+          "right": "Because there is no light to reach our eyes from the desk",
+          "distractors": [
+            {
+              "option": "Because the desk becomes too heavy to lift",
+              "label": "absurd",
+              "reason": "off-topic: weight, not light"
+            },
+            {
+              "option": "Because our eyes stop working in any room",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these gives out its own light?",
+          "right": "The sun",
+          "distractors": [
+            {
+              "option": "The moon",
+              "label": "plausible"
+            },
+            {
+              "option": "A chair",
+              "label": "absurd",
+              "reason": "no pupil believes a chair gives out light"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "When a torch is switched off in a dark room, what happens?",
+          "right": "The room becomes dark because no light is reaching our eyes",
+          "distractors": [
+            {
+              "option": "The room becomes dark because the walls take in the dark",
+              "label": "plausible"
+            },
+            {
+              "option": "The room stays bright for an hour",
+              "label": "absurd",
+              "reason": "physically silly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-light-2",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What happens to light when it hits a mirror?",
+          "right": "It bounces back off the mirror",
+          "distractors": [
+            {
+              "option": "It soaks into the glass and disappears",
+              "label": "plausible"
+            },
+            {
+              "option": "It turns into sound",
+              "label": "absurd",
+              "reason": "physically silly: light does not turn into sound"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which surface reflects light best?",
+          "right": "A polished metal spoon",
+          "distractors": [
+            {
+              "option": "A sponge",
+              "label": "plausible"
+            },
+            {
+              "option": "A woolly jumper",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Why can you see your face in a shiny spoon?",
+          "right": "Light reflects off the spoon into your eyes",
+          "distractors": [
+            {
+              "option": "The spoon makes its own light",
+              "label": "plausible"
+            },
+            {
+              "option": "Your face sends sound into the spoon",
+              "label": "absurd",
+              "reason": "off-topic and silly: sound has nothing to do with seeing a reflection"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which of these is the best reflector of light?",
+          "right": "A clean mirror",
+          "distractors": [
+            {
+              "option": "A black cloth",
+              "label": "plausible"
+            },
+            {
+              "option": "A rough brick wall",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What do we call light bouncing off a surface?",
+          "right": "Reflection",
+          "distractors": [
+            {
+              "option": "Vibration",
+              "label": "plausible"
+            },
+            {
+              "option": "Absorption",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-light-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which part of the sun's light can damage your eyes?",
+          "right": "Ultraviolet light",
+          "distractors": [
+            {
+              "option": "Warm light from the sun",
+              "label": "plausible"
+            },
+            {
+              "option": "Coloured light we can see",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Can UV light reach your eyes on a cloudy day?",
+          "right": "Yes, it can",
+          "distractors": [
+            {
+              "option": "Only at night",
+              "label": "absurd",
+              "reason": "silly: there is no sunlight at night"
+            },
+            {
+              "option": "No, clouds block it completely",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which of these protects your eyes from the sun?",
+          "right": "Sunglasses with UV protection",
+          "distractors": [
+            {
+              "option": "Looking straight at the sun",
+              "label": "absurd",
+              "reason": "offered as protection, it is the danger itself: a joke option"
+            },
+            {
+              "option": "Squinting with no hat or glasses",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "What should you never do when the sun is shining?",
+          "right": "Look at the sun through a solar viewer",
+          "distractors": [
+            {
+              "option": "Wear a wide-brimmed hat",
+              "label": "plausible"
+            },
+            {
+              "option": "Stare directly at the sun",
+              "label": "plausible"
+            }
+          ],
+          "keyNote": "WRONG KEY: 'What should you never do?' marks 'Look at the sun through a solar viewer' (safe) right; the right answer is 'Stare directly at the sun', which is a distractor here (labelled plausible: it is the true answer)."
+        },
+        {
+          "card": 9,
+          "question": "Which is the best way to keep your eyes safe in strong sunshine?",
+          "right": "Wear sunglasses and a hat",
+          "distractors": [
+            {
+              "option": "Close your eyes and keep looking up",
+              "label": "absurd",
+              "reason": "silly: contradicts itself"
+            },
+            {
+              "option": "Rub your eyes often",
+              "label": "absurd",
+              "reason": "off-topic: no link to sunlight"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-light-4",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What makes a shadow?",
+          "right": "A light source shining on an opaque object",
+          "distractors": [
+            {
+              "option": "Water making the light wobble",
+              "label": "plausible"
+            },
+            {
+              "option": "A mirror bouncing light back",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which material would make the darkest shadow?",
+          "right": "A wooden block",
+          "distractors": [
+            {
+              "option": "A sheet of tracing paper",
+              "label": "plausible"
+            },
+            {
+              "option": "A clear glass sheet",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Why is there no shadow behind a clear glass window?",
+          "right": "Light passes straight through the glass",
+          "distractors": [
+            {
+              "option": "The glass hides the shadow inside it",
+              "label": "plausible"
+            },
+            {
+              "option": "The glass makes its own light",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "A torch shines on a book. What do you get behind the book?",
+          "right": "A shadow",
+          "distractors": [
+            {
+              "option": "Nothing at all",
+              "label": "plausible"
+            },
+            {
+              "option": "A reflection",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What is the light source in a shadow game?",
+          "right": "A torch",
+          "distractors": [
+            {
+              "option": "A cup of water",
+              "label": "absurd",
+              "reason": "no pupil believes a cup of water is a light source"
+            },
+            {
+              "option": "A cushion",
+              "label": "absurd",
+              "reason": "no pupil believes a cushion is a light source"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-light-5",
+      "cards": [
+        {
+          "card": 2,
+          "question": "A torch is shone on a toy car. The torch moves closer to the car. What happens to the shadow?",
+          "right": "It gets bigger",
+          "distractors": [
+            {
+              "option": "It gets smaller",
+              "label": "plausible"
+            },
+            {
+              "option": "It stays the same size",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "A torch moves further away from a toy car. What happens to the shadow?",
+          "right": "It gets smaller",
+          "distractors": [
+            {
+              "option": "It disappears",
+              "label": "plausible"
+            },
+            {
+              "option": "It gets bigger",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Which of these makes the shadow of a tree grow longer in the afternoon?",
+          "right": "The sun lowers in the sky",
+          "distractors": [
+            {
+              "option": "The wind blows the leaves",
+              "label": "plausible"
+            },
+            {
+              "option": "The tree grows taller",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "A ball is held closer to a wall lit by a lamp. What happens to its shadow on the wall?",
+          "right": "It gets smaller",
+          "distractors": [
+            {
+              "option": "It turns a different colour",
+              "label": "absurd",
+              "reason": "off-topic: a shadow's colour is not what changes with distance"
+            },
+            {
+              "option": "It gets bigger",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-plants-1",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which part of the plant takes in water from the soil?",
+          "right": "The roots",
+          "distractors": [
+            {
+              "option": "The leaves",
+              "label": "plausible"
+            },
+            {
+              "option": "The petals",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "What is the main job of the leaves?",
+          "right": "To make food using sunlight",
+          "distractors": [
+            {
+              "option": "To anchor the plant in the ground",
+              "label": "plausible"
+            },
+            {
+              "option": "To attract bees",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which part of the plant makes the seeds?",
+          "right": "The flower",
+          "distractors": [
+            {
+              "option": "The stem",
+              "label": "plausible"
+            },
+            {
+              "option": "The root",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which part of the plant carries water up from the roots to the leaves?",
+          "right": "The stem",
+          "distractors": [
+            {
+              "option": "The petals",
+              "label": "plausible"
+            },
+            {
+              "option": "The soil",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What is the main job of a flower?",
+          "right": "To make seeds for new plants",
+          "distractors": [
+            {
+              "option": "To hold the plant in the soil",
+              "label": "plausible"
+            },
+            {
+              "option": "To soak up water",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-plants-2",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which one does a plant need to make its own food?",
+          "right": "Sunlight",
+          "distractors": [
+            {
+              "option": "Sand",
+              "label": "plausible"
+            },
+            {
+              "option": "Gravel",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which part of the plant takes in water from the soil?",
+          "right": "Roots",
+          "distractors": [
+            {
+              "option": "Petals",
+              "label": "plausible"
+            },
+            {
+              "option": "Leaves",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which of these plants needs the most room to grow?",
+          "right": "An oak tree",
+          "distractors": [
+            {
+              "option": "A cress seed",
+              "label": "plausible"
+            },
+            {
+              "option": "A daisy",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which gas do plants take in from the air to make food?",
+          "right": "Carbon dioxide",
+          "distractors": [
+            {
+              "option": "Oxygen",
+              "label": "plausible"
+            },
+            {
+              "option": "Helium",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Do all plants need the same amount of water?",
+          "right": "No, desert plants need much less",
+          "distractors": [
+            {
+              "option": "Only trees need water",
+              "label": "plausible"
+            },
+            {
+              "option": "Yes, every plant needs exactly the same",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-plants-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which tubes carry water up from the roots to the leaves?",
+          "right": "Xylem",
+          "distractors": [
+            {
+              "option": "Stomata",
+              "label": "plausible"
+            },
+            {
+              "option": "Phloem",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which force pulls water up through the plant as it evaporates from the leaves?",
+          "right": "Transpiration",
+          "distractors": [
+            {
+              "option": "Germination",
+              "label": "plausible"
+            },
+            {
+              "option": "Photosynthesis",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Where does water mainly leave a plant?",
+          "right": "Through tiny holes in the leaves",
+          "distractors": [
+            {
+              "option": "Through the roots",
+              "label": "plausible"
+            },
+            {
+              "option": "Through the flower petals only",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 6,
+          "question": "Which part of the plant takes in most of the water?",
+          "right": "The roots",
+          "distractors": [
+            {
+              "option": "The flowers",
+              "label": "plausible"
+            },
+            {
+              "option": "The seeds",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What is the main job of the stem in carrying water?",
+          "right": "It carries water up to the leaves",
+          "distractors": [
+            {
+              "option": "It makes the seeds grow",
+              "label": "plausible"
+            },
+            {
+              "option": "It stores sunlight for the roots",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-plants-4",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which part of the flower makes pollen?",
+          "right": "Anther",
+          "distractors": [
+            {
+              "option": "Stigma",
+              "label": "plausible"
+            },
+            {
+              "option": "Petal",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "After pollen lands on the stigma, what grows down to reach the ovules?",
+          "right": "A pollen tube",
+          "distractors": [
+            {
+              "option": "A root",
+              "label": "plausible"
+            },
+            {
+              "option": "A thorn",
+              "label": "absurd",
+              "reason": "off-topic: thorns are not part of pollination"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these is a fruit that protects seeds?",
+          "right": "An apple",
+          "distractors": [
+            {
+              "option": "A stem",
+              "label": "plausible"
+            },
+            {
+              "option": "A leaf",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What is a seed?",
+          "right": "A baby plant inside a protective coat",
+          "distractors": [
+            {
+              "option": "A type of pollen",
+              "label": "plausible"
+            },
+            {
+              "option": "A flower petal",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which animal is most likely to help a flower by carrying pollen?",
+          "right": "A bee",
+          "distractors": [
+            {
+              "option": "A worm",
+              "label": "plausible"
+            },
+            {
+              "option": "A snail",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-rocks-1",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which rock is made of tiny grains pressed together, like sand?",
+          "right": "Sandstone",
+          "distractors": [
+            {
+              "option": "Granite",
+              "label": "plausible"
+            },
+            {
+              "option": "Marble",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which rock has sparkly crystals you can see easily with your eyes?",
+          "right": "Granite",
+          "distractors": [
+            {
+              "option": "Mudstone",
+              "label": "plausible"
+            },
+            {
+              "option": "Chalk",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which rock is usually dark and very fine, so it feels smooth?",
+          "right": "Basalt",
+          "distractors": [
+            {
+              "option": "Limestone",
+              "label": "plausible"
+            },
+            {
+              "option": "Sandstone",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which two rocks would you put in the same group because both have layers?",
+          "right": "Sandstone and limestone",
+          "distractors": [
+            {
+              "option": "Marble and granite",
+              "label": "plausible"
+            },
+            {
+              "option": "Granite and basalt",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which rock feels rough and can leave a mark on your hand?",
+          "right": "Chalk",
+          "distractors": [
+            {
+              "option": "Granite",
+              "label": "plausible"
+            },
+            {
+              "option": "Basalt",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-rocks-2",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What is a fossil?",
+          "right": "The remains or traces of something that once lived",
+          "distractors": [
+            {
+              "option": "A rock that is made by a volcano",
+              "label": "plausible"
+            },
+            {
+              "option": "A stone that has been polished smooth by a river",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "What usually has to happen to a plant or animal before a fossil can form?",
+          "right": "It is buried quickly in mud or sand",
+          "distractors": [
+            {
+              "option": "It is eaten by a larger animal",
+              "label": "plausible"
+            },
+            {
+              "option": "It is left out in the sun to dry",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Where do most fossils form?",
+          "right": "In layers of sediment at the bottom of water",
+          "distractors": [
+            {
+              "option": "Inside hot desert sand",
+              "label": "plausible"
+            },
+            {
+              "option": "On the tops of tall mountains",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 6,
+          "question": "Over millions of years, what happens to the buried sediment?",
+          "right": "It is pressed and hardens into rock",
+          "distractors": [
+            {
+              "option": "It floats up into the air",
+              "label": "absurd",
+              "reason": "physically silly: buried mud does not float into the air"
+            },
+            {
+              "option": "It melts away into water",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which part of a fossil story helps scientists know how old it is?",
+          "right": "The layers of rock it was found in",
+          "distractors": [
+            {
+              "option": "The colour of the sky that day",
+              "label": "absurd",
+              "reason": "off-topic and silly for the age of a fossil"
+            },
+            {
+              "option": "The temperature of the water it was in",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y3-rocks-3",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which of these is the main source of the rock particles in soil?",
+          "right": "Rocks broken into small pieces",
+          "distractors": [
+            {
+              "option": "Sea water",
+              "label": "plausible"
+            },
+            {
+              "option": "Clouds",
+              "label": "absurd",
+              "reason": "no pupil believes soil's rock particles come from clouds"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "What is the name for the part of soil made from dead plants and animals?",
+          "right": "Organic matter",
+          "distractors": [
+            {
+              "option": "Gravel",
+              "label": "plausible"
+            },
+            {
+              "option": "Bedrock",
+              "label": "plausible"
+            },
+            {
+              "option": "Magma",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which pair describes what good garden soil is made from?",
+          "right": "Rock particles and organic matter",
+          "distractors": [
+            {
+              "option": "Water and air only",
+              "label": "plausible"
+            },
+            {
+              "option": "Metal and glass",
+              "label": "absurd",
+              "reason": "off-topic: no pupil thinks garden soil is metal and glass"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which of these is an example of organic matter?",
+          "right": "A fallen oak leaf",
+          "distractors": [
+            {
+              "option": "A drop of rain",
+              "label": "plausible"
+            },
+            {
+              "option": "A grain of sand",
+              "label": "plausible"
+            },
+            {
+              "option": "A piece of granite",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What do rock particles give soil?",
+          "right": "Its texture and minerals",
+          "distractors": [
+            {
+              "option": "Its flowers",
+              "label": "absurd",
+              "reason": "garbled: soil has no flowers of its own"
+            },
+            {
+              "option": "Its colour of leaves",
+              "label": "absurd",
+              "reason": "garbled and off-topic"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-animals-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which part of the body breaks food into small pieces using the teeth?",
+          "right": "The mouth",
+          "distractors": [
+            {
+              "option": "The large intestine",
+              "label": "plausible"
+            },
+            {
+              "option": "The stomach",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "What is the main job of the stomach?",
+          "right": "To store and churn food, breaking it down with acid",
+          "distractors": [
+            {
+              "option": "To make the bile that helps us digest fats",
+              "label": "plausible"
+            },
+            {
+              "option": "To absorb most of the water from food",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Where are most nutrients from our food taken into the blood?",
+          "right": "The small intestine",
+          "distractors": [
+            {
+              "option": "The oesophagus",
+              "label": "plausible"
+            },
+            {
+              "option": "The mouth",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 6,
+          "question": "What is the job of the oesophagus?",
+          "right": "To carry food from the mouth to the stomach",
+          "distractors": [
+            {
+              "option": "To make the enzymes that digest starch",
+              "label": "plausible"
+            },
+            {
+              "option": "To remove waste from the body",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What does saliva do when we eat?",
+          "right": "It starts breaking down food",
+          "distractors": [
+            {
+              "option": "It removes waste from the body",
+              "label": "plausible"
+            },
+            {
+              "option": "It makes food hot",
+              "label": "absurd",
+              "reason": "physically silly: saliva does not heat food"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-animals-2",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which teeth are used for cutting food?",
+          "right": "Incisors",
+          "distractors": [
+            {
+              "option": "Canines",
+              "label": "plausible"
+            },
+            {
+              "option": "Molars",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "How many teeth does a typical adult human have?",
+          "right": "32",
+          "distractors": [
+            {
+              "option": "24",
+              "label": "plausible"
+            },
+            {
+              "option": "20",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which teeth are best for grinding food?",
+          "right": "Molars",
+          "distractors": [
+            {
+              "option": "Canines",
+              "label": "plausible"
+            },
+            {
+              "option": "Incisors",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which tooth is pointed and used for tearing food?",
+          "right": "Canine",
+          "distractors": [
+            {
+              "option": "Molar",
+              "label": "plausible"
+            },
+            {
+              "option": "Premolar",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which teeth sit between the canines and the molars?",
+          "right": "Premolars",
+          "distractors": [
+            {
+              "option": "Wisdom teeth",
+              "label": "plausible"
+            },
+            {
+              "option": "Incisors",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-animals-3",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which living thing is a producer in a food chain?",
+          "right": "Grass",
+          "distractors": [
+            {
+              "option": "Fox",
+              "label": "plausible"
+            },
+            {
+              "option": "Rabbit",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "In the chain grass, then mouse, then owl, what does the mouse eat?",
+          "right": "Grass",
+          "distractors": [
+            {
+              "option": "Owl",
+              "label": "plausible"
+            },
+            {
+              "option": "Sunlight",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "In the chain grass, then rabbit, then fox, which animal is the prey?",
+          "right": "Rabbit",
+          "distractors": [
+            {
+              "option": "Grass",
+              "label": "plausible"
+            },
+            {
+              "option": "Fox",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which animal is a predator that eats other animals?",
+          "right": "Fox",
+          "distractors": [
+            {
+              "option": "Grass",
+              "label": "absurd",
+              "reason": "grass is not an animal, and no pupil thinks it eats animals"
+            },
+            {
+              "option": "Rabbit",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What gives energy to start every food chain?",
+          "right": "Sunlight",
+          "distractors": [
+            {
+              "option": "Soil",
+              "label": "plausible"
+            },
+            {
+              "option": "Rain",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-electricity-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which of these runs on electricity?",
+          "right": "A kettle",
+          "distractors": [
+            {
+              "option": "A wooden spoon",
+              "label": "absurd",
+              "reason": "no pupil believes a wooden spoon runs on electricity"
+            },
+            {
+              "option": "A bicycle pump",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which appliance keeps food cold?",
+          "right": "A fridge",
+          "distractors": [
+            {
+              "option": "A frying pan",
+              "label": "plausible"
+            },
+            {
+              "option": "A toaster",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these is an electrical appliance?",
+          "right": "A washing machine",
+          "distractors": [
+            {
+              "option": "A paper cup",
+              "label": "absurd",
+              "reason": "no pupil believes a paper cup is an electrical appliance"
+            },
+            {
+              "option": "A wooden chair",
+              "label": "absurd",
+              "reason": "no pupil believes a chair is an electrical appliance"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What does a hairdryer turn electricity into?",
+          "right": "Heat and moving air",
+          "distractors": [
+            {
+              "option": "Sound only",
+              "label": "plausible"
+            },
+            {
+              "option": "Water",
+              "label": "absurd",
+              "reason": "physically silly: a hairdryer does not make water"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which appliance lights up a room?",
+          "right": "A lamp",
+          "distractors": [
+            {
+              "option": "A rubber ball",
+              "label": "absurd",
+              "reason": "no pupil believes a ball lights a room"
+            },
+            {
+              "option": "A glass jar",
+              "label": "absurd",
+              "reason": "no pupil believes a jar lights a room"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-electricity-3",
+      "cards": [
+        {
+          "card": 2,
+          "question": "A lamp is connected to one battery with a wire at each end. Is the loop complete?",
+          "right": "Yes, the loop is complete",
+          "distractors": [
+            {
+              "option": "Only if the lamp is switched off",
+              "label": "plausible"
+            },
+            {
+              "option": "No, there is a gap in the loop",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Where does the current start in a simple circuit?",
+          "right": "At the battery",
+          "distractors": [
+            {
+              "option": "At the lamp",
+              "label": "plausible"
+            },
+            {
+              "option": "At the wire end",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "A wire has a break in it. Will the lamp light?",
+          "right": "No, the loop is no longer complete",
+          "distractors": [
+            {
+              "option": "It lights, but only a little",
+              "label": "plausible"
+            },
+            {
+              "option": "Yes, the lamp still lights",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these is a complete loop with a battery?",
+          "right": "A battery, a lamp and wires joined end to end",
+          "distractors": [
+            {
+              "option": "A battery with a wire lying loose beside it",
+              "label": "plausible"
+            },
+            {
+              "option": "A lamp with one wire, not joined to the battery",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which word describes a circuit with a gap in it?",
+          "right": "Open",
+          "distractors": [
+            {
+              "option": "Closed",
+              "label": "plausible"
+            },
+            {
+              "option": "Charged",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-electricity-4",
+      "cards": [
+        {
+          "card": 3,
+          "question": "A switch is closed. Does the lamp light?",
+          "right": "Yes, the lamp lights",
+          "distractors": [
+            {
+              "option": "Only if the switch is open",
+              "label": "plausible"
+            },
+            {
+              "option": "No, the lamp stays off",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "The switch is open. What happens to the lamp?",
+          "right": "It goes out",
+          "distractors": [
+            {
+              "option": "It stays bright",
+              "label": "plausible"
+            },
+            {
+              "option": "It gets hotter",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Which part opens and closes the circuit?",
+          "right": "The switch",
+          "distractors": [
+            {
+              "option": "The battery",
+              "label": "plausible"
+            },
+            {
+              "option": "The bulb holder",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which word describes a circuit with a gap in it?",
+          "right": "Open",
+          "distractors": [
+            {
+              "option": "Bright",
+              "label": "plausible"
+            },
+            {
+              "option": "Closed",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Why does the lamp light when the switch is closed?",
+          "right": "Electricity can flow all the way round the circuit",
+          "distractors": [
+            {
+              "option": "The switch makes the lamp heavier",
+              "label": "absurd",
+              "reason": "joke option: weight has nothing to do with it"
+            },
+            {
+              "option": "The lamp is made of glass",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-electricity-5",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which material is a good conductor of electricity?",
+          "right": "Copper",
+          "distractors": [
+            {
+              "option": "Rubber",
+              "label": "plausible"
+            },
+            {
+              "option": "Wood",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which material is an insulator?",
+          "right": "Plastic",
+          "distractors": [
+            {
+              "option": "Aluminium",
+              "label": "plausible"
+            },
+            {
+              "option": "Iron",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which of these is a metal and a good conductor?",
+          "right": "Silver",
+          "distractors": [
+            {
+              "option": "Cotton",
+              "label": "plausible"
+            },
+            {
+              "option": "Glass",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which material would make a good handle for a hot pan?",
+          "right": "Wood",
+          "distractors": [
+            {
+              "option": "Brass",
+              "label": "plausible"
+            },
+            {
+              "option": "Steel",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which material is a metal?",
+          "right": "Gold",
+          "distractors": [
+            {
+              "option": "Sponge",
+              "label": "absurd",
+              "reason": "no pupil believes a sponge is a metal"
+            },
+            {
+              "option": "Paper",
+              "label": "absurd",
+              "reason": "no pupil believes paper is a metal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-living-things-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which group does a cat belong to?",
+          "right": "Mammals",
+          "distractors": [
+            {
+              "option": "Fish",
+              "label": "plausible"
+            },
+            {
+              "option": "Insects",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Living things can be grouped by what they look like and how they do what?",
+          "right": "Live",
+          "distractors": [
+            {
+              "option": "Sleep",
+              "label": "plausible"
+            },
+            {
+              "option": "Shine",
+              "label": "absurd",
+              "reason": "silly: living things are not grouped by how they shine"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which feature would you use to group birds together?",
+          "right": "They have feathers",
+          "distractors": [
+            {
+              "option": "They can swim",
+              "label": "plausible"
+            },
+            {
+              "option": "They are very big",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which living thing is a plant?",
+          "right": "Oak tree",
+          "distractors": [
+            {
+              "option": "Frog",
+              "label": "absurd",
+              "reason": "no pupil believes a frog is a plant"
+            },
+            {
+              "option": "Spider",
+              "label": "absurd",
+              "reason": "no pupil believes a spider is a plant"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which group does a trout belong to?",
+          "right": "Fish",
+          "distractors": [
+            {
+              "option": "Reptiles",
+              "label": "plausible"
+            },
+            {
+              "option": "Birds",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-living-things-2",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which living thing has feathers and can fly?",
+          "right": "Sparrow",
+          "distractors": [
+            {
+              "option": "Goldfish",
+              "label": "absurd",
+              "reason": "no pupil believes a goldfish has feathers and flies"
+            },
+            {
+              "option": "Oak tree",
+              "label": "absurd",
+              "reason": "no pupil believes a tree has feathers and flies"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "A classification key first asks: does it have a backbone? Which group does a frog belong to?",
+          "right": "Amphibians",
+          "distractors": [
+            {
+              "option": "Plants",
+              "label": "absurd",
+              "reason": "no pupil believes a frog is a plant"
+            },
+            {
+              "option": "Insects",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which question would help you sort animals into those with legs and those without?",
+          "right": "Does it have legs?",
+          "distractors": [
+            {
+              "option": "Where did it sleep?",
+              "label": "plausible"
+            },
+            {
+              "option": "What colour is it?",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which living thing is a mammal?",
+          "right": "Cow",
+          "distractors": [
+            {
+              "option": "Snail",
+              "label": "plausible"
+            },
+            {
+              "option": "Trout",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which group do ladybirds belong to?",
+          "right": "Insects",
+          "distractors": [
+            {
+              "option": "Fish",
+              "label": "absurd",
+              "reason": "no pupil believes a ladybird is a fish"
+            },
+            {
+              "option": "Birds",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-living-things-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What is an environment?",
+          "right": "All the living and non-living things around a living thing",
+          "distractors": [
+            {
+              "option": "A type of rock found in the ground",
+              "label": "absurd",
+              "reason": "off-topic: not what an environment is"
+            },
+            {
+              "option": "Only the animals that live in a forest",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which of these can cause a habitat to change quickly?",
+          "right": "A flood",
+          "distractors": [
+            {
+              "option": "A quiet night in a garden",
+              "label": "absurd",
+              "reason": "nothing happens in it; no pupil would think it changes a habitat quickly"
+            },
+            {
+              "option": "A sunny afternoon in a park",
+              "label": "absurd",
+              "reason": "nothing happens in it; no pupil would think it changes a habitat quickly"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Why can a forest fire be dangerous to animals?",
+          "right": "It destroys their food, water and shelter",
+          "distractors": [
+            {
+              "option": "It makes the soil wetter",
+              "label": "absurd",
+              "reason": "physically silly: fire dries things"
+            },
+            {
+              "option": "It makes the trees grow taller",
+              "label": "absurd",
+              "reason": "physically silly: fire burns trees"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which living thing is most at risk when a pond floods?",
+          "right": "A frog that cannot leave the water in time",
+          "distractors": [
+            {
+              "option": "A rock sitting on the bank",
+              "label": "absurd",
+              "reason": "a rock is not a living thing at risk"
+            },
+            {
+              "option": "A dry leaf on the path",
+              "label": "absurd",
+              "reason": "off-topic: a dead leaf is not at risk from a flood"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which of these is an example of pollution harming a river?",
+          "right": "Oil spilled into the water, harming fish",
+          "distractors": [
+            {
+              "option": "Rain falling into the river",
+              "label": "plausible"
+            },
+            {
+              "option": "Leaves floating on the surface",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-sound-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What makes a sound?",
+          "right": "Something vibrating",
+          "distractors": [
+            {
+              "option": "Something being cold",
+              "label": "plausible"
+            },
+            {
+              "option": "Something being still",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "When you pluck a guitar string, what happens?",
+          "right": "The string vibrates and makes sound",
+          "distractors": [
+            {
+              "option": "The string changes colour",
+              "label": "absurd",
+              "reason": "off-topic: colour, not sound"
+            },
+            {
+              "option": "The string gets heavier",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which of these makes a sound by vibrating?",
+          "right": "A drum skin",
+          "distractors": [
+            {
+              "option": "A wooden spoon at rest",
+              "label": "plausible"
+            },
+            {
+              "option": "A glass of still water",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "How can you feel a sound being made?",
+          "right": "Touch a vibrating object lightly",
+          "distractors": [
+            {
+              "option": "Look for a change in colour",
+              "label": "absurd",
+              "reason": "off-topic: colour, not sound"
+            },
+            {
+              "option": "Smell the air around it",
+              "label": "absurd",
+              "reason": "off-topic: smell, not sound"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which vibrates faster and makes a higher sound?",
+          "right": "A short, tight string",
+          "distractors": [
+            {
+              "option": "A thick, heavy rope",
+              "label": "plausible"
+            },
+            {
+              "option": "A long, loose string",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-sound-2",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What makes a sound?",
+          "right": "Vibrations",
+          "distractors": [
+            {
+              "option": "Colours",
+              "label": "absurd",
+              "reason": "off-topic: colours do not make sound"
+            },
+            {
+              "option": "Smells",
+              "label": "absurd",
+              "reason": "off-topic: smells do not make sound"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Sound needs something to travel through. What is this called?",
+          "right": "A medium",
+          "distractors": [
+            {
+              "option": "A shadow",
+              "label": "absurd",
+              "reason": "off-topic: light, not sound"
+            },
+            {
+              "option": "A magnet",
+              "label": "absurd",
+              "reason": "off-topic: magnets, not sound"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which medium can sound travel through?",
+          "right": "Air",
+          "distractors": [
+            {
+              "option": "Water",
+              "label": "plausible"
+            },
+            {
+              "option": "Glass",
+              "label": "plausible"
+            }
+          ],
+          "keyNote": "AMBIGUOUS: sound travels through air, water and glass (see key-review.json)."
+        },
+        {
+          "card": 6,
+          "question": "Where do vibrations from sound go first in the ear?",
+          "right": "The eardrum",
+          "distractors": [
+            {
+              "option": "The nose",
+              "label": "absurd",
+              "reason": "no pupil believes sound goes first to the nose"
+            },
+            {
+              "option": "The tongue",
+              "label": "absurd",
+              "reason": "no pupil believes sound goes first to the tongue"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What happens to the eardrum when sound vibrations reach it?",
+          "right": "It shakes",
+          "distractors": [
+            {
+              "option": "It changes colour",
+              "label": "absurd",
+              "reason": "off-topic and silly"
+            },
+            {
+              "option": "It turns to ice",
+              "label": "absurd",
+              "reason": "physically silly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-sound-3",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which of these makes a higher pitched sound?",
+          "right": "A short, tight guitar string",
+          "distractors": [
+            {
+              "option": "A thick, loose guitar string",
+              "label": "plausible"
+            },
+            {
+              "option": "A long, loose guitar string",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "A tall glass holds the same amount of water as a short wide glass. Which gives a higher sound when tapped?",
+          "right": "The tall, thin glass",
+          "distractors": [
+            {
+              "option": "Both sound exactly the same",
+              "label": "plausible"
+            },
+            {
+              "option": "The short, wide glass",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "A ruler is held over the edge of a desk. Which makes a higher sound when flicked?",
+          "right": "A short part sticking out",
+          "distractors": [
+            {
+              "option": "The sound is the same either way",
+              "label": "plausible"
+            },
+            {
+              "option": "A long part sticking out",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which pair of objects is likely to give the lower pitch?",
+          "right": "A thick, heavy bottle",
+          "distractors": [
+            {
+              "option": "A thin, light bottle",
+              "label": "plausible"
+            },
+            {
+              "option": "A tiny metal spoon",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which tightens a string to make the pitch rise?",
+          "right": "Turning the tuning peg to tighten it",
+          "distractors": [
+            {
+              "option": "Turning the tuning peg to loosen it",
+              "label": "plausible"
+            },
+            {
+              "option": "Leaving the string alone",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-sound-4",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What makes a sound?",
+          "right": "Something vibrating",
+          "distractors": [
+            {
+              "option": "Something getting colder",
+              "label": "plausible"
+            },
+            {
+              "option": "Something getting heavier",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "When a drum is hit harder, what happens to its vibrations?",
+          "right": "They get bigger",
+          "distractors": [
+            {
+              "option": "They stop completely",
+              "label": "plausible"
+            },
+            {
+              "option": "They get smaller",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "A loud sound has vibrations that are ___ than a quiet sound.",
+          "right": "Bigger",
+          "distractors": [
+            {
+              "option": "Smaller",
+              "label": "plausible"
+            },
+            {
+              "option": "The same size",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which sound has the biggest vibrations?",
+          "right": "A very loud shout",
+          "distractors": [
+            {
+              "option": "A soft whisper",
+              "label": "plausible"
+            },
+            {
+              "option": "A gentle ticking clock",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "If you want a quieter sound from a drum, what should you do?",
+          "right": "Tap it more softly",
+          "distractors": [
+            {
+              "option": "Hit it harder",
+              "label": "plausible"
+            },
+            {
+              "option": "Make it bigger",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-sound-5",
+      "cards": [
+        {
+          "card": 3,
+          "question": "When you move further away from a ticking clock, what happens to the sound?",
+          "right": "It gets fainter",
+          "distractors": [
+            {
+              "option": "It stays exactly the same",
+              "label": "plausible"
+            },
+            {
+              "option": "It gets louder",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which place would you hear a drum from most clearly?",
+          "right": "Right beside the drum",
+          "distractors": [
+            {
+              "option": "Across the field, behind the wall",
+              "label": "plausible"
+            },
+            {
+              "option": "At the far end of the playground",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "A dog barks in the next room. Why does it sound quiet?",
+          "right": "The sound has further to travel",
+          "distractors": [
+            {
+              "option": "The dog is barking more softly on purpose",
+              "label": "plausible"
+            },
+            {
+              "option": "The dog has run out of breath",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which sound would you hear the most quietly?",
+          "right": "A whisper from 20 metres away",
+          "distractors": [
+            {
+              "option": "A shout from 2 metres away",
+              "label": "plausible"
+            },
+            {
+              "option": "A whisper from 2 metres away",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which of these is the best way to hear a ticking clock more clearly?",
+          "right": "Move closer to the clock",
+          "distractors": [
+            {
+              "option": "Cover your ears with your hands",
+              "label": "plausible"
+            },
+            {
+              "option": "Move further away from the clock",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-states-of-matter-1",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which of these is a solid?",
+          "right": "A rock",
+          "distractors": [
+            {
+              "option": "Steam",
+              "label": "plausible"
+            },
+            {
+              "option": "Milk",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which of these is a gas?",
+          "right": "Air",
+          "distractors": [
+            {
+              "option": "Honey",
+              "label": "plausible"
+            },
+            {
+              "option": "Sand",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Which group contains only liquids?",
+          "right": "Water, oil, juice",
+          "distractors": [
+            {
+              "option": "Wood, glass, iron",
+              "label": "plausible"
+            },
+            {
+              "option": "Air, steam, oxygen",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What happens to a liquid in a tall, thin glass if you pour it into a wide dish?",
+          "right": "It spreads out to take the dish's shape",
+          "distractors": [
+            {
+              "option": "It keeps the shape of the glass",
+              "label": "plausible"
+            },
+            {
+              "option": "It turns into a solid",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which material can you put in a balloon and squash into a smaller space?",
+          "right": "Air",
+          "distractors": [
+            {
+              "option": "Stone",
+              "label": "plausible"
+            },
+            {
+              "option": "Water",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-states-of-matter-2",
+      "cards": [
+        {
+          "card": 3,
+          "question": "At what temperature does pure water freeze?",
+          "right": "0 °C",
+          "distractors": [
+            {
+              "option": "50 °C",
+              "label": "plausible"
+            },
+            {
+              "option": "10 °C",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Chocolate melts when it is heated. What state is it in once melted?",
+          "right": "Liquid",
+          "distractors": [
+            {
+              "option": "Gas",
+              "label": "plausible"
+            },
+            {
+              "option": "Solid",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Which change of state happens when a puddle dries up on a warm day?",
+          "right": "Evaporation",
+          "distractors": [
+            {
+              "option": "Dissolving",
+              "label": "plausible"
+            },
+            {
+              "option": "Freezing",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Wax in a candle melts when it is heated. What happens when the melted wax cools down?",
+          "right": "It turns back into a solid",
+          "distractors": [
+            {
+              "option": "It disappears",
+              "label": "plausible"
+            },
+            {
+              "option": "It turns into a gas",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "A thermometer shows water at 100 °C. What is happening to the water?",
+          "right": "It is boiling",
+          "distractors": [
+            {
+              "option": "It is freezing",
+              "label": "plausible"
+            },
+            {
+              "option": "It is melting",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y4-states-of-matter-3",
+      "cards": [
+        {
+          "card": 3,
+          "question": "What is the name of the process when water turns from a liquid into a gas?",
+          "right": "Evaporation",
+          "distractors": [
+            {
+              "option": "Freezing",
+              "label": "plausible"
+            },
+            {
+              "option": "Condensation",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Where does most of the water that evaporates come from?",
+          "right": "Oceans, lakes and rivers",
+          "distractors": [
+            {
+              "option": "Rocks under the ground",
+              "label": "plausible"
+            },
+            {
+              "option": "Clouds",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "On which day would wet washing dry fastest outside?",
+          "right": "A hot, sunny, windy day",
+          "distractors": [
+            {
+              "option": "A cold, rainy day",
+              "label": "plausible"
+            },
+            {
+              "option": "A cold, cloudy, still day",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Clouds form when water vapour does what?",
+          "right": "Cools and condenses into tiny droplets",
+          "distractors": [
+            {
+              "option": "Turns into salt",
+              "label": "absurd",
+              "reason": "physically silly: vapour does not turn into salt"
+            },
+            {
+              "option": "Heats up and freezes solid",
+              "label": "absurd",
+              "reason": "contradicts itself: heating does not freeze"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which of these would make water evaporate more quickly?",
+          "right": "Raising the temperature",
+          "distractors": [
+            {
+              "option": "Covering it with a lid",
+              "label": "plausible"
+            },
+            {
+              "option": "Keeping it in a fridge",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-animals-1",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What is the first stage of human life?",
+          "right": "Infancy",
+          "distractors": [
+            {
+              "option": "Adulthood",
+              "label": "plausible"
+            },
+            {
+              "option": "Old age",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "During which stage do people usually learn to walk and talk?",
+          "right": "Early childhood",
+          "distractors": [
+            {
+              "option": "Middle age",
+              "label": "plausible"
+            },
+            {
+              "option": "Late adulthood",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which change is common in old age?",
+          "right": "Bones can become weaker",
+          "distractors": [
+            {
+              "option": "Height keeps doubling",
+              "label": "absurd",
+              "reason": "physically silly"
+            },
+            {
+              "option": "Teeth grow back",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which stage comes after adolescence?",
+          "right": "Adulthood",
+          "distractors": [
+            {
+              "option": "Toddlerhood",
+              "label": "plausible"
+            },
+            {
+              "option": "Infancy",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What happens to most people's hair as they get older?",
+          "right": "It can turn grey",
+          "distractors": [
+            {
+              "option": "It turns bright green",
+              "label": "absurd",
+              "reason": "joke option"
+            },
+            {
+              "option": "It stops growing for ever",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-earth-space-1",
+      "cards": [
+        {
+          "card": 3,
+          "question": "What is at the centre of our solar system?",
+          "right": "The Sun",
+          "distractors": [
+            {
+              "option": "Jupiter",
+              "label": "plausible"
+            },
+            {
+              "option": "The Moon",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "How long does the Earth take to travel once around the Sun?",
+          "right": "About one year",
+          "distractors": [
+            {
+              "option": "About one month",
+              "label": "plausible"
+            },
+            {
+              "option": "About one day",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "What causes day and night on Earth?",
+          "right": "The Earth spinning on its axis",
+          "distractors": [
+            {
+              "option": "The Moon blocking the Sun",
+              "label": "plausible"
+            },
+            {
+              "option": "The Sun moving across the sky",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which planet is closest to the Sun?",
+          "right": "Mercury",
+          "distractors": [
+            {
+              "option": "Neptune",
+              "label": "plausible"
+            },
+            {
+              "option": "Saturn",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-earth-space-2",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What does the Moon travel around?",
+          "right": "The Earth",
+          "distractors": [
+            {
+              "option": "The Sun",
+              "label": "plausible"
+            },
+            {
+              "option": "The stars",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "About how long does the Moon take to orbit the Earth once?",
+          "right": "About 27 days",
+          "distractors": [
+            {
+              "option": "About 1 year",
+              "label": "plausible"
+            },
+            {
+              "option": "About 1 day",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which way does the Moon travel around the Earth?",
+          "right": "Anticlockwise, seen from above the North Pole",
+          "distractors": [
+            {
+              "option": "Up and down, like a bouncing ball",
+              "label": "absurd",
+              "reason": "physically silly for an orbit"
+            },
+            {
+              "option": "It stays still and the Earth goes around it",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Why do we always see the same side of the Moon from Earth?",
+          "right": "The Moon spins once in the same time it orbits the Earth",
+          "distractors": [
+            {
+              "option": "Clouds always cover the other side",
+              "label": "plausible"
+            },
+            {
+              "option": "The Moon does not spin at all",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What causes the Moon's phases?",
+          "right": "The changing angle at which we see the Sun-lit part of the Moon",
+          "distractors": [
+            {
+              "option": "The Earth's shadow falling on the Moon every night",
+              "label": "plausible"
+            },
+            {
+              "option": "Dust clouds passing in front of the Moon",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-earth-space-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What shape is the sun?",
+          "right": "Round like a ball",
+          "distractors": [
+            {
+              "option": "Square like a box",
+              "label": "absurd",
+              "reason": "no pupil believes the sun is square"
+            },
+            {
+              "option": "Flat like a coin",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "What shape is the Earth?",
+          "right": "Round like a ball",
+          "distractors": [
+            {
+              "option": "Flat like a plate",
+              "label": "plausible"
+            },
+            {
+              "option": "Long like a stick",
+              "label": "absurd",
+              "reason": "no pupil believes the Earth is shaped like a stick"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which word best describes the shape of the moon?",
+          "right": "Spherical",
+          "distractors": [
+            {
+              "option": "Cubic",
+              "label": "absurd",
+              "reason": "no pupil believes the moon is a cube"
+            },
+            {
+              "option": "Triangular",
+              "label": "absurd",
+              "reason": "no pupil believes the moon is a triangle"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Why are the sun, Earth and moon round?",
+          "right": "Gravity pulls them evenly from all sides",
+          "distractors": [
+            {
+              "option": "They are coloured in a round pattern",
+              "label": "absurd",
+              "reason": "nonsense: colour does not make a shape"
+            },
+            {
+              "option": "They were cut into circles by machines",
+              "label": "absurd",
+              "reason": "joke option"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which one is the best example of a sphere?",
+          "right": "A football",
+          "distractors": [
+            {
+              "option": "A book",
+              "label": "absurd",
+              "reason": "no pupil believes a book is a sphere"
+            },
+            {
+              "option": "A coin",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-earth-space-4",
+      "cards": [
+        {
+          "card": 1,
+          "question": "What causes day and night on Earth?",
+          "right": "Earth spinning on its axis",
+          "distractors": [
+            {
+              "option": "The sun going around the Earth",
+              "label": "plausible"
+            },
+            {
+              "option": "The moon blocking the sun",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "How long does it take the Earth to spin once around?",
+          "right": "About 24 hours",
+          "distractors": [
+            {
+              "option": "About 365 days",
+              "label": "plausible"
+            },
+            {
+              "option": "About 12 hours",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Why does the sun seem to move across the sky each day?",
+          "right": "The Earth is turning, so we face the sun, then turn away",
+          "distractors": [
+            {
+              "option": "The sun gets bigger and smaller each day",
+              "label": "plausible"
+            },
+            {
+              "option": "The sun really travels around the Earth each day",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "In which direction does the sun appear to rise?",
+          "right": "East",
+          "distractors": [
+            {
+              "option": "North",
+              "label": "plausible"
+            },
+            {
+              "option": "West",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "When it is day for us in Ireland, what is it doing on the far side of the world?",
+          "right": "It is night there",
+          "distractors": [
+            {
+              "option": "It is always sunset there",
+              "label": "plausible"
+            },
+            {
+              "option": "It is day there too",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-forces-1",
+      "cards": [
+        {
+          "card": 2,
+          "question": "What pulls a dropped ball towards the ground?",
+          "right": "Gravity",
+          "distractors": [
+            {
+              "option": "Magnets in the ground",
+              "label": "plausible"
+            },
+            {
+              "option": "Wind",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which force pulls objects towards the Earth?",
+          "right": "Gravity",
+          "distractors": [
+            {
+              "option": "Friction",
+              "label": "plausible"
+            },
+            {
+              "option": "Sound",
+              "label": "absurd",
+              "reason": "off-topic: sound is not a pull towards the Earth"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Why does a dropped pencil fall to the floor?",
+          "right": "Gravity pulls it down",
+          "distractors": [
+            {
+              "option": "It wants to be on the floor",
+              "label": "plausible"
+            },
+            {
+              "option": "Air pushes it down",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Is the pull of gravity stronger near the Earth or far away in space?",
+          "right": "Near the Earth",
+          "distractors": [
+            {
+              "option": "Far away in space",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "What do we call a push or a pull on an object?",
+          "right": "A force",
+          "distractors": [
+            {
+              "option": "A colour",
+              "label": "absurd",
+              "reason": "off-topic: a colour is not a push or pull"
+            },
+            {
+              "option": "A shadow",
+              "label": "absurd",
+              "reason": "off-topic: a shadow is not a push or pull"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-forces-2",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which force slows a parachute as it falls through the air?",
+          "right": "Air resistance",
+          "distractors": [
+            {
+              "option": "Gravity pulling it sideways",
+              "label": "plausible"
+            },
+            {
+              "option": "Magnetism",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "A boat moves through water. Which force slows it down?",
+          "right": "Water resistance",
+          "distractors": [
+            {
+              "option": "Static electricity",
+              "label": "plausible"
+            },
+            {
+              "option": "Magnetism",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which force is caused by two surfaces rubbing together?",
+          "right": "Friction",
+          "distractors": [
+            {
+              "option": "Upthrust",
+              "label": "plausible"
+            },
+            {
+              "option": "Gravity",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which surface would make a rolling ball slow down the most?",
+          "right": "Thick carpet",
+          "distractors": [
+            {
+              "option": "Polished ice",
+              "label": "plausible"
+            },
+            {
+              "option": "Glass table top",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which shape would move through air with the least air resistance?",
+          "right": "A streamlined, pointed shape",
+          "distractors": [
+            {
+              "option": "A wide open umbrella",
+              "label": "plausible"
+            },
+            {
+              "option": "A flat square board",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-forces-3",
+      "cards": [
+        {
+          "card": 1,
+          "question": "A seesaw is an example of which simple machine?",
+          "right": "A lever",
+          "distractors": [
+            {
+              "option": "A wheel",
+              "label": "plausible"
+            },
+            {
+              "option": "A battery",
+              "label": "absurd",
+              "reason": "off-topic: a battery is not a simple machine like a seesaw"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which machine uses a grooved wheel and a rope to lift a heavy load more easily?",
+          "right": "A pulley",
+          "distractors": [
+            {
+              "option": "A ramp",
+              "label": "plausible"
+            },
+            {
+              "option": "A hammer",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "How many teeth must a small gear turn to make a larger gear turn once?",
+          "right": "Fewer teeth than the small gear has",
+          "distractors": [
+            {
+              "option": "Exactly the same number",
+              "label": "plausible"
+            },
+            {
+              "option": "More teeth than the small gear has",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 6,
+          "question": "Which simple machine would let you lift a heavy rock with the least effort?",
+          "right": "A long lever with the pivot close to the rock",
+          "distractors": [
+            {
+              "option": "No machine, just pushing harder",
+              "label": "plausible"
+            },
+            {
+              "option": "A short lever with the pivot far from the rock",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "In a lever, where is the fixed point called?",
+          "right": "The pivot",
+          "distractors": [
+            {
+              "option": "The load",
+              "label": "plausible"
+            },
+            {
+              "option": "The handle",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-living-things-1",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which animal goes through a larva stage and a pupa stage before it becomes an adult?",
+          "right": "A butterfly",
+          "distractors": [
+            {
+              "option": "A frog",
+              "label": "plausible"
+            },
+            {
+              "option": "A cat",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which animal is born alive and feeds its young on milk?",
+          "right": "A rabbit",
+          "distractors": [
+            {
+              "option": "A frogspawn tadpole",
+              "label": "plausible"
+            },
+            {
+              "option": "A hen's egg",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which animal's young look like small adults from the day they hatch?",
+          "right": "A cow",
+          "distractors": [
+            {
+              "option": "A beetle",
+              "label": "plausible"
+            },
+            {
+              "option": "A bird",
+              "label": "plausible"
+            }
+          ],
+          "keyNote": "AMBIGUOUS: 'from the day they hatch' keys 'A cow', which does not hatch; a bird's chick is closer to the question."
+        },
+        {
+          "card": 8,
+          "question": "How many stages does a frog's life cycle have?",
+          "right": "Four",
+          "distractors": [
+            {
+              "option": "Six",
+              "label": "plausible"
+            },
+            {
+              "option": "Two",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which animal's young are called nymphs as they grow, with no pupa stage?",
+          "right": "A grasshopper",
+          "distractors": [
+            {
+              "option": "A toad",
+              "label": "plausible"
+            },
+            {
+              "option": "A butterfly",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-living-things-2",
+      "cards": [
+        {
+          "card": 3,
+          "question": "Which part of a plant makes the seeds?",
+          "right": "The flower",
+          "distractors": [
+            {
+              "option": "The leaf",
+              "label": "plausible"
+            },
+            {
+              "option": "The root",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "What does a bee help move from flower to flower?",
+          "right": "Pollen",
+          "distractors": [
+            {
+              "option": "Soil",
+              "label": "plausible"
+            },
+            {
+              "option": "Water",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 5,
+          "question": "Frogs lay eggs in water. What is this called?",
+          "right": "Spawning",
+          "distractors": [
+            {
+              "option": "Hibernating",
+              "label": "plausible"
+            },
+            {
+              "option": "Migrating",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "How do many plants spread their seeds to new places?",
+          "right": "By wind, water or animals",
+          "distractors": [
+            {
+              "option": "By pulling up their roots",
+              "label": "absurd",
+              "reason": "physically silly: plants cannot pull up their roots"
+            },
+            {
+              "option": "By turning into stones",
+              "label": "absurd",
+              "reason": "joke option"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which animal grows from a tiny egg into an adult in a process called metamorphosis?",
+          "right": "Butterfly",
+          "distractors": [
+            {
+              "option": "Horse",
+              "label": "plausible"
+            },
+            {
+              "option": "Cat",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-1",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Which material is a good conductor of electricity?",
+          "right": "Copper",
+          "distractors": [
+            {
+              "option": "Wood",
+              "label": "plausible"
+            },
+            {
+              "option": "Rubber",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which material is transparent, letting light pass through so you can see clearly through it?",
+          "right": "Glass",
+          "distractors": [
+            {
+              "option": "Concrete",
+              "label": "plausible"
+            },
+            {
+              "option": "Cardboard",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Which material is attracted to a magnet?",
+          "right": "Iron nail",
+          "distractors": [
+            {
+              "option": "Glass jar",
+              "label": "plausible"
+            },
+            {
+              "option": "Plastic spoon",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which property describes how hard a material is to scratch or dent?",
+          "right": "Hardness",
+          "distractors": [
+            {
+              "option": "Smell",
+              "label": "plausible"
+            },
+            {
+              "option": "Colour",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which material is a good thermal conductor, letting heat travel through it quickly?",
+          "right": "Metal spoon",
+          "distractors": [
+            {
+              "option": "Wooden spoon",
+              "label": "plausible"
+            },
+            {
+              "option": "Plastic spoon",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-2",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which of these will dissolve in water?",
+          "right": "Sugar",
+          "distractors": [
+            {
+              "option": "Pebbles",
+              "label": "plausible"
+            },
+            {
+              "option": "Sand",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "What do we call the liquid with something dissolved in it?",
+          "right": "A solution",
+          "distractors": [
+            {
+              "option": "A mixture of solids",
+              "label": "plausible"
+            },
+            {
+              "option": "A gas",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Which of these will NOT dissolve in water?",
+          "right": "Chalk dust",
+          "distractors": [
+            {
+              "option": "Sugar",
+              "label": "plausible"
+            },
+            {
+              "option": "Salt",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "How many grams of sugar might dissolve in a cup of water? Pick the best estimate.",
+          "right": "A few spoonfuls",
+          "distractors": [
+            {
+              "option": "One drop",
+              "label": "absurd",
+              "reason": "silly: sugar is not measured in drops"
+            },
+            {
+              "option": "A full bucket",
+              "label": "absurd",
+              "reason": "silly: a bucket of sugar in one cup"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which method recovers a solid from a solution?",
+          "right": "Evaporating the liquid",
+          "distractors": [
+            {
+              "option": "Shaking the glass",
+              "label": "plausible"
+            },
+            {
+              "option": "Adding more water",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-3",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which method would separate sand from water?",
+          "right": "Filtering",
+          "distractors": [
+            {
+              "option": "Melting",
+              "label": "plausible"
+            },
+            {
+              "option": "Dissolving",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which method separates small stones from sand?",
+          "right": "Sieving",
+          "distractors": [
+            {
+              "option": "Boiling the sand",
+              "label": "absurd",
+              "reason": "physically silly"
+            },
+            {
+              "option": "Evaporating",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "When water evaporates, what is left behind?",
+          "right": "The salt",
+          "distractors": [
+            {
+              "option": "More water",
+              "label": "plausible"
+            },
+            {
+              "option": "Nothing at all",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which mixture could you separate by sieving?",
+          "right": "Pebbles and sand",
+          "distractors": [
+            {
+              "option": "Milk and cream",
+              "label": "plausible"
+            },
+            {
+              "option": "Salt and water",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which change of state happens when water evaporates?",
+          "right": "Liquid to gas",
+          "distractors": [
+            {
+              "option": "Gas to solid",
+              "label": "plausible"
+            },
+            {
+              "option": "Liquid to solid",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-4",
+      "cards": [
+        {
+          "card": 2,
+          "question": "Which material would be best for a bucket that holds water?",
+          "right": "Plastic",
+          "distractors": [
+            {
+              "option": "Paper",
+              "label": "plausible"
+            },
+            {
+              "option": "Cotton wool",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Why are metal saucepans used for cooking?",
+          "right": "They let heat pass through quickly",
+          "distractors": [
+            {
+              "option": "They float on water",
+              "label": "absurd",
+              "reason": "off-topic: nothing to do with cooking"
+            },
+            {
+              "option": "They are soft to touch",
+              "label": "absurd",
+              "reason": "no pupil believes a metal pan is soft"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Which material is best for a window in a house?",
+          "right": "Glass",
+          "distractors": [
+            {
+              "option": "Wood",
+              "label": "plausible"
+            },
+            {
+              "option": "Cardboard",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Why is wood used to make a table?",
+          "right": "It is strong and does not break easily",
+          "distractors": [
+            {
+              "option": "It is see-through",
+              "label": "absurd",
+              "reason": "no pupil believes wood is see-through"
+            },
+            {
+              "option": "It melts in warm rooms",
+              "label": "absurd",
+              "reason": "physically silly"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which material would be best for a spoon for hot soup?",
+          "right": "Wood",
+          "distractors": [
+            {
+              "option": "Ice",
+              "label": "absurd",
+              "reason": "joke option: a spoon of ice for hot soup"
+            },
+            {
+              "option": "Aluminium foil",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-5",
+      "cards": [
+        {
+          "card": 1,
+          "question": "Sugar dissolves in tea. Can you get the sugar back?",
+          "right": "Yes, by evaporating the water",
+          "distractors": [
+            {
+              "option": "No, sugar cannot be recovered from a liquid",
+              "label": "plausible"
+            },
+            {
+              "option": "No, the sugar is used up",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which change can be reversed by cooling?",
+          "right": "Water freezing into ice",
+          "distractors": [
+            {
+              "option": "Baking a cake",
+              "label": "plausible"
+            },
+            {
+              "option": "Burning a piece of wood",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 4,
+          "question": "Sand and water are mixed. Can the sand and water be separated again?",
+          "right": "Yes, by filtering",
+          "distractors": [
+            {
+              "option": "No, the sand turns into water",
+              "label": "absurd",
+              "reason": "physically silly"
+            },
+            {
+              "option": "No, mixing is always permanent",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 8,
+          "question": "Ice is melted into water. What can turn the water back into ice?",
+          "right": "Cooling it in a freezer",
+          "distractors": [
+            {
+              "option": "Adding more sugar",
+              "label": "plausible"
+            },
+            {
+              "option": "Stirring it hard",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "Which change is NOT easily reversed?",
+          "right": "Baking an egg into a cake",
+          "distractors": [
+            {
+              "option": "Dissolving salt in water",
+              "label": "plausible"
+            },
+            {
+              "option": "Melting butter",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "y5-materials-6",
+      "cards": [
+        {
+          "card": 1,
+          "question": "When you burn a piece of paper, what happens to it?",
+          "right": "It turns into new materials, like ash and smoke",
+          "distractors": [
+            {
+              "option": "It just gets wet and soft",
+              "label": "absurd",
+              "reason": "physically silly: burning does not make things wet"
+            },
+            {
+              "option": "It turns back into a tree",
+              "label": "absurd",
+              "reason": "joke option"
+            }
+          ]
+        },
+        {
+          "card": 3,
+          "question": "Which of these is a change that makes a new material?",
+          "right": "Baking a cake in the oven",
+          "distractors": [
+            {
+              "option": "Folding a sheet of paper",
+              "label": "plausible"
+            },
+            {
+              "option": "Melting an ice cube in your hand",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 7,
+          "question": "Why is it hard to turn new materials back into the original ones?",
+          "right": "New materials form, so the change is irreversible",
+          "distractors": [
+            {
+              "option": "New materials always melt back into water",
+              "label": "plausible"
+            },
+            {
+              "option": "New materials are always lighter than before",
+              "label": "plausible"
+            }
+          ]
+        },
+        {
+          "card": 9,
+          "question": "What do you see when bicarbonate of soda meets vinegar?",
+          "right": "Fizzing and bubbles",
+          "distractors": [
+            {
+              "option": "Nothing at all happens",
+              "label": "plausible"
+            },
+            {
+              "option": "The mixture turns solid ice",
+              "label": "absurd",
+              "reason": "physically silly"
+            }
+          ]
+        },
+        {
+          "card": 10,
+          "question": "Which change is usually irreversible?",
+          "right": "Burning wood in a fire",
+          "distractors": [
+            {
+              "option": "Stretching an elastic band",
+              "label": "plausible"
+            },
+            {
+              "option": "Dissolving sugar in water",
+              "label": "plausible"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "decks": 54,
+    "quizCards": 268,
+    "distractors": 541,
+    "absurd": 96,
+    "decksWithAbsurd": 34
+  }
+}

@@ -490,3 +490,24 @@ reached the class (J2 P1-2).
 ### TASK-32c (generator half): no on-card credit for our pictograms
   - **Fix.** `withPictogram` adds only the image. `splitPictogram` still strips an old credit line, so older decks are cleaned when they are re-normalised.
   - **Acceptance criteria.** See `maker/tasks.md` TASK-32c.
+
+### TASK-34a2: "may be a joke answer", a cheap and explainable warning  *(TASK-34a, item 2)*
+  - **Bug.** Joke distractors reach the class. The lesson-checker's v2 review found 96 of 541 distractors absurd, in 34 of 54 bench decks (`bench/distractor-review.json`).
+  - **Fix.**
+    - `jokeAnswerReason` in `src/shared/lessonCheck.ts` is a documented list of absurdity markers: glowing, magic, a colour change offered as the result, turning to ice when the question isn't about cold, impossible shapes, silly conditions, "makes … heavier", and so on.
+    - A marker that also appears in the question does not count. A right answer is never flagged.
+    - `lessonWarnings` gives one `joke-answer` warning per such answer. "Before you share" (the Maker and the Teacher tab) shows: "Card N: “<option>” may be a joke answer; use a mistake a pupil might really make."
+    - It is a warning only. The server's deck-quality pass never removes or rewrites an answer for it (no server-side invention), but the bench counts it in "passed our automatic lesson check".
+    - The off-topic and wrong-sense rules were built, measured and dropped (precision 0.25 and 0.60). Both measurements are in `bench/DIAGNOSIS.md`.
+  - **Acceptance criteria.**
+    - Unit tests: labelled absurd examples are flagged; labelled plausible ones are not.
+    - A property that the right answer is never flagged.
+    - Precision ≥ 0.8 against the ground truth (`scripts/distractor-eval.ts`), with the numbers in `DIAGNOSIS.md` checked.
+    - A mutant (the markers never fire) is killed.
+
+### TASK-34a3: the wrong-answer rule says "a mistake a pupil might really make"  *(TASK-34a, item 3)*
+  - **Fix.**
+    - All three prompts (one-shot, streaming, retry) build every wrong answer from one neutral pattern: start from the right answer and change the one part a pupil who half-remembers the lesson gets wrong.
+    - They say "Never silly, magic or impossible options", and never a colour, smell or weight when the question isn't about one.
+    - No topic example from the bench is used.
+  - **Acceptance criteria.** Prompt tests for the pattern and the "never" sentence in all three prompts, and for no absurd bench answer quoted.

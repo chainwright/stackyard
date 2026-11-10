@@ -7,7 +7,9 @@
 //   npm run bench:record          record each objective once through the REAL
 //                                 streaming generator (needs STACKYARD_LLM_*; run
 //                                 by us). Skips cached objectives unless --force;
-//                                 --only id,id records just those. At most 3 at once.
+//                                 --only id,id records just those; --only-file
+//                                 bench/rerecord.txt records the ids listed there
+//                                 (TASK-34a4). At most 3 at once.
 //   node … scripts/bench.ts --check
 //                                 replay in memory and fail if bench/files or
 //                                 bench/results.json differ (stale)
@@ -31,6 +33,7 @@ import {
   type BenchSummary,
   type DeckResult,
   type Objective,
+  type V2Context,
 } from "./bench-lib.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -65,8 +68,8 @@ export interface Replay {
   decks: DeckResult[];
 }
 
-/** Replay every cache, in objective order, one at a time. `v1` is the kept v1 summary (TASK-33c12), shown at the top of RESULTS.md. */
-export async function replayAll(objectives: Objective[], caches: Map<string, BenchCache>, v1: BenchSummary | null = null): Promise<Replay> {
+/** Replay every cache, in objective order, one at a time. `v1` / `v2` are the kept runs (TASK-33c12, TASK-34a4), shown at the top of RESULTS.md. */
+export async function replayAll(objectives: Objective[], caches: Map<string, BenchCache>, v1: BenchSummary | null = null, v2: V2Context | null = null): Promise<Replay> {
   const decks: DeckResult[] = [];
   const files = new Map<string, string>();
   for (const obj of objectives) {
@@ -78,7 +81,35 @@ export async function replayAll(objectives: Objective[], caches: Map<string, Ben
   }
   if (decks.length === 0) return { recorded: 0, resultsJson: null, resultsMd: null, files, decks };
   const results = buildResults(objectives.length, decks);
-  return { recorded: decks.length, resultsJson: JSON.stringify(results, null, 2) + "\n", resultsMd: resultsMarkdown(results, v1), files, decks };
+  return { recorded: decks.length, resultsJson: JSON.stringify(results, null, 2) + "\n", resultsMd: resultsMarkdown(results, v1, v2), files, decks };
+}
+
+/**
+ * bench/rerecord.txt (TASK-34a4): one objective id per line; `#` starts a
+ * comment. A line "# v2-recorded-until: <ISO time>" marks when v2's recordings
+ * ended, so a cache newer than that counts as re-recorded.
+ */
+export function parseRerecordFile(text: string): { ids: string[]; v2Until: string | null } {
+  const ids: string[] = [];
+  let v2Until: string | null = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const until = /^#\s*v2-recorded-until:\s*(\S+)/.exec(raw);
+    if (until) v2Until = until[1]!;
+    const line = raw.replace(/#.*$/, "").trim();
+    if (line.length > 0) ids.push(line);
+  }
+  return { ids, v2Until };
+}
+
+/** The v2 context for RESULTS.md, or null when there is no bench/results-v2.json. */
+export function loadV2Context(out: string, caches: Map<string, BenchCache>): V2Context | null {
+  const p = path.join(out, "results-v2.json");
+  if (!existsSync(p)) return null;
+  const summary = (JSON.parse(readFileSync(p, "utf8")) as { summary: BenchSummary }).summary;
+  const rr = path.join(out, "rerecord.txt");
+  const { ids, v2Until } = existsSync(rr) ? parseRerecordFile(readFileSync(rr, "utf8")) : { ids: [], v2Until: null };
+  const rerecorded = v2Until === null ? [] : ids.filter((id) => (caches.get(id)?.recordedAt ?? "") > v2Until);
+  return { summary, rerecord: ids, rerecorded };
 }
 
 /** The v1 summary kept in `<out>/results-v1.json`, or null when there is none (TASK-33c12). */
@@ -126,7 +157,8 @@ async function replayMain(check: boolean): Promise<void> {
   const cacheDir = path.resolve(arg("--cache") ?? path.join(BENCH_DIR, "cache"));
   const objectives = loadObjectives();
   const t0 = Date.now();
-  const r = await replayAll(objectives, loadCaches(cacheDir, objectives), loadV1Summary(out));
+  const caches = loadCaches(cacheDir, objectives);
+  const r = await replayAll(objectives, caches, loadV1Summary(out), loadV2Context(out, caches));
   if (check) {
     const problems = staleOutputs(out, r);
     if (problems.length > 0) {
@@ -170,7 +202,10 @@ async function recordMain(): Promise<void> {
   const cacheDir = path.resolve(arg("--cache") ?? path.join(BENCH_DIR, "cache"));
   mkdirSync(cacheDir, { recursive: true });
   const force = process.argv.includes("--force");
-  const only = arg("--only")?.split(",").map((s) => s.trim()).filter(Boolean);
+  const onlyFile = arg("--only-file");
+  const only = onlyFile !== undefined
+    ? parseRerecordFile(readFileSync(path.resolve(onlyFile), "utf8")).ids
+    : arg("--only")?.split(",").map((s) => s.trim()).filter(Boolean);
   const objectives = loadObjectives().filter((o) => only === undefined || only.includes(o.id));
   const queue = toRecord(objectives, cacheDir, force);
   console.log(`bench:record: ${queue.length} to record (${objectives.length - queue.length} already cached), ${RECORD_PARALLEL} at a time, model ${configuredModel()}, thinking ${llmThinking()}.`);

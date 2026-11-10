@@ -1,0 +1,38 @@
+# TASK-34a4: the objectives v3 re-records. These are the 34 v2 decks with at least one
+# absurd distractor in bench/distractor-review.json (the lesson-checker's v2 review, an AI review).
+# Re-record with:  npm run bench:record -- --force --only-file bench/rerecord.txt
+# v2-recorded-until: 2026-11-09T23:00:35.088Z
+y3-animals-1
+y3-animals-2
+y3-forces-magnets-2
+y3-forces-magnets-6
+y3-light-1
+y3-light-2
+y3-light-3
+y3-light-4
+y3-light-5
+y3-plants-4
+y3-rocks-2
+y3-rocks-3
+y4-animals-1
+y4-animals-3
+y4-electricity-1
+y4-electricity-4
+y4-electricity-5
+y4-living-things-1
+y4-living-things-2
+y4-living-things-3
+y4-sound-1
+y4-sound-2
+y4-states-of-matter-3
+y5-animals-1
+y5-earth-space-2
+y5-earth-space-3
+y5-forces-1
+y5-forces-3
+y5-living-things-2
+y5-materials-2
+y5-materials-3
+y5-materials-4
+y5-materials-5
+y5-materials-6

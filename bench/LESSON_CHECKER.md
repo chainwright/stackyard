@@ -173,3 +173,44 @@ This review asks one question per quiz card: is the marked answer the one defens
 - y5-materials-4 card 10: "Ice" is a joke distractor. The story's consequence card 6 says metal "gets very cold in the sun", which is false: metal in the sun gets hot. That card is not a quiz, so it is not counted.
 - y3-light-2 cards 3 and 9 ask nearly the same question.
 - y4-electricity-3 card 10 asks the term from flash card 9 straight back ("Open"). The automatic check missed it: its flash-restatement match did not trigger.
+
+## v2 distractor review
+
+9 November 2026: run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's (TASK-34a1).
+
+The reviewer read the `#stack-data` of every v2 bench file (54 decks) and labelled every wrong answer on every quiz card. This is the ground truth for the joke-answer check and for what v3 re-records. Every distractor is in [`distractor-review.json`](distractor-review.json); the judgement itself (the absurd ones, with reasons) is in [`distractor-labels.json`](distractor-labels.json).
+
+**Labels:**
+- **absurd:** off-topic, physically silly, or no 8–10-year-old would believe it;
+- **plausible:** a mistake a pupil who hasn't learnt it yet might really make. A plausible option can still be weak or easy.
+
+**Totals.**
+- 268 quiz cards and 541 distractors reviewed.
+- **96 absurd** (18 %); the other 445 are plausible.
+- **34 of 54 decks** have at least one absurd distractor. Those 34 are the objectives in [`rerecord.txt`](rerecord.txt).
+- How many absurd distractors a deck has:
+
+  | Absurd distractors | Decks |
+  |---|---|
+  | 0 | 20 |
+  | 1 | 10 |
+  | 2 | 10 |
+  | 3 | 5 |
+  | 4 | 3 |
+  | 5 | 1 |
+  | 6 | 2 |
+  | 7 | 2 |
+  | 8 | 1 |
+
+  The worst are y4-sound-2 (8 of 10), y4-living-things-3 and y5-earth-space-3 (7 each), and y3-animals-2 and y4-electricity-1 (6 each).
+
+**What the absurd ones look like:**
+- **Another sense or property offered as the answer.** Colours and smells in a sound lesson ("It changes colour", "Smells"); weight in a magnets or circuits lesson ("The switch makes the lamp heavier").
+- **Not even the right kind of thing.** Objects that obviously can't be the answer: "A chair" as a light source, "A rock" as an animal, "A wooden spoon" as an electrical appliance, "Frog" as a plant.
+- **Physically silly results.** "It turns to ice", "It floats up into the air", "Height keeps doubling", "It makes the body glow in the dark".
+- **Silly conditions.** "Only if the ball is wet", "Only when the ball is hot".
+
+Three key notes turned up as well (not distractor labels):
+- y3-light-3 card 5 has a **wrong key**: "What should you never do?" marks the safe "Look at the sun through a solar viewer" right.
+- y4-sound-2 card 4 is ambiguous (already in the key review).
+- y5-living-things-1 card 7 is ambiguous: "from the day they hatch" keys "A cow".

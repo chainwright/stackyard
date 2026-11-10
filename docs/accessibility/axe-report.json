@@ -13,7 +13,7 @@
   "pages": [
     {
       "page": "Maker: Start screen",
-      "url": "http://127.0.0.1:60324/",
+      "url": "/",
       "violations": {
         "critical": [],
         "serious": [],
@@ -24,7 +24,7 @@
     },
     {
       "page": "Maker: editor (ready-made deck)",
-      "url": "http://127.0.0.1:60324/",
+      "url": "/",
       "violations": {
         "critical": [],
         "serious": [],
@@ -35,7 +35,7 @@
     },
     {
       "page": "Sample irish-words.html: Play",
-      "url": "http://127.0.0.1:60324/samples/irish-words.html",
+      "url": "/samples/irish-words.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -46,7 +46,7 @@
     },
     {
       "page": "Sample irish-words.html: Teacher tab",
-      "url": "http://127.0.0.1:60324/samples/irish-words.html",
+      "url": "/samples/irish-words.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -57,7 +57,7 @@
     },
     {
       "page": "Sample times-tables.html: Play",
-      "url": "http://127.0.0.1:60324/samples/times-tables.html",
+      "url": "/samples/times-tables.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -68,7 +68,7 @@
     },
     {
       "page": "Sample times-tables.html: Teacher tab",
-      "url": "http://127.0.0.1:60324/samples/times-tables.html",
+      "url": "/samples/times-tables.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -79,7 +79,7 @@
     },
     {
       "page": "Sample vikings-in-ireland.html: Play",
-      "url": "http://127.0.0.1:60324/samples/vikings-in-ireland.html",
+      "url": "/samples/vikings-in-ireland.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -90,7 +90,7 @@
     },
     {
       "page": "Sample vikings-in-ireland.html: Teacher tab",
-      "url": "http://127.0.0.1:60324/samples/vikings-in-ireland.html",
+      "url": "/samples/vikings-in-ireland.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -101,7 +101,7 @@
     },
     {
       "page": "Class export (Vikings, play-only)",
-      "url": "file:///var/folders/sc/41xzbv855slf3pjjcc1gp_980000gn/T/stackyard-a11y-JpaoQq/vikings-class.html",
+      "url": "file:vikings-class.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -112,7 +112,7 @@
     },
     {
       "page": "Bench y3-animals-1.html: Play",
-      "url": "file:///Users/mini/agents/sora/hackathons/kiroween_2026/stackyard/bench/files/y3-animals-1.html",
+      "url": "file:y3-animals-1.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -123,7 +123,7 @@
     },
     {
       "page": "Bench y3-animals-2.html: Play",
-      "url": "file:///Users/mini/agents/sora/hackathons/kiroween_2026/stackyard/bench/files/y3-animals-2.html",
+      "url": "file:y3-animals-2.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -134,7 +134,7 @@
     },
     {
       "page": "Bench y3-forces-magnets-1.html: Play",
-      "url": "file:///Users/mini/agents/sora/hackathons/kiroween_2026/stackyard/bench/files/y3-forces-magnets-1.html",
+      "url": "file:y3-forces-magnets-1.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -145,7 +145,7 @@
     },
     {
       "page": "Bench y3-forces-magnets-2.html: Play",
-      "url": "file:///Users/mini/agents/sora/hackathons/kiroween_2026/stackyard/bench/files/y3-forces-magnets-2.html",
+      "url": "file:y3-forces-magnets-2.html",
       "violations": {
         "critical": [],
         "serious": [],
@@ -156,7 +156,7 @@
     },
     {
       "page": "Bench y3-forces-magnets-3.html: Play",
-      "url": "file:///Users/mini/agents/sora/hackathons/kiroween_2026/stackyard/bench/files/y3-forces-magnets-3.html",
+      "url": "file:y3-forces-magnets-3.html",
       "violations": {
         "critical": [],
         "serious": [],

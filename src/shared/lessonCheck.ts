@@ -17,7 +17,9 @@
 //                        for that card's term or its definition again;
 //   repeated-card        a card whose kind and front repeat an earlier card's
 //                        (the generator removes these; one it could not remove
-//                        without stranding a card is flagged instead).
+//                        without stranding a card is flagged instead);
+//   joke-answer          a wrong answer no pupil would really give (TASK-34a2,
+//                        a short list of markers; see jokeAnswerReason).
 // The factual, reading-level and distractor-quality judgements stay with the
 // persona: they need a reader, not a rule.
 
@@ -29,7 +31,8 @@ export type LessonWarningCode =
   | "duplicate-answers"
   | "answer-inside-answer"
   | "restates-flash"
-  | "repeated-card";
+  | "repeated-card"
+  | "joke-answer";
 
 export interface LessonWarning {
   code: LessonWarningCode;
@@ -128,6 +131,60 @@ export function restatesFlash(quiz: Card, flash: Card): boolean {
   return asksTerm || asksDefinition;
 }
 
+// ---------------------------------------------------------------------------
+// TASK-34a2: "may be a joke answer". One cheap, explainable rule: a small,
+// documented list of MARKERS, phrases that are almost never a real pupil's
+// mistake (glowing, magic, turning into a tree, a colour change offered as the
+// result, a silly condition…). A marker that also appears in the question does
+// not count ("Which glows?" can offer "It glows").
+//
+// Designed from the lesson-checker's labels of the v2 bench
+// (bench/distractor-review.json) and measured against them
+// (scripts/distractor-eval.ts; bench/DIAGNOSIS.md, v2). We also built and
+// measured an OFF-TOPIC rule: "none of the wrong answer's content words appear
+// anywhere in the lesson, while the right answer's do". It was dropped. Real
+// misconceptions are new words too ("Gold", "Steam", "Petals"): precision 0.25
+// on single words and 0.24 on phrases of 3 or more words. A "wrong sense" rule
+// (colour / smell / weight not mentioned in the lesson) was dropped for the same
+// reason ("Colour" is a real material property).
+//
+// A right answer is never flagged. It is a warning only; it never removes or
+// rewrites an answer.
+
+/** Documented absurdity markers (normalised text, whole words). */
+export const JOKE_MARKERS: ReadonlyArray<{ re: RegExp; why: string }> = [
+  { re: /\bglow(?:s|ing)?\b/, why: "glowing" },
+  { re: /\bmagic(?:al)?\b|\bspell\b|\bwizard\b/, why: "magic" },
+  { re: /\b(?:sings?|singing|dances?|dancing)\b/, why: "singing or dancing" },
+  { re: /\bfl(?:y|ies) to the moon\b/, why: "flying to the moon" },
+  { re: /\beats? it\b/, why: "eating it" },
+  { re: /\bturns? bright (?:green|pink|purple|blue)\b/, why: "a joke colour" },
+  { re: /\b(?:changes? colou?r|change in colou?r|turns? (?:a )?different colou?r)\b/, why: "a colour change offered as the result" },
+  { re: /\bturns? (?:back )?into (?:a )?(?:tree|stones?|rocks?|chocolate|frog)\b/, why: "turning into something else entirely" },
+  { re: /\bturns? (?:to|into) (?:solid )?ice\b|\bturns solid ice\b/, why: "turning to ice" },
+  { re: /\b(?:cut|made) into (?:circles|squares) by machines?\b/, why: "made by machines" },
+  { re: /\bsquare like a box\b|\blong like a stick\b|\b(?:cubic|triangular)\b/, why: "an impossible shape" },
+  { re: /\bfloats? up into the air\b/, why: "floating away" },
+  { re: /\bonly (?:if|when) (?:the|it) .*\b(?:wet|hot|painted)\b/, why: "a silly condition" },
+  { re: /\bmakes? (?:the )?\w+ heavier\b/, why: "weight with no part in it" },
+  { re: /\bkeeps doubling\b/, why: "an impossible change" },
+];
+
+/** Why `option` (a WRONG answer on quiz `card`) may be a joke, or null. */
+export function jokeAnswerReason(option: ButtonElement, card: Card): string | null {
+  const right = rightAnswer(card);
+  if (right === undefined || option === right || option.label === right.label) return null;
+  const text = normaliseText(option.label);
+  const question = normaliseText(primaryText(card));
+  // "turns to ice" is a real answer when the question is about cold or freezing.
+  const cold = /\b(?:ice|freez\w*|cold|cool\w*|frozen)\b/.test(question);
+  for (const m of JOKE_MARKERS) {
+    if (m.why === "turning to ice" && cold) continue;
+    if (m.re.test(text) && !m.re.test(question)) return m.why;
+  }
+  return null;
+}
+
 /** Every mechanical lesson warning for a stack, in deck order. */
 export function lessonWarnings(stack: Stack): LessonWarning[] {
   const out: LessonWarning[] = [];
@@ -176,6 +233,11 @@ export function lessonWarnings(stack: Stack): LessonWarning[] {
         break;
       }
     }
+    // TASK-34a2: a wrong answer that may be a joke (one warning per answer).
+    for (const wrong of answers) {
+      const why = jokeAnswerReason(wrong, card);
+      if (why !== null) out.push({ code: "joke-answer", cardId: card.id, labels: [wrong.label, why] });
+    }
   });
   return out;
 }
@@ -208,6 +270,8 @@ export function describeLessonWarnings(
         return `${card} just asks again what ${num(w.otherCardId)} showed: ask about it differently.`;
       case "repeated-card":
         return `${card} repeats ${num(w.otherCardId)}: change it or remove it.`;
+      case "joke-answer":
+        return `${card}: “${w.labels![0]}” may be a joke answer; use a mistake a pupil might really make.`;
     }
   });
 }

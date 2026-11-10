@@ -844,6 +844,23 @@ const MUTANTS: Mutant[] = [
     replace: "      ok: true,",
     tests: ["tests/a11y-claims.test.ts"],
   },
+  // ---- no joke distractors (TASK-34a) ----
+  {
+    name: "lesson check: the joke-answer markers never fire",
+    reverts: "34a2 — 'may be a joke answer'",
+    file: "src/shared/lessonCheck.ts",
+    find: "    if (m.re.test(text) && !m.re.test(question)) return m.why;",
+    replace: "    if (false) return m.why;",
+    tests: ["tests/joke-answers.test.ts"],
+  },
+  {
+    name: "prompt: the wrong-answer rule loses 'never silly, magic or impossible options'",
+    reverts: "34a3 — a mistake a pupil might really make",
+    file: "server/promptBuilder.ts",
+    find: "Never silly, magic or impossible options. Never jokes",
+    replace: "Never jokes",
+    tests: ["tests/joke-answers.test.ts"],
+  },
   {
     name: "claims: a bench line without 'do not verify facts' is accepted",
     reverts: "33c14 — the bench line says the checks are mechanical",

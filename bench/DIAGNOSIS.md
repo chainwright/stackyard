@@ -131,3 +131,30 @@ This is a sample by an AI reviewer. It does not show the other 42 decks are clea
 - The garbled y4-living-things-1 question is a one-off writing slip that no rule would reliably prevent.
 
 We have not changed the prompt.
+
+### v2 distractors and the joke-answer check (TASK-34a)
+
+**Ground truth** (`LESSON_CHECKER.md`, "v2 distractor review"; an AI review): 96 of 541 distractors are absurd, in 34 of 54 decks.
+
+**The check** (`jokeAnswerReason` in `src/shared/lessonCheck.ts`) is a list of 15 documented markers: glowing, magic, a colour change offered as the result, turning to ice when the question isn't about cold, an impossible shape, a silly condition, "makes … heavier", and so on.
+
+Measured against the ground truth by `scripts/distractor-eval.ts`: **precision 1.00 (20 of 20 flags), recall 0.21 (20 of 96 absurd distractors)**.
+
+- **This precision is in-sample.** The markers were drawn from this same data, so expect it to be lower on new decks.
+- **What it misses.** About four in five absurd answers are "the wrong kind of thing" ("A chair", "A rock", "Frog" as a plant). Only a reader can see those. That is why the prompt change, not the check, carries the fix.
+
+**Rules we built, measured and dropped:**
+
+| Rule | Flags | True | False | Precision |
+|---|---|---|---|---|
+| Off-topic: none of the wrong answer's content words appear anywhere in the lesson, while the right answer's do | 227 | 57 | 170 | 0.25 |
+| The same, only for phrases of 3 or more content words | 29 | 7 | 22 | 0.24 |
+| Wrong sense: colour, smell or weight not mentioned in the lesson | 20 | 12 | 8 | 0.60 |
+
+Real misconceptions are new words too ("Gold", "Steam", "Petals", "Smell" as a property), so a rule that looks for words missing from the lesson can't tell a mistake a pupil would make from a joke.
+
+**The prompt (TASK-34a3).** All three prompts now build every wrong answer from one neutral pattern: start from the right answer and change the one part a pupil who half-remembers the lesson gets wrong. They also say "Never silly, magic or impossible options", and never a colour, smell or weight when the question isn't about one. No answer from the bench is quoted.
+
+**Effect on the current run** (still the v2 recordings, today's checks): "passed our automatic lesson check with no warnings" falls from 48 to 38 of 55. The joke-answer warning is the only new warning.
+
+**v3** re-records only the 34 objectives in `rerecord.txt` (`npm run bench:record -- --force --only-file bench/rerecord.txt`). After the re-record, the lesson-checker labels those decks' distractors the same way.

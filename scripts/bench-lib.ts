@@ -530,12 +530,33 @@ function summaryRows(s: BenchSummary): string[] {
   ];
 }
 
+/** The kept v2 run and what v3 re-records (TASK-34a4). */
+export interface V2Context {
+  summary: BenchSummary;
+  /** The objectives v3 re-records (bench/rerecord.txt). */
+  rerecord: string[];
+  /** Of those, the ones whose cache is newer than the v2 recordings. */
+  rerecorded: string[];
+}
+
 /**
- * bench/RESULTS.md: the v1 summary (TASK-33c12, from bench/results-v1.json, when
- * given), then the current summary table plus one row per objective, linking its file.
+ * bench/RESULTS.md: the v1 summary (TASK-33c12, from bench/results-v1.json) and
+ * the v2 summary (TASK-34a4, from bench/results-v2.json), when given, then the
+ * current summary table plus one row per objective, linking its file.
  */
-export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null): string {
+export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null, v2: V2Context | null = null): string {
   const s = r.summary;
+  const v2Lines =
+    v2 === null
+      ? []
+      : [
+          "## v2 (before the TASK-34a distractor fixes)",
+          "",
+          `Kept in \`bench/results-v2.json\`, as v2 was recorded and checked; model: ${v2.summary.models.join(", ") || "—"}. Its distractors were reviewed one by one in [\`distractor-review.json\`](distractor-review.json).`,
+          "",
+          ...summaryRows(v2.summary),
+          "",
+        ];
   const v1Lines =
     v1 === null
       ? []
@@ -546,8 +567,19 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null)
           "",
           ...summaryRows(v1),
           "",
+        ];
+  const currentHead =
+    v1 === null && v2 === null
+      ? []
+      : [
           "## Current run",
           "",
+          ...(v2 === null
+            ? []
+            : [
+                `v3 re-records only the ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt) (the v2 decks with at least one absurd distractor); every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. The current run uses today's checks, including the joke-answer warning (TASK-34a2).`,
+                "",
+              ]),
         ];
   const lines = [
     "# Curriculum bench: results",
@@ -559,6 +591,8 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null)
     `Sentence for every objective: "${r.template}"`,
     "",
     ...v1Lines,
+    ...v2Lines,
+    ...currentHead,
     `Written by \`npm run bench\` from the recorded model text in \`bench/cache/\`. Model: ${s.models.join(", ") || "—"}.`,
     "",
     ...summaryRows(s),
