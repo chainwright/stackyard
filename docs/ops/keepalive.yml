@@ -1,0 +1,33 @@
+# Re-enable the keep-warm workflow once a month (TASK-36c6). GitHub disables
+# scheduled workflows in public repositories after 60 days without repository
+# activity; this calls the REST API's "enable a workflow" endpoint for
+# keep-warm.yml with the job's own GITHUB_TOKEN. No third-party action, no
+# secrets. We have NOT been able to verify that this call resets GitHub's
+# 60-day timer (the README says so), so a second pinger runs outside GitHub.
+#
+# Ready to install: copy this file to .github/workflows/keepalive.yml through
+# the GitHub web editor (a token without the `workflow` scope can't push it).
+name: keepalive
+
+on:
+  schedule:
+    - cron: "17 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  enable-keep-warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Re-enable keep-warm.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsS -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/keep-warm.yml/enable"

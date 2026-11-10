@@ -142,6 +142,22 @@ describe("TASK-35a3: Swap this wrong answer, in the Maker inspector", () => {
     expect(labelOf(store, CHAIR)).toBe("A candle");
   });
 
+  it("TASK-36c1: opening the list scrolls it into view (never hidden under the toolbar)", async () => {
+    const calls: unknown[] = [];
+    const proto = HTMLElement.prototype as unknown as { scrollIntoView?: ((o?: unknown) => void) | undefined };
+    const before = proto.scrollIntoView;
+    proto.scrollIntoView = function (this: HTMLElement, o?: unknown) { calls.push([this.id, o]); };
+    try {
+      const { inspector } = setup(CHAIR);
+      inspector.querySelector<HTMLButtonElement>("[data-testid='swap-open']")!.click();
+      await flush();
+      await flush();
+      expect(calls).toContainEqual(["swap-list", { block: "nearest" }]);
+    } finally {
+      proto.scrollIntoView = before;
+    }
+  });
+
   it("TASK-35a3: the right answer has no Swap control", () => {
     const { inspector } = setup(RIGHT);
     expect(inspector.querySelector("h2")!.textContent).toBe("Edit this answer");

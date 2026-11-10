@@ -9,7 +9,6 @@
 import type { Stack } from "../shared/types.js";
 import { mountPlayer } from "../player/mount.js";
 import { beforeYouShare } from "../shared/shareCheck.js";
-import { cardRefLabel } from "../shared/cardTitle.js";
 import { ensureLivingStyles } from "./styles.js";
 import { LivingEditor } from "./editor.js";
 import { saveCopy } from "./saveCopy.js";
@@ -67,7 +66,7 @@ export function mountLivingApp(
   function startPlay(): void {
     stopPlay();
     teacherTab.style.display = "";
-    playTeardown = mountPlayer(current, root, { scan: true });
+    playTeardown = mountPlayer(current, root, { scan: true, portrait: true });
   }
 
   function stopPlay(): void {
@@ -183,7 +182,7 @@ export function mountLivingApp(
     // way on, and cards still holding the words they started with. It runs BEFORE
     // anything is written. OK saves anyway; Cancel writes nothing and takes the
     // teacher to the first card with a problem.
-    const check = beforeYouShare(edited, (c) => cardRefLabel(edited, c));
+    const check = beforeYouShare(edited);
     if (!check.ok) {
       const lines = check.lines;
       const proceed = window.confirm(

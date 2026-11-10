@@ -15,7 +15,6 @@ import { Toolbar } from "./Toolbar.js";
 import { ExportDone } from "./ExportDone.js";
 import { ShareCheck } from "./ShareCheck.js";
 import { beforeYouShare } from "../shared/shareCheck.js";
-import { cardRefLabel } from "../shared/cardTitle.js";
 import { PlayerPreview } from "./PlayerPreview.js";
 import { fallbackMessage } from "./fallbackMessages.js";
 import { repairFlow } from "./operations.js";
@@ -57,6 +56,8 @@ export function EditorScreen({
   // The kind of the file that was just exported (the toolbar choice may change
   // while the confirmation is open); drives the Teacher-tab hint.
   const [exportedLiving, setExportedLiving] = useState(true);
+  // TASK-36c3: the non-blocking notes for the file just exported.
+  const [exportedNotes, setExportedNotes] = useState<string[]>([]);
   // When set, play the exported stack in-app (avoids the blob CSP blank page,
   // J4 H1). We play the current stack through the shared mountPlayer.
   const [previewing, setPreviewing] = useState(false);
@@ -81,9 +82,12 @@ export function EditorScreen({
     // an unreachable card or unfinished placeholder words, stop and say so; the
     // download only happens when the teacher chooses "Export anyway" (or there is
     // nothing to warn about).
+    // TASK-36c3: notes (a quiz that re-tests a flash card, a possible joke
+    // answer) never stop the export; they are listed on the done screen.
+    const notes = beforeYouShare(current).notes;
     if (opts.skipCheck !== true) {
-      // Flow problems plus the lesson warnings (TASK-32b), in one list.
-      const check = beforeYouShare(current, (c) => cardRefLabel(current, c));
+      // Flow problems plus the structural lesson warnings (TASK-32b), in one list.
+      const check = beforeYouShare(current);
       if (!check.ok) {
         const lines = check.lines;
         setShareCheck({ lines, firstCardId: check.first?.id ?? null, canFix: check.flowProblem, kind });
@@ -99,6 +103,7 @@ export function EditorScreen({
     if (outcome.ok) {
       triggerDownload(outcome.html, outcome.filename);
       setExportedLiving(kind === "living");
+      setExportedNotes(notes);
       setExportedName(outcome.filename);
       announce(`Your file is ready. Saved as ${outcome.filename}.`);
     } else {
@@ -263,6 +268,7 @@ export function EditorScreen({
       {exportedName !== null ? (
         <ExportDone
           living={exportedLiving}
+          notes={exportedNotes}
           filename={exportedName}
           stack={stack}
           showCheck={false}

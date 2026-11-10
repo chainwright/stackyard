@@ -795,6 +795,12 @@ const PLAYER_STYLES = `
 .sy-card:focus { outline: none; }
 /* TASK-33d4: one-switch scanning — the highlighted choice gets a heavier ink ring. */
 .sy-scanning .sy-scan-focus { outline: 5px solid var(--color-ink) !important; outline-offset: 3px !important; }
+/* TASK-36c2: the flash card fills the card, and the card clips, so an outline
+   outside it never showed. Draw the scan ring INSIDE it: an ink ring with a
+   paper gap, like the quiz tiles' ring. Next Card on the back keeps the outline
+   (it sits inside the card) with a paper gap. */
+.sy-scanning .sy-flash.sy-scan-focus { outline: none !important; border-radius: var(--radius-card); box-shadow: inset 0 0 0 4px var(--color-paper), inset 0 0 0 9px var(--color-ink); }
+.sy-scanning .sy-flash-next .sy-scan-focus { box-shadow: 0 0 0 3px var(--color-paper); }
 .sy-scan-bar {
   position: fixed; bottom: 12px; left: 12px; z-index: 60;
   display: flex; gap: 8px; align-items: center;
@@ -816,6 +822,44 @@ const PLAYER_STYLES = `
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border: 0;
+}
+/* TASK-36c5: a portrait card on a phone (round-3 panel, J03 §3 item 6). Only a
+   player mounted with portrait: true (the exported file, the living file's Play,
+   the Teacher tab's Try It) gets .sy-portrait; the Maker and desktop are
+   unchanged. The card is 94vw wide and as tall as the screen less the Scan and
+   Teacher bar; its elements flow top to bottom in their y order (renderer
+   sets "order"), tiles one per row with a 40px gutter for the stamps. The
+   question is 28px and the tiles 24px; picture credits and other small text are
+   14px (the coordinator's floor for credits on a phone card), everything else
+   18px or more. */
+@media (max-width: 600px) {
+  .sy-portrait { width: 94vw !important; max-width: 100%; height: calc(100vh - 88px) !important; transform: none !important; margin-bottom: 44px; }
+  .sy-portrait .sy-card-stack { width: 100% !important; height: 100% !important; transform: none !important; }
+  .sy-portrait .sy-card-edge { width: 100%; height: 100%; }
+  .sy-portrait .sy-card { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 46px 16px 20px; overflow-y: auto; }
+  .sy-portrait .sy-ring-holes, .sy-portrait .sy-rings { width: 100%; gap: 0; justify-content: space-evenly; }
+  .sy-portrait .sy-meta-chrome { position: static; width: auto; height: auto; order: -1; }
+  .sy-portrait .sy-meta-chrome .sy-meta { font-size: 18px; }
+  .sy-portrait .sy-score-chrome { top: 44px; right: 16px; font-size: 20px; }
+  .sy-portrait .sy-element { position: relative !important; left: auto !important; top: auto !important; width: auto !important; height: auto !important; margin-top: 8px; flex: 0 0 auto; }
+  .sy-portrait .sy-question { font-size: 28px !important; line-height: 1.3 !important; }
+  .sy-portrait .sy-story { font-size: 24px !important; line-height: 1.45 !important; height: auto; }
+  .sy-portrait .sy-text { font-size: 14px !important; line-height: 1.3 !important; }
+  .sy-portrait .sy-image { width: auto !important; height: auto !important; max-width: 100%; max-height: 12vh; display: block; margin: 0 auto; }
+  .sy-portrait .sy-tile { min-height: 64px; height: auto; margin-top: 30px; }
+  .sy-portrait .sy-tile-label { font-size: 24px !important; line-height: 1.25 !important; }
+  .sy-portrait .sy-button { min-height: 56px; height: auto; font-size: 22px !important; }
+  .sy-portrait .sy-flash { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 64px 20px 100px; box-sizing: border-box; }
+  .sy-portrait .sy-flash-term, .sy-portrait .sy-flash-term-small, .sy-portrait .sy-flash-back, .sy-portrait .sy-flash-hint { position: static; width: auto; height: auto; }
+  .sy-portrait .sy-flash-term { font-size: 32px !important; }
+  .sy-portrait .sy-flash-term-small { font-size: 26px !important; }
+  .sy-portrait .sy-flash-back { font-size: 22px !important; line-height: 1.45 !important; }
+  .sy-portrait .sy-flash-next { left: 16px; right: 16px; width: auto; top: auto; bottom: 20px; }
+  .sy-portrait .sy-end-card { height: auto; min-height: 100%; padding: 12px 4px; gap: 12px; }
+  .sy-portrait .sy-end-heading { font-size: 28px !important; }
+  .sy-portrait .sy-end-score { font-size: 36px !important; }
+  .sy-portrait .sy-end-code { font-size: 26px; }
+  .sy-portrait .sy-end-initials, .sy-portrait .sy-end-code-row { flex-wrap: wrap; justify-content: center; }
 }
 `;
 
@@ -1547,6 +1591,7 @@ export function renderCard(
     wrapper.style.top = `${rect.y}px`;
     wrapper.style.width = `${rect.w}px`;
     wrapper.style.height = `${rect.h}px`;
+    wrapper.style.order = String(rect.y);
     const next = withForward(
       { type: "button", id: "sy-next", ...rect, label: "Next Card", actions: [] },
       chrome.nextCardId,
@@ -1570,6 +1615,9 @@ function positionElement(wrapper: HTMLElement, el: StackElement): void {
   wrapper.style.top = `${el.y}px`;
   wrapper.style.width = `${el.w}px`;
   wrapper.style.height = `${el.h}px`;
+  // TASK-36c5: on a phone the portrait card flows its elements top to bottom;
+  // `order` keeps them in their y order (a picture at the top stays at the top).
+  wrapper.style.order = String(Math.round(el.y));
 }
 
 // ---------------------------------------------------------------------------

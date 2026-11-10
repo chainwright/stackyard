@@ -77,7 +77,18 @@ function SwapControl(props: {
         aria-controls="swap-list"
         aria-describedby="swap-title"
         data-testid="swap-open"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open);
+          // TASK-36c1: the open list scrolls into view, so the toolbar never hides
+          // its last candidates or Type My Own…. (A timeout, not an effect: a
+          // mount-time effect here left Preact's after-paint queue pending.)
+          if (!open) {
+            setTimeout(() => {
+              const list = document.getElementById("swap-list");
+              if (list && typeof list.scrollIntoView === "function") list.scrollIntoView({ block: "nearest" });
+            }, 0);
+          }
+        }}
       >
         Swap
       </button>

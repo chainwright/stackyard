@@ -257,6 +257,7 @@ export function describeLessonWarnings(
     const i = stack.cards.findIndex((c) => c.id === id);
     return i >= 0 ? `card ${i + 1}` : "another card";
   };
+  // TASK-36c3: every message is ONE sentence, naming the card with its question in full.
   return warnings.map((w) => {
     const card = name(w.cardId);
     switch (w.code) {
@@ -265,13 +266,13 @@ export function describeLessonWarnings(
       case "duplicate-answers":
         return `${card} has two answers with the same words: change one.`;
       case "answer-inside-answer":
-        return `${card}: the right answer “${w.labels![0]}” and the wrong answer “${w.labels![1]}” overlap, so a pupil could argue for both. Reword one.`;
+        return `In ${card}, the right answer “${w.labels![0]}” and the wrong answer “${w.labels![1]}” overlap, so reword one before a pupil can argue for both.`;
       case "restates-flash":
-        return `${card} just asks again what ${num(w.otherCardId)} showed: ask about it differently.`;
+        return `${card} tests the same word as flash ${num(w.otherCardId)}, which is fine if you meant it as a check.`;
       case "repeated-card":
         return `${card} repeats ${num(w.otherCardId)}: change it or remove it.`;
       case "joke-answer":
-        return `${card}: “${w.labels![0]}” may be a joke answer; use a mistake a pupil might really make.`;
+        return `In ${card}, “${w.labels![0]}” may be a joke answer: use a mistake a pupil might really make.`;
     }
   });
 }

@@ -96,7 +96,7 @@ When the request gives a card plan, write exactly that many cards of each kind. 
 
 ## The end card
 
-The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card.
+The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card. When the request gives a card plan, the end card comes only after the last planned quiz card: count the quiz cards as you write them (quiz card 1, quiz card 2 …) and write the end card only when the count is reached.
 
 ## Audience writing rules — apply to all generated card text
 
@@ -216,7 +216,7 @@ When the request gives a card plan, write exactly that many cards of each kind. 
 
 ## The end card
 
-The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card.
+The "end" card has a heading text of ONE short line of 70 characters or fewer that names what the class finished (say the topic; do not copy a stock line). It may have a SECOND text of up to 300 characters for a longer encouraging message: put any longer message THERE. Never put a message, celebration or "tap to see" card before the end card, and never use a flash or story card as a second ending. Do not put a question or instructions on the end card. When the request gives a card plan, the end card comes only after the last planned quiz card: count the quiz cards as you write them (quiz card 1, quiz card 2 …) and write the end card only when the count is reached.
 
 ## Audience writing rules — apply to all generated card text
 
@@ -272,7 +272,9 @@ export function cardPlan(prompt: string): string {
   parts.push("1 end card");
   const all = c.quiz !== undefined && c.flash !== undefined ? ` (${c.quiz + c.flash + (story ? 3 : 0) + 1} cards in all)` : "";
   const notQuiz = story ? " The story cards are not quiz cards." : "";
-  return `Card plan: ${parts.join(", ")}${all}.${notQuiz}`;
+  // TASK-36c4: the quiz count again, tied to where the end card goes.
+  const last = c.quiz !== undefined ? ` Write the end card only after quiz card ${c.quiz}.` : "";
+  return `Card plan: ${parts.join(", ")}${all}.${notQuiz}${last}`;
 }
 
 function buildUserBody(prompt: string): string {

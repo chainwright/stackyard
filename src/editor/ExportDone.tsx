@@ -25,7 +25,14 @@ export function ExportDone({
   onFixFlow,
   living = false,
   showCheck = true,
+  notes = [],
 }: {
+  /**
+   * TASK-36c3: non-blocking notes about the lesson (a quiz that re-tests a
+   * flash card, a possible joke answer). Listed here, after the export; they
+   * never stop it.
+   */
+  notes?: string[];
   /**
    * Show the "Before you share" box here. The Maker runs that check BEFORE the
    * download (ShareCheck) and passes false; this stays for a standalone
@@ -71,6 +78,18 @@ export function ExportDone({
               <button class="ghost-btn" type="button" onClick={onFixFlow}>
                 Link these in and export again
               </button>
+            </div>
+          ) : null}
+
+          {notes.length > 0 ? (
+            <div class="share-notes" data-testid="export-notes">
+              <h2>Worth a look</h2>
+              <p class="hint">Your file is exported. These won't stop the class:</p>
+              <ul>
+                {notes.map((line) => (
+                  <li>{line}</li>
+                ))}
+              </ul>
             </div>
           ) : null}
 

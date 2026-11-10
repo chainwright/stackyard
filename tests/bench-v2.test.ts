@@ -157,11 +157,11 @@ describe("TASK-33c9: the five v1 first-try failures were quizzes with no right a
 });
 
 describe("TASK-33c10: the card plan, near the top and at the end of the request", () => {
-  const PLAN = "Card plan: exactly 5 quiz cards, exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (11 cards in all). The story cards are not quiz cards.";
+  const PLAN = "Card plan: exactly 5 quiz cards, exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (11 cards in all). The story cards are not quiz cards. Write the end card only after quiz card 5.";
 
   it("TASK-33c10: the bench sentence gives the full plan; the count parser reads quiz 5 and flash 2", () => {
     expect(cardPlan(SENTENCE)).toBe(PLAN);
-    expect(cardPlan("a 6-question quiz on fractions")).toBe("Card plan: exactly 6 quiz cards, 1 end card.");
+    expect(cardPlan("a 6-question quiz on fractions")).toBe("Card plan: exactly 6 quiz cards, 1 end card. Write the end card only after quiz card 6.");
     expect(cardPlan("a quiz about the Vikings")).toBe("");
   });
 

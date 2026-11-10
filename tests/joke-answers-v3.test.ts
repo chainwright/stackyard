@@ -94,7 +94,7 @@ describe("TASK-34a6: the joke-answer claim line", () => {
   });
 
   it("TASK-34a6: --fix inserts the line after the key-review line, rewrites its numbers in place, and replaces the v3-era wording", () => {
-    const key = keyReviewLine({ cards: 60, decks: 12, wrong: 0, ambiguous: 2 });
+    const key = keyReviewLine({ cards: 60, decks: 12, wrong: 0, ambiguous: 2, currentWrong: 1 });
     const inserted = fixJoke(`a\n${key}\nb\n`, j);
     expect(inserted.split("\n")[2]).toBe(jokeLine(j));
     const moved = fixJoke(inserted, { ...j, afterAbsurd: 10 });

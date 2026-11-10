@@ -23,10 +23,11 @@ const FLAT = (s: string): string => s.replace(/\s+/g, " ");
 
 describe("TASK-32e: README truth", () => {
   const readme = FLAT(read("README.md"));
-  it("TASK-32e: the H5P / Lumi line is the exact, defensible one", () => {
+  it("TASK-32e: TASK-36b1: the Lumi line is the exact, defensible one (R20: Lumi's desktop app, not 'H5P / Lumi')", () => {
     expect(readme).toContain(
-      "**H5P / Lumi** export an offline interactive activity for teachers, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.",
+      "Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.",
     );
+    expect(readme).not.toContain("**H5P / Lumi** export");
     expect(readme).not.toContain("no free-form card editing");
   });
   it("TASK-32e: the invariants sentence no longer claims they guarantee an end score", () => {

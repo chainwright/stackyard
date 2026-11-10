@@ -17,7 +17,8 @@
 //   - (TASK-32g) docs/DEVPOST_WRITEUP.md: traced ids vs `check:trace`, tests,
 //     mutants vs the entries in scripts/mutation-check.ts, fast-check
 //     properties vs a count of fc.property / fc.asyncProperty in tests/, player
-//     KB, and "about N KB" vs a living export of the water-cycle fixture (±10 %).
+//     KB, and "about N KB" vs a living export of the water-cycle fixture
+//     (decimal KB, bytes / 1000, ±3 %; TASK-36a2).
 //   - (TASK-33b) The floppy count in both files: floor(1,457,664 / bytes of
 //     that same living export), exact (scripts/lesson-size.ts measures it).
 //   - (TASK-33c7) Once bench/results.json exists: the curriculum-bench line in
@@ -115,10 +116,20 @@ const WRITEUP = path.join(ROOT, "docs", "DEVPOST_WRITEUP.md");
 const BENCH_RESULTS = path.join(ROOT, "bench", "results.json");
 const KEY_REVIEW = path.join(ROOT, "bench", "key-review.json");
 
-/** The key-review totals, recomputed from the verdicts, or null while bench/key-review.json does not exist (TASK-33c16). */
+/**
+ * The key-review totals, recomputed from the verdicts, or null while
+ * bench/key-review.json does not exist (TASK-33c16), plus the current run's
+ * known wrong keys from the latest distractor review, recounted from its
+ * verdicts (TASK-36b3).
+ */
 function keyNumbers(): KeyNumbers | null {
   if (!existsSync(KEY_REVIEW)) return null;
-  return keyReviewTotals(JSON.parse(readFileSync(KEY_REVIEW, "utf8")) as KeyReview);
+  const totals = keyReviewTotals(JSON.parse(readFileSync(KEY_REVIEW, "utf8")) as KeyReview);
+  const dir = path.join(ROOT, "bench");
+  const latest = ["v5", "v4", "v3"].find((v) => existsSync(path.join(dir, `distractor-review-${v}.json`)));
+  const review = latest === undefined ? null : (JSON.parse(readFileSync(path.join(dir, `distractor-review-${latest}.json`), "utf8")) as { decks: Array<{ cards: Array<{ key?: { verdict: string } }> }> });
+  const currentWrong = review === null ? 0 : review.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length;
+  return { ...totals, currentWrong };
 }
 
 /** The bench line's numbers from bench/results.json, or null while it does not exist (TASK-33c7). */
@@ -330,7 +341,8 @@ async function measureWriteupNumbers(readme: Numbers, file: { fileKb: number; fl
 async function lessonFileNumbers(): Promise<{ fileKb: number; floppy: number }> {
   const bytes = await fixtureLivingExportBytes();
   if (bytes <= 0) return { fileKb: -1, floppy: -1 };
-  return { fileKb: Math.round(bytes / 1024), floppy: floppyClaim(bytes) };
+  // TASK-36a2: decimal KB (bytes / 1000), as a file manager shows the size.
+  return { fileKb: Math.round(bytes / 1000), floppy: floppyClaim(bytes) };
 }
 
 main().catch((err) => {

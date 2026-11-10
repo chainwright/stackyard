@@ -99,7 +99,7 @@ describe("TASK-33d6: what was checked, what was not, and the checked line", () =
   });
 
   it("TASK-33d6: --fix inserts the line after the key-review line, then rewrites its numbers in place", () => {
-    const key = keyReviewLine({ cards: 60, decks: 12, wrong: 0, ambiguous: 2 });
+    const key = keyReviewLine({ cards: 60, decks: 12, wrong: 0, ambiguous: 2, currentWrong: 1 });
     const inserted = fixA11y(`a\n${key}\nb\n`, a);
     expect(inserted.split("\n")[2]).toBe(a11yLine(a));
     const moved = fixA11y(inserted, { ...a, pages: 15 });

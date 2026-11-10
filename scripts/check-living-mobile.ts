@@ -137,6 +137,64 @@ async function openTeacher(cdp: Cdp, url: string, width: number, height: number)
   await sleep(700); // the card settles (flip-in, fit scale)
 }
 
+// ---------------------------------------------------------------------------
+// TASK-36c5: the PLAY view on a phone is a portrait card.
+
+const SETTLE = `(() => { if (document.getAnimations) document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} }); return 1; })()`;
+
+/** What the play view measures: the card's share of the screen, overflow, meta size, tile heights. */
+const MEASURE_PLAY = `(() => {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const card = document.querySelector("#player-root .sy-card");
+  if (!card) return JSON.stringify({ error: "no card" });
+  const r = card.getBoundingClientRect();
+  const meta = document.querySelector("#player-root .sy-meta");
+  const tiles = Array.from(document.querySelectorAll("#player-root .sy-tile")).map((t) => Math.round(t.getBoundingClientRect().height));
+  // Every tile fully inside the visible card (not cut off by its bottom edge or the screen).
+  const clipped = Array.from(document.querySelectorAll("#player-root .sy-tile")).filter((t) => {
+    const b = t.getBoundingClientRect();
+    return b.bottom > Math.min(r.bottom, vh) + 0.5 || b.top < r.top - 0.5;
+  }).length;
+  const stack = document.querySelector("#player-root .sy-card-stack");
+  return JSON.stringify({
+    area: (Math.min(r.right, vw) - Math.max(r.left, 0)) * (Math.min(r.bottom, vh) - Math.max(r.top, 0)) / (vw * vh),
+    width: Math.round(r.width),
+    overflowX: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw || r.right > vw + 0.5 || r.left < -0.5,
+    metaPx: meta ? parseFloat(getComputedStyle(meta).fontSize) * (r.width / card.offsetWidth) : 0,
+    tiles,
+    clipped,
+    portrait: document.getElementById("player-root").classList.contains("sy-portrait"),
+    stackTransform: stack ? getComputedStyle(stack).transform : "",
+    rootTransform: getComputedStyle(document.getElementById("player-root")).transform,
+  });
+})()`;
+
+interface PlayFacts { error?: string; area: number; width: number; overflowX: boolean; metaPx: number; tiles: number[]; clipped: number; portrait: boolean; stackTransform: string; rootTransform: string }
+
+async function openPlay(cdp: Cdp, url: string, width: number, height: number): Promise<PlayFacts> {
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 2, mobile: false });
+  await cdp.send("Page.navigate", { url });
+  if (!(await cdp.until(`document.querySelector("#player-root .sy-card .sy-tile")`))) throw new Error("the lesson did not show its first question");
+  await sleep(500);
+  await cdp.eval(SETTLE);
+  await sleep(200);
+  return JSON.parse(await cdp.eval<string>(MEASURE_PLAY)) as PlayFacts;
+}
+
+/** The 390 x 844 play-view problems (empty when it passes). */
+export function phonePlayProblems(f: PlayFacts): string[] {
+  const p: string[] = [];
+  if (f.error) return [f.error];
+  if (!f.portrait) p.push("the player is not in portrait mode");
+  if (f.area < 0.7) p.push(`the card fills ${Math.round(f.area * 100)} % of the screen (need at least 70 %)`);
+  if (f.overflowX) p.push("the play view overflows sideways");
+  if (f.metaPx < 14) p.push(`the "Card N of M" text renders at ${f.metaPx.toFixed(1)} px (need at least 14)`);
+  if (f.tiles.length === 0) p.push("no answer tiles");
+  for (const h of f.tiles) if (h < 44) p.push(`a tile is ${h} px tall (need at least 44)`);
+  if (f.clipped > 0) p.push(`${f.clipped} answer tile(s) are cut off by the card's edge`);
+  return p;
+}
+
 async function main(): Promise<void> {
   if (CHROME === undefined) {
     console.warn("check-living-mobile: no headless Chrome found — SKIPPING.");
@@ -179,6 +237,20 @@ async function main(): Promise<void> {
     await openTeacher(cdp, url, 1366, 768);
     const desk = JSON.parse(await cdp.eval<string>(MEASURE(false))) as { problems: string[] };
     for (const p of desk.problems) problems.push("1366x768: " + p);
+
+    // ---- TASK-36c5: the PLAY view, phone then desktop ----
+    const play = await openPlay(cdp, url, 390, 844);
+    for (const p of phonePlayProblems(play)) problems.push("TASK-36c5 play 390x844: " + p);
+    const playShot = await cdp.send<{ data?: string }>("Page.captureScreenshot", { format: "png" });
+    if (playShot.data) {
+      const out = path.join(ROOT, "docs", "media", "play-390.png");
+      mkdirSync(path.dirname(out), { recursive: true });
+      writeFileSync(out, Buffer.from(playShot.data, "base64"));
+    } else problems.push("TASK-36c5 play 390x844: no screenshot came back");
+    console.log(`check-living-mobile: play 390x844 — card ${play.width} px wide, ${Math.round(play.area * 100)} % of the screen, meta ${play.metaPx.toFixed(1)} px, tiles ${play.tiles.join("/")} px tall.`);
+    const deskPlay = await openPlay(cdp, url, 1366, 768);
+    if (deskPlay.rootTransform === "none" || !/matrix/.test(deskPlay.rootTransform)) problems.push("TASK-36c5 play 1366x768: the desktop card is no longer the scaled 800 x 600 card");
+    if (deskPlay.width < 700) problems.push(`TASK-36c5 play 1366x768: the desktop card is ${deskPlay.width} px wide`);
     cdp.close();
   } finally {
     chrome.kill();
@@ -195,7 +267,7 @@ async function main(): Promise<void> {
     for (const p of problems) console.error("check-living-mobile: FAIL — TASK-31b: " + p);
     process.exit(1);
   }
-  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged.");
+  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged. TASK-36c5: the play view is a portrait card (docs/media/play-390.png).");
 }
 
 main().catch((err) => {

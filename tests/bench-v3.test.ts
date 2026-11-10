@@ -146,18 +146,20 @@ describe("TASK-33c15: the key-accuracy sample", () => {
 });
 
 describe("TASK-33c16: the key-review line is checked by check:claims", () => {
-  const k = { cards: 60, decks: 12, wrong: 0, ambiguous: 2 };
+  const k = { cards: 60, decks: 12, wrong: 0, ambiguous: 2, currentWrong: 1 };
 
-  it("TASK-33c16: the sentence is the brief's, with singular forms for one", () => {
-    expect(keySentence(k)).toBe("A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md).");
-    expect(keySentence({ ...k, wrong: 1, ambiguous: 1 })).toContain("found 1 wrong key and 1 ambiguous one (");
+  it("TASK-33c16: TASK-36b3: the sentence names the v2 sample and the current run's known wrong keys, with singular forms for one", () => {
+    expect(keySentence(k)).toBe(
+      "An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md).",
+    );
+    expect(keySentence({ ...k, wrong: 1, ambiguous: 1, currentWrong: 3 })).toContain("found 1 wrong key and 1 ambiguous one; the current run's re-recorded decks have 3 known wrong keys (");
     expect(readKeyClaim(keyReviewLine(k))).toEqual(k);
   });
 
-  it("TASK-33c16: a right line passes; a wrong N, D, W or A fails; a line with no review file fails; no file and no line passes", () => {
+  it("TASK-33c16: a right line passes; a wrong N, D, W, A or C fails; a line with no review file fails; no file and no line passes", () => {
     const line = keyReviewLine(k);
     expect(compareKeyReview(line, "README", k).every((c) => c.ok)).toBe(true);
-    for (const bad of [{ cards: 59 }, { decks: 11 }, { wrong: 1 }, { ambiguous: 0 }]) {
+    for (const bad of [{ cards: 59 }, { decks: 11 }, { wrong: 1 }, { ambiguous: 0 }, { currentWrong: 0 }]) {
       expect(compareKeyReview(line, "README", { ...k, ...bad }).every((c) => c.ok), JSON.stringify(bad)).toBe(false);
     }
     expect(compareKeyReview("nothing", "README", k).map((c) => c.ok)).toEqual([false]);
@@ -172,11 +174,18 @@ describe("TASK-33c16: the key-review line is checked by check:claims", () => {
     expect(lines[lines.indexOf(readmeBenchLine(b)) + 1]).toBe(keyReviewLine(k));
     const moved = fixKeyReview(inserted, { ...k, wrong: 3 });
     expect(readKeyClaim(moved)).toEqual({ ...k, wrong: 3 });
-    expect(moved.split("A read-only AI review").length).toBe(2);
+    expect(moved.split("An AI review of").length).toBe(2);
+    // TASK-36b3: the old "read-only … generated decks" wording is replaced, not left beside the new one.
+    const old = "- A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.";
+    expect(readKeyClaim(old)).toBeNull();
+    expect(fixKeyReview(old, k)).toBe(keyReviewLine(k));
   });
 
-  it("TASK-33c16: the real README and write-up carry the line, matching totals recomputed from key-review.json", () => {
+  it("TASK-33c16: TASK-36b3: the real README and write-up carry the line, matching key-review.json and the latest distractor review", () => {
     const t = keyReviewTotals(review);
-    for (const f of ["README.md", "docs/DEVPOST_WRITEUP.md"]) expect(readKeyClaim(read(f)), f).toEqual(t);
+    const v5 = JSON.parse(read("bench/distractor-review-v5.json")) as { decks: Array<{ cards: Array<{ key?: { verdict: string } }> }> };
+    const currentWrong = v5.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length;
+    expect(currentWrong).toBe(1);
+    for (const f of ["README.md", "docs/DEVPOST_WRITEUP.md"]) expect(readKeyClaim(read(f)), f).toEqual({ ...t, currentWrong });
   });
 });

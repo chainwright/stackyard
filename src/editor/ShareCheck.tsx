@@ -48,7 +48,7 @@ export function ShareCheck({
         </div>
         <div class="done-inner">
           <h1 id="share-title">Before you share</h1>
-          <p class="sub">Nothing has been saved yet. The class would meet these:</p>
+          <p class="sub">Not exported yet. The class would meet these:</p>
           <div class="share-check" role="alert">
             <ul>
               {lines.map((line) => (

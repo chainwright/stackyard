@@ -136,3 +136,17 @@ export function cardRefLabel(
   if (n === 0) return words.length > 0 ? words : "a card";
   return words.length > 0 ? `Card ${n} — ${words}` : `Card ${n}`;
 }
+
+/**
+ * TASK-36c3: a card named for "Before you share" — its number and its question
+ * IN FULL, in curly quotes, never cut mid-phrase: "Card 4 (“What is the name for
+ * water vapour turning back into tiny droplets in the air?”)". The last card is
+ * "the last card"; a card with no words is "Card N".
+ */
+export function quotedCardName(stack: { cards: Card[] }, card: Card): string {
+  if (card.kind === "end") return "the last card";
+  const index = stack.cards.findIndex((c) => c.id === card.id);
+  const words = primaryText(card).replace(/\s+/g, " ").trim();
+  const n = index >= 0 ? `Card ${index + 1}` : "A card";
+  return words.length > 0 ? `${n} (“${words}”)` : n;
+}

@@ -1954,3 +1954,101 @@ The coordinator's decision after TASK-34: prompt changes levelled off at about 2
 - `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0.
 - `npm run check:mutants` reports every mutant killed.
 - `npm run check:claims:fix` if counts moved.
+
+## Phase 21 - TASK-36: fixes from the round-3 panel on 2a3a29b
+
+Source: `../judge_v2_2026-11-10_app_r3/` (SUMMARY.md; J05_hound.md §4–§6; J03_design.md §3 item 6, "Extra for this round" and fixes 1–9; J04_engineering.md §4.4, §4.12 and §4.13). The player tasks are in `exporter/tasks.md` Phase 10 (TASK-36c2, c5) and the prompt task in `stack-generator/tasks.md` (TASK-36c4). There are no model calls; we have no key.
+
+### TASK-36a1: the write-up's video note is true  *(J05 E5, §5b; SUMMARY P0)*
+  - **Bug.** The write-up says "a generated lesson file is now about 185 KB". The living export of the water-cycle fixture is 208,188 B, and live exports are 207–209 KB. It is the hound's only FALSE claim.
+  - **Fix.** The hound's §5b replacement for the write-up's first paragraph. It names the 11.7 KB player, the 20–45 s wait, class results not in the video, and that class results, one-switch Scan and "Swap this wrong answer" came after it. The file size is what check:claims measures (decimal KB, rounded), and the counts are what `check:claims:fix` keeps true.
+  - **Acceptance criteria.** check:claims passes on the new paragraph. A test finds the "added after the video" sentence.
+
+### TASK-36a2: "about N KB" is checked in decimal KB at ±3 %  *(J05 E5/E46, J04 §4.12; SUMMARY P0)*
+  - **Bug.** The rule compared against KiB with ±10 %, so 185 passed against 203.
+  - **Fix.** The rule compares against the living export in bytes / 1000 (decimal KB, as a file manager shows it), with ±3 %. `--fix` writes the rounded measured value. The README states no file size, so only the write-up carries the rule.
+  - **Acceptance criteria.**
+    - A temp-copy test: the real write-up with 185 fails and the measured value passes.
+    - The tolerance is 3 % on both sides.
+    - The README and the write-up say "±3 %" where they describe it.
+
+### TASK-36b1: the hound's exact replacements  *(J05 §4: E9, E13, E25, E31, E46, E49, E53, E62; R8, R17, R20, R25, R26b)*
+  - **Fix.** Each replacement word for word, adjusting only numbers that check:claims owns.
+    - R8 (the coordinator's "drop the personal initials" sentence) replaces the README's privacy opener.
+    - "Where it sits" changes only by E25 (the AfterStack clause).
+  - **Acceptance criteria.**
+    - A test finds every replacement sentence in place and the replaced wording gone.
+    - The older tests that pinned the replaced README lines (round 6, 7 and 8) follow.
+
+### TASK-36b2: Swap is described where a reader looks  *(J05 §6 P2, §5b row 5)*
+  - **Fix.** One sentence in the write-up's Maker bullet and one in the README, saying:
+    - what Swap does (offers wrong answers from the same deck, or lets the teacher type her own);
+    - that it needs no model call;
+    - that it is one undo step.
+  - **Acceptance criteria.** A test finds both sentences.
+
+### TASK-36b3: the key-review line names its sample  *(J05 E49 / R26b)*
+  - **Fix.** check:claims pins the new wording: "An AI review of N quiz cards from D decks of an earlier bench run (v2) found W wrong keys and A ambiguous ones; the current run's re-recorded decks have C known wrong key(s) (bench/LESSON_CHECKER.md)."
+    - N, D, W and A come from `bench/key-review.json`.
+    - C is the latest distractor review's wrong-key count over all its decks.
+    - `--fix` replaces the old wording.
+  - **Acceptance criteria.** Unit tests:
+    - the sentence reads back;
+    - each wrong number fails, C included;
+    - `--fix` replaces the old line;
+    - the real README and write-up match the JSONs.
+
+### TASK-36c1: Swap never offers another question's right answer, and prefers the right answer's form  *(J03 Extra: Swap, fixes 5–6)*
+  - **Bug.**
+    - Swap offered the right answers of Q5 and Q10 as wrong answers on Q3. A pupil may have just learned those as true.
+    - It offered noun phrases for a verb-phrase question.
+    - The open list was clipped by the toolbar.
+  - **Fix.**
+    - **No right answers.** A candidate is never ANY quiz card's right answer (case and punctuation ignored).
+    - **Form classifier.** `answerForm(label)` is a small, documented classifier:
+      - a *number* is digits only;
+      - a *verb phrase* starts with a subject pronoun (it, they, he, she, we, you, i), starts with a word in -ing, or starts with a word in -s/-es followed by a particle or object word ("Turns into vapour", "Heats it up");
+      - anything else is a *noun phrase*.
+    - **Ranking.** Candidates of the same form as this card's right answer rank first, then by shared words, then in deck order.
+    - **Scrolling.** Opening the list scrolls it into view (`scrollIntoView({ block: "nearest" })`).
+  - **Acceptance criteria.**
+    - Unit tests for the classifier and the ranking.
+    - The property test adds: no candidate equals any quiz card's right answer.
+    - A DOM test checks that the list is scrolled into view on open.
+    - A mutant (another card's right answer let through) is killed.
+
+### TASK-36c3: "Before you share" blocks only structural problems  *(J03 Extra, fix 2; J04 §4.13)*
+  - **Bug.** On the hero sentence the dialog blocked Export for a flash-then-quiz pair the teacher had asked for, with a garbled message ("Card 4 — What is the name for water vapour turning just asks again…"), and it said "Nothing has been saved yet" although the lesson is kept.
+  - **Fix.**
+    - **What still opens the dialog:** structural problems. These are the flow problems (a stuck card, an unreachable card, a dead end, unfinished words), two answers with the same words, an answer inside another, a two-answer quiz and a repeated card. Two right answers are already refused by the validator.
+    - **What becomes a note:** `restates-flash` and `joke-answer` no longer open it. They are listed as non-blocking notes on the export-done screen, and Export proceeds.
+    - **Wording.** Every lesson message names the card with its question in full, in curly quotes, never cut mid-phrase, and reads as one sentence. For example: "Card 4 (“What is the name for water vapour turning back into tiny droplets in the air?”) tests the same word as card 2, which is fine if you meant it as a check."
+    - "Nothing has been saved yet" becomes "Not exported yet."
+    - The Teacher tab's Save a Copy uses the same split.
+  - **Acceptance criteria.**
+    - DOM tests with the hero-sentence deck shape: a flash card, then a quiz on the same term, exports without a dialog and shows the note on the done screen.
+    - A two-answer quiz still opens the dialog.
+    - Each message quotes the full question.
+    - A mutant (notes block again) is killed.
+
+### TASK-36c6: keep-warm survives GitHub's 60-day rule, or says it may not  *(J04 §4.4; SUMMARY Product P1)*
+  - **Bug.** GitHub disables scheduled workflows in public repositories after 60 days without repository activity, around 9 Jan 2027, inside the judging window.
+  - **Fix.**
+    - `docs/ops/keepalive.yml`, ready to install (our token cannot push workflow files):
+      - monthly cron plus `workflow_dispatch`;
+      - `permissions: actions: write`;
+      - one `curl` to `PUT /repos/{owner}/{repo}/actions/workflows/keep-warm.yml/enable` with the `GITHUB_TOKEN`;
+      - no third-party action and no secrets.
+    - The README "Deploy" section says plainly:
+      - GitHub disables scheduled workflows in public repos after 60 days without repository activity;
+      - we have not been able to verify that the enable call resets that timer;
+      - a second pinger runs outside GitHub (our own machine) until results.
+  - **Acceptance criteria.** A test checks the file (schedule, dispatch, permissions, the endpoint, no `uses:` and no `secrets.`) and the README sentences.
+
+**Not in this task (J03 fixes 7–9).** The class-results message wording, the start screen and the Maker's "Play this lesson" at 390 px are left for later. The coordinator's TASK-36 list does not include them.
+
+**Gate (TASK-36):**
+- `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0.
+- `npm run check:mutants` kills every mutant.
+- `npm run check:claims:fix` if counts moved.
+- check:a11y reports 0 serious or critical violations.

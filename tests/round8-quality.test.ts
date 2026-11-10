@@ -422,7 +422,7 @@ describe("TASK-32b.5: the cheap lesson check", () => {
     const s = deck([fl, asksTerm, asksDef, endCard(e!)]);
     const w = lessonWarnings(s).filter((x) => x.code === "restates-flash");
     expect(w.map((x) => x.cardId)).toEqual([q1, q2]);
-    expect(describeLessonWarnings(s, w, label(s))[0]).toContain("just asks again what card 1 showed");
+    expect(describeLessonWarnings(s, w, label(s))[0]).toContain("tests the same word as flash card 1, which is fine if you meant it as a check.");
     // four cards later it is revision, not a restatement
     const [g1, g2, g3, g4] = ids(4);
     const far = deck([fl, story(g1!, "A.", [g2!]), story(g2!, "B.", [g3!]), story(g3!, "C.", [g4!]), { ...asksTerm, id: g4!, elements: asksTerm.elements.map((x) => (x.type === "button" ? { ...x, actions: x.actions.map((a) => (a.type === "goto" ? { ...a, cardId: e! } : a)) } : x)) }, endCard(e!)]);

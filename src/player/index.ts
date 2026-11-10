@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 3. Mount the player (shared with the Maker's Play mode).
-    mountPlayer(result.stack, root, { scan: true });
+    mountPlayer(result.stack, root, { scan: true, portrait: true });
   } catch {
     // If anything throws before the first render, show the error message.
     showFatalError(root);

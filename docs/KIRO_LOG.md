@@ -617,3 +617,48 @@ The coordinator's decisions after TASK-34. The spec came first: maker `tasks.md`
   - check:a11y's Maker editor page now audits the open Swap list beside a joke tag, with 0 violations.
   - Three new mutants, all killed.
 - **Shell edits.** None to lasting files.
+
+## 10 Nov 2026: fixes from the round-3 panel on 2a3a29b (TASK-36)
+
+Read first: `../judge_v2_2026-11-10_app_r3/` (SUMMARY; the hound's fact checks and fixes; the design seat's phone card, Swap, Scan and "Before you share"; the engineering seat's keep-warm and §4.13). Spec first: maker `tasks.md` Phase 21 (TASK-36a1, a2, b1–b3, c1, c3, c6), exporter Phase 10 (TASK-36c2, c5) and stack-generator TASK-36c4. No model calls.
+
+- **a (write-up P0).**
+  - The video paragraph is the hound's §5b replacement, with the measured file size: 210,983 B, about 211 KB decimal. It also names Class results, Scan and Swap as added after the video. Its "a 12.3 KB player" is now a checked number too.
+  - check:claims' "about N KB" rule compares in decimal KB (bytes / 1000) at ±3 % (it was KiB at ±10 %). A temp-copy test proves the old 185 fails.
+- **b (P1 wording).**
+  - Write-up: E9, E13, E25 (the AfterStack clause, the only change to "Where it sits"), E31, E46, E53 and E62.
+  - README: R8 (initials are the one personal detail), R17, R20 and R25.
+  - The key-review line (E49 / R26b) is a new check:claims sentence. It names the v2 sample and the current run's one known wrong key, and `--fix` replaced the old wording.
+  - Swap is described in the write-up's Maker bullet and in the README.
+- **c1 Swap.**
+  - It never offers ANY quiz card's right answer.
+  - A small documented `answerForm` classifier (number, verb phrase, noun phrase) ranks candidates of the right answer's form first.
+  - The open list scrolls into view.
+  - A first version scrolled from a mount-time `useEffect`. That left Preact's after-paint queue pending, which broke a later fake-timer test, so it scrolls from the click instead.
+- **c2 Scan.**
+  - A highlighted flash card gets an inset ink ring with a paper gap, so the card's clip can't hide it; Next Card keeps its outline plus a paper gap.
+  - check-a11y's scan run asserts a visible ring on both in Chrome: drawn, inside the viewport, inside the card.
+- **c3 "Before you share".**
+  - Only structural problems open it. `restates-flash` and `joke-answer` are notes on the export-done screen, so the hero sentence's flash-then-quiz exports in one click.
+  - Every message names the card with its full question in curly quotes, as one sentence.
+  - "Not exported yet." replaces "Nothing has been saved yet".
+- **c4 counts.**
+  - The card plan ends "Write the end card only after quiz card N.", and both system prompts' end-card section says the same.
+  - The server still never pads a short deck.
+  - `bench/rerecord-counts.txt` lists the four countsOk-false objectives for the coordinator to re-record. DIAGNOSIS says only a re-recording can measure the change.
+- **c5 phone card.**
+  - At ≤ 600 px a player mounted with `portrait: true` reflows into a portrait card: 94 vw wide, the screen's height less 88 px, the question at 28 px, one 64 px tile per row with a 40 px stamp gutter, and 14 px credits.
+  - It applies to the exported file, Play and the Teacher tab's Try It, not the Maker.
+  - check:living-mobile measures it at 390 × 844 (84 % of the screen, meta 18 px, tiles 64 px, none cut off) and saves `docs/media/play-390.png`.
+  - The first try cut off the fourth tile, and the gate only caught it once it also checked that every tile sits inside the visible card.
+  - Export: 210,983 B, under the 232,000 B margin budget.
+- **c6 keep-warm.** `docs/ops/keepalive.yml` is ready to install: a monthly call to `PUT …/actions/workflows/keep-warm.yml/enable` with the `GITHUB_TOKEN`. The README says the reset is unverified and that a second pinger runs on our machine.
+- **Not done.** The design seat's fixes 7–9 (class-results messages, the start screen and the Maker at 390 px) were not in the coordinator's list.
+- **Mutants.** Four new, all killed:
+  - another card's right answer offered by Swap;
+  - notes blocking the export again;
+  - the flash scan ring removed (a real-browser gate);
+  - no portrait card (a real-browser gate).
+
+  The TASK-35 right-answer mutant was moved onto the new filter.
+- **Shell edits.** One `sed -i` on two test fixtures (`tests/a11y-claims.test.ts`, `tests/joke-answers-v3.test.ts`: adding `currentWrong: 1` to a key-review fixture). Everything else used the file tools.

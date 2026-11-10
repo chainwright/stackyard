@@ -132,7 +132,7 @@ describe("TASK-34a2: 'may be a joke answer' — cheap, explainable, measured", (
     const w = lessonWarnings(s).filter((x) => x.code === "joke-answer");
     expect(w.length).toBe(1);
     expect(describeLessonWarnings(s, w, () => "Card 1")).toEqual([
-      "Card 1: “To make the body glow in the dark” may be a joke answer; use a mistake a pupil might really make.",
+      "In Card 1, “To make the body glow in the dark” may be a joke answer: use a mistake a pupil might really make.",
     ]);
   });
 

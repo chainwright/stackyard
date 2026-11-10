@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
-import { swapCandidates, MAX_SWAP_CANDIDATES, wouldBeJoke } from "../../src/editor/swapCandidates.js";
+import { swapCandidates, MAX_SWAP_CANDIDATES, wouldBeJoke, answerForm } from "../../src/editor/swapCandidates.js";
 import { swapWrongAnswer, MAX_ANSWER_LABEL } from "../../src/editor/operations.js";
 import { isRejected } from "../../src/editor/types.js";
 import { EditorStore } from "../../src/editor/store.js";
@@ -80,14 +80,15 @@ describe("TASK-35a1: replacement candidates come from this deck only, filtered a
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it("TASK-35a1: sources are the other quiz cards' answers (right and wrong) and the flash terms; ranked by shared words, ties in deck order; at most 6", () => {
+  it("TASK-35a1: sources are the other quiz cards' answers and the flash terms; ranked by shared words, ties in deck order; at most 6", () => {
     const s = lightDeck();
     const got = swapCandidates(s, card3, chair);
     expect(got).toHaveLength(MAX_SWAP_CANDIDATES);
-    // "Light source" and "Light" share words with "Which of these is a light source?": first.
-    expect(got.slice(0, 2)).toEqual(["Light source", "Light"]);
-    // The rest keep deck order (no shared words): card 4's, then card 5's answers.
-    expect(got.slice(2)).toEqual(["A torch", "A book", "An opaque object", "A glass window"]);
+    // "Light source" shares words with "Which of these is a light source?": first.
+    expect(got[0]).toBe("Light source");
+    // The rest keep deck order (no shared words). Other cards' RIGHT answers
+    // ("An opaque object", "Light") are never offered (TASK-36c1).
+    expect(got.slice(1)).toEqual(["A torch", "A book", "A glass window", "Sound", "A candle"]);
     // A flash BACK is never a source.
     expect(got).not.toContain("Something that makes its own light.");
   });
@@ -101,8 +102,38 @@ describe("TASK-35a1: replacement candidates come from this deck only, filtered a
 
   it("TASK-35a1: a label longer than the answer limit is never offered", () => {
     const long = "x".repeat(MAX_ANSWER_LABEL + 1);
-    const s = deck([quiz(3, "Q one?", ["Yes", "No"], id(4)), quiz(4, "Q two?", ["Right one", long], END)]);
-    expect(swapCandidates(s, card3, id(311))).toEqual(["Right one"]);
+    const s = deck([quiz(3, "Q one?", ["Yes", "No"], id(4)), quiz(4, "Q two?", ["Right one", "Wrong one", long], END)]);
+    expect(swapCandidates(s, card3, id(311))).toEqual(["Wrong one"]);
+  });
+});
+
+describe("TASK-36c1: never another question's right answer; the right answer's form first", () => {
+  it("TASK-36c1: answerForm — numbers, verb phrases and noun phrases (a small documented classifier)", () => {
+    expect(["42", "7 3", " 56 "].map(answerForm)).toEqual(["number", "number", "number"]);
+    expect(["It melts", "They fall as rain", "Turns into vapour", "Heats it up", "Melting slowly"].map(answerForm)).toEqual(["verb", "verb", "verb", "verb", "verb"]);
+    expect(["Tiny water droplets", "The Sun", "Hot air from the sun", "Clouds", "Plants need sunlight", "Glass", ""].map(answerForm)).toEqual(["noun", "noun", "noun", "noun", "noun", "noun", "noun"]);
+  });
+
+  it("TASK-36c1: another card's right answer is never offered, even when it shares the most words", () => {
+    const s = deck([
+      quiz(3, "What does the sun do to water in a lake?", ["It heats it up", "It freezes it", "It turns it blue"], id(4)),
+      quiz(4, "What are clouds made of?", ["Tiny water droplets", "Smoke from fires", "It rains"], id(5)),
+      quiz(5, "What is the water cycle?", ["Water moving between the sky, land and sea", "Water staying in a lake", "It stops in winter"], END),
+    ]);
+    const got = swapCandidates(s, card3, id(311));
+    expect(got).not.toContain("Tiny water droplets");
+    expect(got).not.toContain("Water moving between the sky, land and sea");
+  });
+
+  it("TASK-36c1: candidates of the same form as this card's right answer come first, then shared words, then deck order", () => {
+    const s = deck([
+      quiz(3, "What does the sun do to water in a lake?", ["It heats it up", "It freezes it", "It turns it blue"], id(4)),
+      quiz(4, "What are clouds made of?", ["Tiny water droplets", "Smoke from water fires", "It rains"], id(5)),
+      quiz(5, "What happens in winter?", ["Ponds freeze", "It melts the lake", "Lakes boil"], END),
+    ]);
+    // Right answer "It heats it up" is a verb phrase: the verb phrases lead, the one
+    // sharing "lake" first; the noun phrases follow, "water" sharer first.
+    expect(swapCandidates(s, card3, id(311))).toEqual(["It melts the lake", "It rains", "Smoke from water fires", "Lakes boil"]);
   });
 });
 
@@ -179,7 +210,10 @@ describe("TASK-35a2: property — every candidate passes the filters, and applyi
         const cands = swapCandidates(s, card.id, target.id);
         expect(cands.length).toBeLessThanOrEqual(MAX_SWAP_CANDIDATES);
         const onCard = new Set(quizAnswers(card).map((a) => normaliseText(a.label)));
+        // TASK-36c1: no candidate is ANY quiz card's right answer.
+        const allRights = new Set(s.cards.filter((c) => c.kind === "quiz").map((c) => normaliseText(rightAnswer(c)!.label)));
         for (const c of cands) {
+          expect(allRights.has(normaliseText(c)), `"${c}" is a right answer somewhere`).toBe(false);
           expect(normaliseText(c).length).toBeGreaterThan(0);
           expect(normaliseText(c)).not.toBe(normaliseText(right.label));
           expect(onCard.has(normaliseText(c))).toBe(false);

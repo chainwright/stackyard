@@ -14,6 +14,10 @@ cards (quiz, flashcards, a branching story, a score card). The teacher can edit
 any card (move a button, change an answer, link a card to another) and then
 **export the whole lesson as one self-contained HTML file**. That file is built for ES2018 and plays offline in Chrome (checked by our gates) and, in a one-off run, in Playwright's Firefox and WebKit builds, with no internet, no account and no install.
 
+On a quiz card in the Maker, **Swap** replaces a wrong answer the teacher doesn't
+like (a suspected joke answer is marked) with another answer from the same deck,
+or one she types. It makes no model call, and it is one undo step.
+
 Two halves:
 
 - **The Maker** (the editor) is a web app. It needs the server once, to generate
@@ -70,8 +74,7 @@ got wrong). She can copy the table as plain text or print it.
   - The class file ("Export for class") never carries results.
   - Use it, not a saved copy with codes in, for the pupils' laptops.
 
-**Privacy.** No personal data is collected: no names and no accounts, only
-three optional initials the pupil chooses to type. No network is used: a person
+**Privacy.** No names or accounts are collected; the only personal detail is up to three optional initials a pupil may choose to type. No network is used: a person
 reads the code and a person types it. The results exist only on the pupil's
 screen, then only where the teacher types them (and in a copy she chooses to
 save). It is not analytics or tracking; nothing is collected automatically.
@@ -148,7 +151,7 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 ## Why HyperCard
 
 HyperCard let non-programmers build clickable, branching "stacks" in 1987.
-Successors like HyperStudio and Decker exist; we have not found one that starts from a teacher's sentence. Stackyard brings that back for a teacher
+Successors like HyperStudio and Decker exist, and another Kiroween 2026 entry (NecroCard) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline. Stackyard brings that back for a teacher
 with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
 scored lesson the class plays, every stack satisfies nine validity invariants, and a 'before you share' check warns if any card can't reach the end score, and the exported file is re-importable
 (round-tripped losslessly, checked by a 1,000-run property test).
@@ -157,7 +160,7 @@ scored lesson the class plays, every stack satisfies nine validity invariants, a
 
 - **Decker** (a modern HyperCard-tradition tool) exports one offline HTML with
   the runtime inside — but it has no generation and uses a scripting language.
-- **H5P / Lumi** export an offline interactive activity for teachers, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.
+- Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.
 - **AI quiz makers** turn a topic into a quiz — but they usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
@@ -184,11 +187,10 @@ is never inlined into, the exported file. Fonts are listed under
 
 ## By the numbers
 
-These figures are checked against the code by `scripts/check-claims` (run by the
-`pre-submit` hook), so the docs can't drift:
+These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1394** passing (`npm test`).
-- Player bundle: **12.3 KB** gzipped (budget 50 KB).
+- Tests: **1419** passing (`npm test`).
+- Player bundle: **12.8 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 - Floppy test: **6** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
@@ -196,7 +198,7 @@ These figures are checked against the code by `scripts/check-claims` (run by the
   `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
   The ready-made samples in `samples/` carry photos, so they are larger.
 - Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 43 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
-- A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
+- An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
 - In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
 - Accessibility: axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
 
@@ -332,6 +334,16 @@ without the `workflow` scope can't push workflow files, so it was installed thro
 the GitHub web editor; a test checks the two are byte-identical when both are
 present). GitHub may delay scheduled runs, so a free instance can still be cold
 after a quiet spell: the first load then takes up to a minute.
+
+**The 60-day rule.** GitHub disables scheduled workflows in public repositories
+after 60 days without repository activity, which would stop keep-warm during
+judging. [`docs/ops/keepalive.yml`](docs/ops/keepalive.yml) is ready to install
+the same way: once a month it calls GitHub's REST API to re-enable
+`keep-warm.yml` (`PUT /repos/{owner}/{repo}/actions/workflows/keep-warm.yml/enable`,
+with the job's own `GITHUB_TOKEN` and `permissions: actions: write`; no
+third-party action, no secrets). We have not been able to verify that the enable
+call resets that 60-day timer, so a second pinger runs outside GitHub (our own
+machine) until results.
 
 ## Third-party assets
 

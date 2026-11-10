@@ -671,6 +671,7 @@ export class LivingEditor {
     this.tryingTeardown = mountPlayer(this.stack, stage, {
       startCardId: this.card().id,
       flip: true,
+      portrait: true,
       scaler: makeAreaScaler(area),
     });
   }

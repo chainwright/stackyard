@@ -784,3 +784,42 @@ change in Play.
     - The README and the write-up say 6.
     - The size test passes with its margin and names the margin.
     - The floor mutant (TASK-33b) is still killed.
+
+## Phase 10 — Round-3 panel fixes to the player (TASK-36c2, c5)
+
+### TASK-36c2: Scan draws a ring on a flash card and on its Next Card  *(J03 Extra: Scan, fix 1)*
+  - **Bug.**
+    - The scan highlight is an outline outside the element. The flash card fills the card, and the card clips, so no ring showed on a flash card.
+    - After Space flipped it, Next Card showed no ring either.
+  - **Fix.**
+    - On the highlighted flash card, the ring is drawn INSIDE: an inset ink ring with a paper gap (`box-shadow: inset 0 0 0 4px paper, inset 0 0 0 9px ink`), so the clip cannot hide it.
+    - On Next Card, the ink outline plus a paper gap, inside the card.
+  - **Acceptance criteria.**
+    - A CSS test checks the inset rule.
+    - check-a11y's scan run asserts, in a real browser, a visible ring (a computed box-shadow or outline that is not none, drawn inside the viewport and inside the card's clip) on a flash card and on its Next Card.
+    - A mutant (the flash rule removed) is killed.
+
+### TASK-36c5: a portrait card on a phone  *(J03 §3 item 6; SUMMARY Product P1)*
+  - **Bug.** At 390 px the 800 × 600 card is scaled down whole, so it fills about a third of the screen and its meta text is about 8 px.
+  - **Fix.**
+    - **Where it applies.** At ≤ 600 px wide, a player mounted with `portrait: true` reflows each card into a portrait card. The exported file, the samples, the living file's Play and the Teacher tab's Try It all mount with it. The Maker does not, and desktop is unchanged.
+    - **Card size.** The card is 94 vw wide; its height is the viewport minus 88 px for the Scan and Teacher bar.
+    - **Layout.**
+      - Elements flow in their y order (the renderer sets CSS `order` from y).
+      - The question is 28 px.
+      - Tiles are one per row: at least 64 px tall, 24 px text, the shape kept, with a 40 px gutter so the stamps still sit above each tile.
+      - Meta and credits are 18 px (at least 14 px).
+      - The rings are kept.
+    - **Flash cards** flow the same way. Next Card sits at the bottom.
+    - **The end card** tightens its type.
+    - Reduced motion is respected; it is the same card turn code.
+  - **Acceptance criteria.**
+    - check:living-mobile checks the play view at 390 × 844 and saves `docs/media/play-390.png`:
+      - the card's area is at least 70 % of the viewport;
+      - nothing overflows sideways;
+      - the meta text is at least 14 px;
+      - every tile is at least 44 px tall.
+    - At 1366 × 768 the card is still the scaled 800 × 600 one.
+    - A DOM test checks that the portrait class is set only when asked for.
+    - A mutant (the portrait rules dropped) is killed.
+    - The water-cycle export stays under the 232,000 B margin budget (TASK-35b), and its size is stated.

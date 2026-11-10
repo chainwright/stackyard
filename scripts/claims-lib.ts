@@ -238,6 +238,8 @@ const WRITEUP_PATTERNS: WriteupPattern[] = [
   { name: "mutants", label: "mutants (reverts N)", re: /(reverts )(\d+)( of the review fixes)/g, format: int },
   { name: "properties", label: "fast-check properties", re: /()(\d+)( fast-check properties)/g, format: int },
   { name: "kb", label: "player KB (gzip)", re: /(is )([\d.]+)( KB gzipped)/g, format: (n) => n.toFixed(1) },
+  // TASK-36a1: "…reports N of N and M tests and a 12.3 KB player; …" (the video note).
+  { name: "kb", label: "player KB (… tests and a N KB player)", re: /(tests and an? )([\d.]+)( KB player)/g, format: (n) => n.toFixed(1), lead: (n) => `tests and ${articleFor(n)} ` },
   { name: "fileKb", label: "lesson file size (about N KB)", re: /(lesson file is now about )(\d+)( KB)/g, format: int },
   { name: "floppy", label: "floppy count (N lesson files … fit on a 1.44 MB floppy)", re: /(\b)(\d+)( lesson files like the water-cycle test deck fit on a 1\.44 MB floppy)/g, format: int },
 ];
@@ -256,10 +258,17 @@ export function readWriteupClaims(text: string): Array<{ name: keyof WriteupNumb
   return out;
 }
 
-/** Within tolerance? Player KB ±0.5, the file size ±10 %, everything else exact. */
+/**
+ * TASK-36a2: "about N KB" is compared against the living export in DECIMAL KB
+ * (bytes / 1000, what a file manager shows), within ±3 %. It was ±10 % in KiB,
+ * which let a stale "185" pass against a 203 KiB file (round-3 panel, J05 E5).
+ */
+export const FILE_KB_TOLERANCE = 0.03;
+
+/** Within tolerance? Player KB ±0.5, the file size ±3 %, everything else exact. */
 function close(name: keyof WriteupNumbers, claimed: number, actual: number): boolean {
   if (name === "kb") return actual > 0 && Math.abs(actual - claimed) <= 0.5;
-  if (name === "fileKb") return actual > 0 && Math.abs(actual - claimed) <= actual * 0.1;
+  if (name === "fileKb") return actual > 0 && Math.abs(actual - claimed) <= actual * FILE_KB_TOLERANCE;
   return claimed === actual;
 }
 
@@ -271,7 +280,7 @@ export function compareWriteup(text: string, actual: WriteupNumbers): Check[] {
     claimed: c.values.join(" of "),
     actual: actual[c.name],
     ok: c.values.every((v) => close(c.name, v, actual[c.name])),
-    ...(c.name === "kb" ? { note: "±0.5 KB" } : c.name === "fileKb" ? { note: "±10 %" } : {}),
+    ...(c.name === "kb" ? { note: "±0.5 KB" } : c.name === "fileKb" ? { note: "±3 %, decimal KB (bytes / 1000)" } : {}),
   }));
   for (const name of ["traced", "mutants", "properties", "kb", "fileKb", "floppy"] as const) {
     if (!claims.some((c) => c.name === name)) {
@@ -439,15 +448,24 @@ export interface KeyReview {
   totals: KeyNumbers;
 }
 
-export interface KeyNumbers {
+export interface KeyTotals {
   cards: number;
   decks: number;
   wrong: number;
   ambiguous: number;
 }
 
+/**
+ * TASK-36b3: the line also names the CURRENT run's known wrong keys (from the
+ * latest distractor review), because the 12-deck sample is from v2 and most of
+ * its decks were re-recorded since (round-3 panel, J05 E49).
+ */
+export interface KeyNumbers extends KeyTotals {
+  currentWrong: number;
+}
+
 /** The totals from the verdicts themselves (never from the stored totals). */
-export function keyReviewTotals(r: KeyReview): KeyNumbers {
+export function keyReviewTotals(r: KeyReview): KeyTotals {
   const all = r.decks.flatMap((d) => d.cards);
   return {
     cards: all.length,
@@ -458,10 +476,15 @@ export function keyReviewTotals(r: KeyReview): KeyNumbers {
 }
 
 const KEY_RE =
-  /A read-only AI review of (\d+) quiz cards from (\d+) generated decks found (\d+) wrong keys? and (\d+) ambiguous ones? \(bench\/LESSON_CHECKER\.md\)\./;
+  /An AI review of (\d+) quiz cards from (\d+) decks of an earlier bench run \(v2\) found (\d+) wrong keys? and (\d+) ambiguous ones?; the current run's re-recorded decks have (\d+) known wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+/** The pre-TASK-36b3 wording, recognised only so `--fix` can replace it. */
+const OLD_KEY_RE =
+  /A read-only AI review of \d+ quiz cards from \d+ generated decks found \d+ wrong keys? and \d+ ambiguous ones? \(bench\/LESSON_CHECKER\.md\)\./;
+
+const s = (n: number): string => (n === 1 ? "" : "s");
 
 export function keySentence(k: KeyNumbers): string {
-  return `A read-only AI review of ${k.cards} quiz cards from ${k.decks} generated decks found ${k.wrong} wrong key${k.wrong === 1 ? "" : "s"} and ${k.ambiguous} ambiguous one${k.ambiguous === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
+  return `An AI review of ${k.cards} quiz cards from ${k.decks} decks of an earlier bench run (v2) found ${k.wrong} wrong key${s(k.wrong)} and ${k.ambiguous} ambiguous one${s(k.ambiguous)}; the current run's re-recorded decks have ${k.currentWrong} known wrong key${s(k.currentWrong)} (bench/LESSON_CHECKER.md).`;
 }
 
 /** The line in both files (a bullet). */
@@ -471,7 +494,7 @@ export function keyReviewLine(k: KeyNumbers): string {
 
 export function readKeyClaim(text: string): KeyNumbers | null {
   const m = KEY_RE.exec(text);
-  return m ? { cards: Number(m[1]), decks: Number(m[2]), wrong: Number(m[3]), ambiguous: Number(m[4]) } : null;
+  return m ? { cards: Number(m[1]), decks: Number(m[2]), wrong: Number(m[3]), ambiguous: Number(m[4]), currentWrong: Number(m[5]) } : null;
 }
 
 export function compareKeyReview(text: string, where: string, review: KeyNumbers | null): Check[] {
@@ -486,7 +509,7 @@ export function compareKeyReview(text: string, where: string, review: KeyNumbers
       name,
       claimed: keySentence(claimed),
       actual: keySentence(review),
-      ok: claimed.cards === review.cards && claimed.decks === review.decks && claimed.wrong === review.wrong && claimed.ambiguous === review.ambiguous,
+      ok: claimed.cards === review.cards && claimed.decks === review.decks && claimed.wrong === review.wrong && claimed.ambiguous === review.ambiguous && claimed.currentWrong === review.currentWrong,
     },
   ];
 }
@@ -494,6 +517,7 @@ export function compareKeyReview(text: string, where: string, review: KeyNumbers
 /** Rewrite the key-review sentence from the verdicts, or insert the line after the bench line. */
 export function fixKeyReview(text: string, k: KeyNumbers): string {
   if (KEY_RE.test(text)) return text.replace(KEY_RE, keySentence(k));
+  if (OLD_KEY_RE.test(text)) return text.replace(OLD_KEY_RE, keySentence(k));
   const lines = text.split("\n");
   const at = lines.findIndex((l) => BENCH_RE.test(l));
   if (at < 0) return text;

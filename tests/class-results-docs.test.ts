@@ -15,7 +15,7 @@ describe("TASK-34b9: class results are documented, privacy first", () => {
     const at = md.indexOf("### Class results (no server)");
     expect(at).toBeGreaterThan(0);
     const s = md.slice(at, md.indexOf("\n## ", at));
-    expect(s).toContain("No personal data is collected");
+    expect(s).toContain("No names or accounts are collected; the only personal detail is up to three optional initials a pupil may choose to type.");
     expect(s).toContain("No network is used");
     expect(s).toContain("The results exist only on the pupil's");
     expect(s).toContain("never carries results");

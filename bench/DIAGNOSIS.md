@@ -214,3 +214,16 @@ Written at the end of the distractor work. Every number is from an AI review (th
 | "Swap this wrong answer" in the Maker | The teacher clicks a wrong answer and types her own, or asks for another. | None if she types it; one small call per swap if she asks for one. | Only when she asks, a short call per answer. | Her time: about two answers per five-question deck at today's rate. It fits the product's edit step, and it is the only option that puts a teacher's judgement in. |
 
 **What the bench would need.** Whichever option is chosen, the same 32 decks and the same labelling definitions give a like-for-like number. A teacher's review of a sample would test whether the AI labels match a teacher's.
+
+## Count shortfall after round 3 (TASK-36c4)
+
+Live, the hero sentence ("A 6-question quiz …") gave 5 quiz cards: "You asked for 6 questions; the model wrote 5." The bench shows the same kind of miss on three of the 54 decks that became files: y5-earth-space-1 and y5-forces-3 have 4 quiz cards for 5, and y5-materials-1 has 1 flash card for 2.
+
+- **What changed (no new model calls).**
+  - The card plan now ends with "Write the end card only after quiz card N." It is stated at the top and the end of the user message.
+  - Both system prompts' end-card section say the end card comes only after the last planned quiz card.
+  - The server still does NOT turn a story consequence card or a flash card into a quiz to make up the number. That would invent a question the teacher never saw. The shortfall notice stays.
+- **What can only be measured by re-recording.** Whether the new sentence closes the gap needs live model runs. The bench replays recordings, so it cannot tell.
+  - `bench/rerecord-counts.txt` lists the four objectives whose recording has `countsOk` false: the three above plus y4-electricity-2, which has had no valid file since v2.
+  - The coordinator re-records them with `npm run bench:record -- --force --only-file bench/rerecord-counts.txt`.
+  - Until then the bench numbers are from the old prompt.

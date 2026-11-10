@@ -369,6 +369,33 @@ async function runKeyboard(cdp: Cdp, base: string, problems: string[]): Promise<
 // ---------------------------------------------------------------------------
 // d4: one-switch scan mode
 
+/**
+ * TASK-36c2: is the scan highlight on the focused control really visible? A
+ * ring counts when it is drawn (a non-none outline at least 3px wide, or a
+ * box-shadow) AND the area it paints lies inside the viewport and inside the
+ * card's clip (the card is overflow: hidden). Outline widths are CSS px, so they
+ * are scaled by the card's scale.
+ */
+const RING_VISIBLE = `(() => {
+  const a = document.activeElement;
+  if (!a || !a.classList || !a.classList.contains("sy-scan-focus")) return JSON.stringify({ kind: "none", visible: false, why: "nothing highlighted" });
+  const kind = a.classList.contains("sy-flash") ? "flash" : a.closest(".sy-flash-next") ? "next" : "other";
+  const card = a.closest(".sy-card");
+  const cs = getComputedStyle(a);
+  const r = a.getBoundingClientRect();
+  const c = card ? card.getBoundingClientRect() : r;
+  const s = card ? c.width / card.offsetWidth : 1;
+  const outline = cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 3;
+  const shadow = cs.boxShadow && cs.boxShadow !== "none";
+  if (!outline && !shadow) return JSON.stringify({ kind, visible: false, why: "no outline or box-shadow" });
+  const inset = shadow && /inset/.test(cs.boxShadow);
+  const grow = outline ? (parseFloat(cs.outlineOffset) + parseFloat(cs.outlineWidth)) * s : 0;
+  const box = inset ? r : { left: r.left - grow, top: r.top - grow, right: r.right + grow, bottom: r.bottom + grow };
+  const inView = box.left >= -0.5 && box.top >= -0.5 && box.right <= innerWidth + 0.5 && box.bottom <= innerHeight + 0.5;
+  const inCard = box.left >= c.left - 0.5 && box.top >= c.top - 0.5 && box.right <= c.right + 0.5 && box.bottom <= c.bottom + 0.5;
+  return JSON.stringify({ kind, visible: inView && inCard, why: inView ? (inCard ? "ok" : "cut off by the card's edge") : "outside the viewport" });
+})()`;
+
 async function runScan(cdp: Cdp, base: string, problems: string[]): Promise<{ steps: number; score: string }> {
   const url = `${base}samples/vikings-in-ireland.html`;
   if (!(await open(cdp, url, `document.querySelector("#player-root .sy-card")`))) {
@@ -383,6 +410,7 @@ async function runScan(cdp: Cdp, base: string, problems: string[]): Promise<{ st
     return { steps: 0, score: "" };
   }
   let steps = 0;
+  const rings = { flash: false, next: false };
   for (; steps < 80; steps++) {
     const key = await cdp.eval<string>(CARD_KEY);
     if (key === "END") break;
@@ -401,6 +429,11 @@ async function runScan(cdp: Cdp, base: string, problems: string[]): Promise<{ st
     }
     // A flash card flips (same card); anything else moves on.
     const wasFront = !(await cdp.eval<boolean>(`!!document.querySelector("#player-root .sy-flash-back")`));
+    // TASK-36c2: a highlighted flash card, and its Next Card after the flip, show a ring.
+    const ring = JSON.parse(await cdp.eval<string>(RING_VISIBLE)) as { kind: string; visible: boolean; why: string };
+    if (ring.kind === "flash") rings.flash = rings.flash || ring.visible;
+    if (ring.kind === "next") rings.next = rings.next || ring.visible;
+    if ((ring.kind === "flash" || ring.kind === "next") && !ring.visible) problems.push(`TASK-36c2: scan: the highlighted ${ring.kind === "flash" ? "flash card" : "Next Card"} shows no visible ring (${ring.why})`);
     await cdp.press("Space");
     await sleep(250);
     await cdp.eval(settle);
@@ -415,6 +448,9 @@ async function runScan(cdp: Cdp, base: string, problems: string[]): Promise<{ st
     score = await cdp.eval<string>(`(document.querySelector("#player-root .sy-end-score") || {}).textContent || ""`);
     if (!/^Score \d+ of \d+$/.test(score)) problems.push(`scan: the end card shows no score ("${score}")`);
   } else problems.push(`scan: did not reach the end card in ${steps} presses`);
+  if (!rings.flash) problems.push("TASK-36c2: scan: no flash card was seen highlighted with a visible ring");
+  if (!rings.next) problems.push("TASK-36c2: scan: no Next Card was seen highlighted with a visible ring after a flip");
+  console.log(`check-a11y: ${rings.flash && rings.next ? "OK " : "…  "} — TASK-36c2: scan ring visible on a flash card (${rings.flash}) and on its Next Card (${rings.next})`);
   console.log(`check-a11y: ${score ? "OK " : "…  "} — scan: Vikings finished to "${score}" with the Space key only (${steps} presses)`);
   return { steps, score };
 }

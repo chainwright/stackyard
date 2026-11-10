@@ -69,7 +69,8 @@ describe("TASK-31a: README and docs say only what is true", () => {
   });
 
   it("TASK-31a: the HyperStudio and Decker sentence claims only what was checked", () => {
-    expect(readme).toContain("Successors like HyperStudio and Decker exist; we have not found one that starts from a teacher's sentence.");
+    // TASK-36b1: R17 (the round-3 hound) names NecroCard and claims only the checked part.
+    expect(readme).toContain("we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline.");
   });
 
   it("TASK-31a: the cross-browser README has no internal line and names the script beside it", () => {

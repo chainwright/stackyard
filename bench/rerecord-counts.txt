@@ -1,0 +1,10 @@
+# TASK-36c4: the objectives whose current recording has a count shortfall
+# (countsOk false in bench/results.json): the quiz or flash count the sentence
+# asked for was not met. Re-record them after the card-plan change with:
+#   npm run bench:record -- --force --only-file bench/rerecord-counts.txt
+# (live model calls; the coordinator runs it). y4-electricity-2 has had no
+# valid file since v2, so its counts are not known either.
+y4-electricity-2
+y5-earth-space-1
+y5-forces-3
+y5-materials-1

@@ -559,3 +559,14 @@ reached the class (J2 P1-2).
 
 ### Pending (TASK-34a part 5; the last model-call round for distractors)
   - **Done (TASK-34a12).** The coordinator re-recorded the 34 ids once (v5); the lesson-checker relabelled them into `bench/distractor-review-v5.json` (see `curriculum-bench/tasks.md`, TASK-34a12). The distractor work stops here; the conclusion is in `bench/DIAGNOSIS.md`.
+
+### TASK-36c4: "A 6-question quiz" asks for 6, twice  *(J05 E16, §6 P2; SUMMARY Product P1)*
+  - **Bug.** On the hero sentence, the live model wrote 5 quiz cards, not 6 ("You asked for 6 questions; the model wrote 5.").
+  - **Fix.** There are no new model calls.
+    - (i) The card plan puts the quiz count first. It now ends with "Write the end card only after quiz card N." It is stated at the top and the end of the user message, and the system prompts' end-card section says the same rule: the end card comes only after the last planned quiz card.
+    - (ii) The server does NOT turn a story consequence card or a flash card into a quiz to make up the number (that would invent a question the teacher never saw). The shortfall notice stays.
+  - **What can only be measured by re-recording.** Whether (i) closes the gap needs live model runs. `bench/rerecord-counts.txt` lists the bench objectives whose current recording has a count shortfall (`countsOk` false in `bench/results.json`). The coordinator re-records them with `npm run bench:record -- --force --only-file bench/rerecord-counts.txt`. `bench/DIAGNOSIS.md` says so.
+  - **Acceptance criteria.**
+    - Prompt tests: the plan names the quiz count first and carries the end-card sentence; both system prompts carry the end-card rule.
+    - A server test checks that a 5-quiz deck asked for 6 is not padded and keeps its notice.
+    - A test checks that `rerecord-counts.txt` equals the countsOk-false objectives.

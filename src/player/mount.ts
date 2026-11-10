@@ -42,6 +42,12 @@ export interface MountOptions {
    * leaves it off.
    */
   scan?: boolean;
+  /**
+   * TASK-36c5: on a phone (≤ 600 px wide) reflow each card into a portrait
+   * card. The exported file, the living file's Play and the Teacher tab's Try
+   * It turn it on; the Maker leaves it off. Desktop is unchanged either way.
+   */
+  portrait?: boolean;
 }
 
 /** True when the user asked for reduced motion. */
@@ -85,6 +91,7 @@ export function mountPlayer(
   // 2. Apply scaling (caller may override; default is the viewport scaler).
   const scale = options.scaler ?? applyScaling;
   const stopScaling = scale(root);
+  if (options.portrait === true) root.classList.add("sy-portrait");
 
   // Perspective on the root gives the rotateX flip its depth (top-centre
   // origin on the card). Harmless when flips are disabled.
@@ -202,6 +209,7 @@ export function mountPlayer(
       flipTimer = null;
     }
     stopScaling();
+    root.classList.remove("sy-portrait");
     root.style.perspective = "";
     root.innerHTML = "";
   };
