@@ -77,4 +77,30 @@ Recounted for TASK-32 from session `sess_4ead26b8`'s `messages.jsonl`: every rec
 | TASK-30 window, 9 Nov 16:10–17:21Z | 100 | **98** | 2 | — | — | — | — |
 | TASK-31 window, 9 Nov 18:12–19:21Z | 147 | 132 | 6 | 9 | — | — | — |
 
-So "98" means two different things in older notes: the TASK-28 total of three hooks (79 + 12 + 7), and TASK-30's after-shell count alone (100 firings in all in that window). `pre-submit` (`PostTaskExec`) has never fired: no spec task was marked done in these sessions.
+So "98" means two different things in older notes: the TASK-28 total of three hooks (79 + 12 + 7), and TASK-30's after-shell count alone (100 firings in all in that window). `pre-submit` (`PostTaskExec`) has never fired: no spec task was marked done in these sessions, and kiro-cli sessions have no task-status tool (a ticked box is a file edit; see section 6).
+
+## 6. An MCP call made inside Kiro (10 Nov)
+
+Until 10 Nov the `openverse` MCP server was registered in `.kiro/settings/mcp.json`, but its code had only been run as a script outside Kiro (the write-up's MCP row; KIRO_LOG, 5 Nov). On 10 Nov a separate Kiro session called it as an MCP tool:
+
+- **The session.** `sess_b006fe90-9722-4630-a0b1-13ecc2981ef9`, kiro-cli 3.1.0. It was started with `--mode spec`, but its `session.json` records `agentMode` "vibe" and `specWorkflow` "quick".
+- **What it wrote.** `.kiro/specs/kiro-evidence/` and [`mcp-call-2026-11-10.md`](mcp-call-2026-11-10.md), which holds the query, the time and the first three results.
+- **The tool approval.** It was accepted automatically, because the session ran with `--trust-all-tools`. No person clicked it.
+
+The records, extracted by us from that session's `messages.jsonl` (payload types `tool_call` / `pending_interaction` / `tool_result`; paths trimmed to the repo), verbatim:
+
+```
+2026-11-10T06:07:27.799Z tool_call tool_load {"tool_ids": ["openverse::search_images"]}
+2026-11-10T06:07:27.799Z tool_result bLmpkk1X {   "loaded": [     {       "tool_id": "openverse::search_images",       "description": "Search Openverse for CC0 or public-domain-mark images. Returns title, creator, licence, source URL and a thumbnail URL per result.",       "input_schema": {         "type": "object",         "properties": {     
+2026-11-10T06:07:33.690Z pending_interaction tool_approval "@openverse/search_images"
+2026-11-10T06:07:41.771Z tool_call tool_call {"tool_id": "openverse::search_images", "arguments": {"query": "water cycle", "license": "cc0", "pageSize": 3}}
+2026-11-10T06:07:41.771Z tool_result cYJvFZoy [   {     "title": "Abandoned water cycle",     "creator": "Unknown",     "license": "cc0",     "source": "https://www.rawpixel.com/image/5938991/abandoned-water-cycle",     "thumbnail": "https://api.openverse.org/v1/images/6284ff02-3b3a-44eb-9e72-9d7aa6b2bb87/thumb/",     "url": "https://images.raw
+```
+
+No image was fetched and no picture was added to any deck.
+
+**`PostTaskExec` still did not fire.**
+- The same session ticked `- [ ] TASK-36d1` to `- [x]` with `str_replace`, a file edit, because kiro-cli sessions have no spec task-status tool.
+- A file edit is not a task-status transition, so the `pre-submit` hook had nothing to fire on. The store has no `ContextualHookInvoked` record for it. That session's only hook record is `invariants-after-shell-edit` at 06:07:34Z.
+- The documented trigger is a task-status change from the Kiro IDE's tasks view, and we did not drive the IDE.
+- So `pre-submit` (`PostTaskExec`) is **still not recorded firing**. The same gate runs as `/pre-submit` or `npm run pre-submit`.

@@ -133,7 +133,10 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
   ready-made content check, `invariants-after-shell-edit` — a `PostToolUse` hook
   on the agent's shell commands that re-runs the invariants after a shell edit —
   and a `pre-submit` gate set to fire when a spec task is marked done (not yet recorded firing; run on demand as `/pre-submit`)):
-  [`.kiro/hooks/`](.kiro/hooks/). Kiro's session store recorded 493 hook
+  [`.kiro/hooks/`](.kiro/hooks/). The `pre-submit` hook is a `PostTaskExec`
+  hook: kiro-cli sessions have no task-status tool (a task ticked there is a file
+  edit, which does not fire it), and we did not drive the Kiro IDE's tasks view,
+  which is the documented trigger. Kiro's session store recorded 493 hook
   firings in our main session (5 to 9 Nov), counted per hook in
   [`docs/kiro-sessions/`](docs/kiro-sessions/).
 - **Custom agent** — the lesson checker that reads a set of cards (we ran it on
@@ -141,7 +144,8 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
   level: [`.kiro/agents/`](.kiro/agents/).
 - **MCP server** — `mcp/openverse` finds public-domain pictures for the
   ready-made decks; its search and allowlisted-fetch code was run as a script
-  outside Kiro (Kiro's sandbox had no network) to pick them.
+  outside Kiro (Kiro's sandbox had no network) to pick them; its search was
+  also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions).
 - **Property-based tests** — every stack invariant has a `fast-check` property.
 - **Excerpts** from real Kiro sessions (the TASK-26 prompt, hook firings, the
   lesson-checker run): [`docs/kiro-sessions/`](docs/kiro-sessions/). The running
@@ -189,7 +193,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1426** passing (`npm test`).
+- Tests: **1431** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

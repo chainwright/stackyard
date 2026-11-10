@@ -50,7 +50,9 @@ export function declaredIds(root: string = ROOT): string[] {
     const file = path.join(root, ".kiro", "specs", spec, "tasks.md");
     if (!existsSync(file)) continue;
     for (const line of readFileSync(file, "utf8").split("\n")) {
-      const m = /^#{3,4}\s+TASK-(\d+)(.*)$/.exec(line);
+      // A heading ("### TASK-27c: …"), or a Kiro checkbox task ("- [x] TASK-36d1: …",
+      // the format Kiro's quick spec workflow writes; TASK-36d).
+      const m = /^(?:#{3,4}|\s*- \[[ xX]\])\s+TASK-(\d+)(.*)$/.exec(line);
       if (!m) continue;
       const rest = m[2]!.split(/[:(*—]/)[0]!.trim();
       if (rest.length === 0) continue;

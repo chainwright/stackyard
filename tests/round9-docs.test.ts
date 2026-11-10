@@ -79,7 +79,7 @@ describe("TASK-36b1: the round-3 hound's exact replacements", () => {
       "Their stacks travel as JSON files or as links back to their tool; the closest, AfterStack, is itself one offline page with a form editor, but has no AI and no self-saving copy.",
       "AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter;",
       "The numbers in the README's \"By the numbers\" block are checked by a script, and the pre-submit gate fails if they drift beyond its tolerances (±0.5 KB for the bundle, ±3 % for the file size).",
-      "Kiro (CLI, specs, steering, hooks, one custom agent; an MCP server registered in .kiro and run as a script)",
+      "Kiro (CLI, specs, steering, hooks, one custom agent; an MCP server registered in .kiro, run as a script, and its search also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions))",
       "the cursor, sounds, labels, the OFFLINE stamp and the network-request badge were added in editing; the badge shows the count from the real recording.",
     ];
     for (const s of want) expect(w, s).toContain(s);
