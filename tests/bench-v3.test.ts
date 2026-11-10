@@ -88,10 +88,11 @@ const stackOf = (id: string): Stack =>
 
 describe("TASK-33c15: the key-accuracy sample", () => {
   it("TASK-33c15: the rule picks every 5th objective from the 1st (skipping to the next first-try deck) plus y3-rocks-2: 12 decks", () => {
+    // The sample was drawn on v2, so the rule is re-derived from the v2 run as it was (results-v2.json).
     const firstTry = new Set(
-      (JSON.parse(read("bench/results.json")) as { decks: Array<{ id: string; firstTry: boolean }> }).decks.filter((d) => d.firstTry).map((d) => d.id),
+      (JSON.parse(read("bench/results-v2.json")) as { decks: Array<{ id: string; firstTry: boolean }> }).decks.filter((d) => d.firstTry).map((d) => d.id),
     );
-    const picked = keyReviewSample(objectives, (id) => firstTry.has(id) && existsSync(path.join(ROOT, "bench", "files", `${id}.html`)));
+    const picked = keyReviewSample(objectives, (id) => firstTry.has(id));
     expect(picked.length).toBe(12);
     expect(picked[picked.length - 1]).toBe("y3-rocks-2");
     expect(review.decks.map((d) => d.id)).toEqual(picked);

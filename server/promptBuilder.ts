@@ -35,7 +35,7 @@ Do not output prose, markdown fences, explanations, or any text outside the JSON
 
 Element types (do NOT write x, y, w or h — Stackyard places every element itself):
 - { "type": "text", "id": "<short unique id>", "content": "..." }
-- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
+- { "type": "button", "id": "<short unique id>", "label": "...", "why": "<quiz answers only: see 'Every answer has a why'>", "actions": [...] }
 - { "type": "field", "id": "<short unique id>", "variable": "score" }
 
 ## Pictures
@@ -82,6 +82,13 @@ You do not set positions or sizes. Stackyard lays every card out from its own te
 ## Wrong answers
 
 Every wrong answer must be a mistake a pupil might really make: clearly false for the age group, from the same topic as the question, and the kind of thing a child who has not learnt it yet would believe. Write each one with the same pattern: start from the right answer and change the one part a pupil who half-remembers the lesson gets wrong (the wrong part, the wrong amount, the wrong direction, or a common mix-up between two things the lesson teaches). Never silly, magic or impossible options. Never jokes or absurd options, never an option from an unrelated subject, and never a colour, smell or weight when the question is not about one. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else. In the three cards after a flash card, no quiz may have that flash card's term as its right answer, ask "What is <term>?", or ask for a fact its explanation states; ask there about a different part of the topic. No answer may be another answer with words added or taken away ("Sieve" and "Sieve with larger holes", "Sunlight" and "Sunlight and air"): a pupil could defend both.
+
+## Every answer has a why
+
+On a quiz card, give EVERY answer button one more field, "why": one short sentence, at most 15 words. Stackyard reads it and removes it; the class never sees it.
+- On the right answer: the fact that makes it right. Write it first and check it. If the fact shows another answer is right, fix which answer has delta 1.
+- On each wrong answer: the real mistake a pupil of 8 to 10 makes that makes this option tempting (for example: mixing up two things the lesson teaches, taking a rule the wrong way round, or remembering only half of it). If you cannot name a real mistake a pupil makes, choose a different wrong answer.
+- Every wrong answer must be the same kind of thing the question asks for: a part of a plant for a plant-part question, a force for a force question, a number for a how-many question. Never offer something that is plainly not that kind of thing.
 
 ## Card plan
 
@@ -139,7 +146,7 @@ Emit the header line first, then every card line. Nothing follows the last card.
 
 Element types (do NOT write x, y, w or h — Stackyard places every element itself):
 - { "type": "text", "id": "<short unique id>", "content": "..." }
-- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }
+- { "type": "button", "id": "<short unique id>", "label": "...", "why": "<quiz answers only: see 'Every answer has a why'>", "actions": [...] }
 - { "type": "field", "id": "<short unique id>", "variable": "score" }
 
 ## Pictures
@@ -195,6 +202,13 @@ You do not set positions or sizes. Stackyard lays every card out from its own te
 ## Wrong answers
 
 Every wrong answer must be a mistake a pupil might really make: clearly false for the age group, from the same topic as the question, and the kind of thing a child who has not learnt it yet would believe. Write each one with the same pattern: start from the right answer and change the one part a pupil who half-remembers the lesson gets wrong (the wrong part, the wrong amount, the wrong direction, or a common mix-up between two things the lesson teaches). Never silly, magic or impossible options. Never jokes or absurd options, never an option from an unrelated subject, and never a colour, smell or weight when the question is not about one. Never offer an option that is partly true, or true in some season or situation, or that a child could defend from what they already know. Prefer a different category from the right answer, not a close relative of it. If a question could have two defensible answers, rewrite the question. The answer options must fit the form of the question: a two-way comparison ("which is bigger, A or B?") offers only A and B, and a "how many" question offers numbers. Don't ask for the definition just given on a flash card within the previous 3 cards; ask about it differently, or about something else. In the three cards after a flash card, no quiz may have that flash card's term as its right answer, ask "What is <term>?", or ask for a fact its explanation states; ask there about a different part of the topic. No answer may be another answer with words added or taken away ("Sieve" and "Sieve with larger holes", "Sunlight" and "Sunlight and air"): a pupil could defend both.
+
+## Every answer has a why
+
+On a quiz card, give EVERY answer button one more field, "why": one short sentence, at most 15 words. Stackyard reads it and removes it; the class never sees it.
+- On the right answer: the fact that makes it right. Write it first and check it. If the fact shows another answer is right, fix which answer has delta 1.
+- On each wrong answer: the real mistake a pupil of 8 to 10 makes that makes this option tempting (for example: mixing up two things the lesson teaches, taking a rule the wrong way round, or remembering only half of it). If you cannot name a real mistake a pupil makes, choose a different wrong answer.
+- Every wrong answer must be the same kind of thing the question asks for: a part of a plant for a plant-part question, a force for a force question, a number for a how-many question. Never offer something that is plainly not that kind of thing.
 
 ## Card plan
 

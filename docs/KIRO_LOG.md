@@ -500,3 +500,35 @@ The coordinator re-recorded exactly the 34 objectives in `bench/rerecord.txt` wi
   - `RESULTS.md` says the current run (v3) re-recorded only the 34 listed objectives.
 - **a6 — claim.** README and write-up: "In the 34 re-recorded decks, an AI review found joke answers fell from 96 of 339 to 74 of 336 wrong answers; 3 wrong keys (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's." It is checked by `check:claims` against both review JSONs, with a mutant. The bench line moved to 44 via `--fix`.
 - **Shell edits.** None to lasting files. A read-only probe (`/tmp/d3.mts`) was deleted.
+
+## 9 Nov 2026 (late night): every answer has a why (TASK-34a part 3)
+
+The prompt-only fix cut joke answers in the 34 re-recorded decks only from 96 of 339 to 74 of 336, and it gave 3 wrong keys. Spec first: TASK-34a7 and a8 in `stack-generator/tasks.md`.
+
+- **a7 — the why field.**
+  - All three prompts give every quiz answer button a `"why"` (at most 15 words).
+    - **Right answer:** the fact that makes it right, checked first as a self-check against wrong keys.
+    - **Wrong answers:** the real mistake a pupil of 8 to 10 makes, described as a pattern, with "If you cannot name a real mistake a pupil makes, choose a different wrong answer."
+    - **Category rule:** the same kind of thing the question asks for.
+  - `sanitizeRawElement` and `sanitizeRawCard` strip every `why` (element, action, card) before validation and layout. That covers the one-shot, retry and streamed paths and the preview card.
+  - Tests: prompt tests; sanitiser tests; a property over random `why` fields; a stream property with random splits, including one inside a `"why"`; `generate()` with a forced retry; the exported file carries none. A mutant (the strip removed) is killed.
+- **a8 — cost.** On the fixture deck: 415 → 528 characters per card (4561 → 5806 for the 11-card deck, +27 %; +249 per quiz card). That is about +330 output tokens, well inside the 12,000 limit. My estimate, not a measurement, is about 8.3 → 10.5 s to done.
+- **Not done:** keeping the stripped `why` texts for the lesson check. It would need a side channel through the stream, the Maker store and the bench, so it is not cheap or clean.
+- **Next.** The coordinator re-records the same 34 ids once, then I relabel them into `bench/distractor-review-v4.json`.
+- **Shell edits.** None.
+
+## 10 Nov 2026: the v4 review, why-field prompt (TASK-34a part 4)
+
+The coordinator re-recorded the same 34 objectives with the TASK-34a7 prompt and saved `bench/results-v3.json`. Current run: 52 of 55 valid on the first try, 48 with no warnings, 49 kept counts, p50 9.2 s. Spec: TASK-34a9 in `curriculum-bench/tasks.md`; the pending v4 relabel is marked done.
+
+- **Review.** Acting as the lesson-checker persona (read-only; an AI review, not a teacher's), I labelled the 317 wrong answers and 160 keys of the 32 re-recorded decks that became files. On those same 32 decks, v2 → v3 → v4:
+  - absurd per 100 wrong answers: 27.6 → 21.8 → **22.7** (no further gain from the why field);
+  - decks with at least one absurd answer: 32 → 23 → 26;
+  - wrong keys: — → 3 → **1**; ambiguous keys: — → 4 → 5;
+  - the check on v4: precision 1.00 (1 of 1), recall 0.01.
+- **The 2 new failures** (y5-materials-5, y5-earth-space-3) are a `"why"` key with no value on a Next Card or story button, which makes the line invalid JSON. The likely cause is `"why"` in the generic button schema. Not fixed here.
+- **Plumbing.**
+  - The review builder lists re-recorded decks with no file (`noFile`); the v3 review is frozen.
+  - `RESULTS.md` adds a v3 table from `results-v3.json`.
+  - The claim line now reads "In the 32 re-recorded decks that became lesson files, … fell from 88 of 319 (v2) to 72 of 317 (v4) wrong answers; 1 wrong key …", recounted from the review files.
+- **Shell edits.** None to lasting files. Read-only probes in `/tmp` were deleted.

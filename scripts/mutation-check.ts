@@ -846,6 +846,14 @@ const MUTANTS: Mutant[] = [
   },
   // ---- no joke distractors (TASK-34a) ----
   {
+    name: "generator: a model 'why' field leaks into the stack (not stripped)",
+    reverts: "34a7 — every why is stripped before validation and layout",
+    file: "server/normalizeGenerated.ts",
+    find: "  return sanitizeRawElementInner(isRecord(el) ? withoutWhy(el) : el);",
+    replace: "  return sanitizeRawElementInner(el);",
+    tests: ["tests/why-fields.test.ts"],
+  },
+  {
     name: "lesson check: the joke-answer markers never fire",
     reverts: "34a2 — 'may be a joke answer'",
     file: "src/shared/lessonCheck.ts",

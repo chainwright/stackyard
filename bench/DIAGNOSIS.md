@@ -169,3 +169,14 @@ Same definitions, same reviewer (the lesson-checker persona; an AI review). Full
 - **Could a prompt change fix what remains?**
   - The remaining jokes are mostly an obvious non-member of the asked-for category ("A cloud" as a plant, "Your elbows" for talking). A rule such as "every wrong answer must belong to the category the question asks for" could plausibly reduce them.
   - The wrong keys need a different fix: a reader, or a second model pass that checks each key. We have not changed the prompt in this task.
+
+### v4: the why-field prompt (TASK-34a9)
+
+Same 34 objectives, re-recorded once more. Full tables in `LESSON_CHECKER.md`, "v4 (why-field prompt)".
+
+- **Joke answers on the same 32 decks** (2 had no file): v2 27.6 → v3 21.8 → v4 22.7 per 100. The why field brought no further gain.
+- **Wrong keys:** v3 3 → v4 1. The one left is y5-forces-1 card 9, the same equal-and-opposite-pull misconception as v3.
+- **Two new validation failures** (y5-materials-5, y5-earth-space-3): a `"why"` key with no value (`"why","actions"`) on a Next Card or story button, which is not a quiz answer. That line is not valid JSON, so the streamed attempt stopped.
+  - Likely cause: `"why"` sits in the generic button schema.
+  - Two fixes would plausibly stop it: move `"why"` out of the generic schema into the quiz-answer rule only, and/or let the stream parser drop a valueless `"why"` key before JSON parsing. Neither is made in this task.
+- **Time to done:** p50 9.2 s, p90 10.5 s (v3 8.3 / 9.3), from the recording. That is close to the 10.5 s TASK-34a8 estimated.

@@ -109,7 +109,9 @@ export function loadV2Context(out: string, caches: Map<string, BenchCache>): V2C
   const rr = path.join(out, "rerecord.txt");
   const { ids, v2Until } = existsSync(rr) ? parseRerecordFile(readFileSync(rr, "utf8")) : { ids: [], v2Until: null };
   const rerecorded = v2Until === null ? [] : ids.filter((id) => (caches.get(id)?.recordedAt ?? "") > v2Until);
-  return { summary, rerecord: ids, rerecorded };
+  const p3 = path.join(out, "results-v3.json");
+  const v3 = existsSync(p3) ? (JSON.parse(readFileSync(p3, "utf8")) as { summary: BenchSummary }).summary : undefined;
+  return { summary, rerecord: ids, rerecorded, ...(v3 ? { v3 } : {}) };
 }
 
 /** The v1 summary kept in `<out>/results-v1.json`, or null when there is none (TASK-33c12). */

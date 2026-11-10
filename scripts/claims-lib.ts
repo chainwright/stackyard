@@ -578,7 +578,8 @@ export function fixA11y(text: string, a: A11yNumbers, line: (a: A11yNumbers) => 
 // found joke answers fell from A of N to B of M wrong answers; C wrong keys
 // (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's." Checked against
 // numbers RECOMPUTED from the per-card labels of bench/distractor-review.json
-// (v2, restricted to the re-recorded decks) and bench/distractor-review-v3.json.
+// (v2, restricted to the decks the latest review covers) and the latest review
+// (bench/distractor-review-v4.json, else -v3; TASK-34a9).
 
 export interface JokeNumbers {
   decks: number;
@@ -586,6 +587,8 @@ export interface JokeNumbers {
   beforeTotal: number;
   afterAbsurd: number;
   afterTotal: number;
+  /** Which review the "after" numbers come from ("v3", "v4"). */
+  version: string;
   wrongKeys: number;
 }
 
@@ -593,31 +596,37 @@ interface ReviewShape {
   decks: Array<{ id: string; cards: Array<{ distractors: Array<{ label: string }>; key?: { verdict: string } }> }>;
 }
 
-export function jokeFromReviews(v2: ReviewShape, v3: ReviewShape): JokeNumbers {
-  const ids = new Set(v3.decks.map((d) => d.id));
+export function jokeFromReviews(v2: ReviewShape, latest: ReviewShape, version = "v3"): JokeNumbers {
+  const ids = new Set(latest.decks.map((d) => d.id));
   const count = (r: ReviewShape, only: Set<string> | null): { absurd: number; total: number } => {
     const xs = r.decks.filter((d) => only === null || only.has(d.id)).flatMap((d) => d.cards.flatMap((c) => c.distractors));
     return { absurd: xs.filter((x) => x.label === "absurd").length, total: xs.length };
   };
   const before = count(v2, ids);
-  const after = count(v3, null);
+  const after = count(latest, null);
   return {
-    decks: v3.decks.length,
+    decks: latest.decks.length,
     beforeAbsurd: before.absurd,
     beforeTotal: before.total,
     afterAbsurd: after.absurd,
     afterTotal: after.total,
-    wrongKeys: v3.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length,
+    version,
+    wrongKeys: latest.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length,
   };
 }
 
+// TASK-34a9: the sentence names the latest review ("v4") and counts only the
+// re-recorded decks that became lesson files (both sides of the comparison).
 const JOKE_RE =
-  /In the (\d+) re-recorded decks, an AI review found joke answers fell from (\d+) of (\d+) to (\d+) of (\d+) wrong answers; (\d+) wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+  /In the (\d+) re-recorded decks that became lesson files, an AI review found joke answers fell from (\d+) of (\d+) \(v2\) to (\d+) of (\d+) \((v\d+)\) wrong answers; (\d+) wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+/** The pre-TASK-34a9 wording, recognised only so `--fix` can replace it. */
+const OLD_JOKE_RE =
+  /In the \d+ re-recorded decks, an AI review found joke answers fell from \d+ of \d+ to \d+ of \d+ wrong answers; \d+ wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
 
 export const JOKE_DISCLAIMER = "It is an AI review, not a teacher's.";
 
 export function jokeSentence(j: JokeNumbers): string {
-  return `In the ${j.decks} re-recorded decks, an AI review found joke answers fell from ${j.beforeAbsurd} of ${j.beforeTotal} to ${j.afterAbsurd} of ${j.afterTotal} wrong answers; ${j.wrongKeys} wrong key${j.wrongKeys === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
+  return `In the ${j.decks} re-recorded decks that became lesson files, an AI review found joke answers fell from ${j.beforeAbsurd} of ${j.beforeTotal} (v2) to ${j.afterAbsurd} of ${j.afterTotal} (${j.version}) wrong answers; ${j.wrongKeys} wrong key${j.wrongKeys === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
 }
 
 export function jokeLine(j: JokeNumbers): string {
@@ -627,7 +636,7 @@ export function jokeLine(j: JokeNumbers): string {
 export function readJokeClaim(text: string): JokeNumbers | null {
   const m = JOKE_RE.exec(text);
   return m
-    ? { decks: Number(m[1]), beforeAbsurd: Number(m[2]), beforeTotal: Number(m[3]), afterAbsurd: Number(m[4]), afterTotal: Number(m[5]), wrongKeys: Number(m[6]) }
+    ? { decks: Number(m[1]), beforeAbsurd: Number(m[2]), beforeTotal: Number(m[3]), afterAbsurd: Number(m[4]), afterTotal: Number(m[5]), version: m[6]!, wrongKeys: Number(m[7]) }
     : null;
 }
 
@@ -654,6 +663,7 @@ export function compareJoke(text: string, where: string, j: JokeNumbers | null):
 /** Rewrite the line's numbers, or insert it after the key-review line. */
 export function fixJoke(text: string, j: JokeNumbers): string {
   if (JOKE_RE.test(text)) return text.replace(JOKE_RE, jokeSentence(j));
+  if (OLD_JOKE_RE.test(text)) return text.replace(OLD_JOKE_RE, jokeSentence(j));
   const lines = text.split("\n");
   const at = lines.findIndex((l) => KEY_RE.test(l));
   if (at < 0) return text;

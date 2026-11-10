@@ -301,3 +301,78 @@ It still raised no false alarm, but it caught only 4 of the 74 jokes. Its marker
   - y5-materials-5 card 8: cocoa partly dissolves in milk.
 
 All three wrong keys are in two forces decks, and all three state the opposite of the physics. No mechanical check catches them.
+
+## v4 (why-field prompt)
+
+10 November 2026: run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's (TASK-34a9).
+
+The coordinator re-recorded the same 34 objectives once more, with the TASK-34a7 prompt (every quiz answer carries a "why" that the server strips). The reviewer labelled every wrong answer and judged every key on the quiz cards of the re-recorded decks, with the same definitions as v2 and v3. Results: [`distractor-review-v4.json`](distractor-review-v4.json); judgement: [`distractor-labels-v4.json`](distractor-labels-v4.json).
+
+**Two of the 34 have no lesson file in v4:** y5-materials-5 and y5-earth-space-3 failed validation, so 32 decks were reviewed. To compare like with like, the table counts the same 32 decks in all three runs.
+
+| The same 32 decks | v2 | v3 | v4 |
+|---|---|---|---|
+| Absurd wrong answers | 88 of 319 | 69 of 316 | 72 of 317 |
+| Absurd per 100 wrong answers | 27.6 | 21.8 | 22.7 |
+| Decks with at least one absurd wrong answer | 32 of 32 | 23 of 32 | 26 of 32 |
+| Wrong keys | not reviewed | 3 | 1 |
+| Ambiguous keys | not reviewed | 4 | 5 |
+
+(On all 34 decks, v3 was 74 of 336 absurd, 25 decks, 3 wrong and 6 ambiguous keys.)
+
+**What this shows.**
+- **Joke answers: no further gain.** v4 is level with v3, within noise: 22.7 against 21.8 per 100. The why field did not stop the model offering obvious non-members ("A cup" and "A stone" as light sources, "A football" and "Sand" for electricity, "Teeth and nails" to bend an arm). It wrote a "why" for them anyway. y3-light-3 (3 → 8) and y4-electricity-1 (5 → 8) got worse; y4-living-things-2 (4 → 1), y4-states-of-matter-3 (2 → 0) and y5-forces-1 (2 → 0) got better.
+- **Keys: better.** 3 wrong → 1. Both v3 errors in y5-forces-3 (the see-saw pivot, the gear force) are gone. The one left is the same misconception as v3's y5-forces-1 card 10, in a new question: y5-forces-1 card 9 keys the Earth's pull on a ball as "Bigger" than the ball's pull on the Earth; the two are equal.
+- **Ambiguous (5):**
+  - y3-light-3 card 10: the skin also feels bright sunlight.
+  - y3-light-4 card 3: "biggest shadow" depends on size, not material.
+  - y4-living-things-1 card 4: the question gives its own answer away.
+  - y5-living-things-2 card 10: pollen is a plant's male cell too.
+  - y5-materials-3 card 3: evaporating also leaves the sand.
+
+**The joke-answer check on v4** (out of sample): precision 1.00 (1 of 1), recall 0.01 (1 of 72). It caught one colour-change answer and nothing else.
+
+**Why the 2 newly invalid decks failed** (read offline from `bench/cache/`).
+- Both streams contain a malformed JSON line: `"label":"Next Card","why","actions":…` in y5-materials-5 card 2 (a flash card's Next Card), and `"label":"Pick it up","why","actions":…` in y5-earth-space-3 card 6 (a story choice). That is a `why` key with no value, on a button that is not a quiz answer.
+- The stream parser rejects that line, the attempt stops, and the recording ends there. The live app would retry or fall back; the bench counts it as not a first try.
+- **Likely cause.** The prompt put `"why"` in the generic button schema (marked "quiz answers only"), so the model also started writing it on Next Card and story buttons, sometimes as an empty `"why":""` and twice with no value at all.
+- The third invalid deck, y4-electricity-2, was not re-recorded. It has been invalid since v2 (a quiz with no right answer).
+
+**Per deck** (absurd of wrong answers):
+
+| Deck | v2 | v3 | v4 |
+|---|---|---|---|
+| y3-animals-1 | 1 of 10 | 3 of 8 | 3 of 10 |
+| y3-animals-2 | 6 of 10 | 0 of 10 | 4 of 10 |
+| y3-forces-magnets-2 | 2 of 10 | 0 of 10 | 1 of 10 |
+| y3-forces-magnets-6 | 2 of 10 | 0 of 10 | 0 of 9 |
+| y3-light-1 | 3 of 10 | 5 of 10 | 4 of 10 |
+| y3-light-2 | 2 of 10 | 2 of 10 | 1 of 10 |
+| y3-light-3 | 4 of 10 | 3 of 10 | 8 of 10 |
+| y3-light-4 | 2 of 10 | 2 of 10 | 2 of 10 |
+| y3-light-5 | 1 of 8 | 0 of 10 | 1 of 10 |
+| y3-plants-4 | 1 of 10 | 1 of 10 | 0 of 10 |
+| y3-rocks-2 | 2 of 10 | 1 of 10 | 3 of 10 |
+| y3-rocks-3 | 4 of 12 | 0 of 10 | 2 of 10 |
+| y4-animals-1 | 1 of 10 | 0 of 10 | 1 of 10 |
+| y4-animals-3 | 1 of 10 | 2 of 10 | 1 of 10 |
+| y4-electricity-1 | 6 of 10 | 5 of 10 | 8 of 10 |
+| y4-electricity-4 | 1 of 10 | 1 of 10 | 1 of 10 |
+| y4-electricity-5 | 2 of 10 | 3 of 10 | 1 of 10 |
+| y4-living-things-1 | 3 of 10 | 4 of 10 | 2 of 10 |
+| y4-living-things-2 | 4 of 10 | 4 of 10 | 1 of 10 |
+| y4-living-things-3 | 7 of 10 | 6 of 10 | 5 of 10 |
+| y4-sound-1 | 3 of 10 | 5 of 9 | 3 of 10 |
+| y4-sound-2 | 8 of 10 | 5 of 10 | 4 of 10 |
+| y4-states-of-matter-3 | 2 of 10 | 2 of 10 | 0 of 9 |
+| y5-animals-1 | 2 of 10 | 3 of 10 | 2 of 10 |
+| y5-earth-space-2 | 1 of 10 | 0 of 10 | 2 of 10 |
+| y5-earth-space-3 | 7 of 10 | 4 of 10 | no file (failed validation) |
+| y5-forces-1 | 3 of 9 | 2 of 10 | 0 of 9 |
+| y5-forces-3 | 1 of 10 | 2 of 10 | 3 of 10 |
+| y5-living-things-2 | 2 of 10 | 3 of 10 | 2 of 10 |
+| y5-materials-2 | 2 of 10 | 0 of 9 | 0 of 10 |
+| y5-materials-3 | 1 of 10 | 1 of 10 | 0 of 10 |
+| y5-materials-4 | 5 of 10 | 4 of 10 | 5 of 10 |
+| y5-materials-5 | 1 of 10 | 1 of 10 | no file (failed validation) |
+| y5-materials-6 | 3 of 10 | 0 of 10 | 2 of 10 |

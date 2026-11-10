@@ -200,3 +200,16 @@ Each task: Bug (what is missing) / Fix / Acceptance criteria.
 
 ### Pending (TASK-34a, item 5)
   - **Done (TASK-34a5).** The lesson-checker labelled the 34 re-recorded decks' distractors and keys; see `bench/LESSON_CHECKER.md`, "v3 distractor review".
+
+### TASK-34a9: the v4 (why-field prompt) review, and v3 kept  *(TASK-34a part 4)*
+  - **Fix.**
+    - Inside the Kiro session, acting read-only as the lesson-checker persona, label every distractor and judge every key of the 34 objectives re-recorded with the TASK-34a7 prompt. The judgement is in `bench/distractor-labels-v4.json`; `build-distractor-review.ts … --out bench/distractor-review-v4.json --only-file bench/rerecord.txt` expands it.
+    - A re-recorded deck that failed validation has no file. It is listed in the review's `noFile` (y5-materials-5, y5-earth-space-3), not reviewed. The v3 review is now frozen, like v2.
+    - `LESSON_CHECKER.md` "v4 (why-field prompt)" gives the v2 → v3 → v4 table on the same 32 decks (absurd per 100, decks with at least one, wrong and ambiguous keys), the check's precision and recall on v4, and why the 2 new failures failed (read offline from `bench/cache/`).
+    - `bench/results-v3.json` (saved by the coordinator) gives a "v3" table in `RESULTS.md`, by the same mechanism as v1 and v2. `RESULTS.md` says the current run (v4) re-recorded only the same 34 objectives.
+    - The claim line is recounted from `distractor-review.json` and the latest review (v4): "In the 32 re-recorded decks that became lesson files, an AI review found joke answers fell from A of N (v2) to B of M (v4) wrong answers; C wrong keys (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's." `--fix` replaces the v3-era wording.
+  - **Acceptance criteria.**
+    - A fresh build equals `distractor-review-v4.json`, and decks plus `noFile` equal `rerecord.txt`.
+    - The section's table and precision / recall equal the JSONs and `evaluate()`.
+    - The order of the v1, v2, v3 and current tables in `RESULTS.md`.
+    - The claim line equals `jokeFromReviews(v2, v4, "v4")`. The joke-line mutant still guards it.

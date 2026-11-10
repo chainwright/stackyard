@@ -85,12 +85,16 @@ import { fixtureLivingExportBytes } from "./lesson-size.js";
 
 const AXE_REPORT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs", "accessibility", "axe-report.json");
 
-/** The joke-answer line's numbers, or null while the v3 distractor review does not exist (TASK-34a6). */
+/** The joke-answer line's numbers from the LATEST distractor review (v4, else v3), or null while there is none (TASK-34a6, a9). */
 function jokeNumbers(): JokeNumbers | null {
   const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bench");
-  const v3 = path.join(dir, "distractor-review-v3.json");
-  if (!existsSync(v3)) return null;
-  return jokeFromReviews(JSON.parse(readFileSync(path.join(dir, "distractor-review.json"), "utf8")), JSON.parse(readFileSync(v3, "utf8")));
+  const latest = ["v4", "v3"].find((v) => existsSync(path.join(dir, `distractor-review-${v}.json`)));
+  if (latest === undefined) return null;
+  return jokeFromReviews(
+    JSON.parse(readFileSync(path.join(dir, "distractor-review.json"), "utf8")),
+    JSON.parse(readFileSync(path.join(dir, `distractor-review-${latest}.json`), "utf8")),
+    latest,
+  );
 }
 
 /** The accessibility line's numbers, or null while the axe report does not exist (TASK-33d6). */

@@ -511,3 +511,29 @@ reached the class (J2 P1-2).
     - They say "Never silly, magic or impossible options", and never a colour, smell or weight when the question isn't about one.
     - No topic example from the bench is used.
   - **Acceptance criteria.** Prompt tests for the pattern and the "never" sentence in all three prompts, and for no absurd bench answer quoted.
+
+### TASK-34a7: the model justifies every answer with a "why", and the server strips it  *(TASK-34a part 3)*
+  - **Bug.** The prompt-only fix (TASK-34a3) cut joke answers in the 34 re-recorded bench decks only from 96 of 339 to 74 of 336, and the re-record had 3 wrong keys (`bench/LESSON_CHECKER.md`, v3).
+  - **Fix.**
+    - All three prompts (one-shot, streaming, retry) give every quiz answer button a short `"why"` field (at most 15 words), in the button schema and in a new section, "Every answer has a why":
+      - on the right answer: the fact that makes it right, written first and checked. If the fact shows another answer is right, the key is fixed. This is a self-check against wrong keys.
+      - on each wrong answer: the real mistake a pupil of 8 to 10 makes that makes it tempting, as a pattern (mixing up two things the lesson teaches, a rule the wrong way round, half-remembering). "If you cannot name a real mistake a pupil makes, choose a different wrong answer."
+      - the category rule: every wrong answer is the same kind of thing the question asks for (a part of a plant for a plant-part question, a force for a force question, a number for a how-many question).
+    - `sanitizeRawElement` and `sanitizeRawCard` (`server/normalizeGenerated.ts`) remove every `why` from elements, their actions and the card, before validation and layout. Every path goes through them: the one-shot and retry stacks (`sanitizeRawStack`), each streamed card line, and so its preview. A `why` never reaches the stack, the exported file or the Maker.
+  - **Acceptance criteria.**
+    - Prompt tests in all three prompts.
+    - The sanitisers return no `why` key.
+    - A property: for any model output with or without `why` fields (on elements, actions or cards), the finalised stack has none and validates.
+    - A stream property: the stream is split anywhere, including inside a `"why"`, and no message has a `why`.
+    - `generate()` strips it on the first answer and on the retry, and the exported file carries none.
+    - A mutant (the strip removed) is killed.
+
+### TASK-34a8: what the "why" costs, measured  *(TASK-34a part 3)*
+  - **Measured** (`scripts/why-cost.ts`, the fixture `tests/fixtures/why/water-cycle-with-why.json`: the clean bench deck with a realistic `why` on every quiz answer): 415 → 528 characters per card (4561 → 5806 for the 11-card deck, +27 %; +249 per quiz card).
+  - That is about +330 output tokens per deck. The live limit is 12,000 (`render.yaml`), and the largest v3 recording is 6,416 characters, so there is room.
+  - If time scales with output, the v3 median of 8.3 s to done would become roughly 10.5 s. That is an estimate, not a measurement; the next recording measures it.
+  - **Not done (TASK-34a item 2, optional).** The stripped `why` texts are not kept for the lesson check. The check runs on the stack, in the Maker and the Teacher tab, and the stack must never carry them. Keeping them would mean a side channel through the stream's `done` message, the Maker store and the bench replay. That is not cheap or clean, so it is skipped.
+  - **Acceptance criteria.** A test checks the numbers above against `whyCost()`.
+
+### Pending (TASK-34a part 3)
+  - **Done (TASK-34a9).** The coordinator re-recorded the 34 ids once with the why-field prompt; the lesson-checker relabelled them into `bench/distractor-review-v4.json` (see `curriculum-bench/tasks.md`, TASK-34a9).

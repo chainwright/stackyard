@@ -87,6 +87,26 @@ function sanitizePicto(el: Record<string, unknown>): unknown | null {
 }
 
 function sanitizeRawElement(el: unknown): unknown | null {
+  // TASK-34a7: the model's "why" notes are for its own self-check and are
+  // removed here, before anything else sees the element (every path: one-shot,
+  // stream, retry, the streamed preview card all come through sanitizeRawCard).
+  return sanitizeRawElementInner(isRecord(el) ? withoutWhy(el) : el);
+}
+
+/**
+ * TASK-34a7: a copy of `r` without its "why" field (and none on its actions).
+ * The prompt asks for a "why" on every quiz answer; it never reaches the stack.
+ */
+export function withoutWhy(r: Record<string, unknown>): Record<string, unknown> {
+  const { why: _why, ...rest } = r;
+  void _why;
+  if (Array.isArray(rest["actions"])) {
+    rest["actions"] = (rest["actions"] as unknown[]).map((a) => (isRecord(a) ? withoutWhy(a) : a));
+  }
+  return rest;
+}
+
+function sanitizeRawElementInner(el: unknown): unknown | null {
   if (!isRecord(el)) return el;
   // (d) A picture the model invented ("images/cheval.png") can never be
   // exported, and a model-supplied data: URI is model-controlled bytes. The only
@@ -135,6 +155,8 @@ const DEFAULT_BOX: Record<string, { x: number; y: number; w: number; h: number }
  */
 export function sanitizeRawCard(input: unknown): unknown {
   if (!isRecord(input) || !Array.isArray(input["elements"])) return input;
+  input = withoutWhy(input);
+  if (!isRecord(input)) return input;
   let elements = (input["elements"] as unknown[])
     .map(sanitizeRawElement)
     .filter((e) => e !== null);

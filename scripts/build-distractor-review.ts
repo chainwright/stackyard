@@ -39,6 +39,8 @@ export interface DistractorReview {
   definition: string;
   date: string;
   decks: Array<{ id: string; cards: ReviewedCard[] }>;
+  /** Reviewed objectives with no lesson file (failed validation on this recording). */
+  noFile?: string[];
   totals: {
     decks: number; quizCards: number; distractors: number; absurd: number; decksWithAbsurd: number;
     wrongKeys?: number; ambiguousKeys?: number;
@@ -65,8 +67,14 @@ export function buildReview(labelsPath: string, only?: string[]): DistractorRevi
   const usedKeys = new Set<number>();
   const decks: DistractorReview["decks"] = [];
   const names = only !== undefined ? only.map((id) => `${id}.html`) : readdirSync(FILES).filter((n) => n.endsWith(".html")).sort();
+  const noFile: string[] = [];
   for (const f of names) {
     const id = f.replace(/\.html$/, "");
+    // TASK-34a9: a re-recorded deck that failed validation has no file; it is listed, not reviewed.
+    if (!existsSync(path.join(FILES, f))) {
+      noFile.push(id);
+      continue;
+    }
     const s = stackOfFile(readFileSync(path.join(FILES, f), "utf8"));
     const cards: ReviewedCard[] = [];
     s.cards.forEach((c, i) => {
@@ -96,7 +104,12 @@ export function buildReview(labelsPath: string, only?: string[]): DistractorRevi
   if (stale.length > 0) throw new Error(`distractor labels match no distractor in bench/files: ${stale.map((s) => `${s.deck} card ${s.card} "${s.option}"`).join("; ")}`);
   const staleKeys = (labels.keys ?? []).filter((_, i) => !usedKeys.has(i));
   if (staleKeys.length > 0) throw new Error(`key verdicts match no quiz card: ${staleKeys.map((k) => `${k.deck} card ${k.card}`).join("; ")}`);
-  return { about: labels.about, definition: labels.definition, date: "2026-11-09", decks, totals: reviewTotals(decks, withKeys) };
+  return { about: labels.about, definition: labels.definition, date: labelsDate(labels.about), decks, ...(noFile.length > 0 ? { noFile } : {}), totals: reviewTotals(decks, withKeys) };
+}
+
+/** The review's date: the one in its "about" text, else 9 Nov (v2, v3). */
+function labelsDate(about: string): string {
+  return /on 10 Nov 2026/.test(about) ? "2026-11-10" : "2026-11-09";
 }
 
 /** Totals recomputed from the per-card labels (never trusted from a stored file). */
