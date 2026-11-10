@@ -4,7 +4,7 @@ Make a clickable lesson from one sentence. The **lesson is the file**: one HTML 
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
-**Demo video (2:52):** https://youtu.be/G5aNDWg8UGY · **Live app:** https://stackyard-sdqt.onrender.com
+**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com
 
 ## What it is
 

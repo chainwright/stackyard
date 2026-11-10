@@ -1,6 +1,6 @@
 # Stackyard: Devpost write-up
 
-Video (public, AI disclosure set on YouTube, v7 uploaded 09.11): https://youtu.be/G5aNDWg8UGY
+Video (public, AI disclosure set on YouTube, v8b uploaded 10.11): https://youtu.be/x6W2BzhpAyU
 
 The video (v8b) was recorded on the live app at commit 4703964: a real generation in real time (Build Cards to the editor in 13.7 s in that take; usually 10–20 s), "Swap this wrong answer" with Undo, one-switch Scan, a pupil's results code on the end card and the teacher's Class Results table (two of the three pupil codes were played by script off camera, as the video says), Save a Copy with the Wi-Fi off (files of about 212 KB in the take), and check:trace and check:claims at commit 8e24ecd. The commit we submit reports 176 of 176 and 1,437 tests and a 12.8 KB player; a generated lesson file is now about 211 KB.
 
