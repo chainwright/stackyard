@@ -2092,3 +2092,4 @@ Source: `../judge_v2_2026-11-10_app_r3/` (SUMMARY.md; J05_hound.md §4–§6; J0
     - The numbers check:claims owns (traced ids, tests, player KB, file size) stay checked.
     - Line 3 (the video link) is not touched.
   - **Acceptance criteria.** A test finds the new sentences, finds no v7 caveat, and checks that check:claims still reads the paragraph's numbers.
+  - **Follow-up (v8b, the final cut).** The credits say "about 23 s" (the final cut's real AI-shot total). The note names the video "v8b": its app takes were recorded on the live app at commit 4703964, and the check:trace and check:claims shown in it ran at commit 8e24ecd. Nothing else in the line changes.

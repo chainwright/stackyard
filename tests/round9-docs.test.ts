@@ -16,9 +16,9 @@ const W = (): string => read("docs/DEVPOST_WRITEUP.md");
 const R = (): string => FLAT(read("README.md"));
 
 describe("TASK-36a1: the write-up's video note is true", () => {
-  it("TASK-36a1: TASK-37c: the video note (now v8) carries the measured file size, and the v7 caveats are gone", async () => {
+  it("TASK-36a1: TASK-37c: the video note (now v8b) carries the measured file size, and the v7 caveats are gone", async () => {
     const w = W();
-    expect(w).toContain("The video (v8) was recorded on the live app at commit 4703964:");
+    expect(w).toContain("The video (v8b) was recorded on the live app at commit 4703964:");
     expect(w).not.toContain("It shows 84 of 84 traced task ids");
     expect(w).not.toContain("were added after the video and are not shown in it");
     expect(w).not.toContain("about 185 KB");

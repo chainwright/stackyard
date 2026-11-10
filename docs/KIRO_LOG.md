@@ -703,3 +703,4 @@ Spec first: maker `tasks.md` Phase 22 (TASK-37a–c).
 - **b. Credits.** "About 24 s in six sequences, eight shots" (video v8) in the write-up and the README.
 - **c. Video note.** The write-up's paragraph under the video link now describes v8 (commit 4703964) in two sentences. The v7 caveats are gone, and the traced, tests, player KB and file-size numbers are still checked. Line 3 (the link) is unchanged.
 - **Shell edits.** None.
+- **TASK-37c follow-up (10 Nov).** Credits now say "about 23 s" (v8b, the final cut). The write-up's note names the video "v8b": app takes at 4703964, its check:trace and check:claims at 8e24ecd. The two pinning tests follow. No shell edits.

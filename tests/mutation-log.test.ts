@@ -84,12 +84,12 @@ describe("TASK-37a: the mutant count is backed by the newest logged run", () => 
 });
 
 describe("TASK-37b: the credits count the v8 footage", () => {
-  it("TASK-37b: about 24 s in six sequences, eight shots, in the write-up and the README; the old count is gone", () => {
+  it("TASK-37b: about 23 s (v8b) in six sequences, eight shots, in the write-up and the README; the old count is gone", () => {
     const w = FLAT(read("docs/DEVPOST_WRITEUP.md"));
     const r = FLAT(read("README.md"));
-    expect(w).toContain("(about 24 s in six sequences, eight shots in all)");
-    expect(r).toContain("(about 24 s in six sequences, eight shots)");
-    for (const t of [w, r]) expect(t).not.toMatch(/28 s|ten shots/);
+    expect(w).toContain("(about 23 s in six sequences, eight shots in all)");
+    expect(r).toContain("(about 23 s in six sequences, eight shots)");
+    for (const t of [w, r]) expect(t).not.toMatch(/about 28 s|about 24 s|ten shots/);
   });
 });
 
@@ -105,7 +105,7 @@ describe("TASK-37c: the write-up's video note describes v8", () => {
       "one-switch Scan",
       "a pupil's results code on the end card and the teacher's Class Results table (two of the three pupil codes were played by script off camera, as the video says)",
       "Save a Copy with the Wi-Fi off (files of about 212 KB in the take)",
-      "check:trace and check:claims at that commit",
+      "check:trace and check:claims at commit 8e24ecd",
     ]) expect(p).toContain(s);
     expect(p).not.toMatch(/v7|1,003|11\.7 KB|170 KB|20–45/);
     expect(p.split(/(?<=[.])\s+(?=[A-Z])/).length).toBeLessThanOrEqual(3);
