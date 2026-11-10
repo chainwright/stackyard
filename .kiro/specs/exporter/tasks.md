@@ -768,3 +768,19 @@ change in Play.
   - **Acceptance criteria.**
     - Fake-timer tests: the step and the wrap; disabled controls are skipped; the 1–4 s clamp; the S key; the session setting.
     - `check-a11y` finishes `samples/vikings-in-ireland.html` in a real browser with the Space key only.
+
+## Phase 9 — The floppy claim with a margin (TASK-35b)
+
+### TASK-35b: claim 6 lessons on a floppy, with about 10 KB of headroom  *(TASK-35 b)*
+  - **Why.** TASK-34b left the water-cycle living export at 208,188 B, 49 B under the budget for 7 (208,237 B). Almost any change to the player or the living file would break that claim, so the coordinator moved it to 6.
+  - **Fix.**
+    - `FLOPPY_CLAIM = 6` in `scripts/claims-lib.ts`. `floppyClaim(bytes) = min(FLOPPY_CLAIM, floppyCount(bytes))`, where `floppyCount` is still floor(1,457,664 / bytes) and never rounded up.
+    - check:claims and `--fix` compute the measured count as before, and the README and write-up state `floppyClaim`. They say 6 while 6 or more fit, and fall to the true count if the file ever grows past 242,944 B.
+    - **The size test budgets a margin below the 6-file limit.** The export must be at most `FLOPPY_MARGIN_BUDGET = 232,000` B. floor(1,457,664 / 6) = 242,944 B, so the margin is 10,944 B, and the test's name states it.
+    - Every "7" floppy wording is removed from the README, the write-up, the tests' fixtures and the comments. KIRO_LOG is history and stays as written.
+    - The TASK-34b build-only CSS squeeze is kept (it is tested). Nothing more is squeezed.
+  - **Acceptance criteria.**
+    - Unit tests for `floppyClaim`: it is capped at 6, and it is the true count below 6.
+    - The README and the write-up say 6.
+    - The size test passes with its margin and names the margin.
+    - The floor mutant (TASK-33b) is still killed.

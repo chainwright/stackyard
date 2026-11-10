@@ -28,6 +28,7 @@ import {
   addAnswer,
   setFlashSide,
   addCardAfter,
+  swapWrongAnswer,
 } from "../../src/editor/operations.js";
 
 // A tiny valid PNG data URI (1×1 transparent pixel) for addPictureElement.
@@ -193,6 +194,15 @@ export type OpSpec = (stack: Stack) => EditOperation;
 const noop: EditOperation = (s) => s;
 
 export const opSpecArb: fc.Arbitrary<OpSpec> = fc.oneof(
+  // TASK-35a2: swapWrongAnswer — any label (it may be rejected; the store keeps the stack valid)
+  fc.record({ kind: fc.constant("swapWrongAnswer" as const), seed: fc.nat(), label: fc.string({ maxLength: 90 }) }).map(
+    (o): OpSpec => (stack) => {
+      const hit = pickElement(stack, (el) => el.type === "button" && el.actions.some((a) => a.type === "score"), o.seed);
+      if (!hit) return noop;
+      const card = stack.cards.find((c) => c.elements.some((e) => e.id === hit.el.id))!;
+      return (s) => swapWrongAnswer(s, card.id, hit.el.id, o.label);
+    }
+  ),
   // editText
   fc.record({ kind: fc.constant("editText" as const), seed: fc.nat(), content: fc.string() }).map(
     (o): OpSpec => (stack) => {

@@ -16,6 +16,7 @@ import type { FlashSide } from "./EditorScreen.js";
 import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { moveElement } from "./operations.js";
+import { jokeAnswerReason } from "../shared/lessonCheck.js";
 import { isPictogramCredit } from "../shared/pictogramCredit.js";
 
 /** Map a clicked DOM node up to the card element id it belongs to. */
@@ -302,6 +303,21 @@ export function Canvas({
         )
       : undefined;
 
+  // TASK-35a4: wrong answers the lesson check's existing markers flag as a
+  // possible joke get a small ink tag above the tile's top-left (never on the
+  // right answer). Hidden on the selected tile: the inspector shows the same
+  // note there, and the drag pill owns the strip.
+  const jokeTiles: ButtonElement[] =
+    card.kind === "quiz"
+      ? card.elements.filter(
+          (el): el is ButtonElement =>
+            el.type === "button" &&
+            el.actions.some((a) => a.type === "score") &&
+            el.id !== selectedEl?.id &&
+            jokeAnswerReason(el, card) !== null,
+        )
+      : [];
+
   // Editor-only branch labels under story buttons ("→ Card N"), showing where
   // each button leads. Drawn as sibling overlays, never in the renderer's DOM.
   const branchLabels =
@@ -387,6 +403,27 @@ export function Canvas({
             ✓ Right answer
           </span>
         ) : null}
+        {jokeTiles.map((el) => (
+          <button
+            type="button"
+            class="joke-tag"
+            data-testid="joke-tag"
+            data-element-id={el.id}
+            aria-label={`“${el.label}” may be a joke answer — swap it`}
+            style={{
+              position: "absolute",
+              left: `${(el.x + 8) * scale}px`,
+              top: `${(el.y - 30) * scale}px`,
+              zIndex: 29,
+            }}
+            onClick={() => {
+              store.setSelectedElement(el.id);
+              setTimeout(() => document.querySelector<HTMLElement>("[data-testid='swap-open']")?.focus(), 0);
+            }}
+          >
+            May be a joke answer
+          </button>
+        ))}
         {branchLabels.map(({ el, label }) => (
           <div
             class="branch-label"

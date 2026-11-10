@@ -1,6 +1,7 @@
 // tests/css-squeeze.test.ts
 // TASK-34b2: the build-time CSS squeeze (vite.cssComments.ts) that pays for the
-// class-results code and keeps the lesson file inside the 7-on-a-floppy budget.
+// class-results code. (TASK-35b: the floppy claim is now 6 with a margin; the
+// squeeze is kept because it is tested, and nothing more is squeezed.)
 // It must change nothing but CSS comments and CSS whitespace.
 
 import { describe, it, expect } from "vitest";

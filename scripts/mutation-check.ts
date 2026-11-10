@@ -763,7 +763,7 @@ const MUTANTS: Mutant[] = [
   },
   // ---- the lesson is the file (TASK-33) ----
   {
-    name: "claims: the floppy count rounds up (7.68 → 8 lessons on a floppy)",
+    name: "claims: the floppy count rounds up (a count of 7.68 becomes 8)",
     reverts: "33b — floor(1,457,664 / bytes), never rounded up",
     file: "scripts/claims-lib.ts",
     find: "  return Math.floor(FLOPPY_BYTES / bytes);",
@@ -941,6 +941,31 @@ const MUTANTS: Mutant[] = [
     find: '<script id="class-results" type="application\\/json">(\\[[^<]*\\])<\\/script>',
     replace: '<script id="class-results" type="application\\/json">([\\s\\S]*?)<\\/script>',
     tests: ["tests/class-results-panel.dom.test.ts"],
+  },
+  // ---- TASK-35a5: the teacher's "Swap this wrong answer" ----
+  {
+    name: "swap: the candidate filter lets this card's right answer through",
+    reverts: "TASK-35a5 / 35a1 — a candidate is never the right answer",
+    file: "src/editor/swapCandidates.ts",
+    find: "  const onCard = new Set(answers.map((a) => normaliseText(a.label)));",
+    replace: "  const onCard = new Set(answers.filter((a) => !a.actions.some((x) => x.type === \"score\" && x.delta > 0)).map((a) => normaliseText(a.label)));",
+    tests: ["tests/maker/swap-wrong-answer.test.ts"],
+  },
+  {
+    name: "swap: swapWrongAnswer changes the answer's actions",
+    reverts: "TASK-35a5 / 35a2 — only the label changes; score, sound and goto are kept",
+    file: "src/editor/operations.ts",
+    find: '(el.id === elementId && el.type === "button" ? { ...el, label } : el)),',
+    replace: '(el.id === elementId && el.type === "button" ? { ...el, label, actions: el.actions.filter((a) => a.type !== "sound") } : el)),',
+    tests: ["tests/maker/swap-wrong-answer.test.ts", "tests/maker/swap-wrong-answer.dom.test.ts"],
+  },
+  {
+    name: "swap: the Swap control bypasses the store's chokepoint (not undoable)",
+    reverts: "TASK-35a5 / 35a3 — one undo step through EditorStore.apply",
+    file: "src/editor/Inspector.tsx",
+    find: "onSwap={(label) => dispatch((s) => swapWrongAnswer(s, card.id, selectedEl.id, label))}",
+    replace: 'onSwap={(label) => { const r = swapWrongAnswer(stack, card.id, selectedEl.id, label); if ("rejected" in r) return false; store.setStack(r); return true; }}',
+    tests: ["tests/maker/swap-wrong-answer.dom.test.ts"],
   },
 ];
 

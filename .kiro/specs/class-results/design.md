@@ -536,7 +536,8 @@ because of it:
   13.6 KB gzipped bundle and a 50 KB budget. The README figure is refreshed
   by `check:claims:fix`.
 - **Living bundle.** The panel and the tally, about +6 KB raw. The water-cycle
-  living export stays inside the 7-floppies budget (208,237 B), and the size
-  test proves it.
+  living export stayed inside the floppy budget of the time (208,237 B;
+  TASK-35b later moved the claim to six with a margin), and the size test
+  proves it.
 - **The three samples** are regenerated (`npm run samples`), because the
   player and the living bundle change.

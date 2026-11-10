@@ -1875,3 +1875,82 @@ From the coordinator's note (keep-warm installed) and the teardown of the other 
   - **Acceptance criteria.**
     - Unit tests: a right line passes; a wrong number fails; a line without the disclaimer fails; a line with no report fails; `--fix` inserts and rewrites.
     - Mutants: a tile without its accessible name, the live region turned off, and a scan that never advances are each killed.
+
+## Phase 20 - TASK-35: the teacher swaps joke answers (no model call)
+
+The coordinator's decision after TASK-34: prompt changes levelled off at about 22 joke answers per 100 (`bench/DIAGNOSIS.md`, conclusion). So the teacher gets the control instead, in the Maker, with no model call. The Teacher tab in the file is NOT changed, because the living file has a tight size budget (exporter TASK-35b).
+
+### TASK-35a1: replacement candidates, built from this deck  *(TASK-35 a)*
+  - **Fix.** `src/editor/swapCandidates.ts`, `swapCandidates(stack, cardId, elementId)`, gives at most 6 labels.
+    - **Sources, in deck order:**
+      - every answer label on the deck's OTHER quiz cards (right and wrong);
+      - every flash card's term (its first text element).
+    - **Filters.** A candidate is never:
+      - this card's right answer;
+      - already an answer on this card;
+      - a suspected joke (`jokeAnswerReason` from `src/shared/lessonCheck.ts`, the existing markers, tried as this wrong answer on this card);
+      - empty;
+      - longer than `MAX_ANSWER_LABEL` (80 characters, the limit "Type My Own…" also uses).
+    - **Comparison.** Labels are compared with `normaliseText`, so case and punctuation are ignored. Repeats are kept once, as first written.
+    - **Ranking.**
+      - Most related first: the number of words (`foldedWords`, three letters or more) a candidate shares with this card's question and answers.
+      - Ties keep deck order, so the list is deterministic. There is no randomness and no model.
+  - **Acceptance criteria.**
+    - Unit tests for each filter, the ranking, the cap of 6 and determinism.
+    - A fast-check property: for any deck and any wrong answer, every candidate passes every filter.
+
+### TASK-35a2: `swapWrongAnswer`, one validated edit  *(TASK-35 a)*
+  - **Fix.** `swapWrongAnswer(stack, cardId, elementId, newLabel)` in `src/editor/operations.ts`.
+    - **It rejects, in plain words:**
+      - a card that is not a quiz;
+      - an element that is not an answer on it;
+      - the right answer ("That's the right answer. Swap a wrong one.");
+      - an empty label;
+      - a label over 80 characters;
+      - a label already on another answer of this card;
+      - the answer's own label.
+    - It replaces only that answer's label (trimmed). Its score, sound and goto actions are untouched.
+    - It goes through `EditorStore.apply`, the single chokepoint, so it is one undo step and redo works.
+  - **Acceptance criteria.**
+    - Unit tests for every rejection.
+    - The fast-check property from 35a1 goes on: applying any candidate keeps the stack valid, keeps every element's actions identical, changes only that one label, and undo restores the exact stack (redo puts it back).
+    - `opSpecArb` gains the op, so the 1,000-run operations property covers it too.
+
+### TASK-35a3: the Swap control in the Maker inspector  *(TASK-35 a)*
+  - **Fix.** When a WRONG quiz answer is selected, the inspector shows a "Swap this wrong answer" group.
+    - A **Swap** button (`aria-expanded`, `aria-controls`) opens a labelled list of the candidates, each one a button.
+    - **Type My Own…** opens a labelled text box (`maxlength` 80) and a **Use This Answer** button.
+    - Picking one dispatches `swapWrongAnswer` and closes the list. A rejection shows in the inspector's notice.
+    - With no candidates the list says "No other answers in this deck fit here. Type your own." The right answer has no Swap control.
+  - **Acceptance criteria.**
+    - DOM tests: Swap opens the list; picking a candidate changes only that label; Type My Own… works and rejects a duplicate; undo restores it; the right answer has no Swap control.
+    - check:a11y's Maker editor page audits the open Swap list and a joke marker, and still reports 0 serious or critical violations.
+
+### TASK-35a4: suspected joke answers are marked where the teacher sees them  *(TASK-35 a)*
+  - **Fix.** The existing lesson-check markers only (`jokeAnswerReason`); there are no new heuristics.
+    - **In the Maker canvas,** every wrong answer they flag gets a small tag in the gutter above the tile's top-left: "May be a joke answer". It is a button named "“label” may be a joke answer — swap it", and it selects that tile.
+      - It is hidden while that tile is selected, because the inspector shows the note and the drag pill owns the strip.
+    - **In the inspector,** the same note, "May be a joke answer — swap it", sits next to the Swap control.
+    - Never on the right answer.
+    - **Design system:**
+      - ink text on paper with an ink hairline, no stamp red;
+      - 18px;
+      - 44px tall as a target;
+      - the ink focus ring.
+  - **Acceptance criteria.**
+    - DOM tests: a flagged wrong answer shows the tag, and the right answer never does even with a marker word. Clicking the tag selects the tile, and the inspector shows the note.
+    - A CSS test: no stamp red in the new rules, and no font size under 18px.
+
+### TASK-35a5: mutants  *(TASK-35 a)*
+  - **Fix.** Three entries in `scripts/mutation-check.ts`:
+    - the candidate filter lets the right answer through;
+    - `swapWrongAnswer` changes the answer's actions;
+    - the Swap control bypasses the store's chokepoint (not undoable).
+  - **Acceptance criteria.** `npm run check:mutants` kills all of them.
+
+**Pull note (TASK-35 c).** The coordinator changes `.github/workflows/ci.yml` on GitHub (adds check:bench, check:a11y and check:class-results). It is not edited here.
+
+**Gate (TASK-35):**
+- `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0.
+- `npm run check:mutants` reports every mutant killed.
+- `npm run check:claims:fix` if counts moved.

@@ -2,11 +2,14 @@
 // TASK-33b: "the lesson is the file", with a number you can check.
 //
 // The README and the write-up claim that N lesson files like the water-cycle
-// test deck fit on a 1.44 MB floppy: N = floor(1,457,664 / bytes), where bytes
-// is a LIVING export of tests/fixtures/generation/water-cycle-g2.json (measured
-// by scripts/lesson-size.ts, the same code check:claims uses).
-//   - Measured on 9 Nov (TASK-33): 189,754 bytes → floor(1,457,664 / 189,754) = 7.
-//   - Budget for 7: floor(1,457,664 / 7) = 208,237 bytes.
+// test deck fit on a 1.44 MB floppy, where bytes is a LIVING export of
+// tests/fixtures/generation/water-cycle-g2.json (measured by
+// scripts/lesson-size.ts, the same code check:claims uses).
+//   - TASK-35b: N = min(6, floor(1,457,664 / bytes)). The coordinator claims 6
+//     so the claim has headroom (the export was 208,188 B on 10 Nov, 49 B under
+//     the next count up).
+//   - Limit for 6: floor(1,457,664 / 6) = 242,944 bytes. The size test budgets
+//     232,000 bytes, a 10,944-byte margin below it.
 // The ready-made samples carry photos, so they are larger (9 Nov):
 //   irish-words.html 252,776 B, times-tables.html 248,187 B,
 //   vikings-in-ireland.html 238,930 B. That is why the claim names the fixture.
@@ -20,6 +23,9 @@ import {
   FLOPPY_PHRASE,
   floppyCount,
   floppyBudget,
+  floppyClaim,
+  FLOPPY_CLAIM,
+  FLOPPY_MARGIN_BUDGET,
   readFloppyClaim,
   fixFloppyClaim,
   compareFloppy,
@@ -52,22 +58,22 @@ describe("TASK-33b: the floppy count is floor(1,457,664 / bytes), never rounded 
     }
   });
 
-  const readme = "- Floppy test: **7** lesson files like the water-cycle test deck fit on a 1.44 MB floppy\n  (1,457,664 bytes).";
+  const readme = "- Floppy test: **6** lesson files like the water-cycle test deck fit on a 1.44 MB floppy\n  (1,457,664 bytes).";
 
   it("TASK-33b: the README check reads the count, goes red on a wrong or missing one, and --fix rewrites it", () => {
-    expect(readFloppyClaim(readme)).toBe(7);
-    expect(compareFloppy(readme, 7).ok).toBe(true);
-    expect(compareFloppy(readme, 6).ok).toBe(false);
-    expect(compareFloppy(readme, 8).ok).toBe(false);
-    expect(compareFloppy(readme.replace("water-cycle test deck", "samples"), 7).ok).toBe(false);
-    expect(compareFloppy("no floppy here", 7).claimed).toBe("(missing)");
-    expect(compareFloppy("no floppy here", 7).ok).toBe(false);
-    const fixed = fixFloppyClaim(readme, 6);
-    expect(readFloppyClaim(fixed)).toBe(6);
-    expect(fixed).toContain("**6** lesson files like the water-cycle test deck");
+    expect(readFloppyClaim(readme)).toBe(6);
+    expect(compareFloppy(readme, 6).ok).toBe(true);
+    expect(compareFloppy(readme, 5).ok).toBe(false);
+    expect(compareFloppy(readme, 7).ok).toBe(false);
+    expect(compareFloppy(readme.replace("water-cycle test deck", "samples"), 6).ok).toBe(false);
+    expect(compareFloppy("no floppy here", 6).claimed).toBe("(missing)");
+    expect(compareFloppy("no floppy here", 6).ok).toBe(false);
+    const fixed = fixFloppyClaim(readme, 5);
+    expect(readFloppyClaim(fixed)).toBe(5);
+    expect(fixed).toContain("**5** lesson files like the water-cycle test deck");
   });
 
-  const truth: WriteupNumbers = { traced: 110, tests: 1200, mutants: 88, properties: 63, kb: 11.9, fileKb: 185, floppy: 7 };
+  const truth: WriteupNumbers = { traced: 110, tests: 1200, mutants: 88, properties: 63, kb: 11.9, fileKb: 185, floppy: 6 };
   const writeup = (n: number): string =>
     [
       "The commit we submit reports 110 of 110 and 1,200 tests; a generated lesson file is now about 185 KB.",
@@ -77,12 +83,25 @@ describe("TASK-33b: the floppy count is floor(1,457,664 / bytes), never rounded 
     ].join("\n");
 
   it("TASK-33b: the write-up check goes red on a wrong floppy count (or none), and --fix writes the measured one", () => {
-    expect(compareWriteup(writeup(7), truth).filter((c) => !c.ok)).toEqual([]);
-    const bad = compareWriteup(writeup(8), truth).filter((c) => !c.ok);
+    expect(compareWriteup(writeup(6), truth).filter((c) => !c.ok)).toEqual([]);
+    const bad = compareWriteup(writeup(7), truth).filter((c) => !c.ok);
     expect(bad.map((c) => c.name)).toEqual(["write-up floppy count (N lesson files … fit on a 1.44 MB floppy)"]);
-    const missing = compareWriteup(writeup(7).replace(/It is small:[^\n]*/, ""), truth).filter((c) => !c.ok);
+    const missing = compareWriteup(writeup(6).replace(/It is small:[^\n]*/, ""), truth).filter((c) => !c.ok);
     expect(missing.map((c) => c.name)).toEqual(["write-up floppy"]);
-    expect(applyWriteupFix(writeup(8), truth)).toContain(`7 ${FLOPPY_PHRASE}`);
+    expect(applyWriteupFix(writeup(7), truth)).toContain(`6 ${FLOPPY_PHRASE}`);
+  });
+
+  it("TASK-35b: the stated count is min(6, the measured count) — capped at 6, never more than really fits", () => {
+    expect(FLOPPY_CLAIM).toBe(6);
+    expect(floppyClaim(189_754)).toBe(6); // 7 fit, 6 stated
+    expect(floppyClaim(208_188)).toBe(6);
+    expect(floppyClaim(100_000)).toBe(6); // 14 fit, still 6
+    expect(floppyClaim(floppyBudget(6))).toBe(6);
+    expect(floppyClaim(floppyBudget(6) + 1)).toBe(5); // past 242,944 B the claim drops
+    expect(floppyClaim(0)).toBe(0);
+    expect(floppyBudget(6)).toBe(242_944);
+    expect(FLOPPY_MARGIN_BUDGET).toBe(232_000);
+    expect(floppyBudget(6) - FLOPPY_MARGIN_BUDGET).toBe(10_944);
   });
 });
 
@@ -96,13 +115,13 @@ describe("TASK-33b: the living export of the water-cycle fixture stays inside th
     expect(FLAT(read("docs/DEVPOST_WRITEUP.md"))).toContain(`${n} ${FLOPPY_PHRASE}`);
   });
 
-  it("TASK-33b: size budget — the export is at most floor(1,457,664 / N) bytes for the README's N", async () => {
+  it("TASK-35b: size budget — the export is at most 232,000 bytes, a 10,944-byte margin below the 6-file limit (242,944 B)", async () => {
     const n = readFloppyClaim(read("README.md"))!;
     const bytes = await fixtureLivingExportBytes();
-    const budget = floppyBudget(n);
-    console.log(`TASK-33b: water-cycle living export ${bytes} bytes; budget for ${n} on a floppy ${budget} bytes; ${floppyCount(bytes)} fit`);
+    console.log(`TASK-35b: water-cycle living export ${bytes} bytes; margin budget ${FLOPPY_MARGIN_BUDGET} bytes (${FLOPPY_MARGIN_BUDGET - bytes} left); the 6-file limit ${floppyBudget(6)} bytes; ${floppyCount(bytes)} fit`);
+    expect(n).toBe(FLOPPY_CLAIM);
     expect(bytes).toBeGreaterThan(0);
-    expect(bytes, `the export grew past ${budget} bytes, so fewer than ${n} fit on a floppy`).toBeLessThanOrEqual(budget);
+    expect(bytes, `the export grew past the ${FLOPPY_MARGIN_BUDGET}-byte margin budget under the 6-file limit`).toBeLessThanOrEqual(FLOPPY_MARGIN_BUDGET);
     expect(floppyCount(bytes)).toBeGreaterThanOrEqual(n);
   });
 

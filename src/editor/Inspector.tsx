@@ -23,11 +23,108 @@ import {
   setGotoTarget,
   setFlashSide,
   addAnswer,
+  swapWrongAnswer,
+  MAX_ANSWER_LABEL,
 } from "./operations.js";
 import { primaryText, truncateLabel } from "../shared/cardTitle.js";
 import { fullCreditFor } from "../shared/readyMadeImages.js";
+import { useState } from "preact/hooks";
+import { swapCandidates } from "./swapCandidates.js";
+import { jokeAnswerReason } from "../shared/lessonCheck.js";
 
 type Notice = (m: string | null) => void;
+
+/** TASK-35a4: the note shown wherever a suspected joke answer is flagged. */
+export const JOKE_NOTE = "May be a joke answer — swap it";
+
+/**
+ * TASK-35a3: "Swap this wrong answer". Swap opens up to six replacements from
+ * this deck (TASK-35a1), plus Type My Own…. Every pick is ONE validated edit
+ * through the store (swapWrongAnswer), so it is one undo step. No model call.
+ */
+function SwapControl(props: {
+  stack: Stack;
+  card: Card;
+  answer: ButtonElement;
+  /** Apply the swap; true when it was accepted. */
+  onSwap: (label: string) => boolean;
+}): JSX.Element {
+  const { stack, card, answer, onSwap } = props;
+  const [open, setOpen] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [own, setOwn] = useState("");
+  const joke = jokeAnswerReason(answer, card) !== null;
+  const candidates = open ? swapCandidates(stack, card.id, answer.id) : [];
+  const pick = (label: string): void => {
+    if (onSwap(label)) {
+      setOpen(false);
+      setTyping(false);
+      setOwn("");
+    }
+  };
+  return (
+    <div class="field-group swap-group">
+      <span class="swap-title" id="swap-title">Swap this wrong answer</span>
+      {joke ? (
+        <p class="joke-note" data-testid="joke-note">
+          {JOKE_NOTE}
+        </p>
+      ) : null}
+      <button
+        class="ghost-btn swap-btn"
+        type="button"
+        aria-expanded={open ? "true" : "false"}
+        aria-controls="swap-list"
+        aria-describedby="swap-title"
+        data-testid="swap-open"
+        onClick={() => setOpen(!open)}
+      >
+        Swap
+      </button>
+      {open ? (
+        <div id="swap-list" class="swap-list" role="group" aria-labelledby="swap-title">
+          {candidates.length === 0 ? (
+            <p class="hint">No other answers in this deck fit here. Type your own.</p>
+          ) : (
+            <ul>
+              {candidates.map((c) => (
+                <li>
+                  <button class="ghost-btn swap-option" type="button" data-testid="swap-option" onClick={() => pick(c)}>
+                    {c}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button class="ghost-btn swap-own-btn" type="button" data-testid="swap-own" aria-expanded={typing ? "true" : "false"} onClick={() => setTyping(!typing)}>
+            Type My Own…
+          </button>
+          {typing ? (
+            <div class="swap-own">
+              <label for="swap-own-input">Your wrong answer</label>
+              <input
+                id="swap-own-input"
+                type="text"
+                maxLength={MAX_ANSWER_LABEL}
+                value={own}
+                onInput={(e) => setOwn((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    pick(own);
+                  }
+                }}
+              />
+              <button class="ghost-btn" type="button" data-testid="swap-own-use" onClick={() => pick(own)}>
+                Use This Answer
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 /** Focus the Answer box and select its text (the Inspector's answer field has id "label"). */
 export function focusAnswerBox(): void {
@@ -91,10 +188,11 @@ export function Inspector({
 
   const notice: Notice = (m) => onNotice?.(m);
 
-  function dispatch(op: Parameters<EditorStore["apply"]>[0]): void {
+  function dispatch(op: Parameters<EditorStore["apply"]>[0]): boolean {
     notice(null);
     const res = store.apply(op);
     if (!res.ok) notice(res.message);
+    return res.ok;
   }
 
   // A picture from Stackyard's own set (TASK-31h): add, swap or remove it. Not on
@@ -335,6 +433,15 @@ export function Inspector({
                 : "No answer is the right one yet. Pick one so the class can earn a point."}
           </p>
         </div>
+        {correct ? null : (
+          <SwapControl
+            key={selectedEl.id}
+            stack={stack}
+            card={card}
+            answer={selectedEl}
+            onSwap={(label) => dispatch((s) => swapWrongAnswer(s, card.id, selectedEl.id, label))}
+          />
+        )}
         {addAnswerControl}
         {kindPicker}
         {gotoPicker(selectedEl)}

@@ -115,6 +115,24 @@ async function runAxe(cdp: Cdp, base: string, tmp: string, problems: string[]): 
     if (!(await cdp.until(`document.querySelector(".sy-card .sy-element, .sy-card .sy-flash")`))) problems.push("Maker: the editor never showed a card");
     await sleep(400);
     await cdp.eval(settle);
+    // TASK-35a3/a4: audit the Swap list open and a joke-answer tag too. Make one
+    // wrong answer a suspected joke ("It glows"), then select another and open Swap.
+    const swapReady = await cdp.eval<boolean>(`(async () => {
+      const wrong = () => Array.from(document.querySelectorAll(".canvas-area .sy-card .sy-tile:not([data-correct])"));
+      const pause = () => new Promise((r) => setTimeout(r, 150));
+      if (wrong().length < 2) return false;
+      wrong()[0].click(); await pause();
+      const box = document.getElementById("label");
+      if (!box) return false;
+      box.value = "It glows"; box.dispatchEvent(new Event("input", { bubbles: true })); await pause();
+      wrong()[1].click(); await pause();
+      const open = document.querySelector("[data-testid='swap-open']");
+      if (!open) return false;
+      open.click(); await pause();
+      return !!document.querySelector("#swap-list") && !!document.querySelector("[data-testid='joke-tag']");
+    })()`);
+    if (!swapReady) problems.push("TASK-35a3: the Maker editor page could not open the Swap list beside a joke-answer tag");
+    await cdp.eval(settle);
   });
   await cdp.eval(`try { localStorage.clear(); } catch (e) {}`);
 

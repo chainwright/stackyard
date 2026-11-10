@@ -593,3 +593,27 @@ From `../CLONES_TEARDOWN_2026-11-09.md` §4 row 5. A new spec, `.kiro/specs/clas
   - Guards: a test on the real bundle, the fifth mutant, and the gate's save-and-reopen step.
 - **Docs.** The README has a "Class results (no server)" section with the privacy statement. The write-up has one "What it does" line with no number, and the feature is gone from "What's next".
 - **Shell edits.** None; source files were written with the file tools.
+
+## 10 Nov 2026: the teacher swaps joke answers; the floppy claim moves to 6 (TASK-35)
+
+The coordinator's decisions after TASK-34. The spec came first: maker `tasks.md` Phase 20 (TASK-35a1–a5) and exporter `tasks.md` Phase 9 (TASK-35b). There were no model calls.
+- **a: "Swap this wrong answer" in the Maker. It makes no model call, and the Teacher tab is unchanged.**
+  - `src/editor/swapCandidates.ts` builds up to six replacements from this deck only: the other quiz cards' answers and the flash terms.
+  - A candidate is never this card's right answer, never already on the card (compared with `normaliseText`), never a suspected joke (the existing `jokeAnswerReason` markers) and never empty or over 80 characters.
+  - They are ranked by shared words with the question and answers; ties keep deck order.
+  - `swapWrongAnswer` in `operations.ts` changes one wrong answer's label only, through `EditorStore.apply`.
+  - The inspector's Swap control has the list and Type My Own…. The canvas gets an ink "May be a joke answer" tag on flagged wrong tiles, a button that selects the tile. The inspector shows the same note.
+- **b: the floppy claim.**
+  - `FLOPPY_CLAIM = 6`. check:claims states min(6, floor(1,457,664 / bytes)).
+  - The size test budgets 232,000 B, a 10,944 B margin below the 6-file limit of 242,944 B.
+  - The water-cycle export is 208,188 B.
+  - The "7" wording is gone from the README, the write-up, test fixtures and comments. The TASK-34b CSS squeeze is kept, and nothing more is squeezed.
+- **c.** `.github/workflows/ci.yml` was not touched; the coordinator changes it on GitHub.
+- **Proof.**
+  - Unit tests for the candidate builder: each filter, the ranking, the cap and determinism.
+  - A 300-run fast-check property: any deck and any wrong answer give filtered candidates, and a swap keeps the stack valid and every action, then undo and redo restore it exactly.
+  - `opSpecArb` gains the op.
+  - DOM tests for the Swap flow and the joke marker.
+  - check:a11y's Maker editor page now audits the open Swap list beside a joke tag, with 0 violations.
+  - Three new mutants, all killed.
+- **Shell edits.** None to lasting files.

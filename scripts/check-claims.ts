@@ -56,6 +56,7 @@ import {
   countMutants,
   parseTraceCount,
   floppyCount,
+  floppyClaim,
   fixFloppyClaim,
   compareFloppy,
   compareBench,
@@ -329,7 +330,7 @@ async function measureWriteupNumbers(readme: Numbers, file: { fileKb: number; fl
 async function lessonFileNumbers(): Promise<{ fileKb: number; floppy: number }> {
   const bytes = await fixtureLivingExportBytes();
   if (bytes <= 0) return { fileKb: -1, floppy: -1 };
-  return { fileKb: Math.round(bytes / 1024), floppy: floppyCount(bytes) };
+  return { fileKb: Math.round(bytes / 1024), floppy: floppyClaim(bytes) };
 }
 
 main().catch((err) => {

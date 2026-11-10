@@ -13,6 +13,7 @@ import type {
   Action,
 } from "../shared/types.js";
 import { reject, type Rejected } from "./types.js";
+import { normaliseText } from "../shared/lessonCheck.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter, spliceNewCard, outTargets, retarget, reachableIds, isChoiceFork, nearestReachableBefore, canSplice } from "../shared/flow.js";
 import { PLACEHOLDER_WORDS } from "../shared/reachability.js";
 import { FLASH_TERM, FLASH_BACK, QUIZ_QUESTION, QUIZ_TILES, MAX_QUIZ_ANSWERS, END_BODY, PICTURE_SLOT } from "../shared/layout.js";
@@ -974,4 +975,45 @@ export function addAnswer(
     actions,
   };
   return addElementToCard(stack, cardId, el);
+}
+
+// ---------------------------------------------------------------------------
+// TASK-35a2 — swap a wrong answer (the teacher's control over joke answers)
+
+/** The longest answer label a swap (or "Type My Own…") accepts. */
+export const MAX_ANSWER_LABEL = 80;
+
+/**
+ * Replace the label of ONE wrong answer on a quiz card. Only the label changes:
+ * the answer's score, sound and goto actions are kept exactly. Rejects the right
+ * answer, an empty or over-long label, a label already on another answer of
+ * this card (case and punctuation ignored), and the answer's own label.
+ */
+export function swapWrongAnswer(
+  stack: Stack,
+  cardId: string,
+  elementId: string,
+  newLabel: string,
+): Stack | Rejected {
+  const card = stack.cards.find((c) => c.id === cardId);
+  if (card === undefined || card.kind !== "quiz") return reject("Answers belong on a question card.");
+  const answers = card.elements.filter(
+    (el): el is ButtonElement => el.type === "button" && isAnswerButton(el),
+  );
+  const target = answers.find((b) => b.id === elementId);
+  if (target === undefined) return reject("That tile isn't an answer on this card.");
+  if (target.actions.some((a) => a.type === "score" && a.delta > 0)) {
+    return reject("That's the right answer. Swap a wrong one.");
+  }
+  const label = newLabel.trim();
+  if (label.length === 0) return reject("A wrong answer needs some words. Type one or pick one.");
+  if (label.length > MAX_ANSWER_LABEL) return reject(`Keep an answer to ${MAX_ANSWER_LABEL} characters or fewer.`);
+  const key = normaliseText(label);
+  if (key === normaliseText(target.label)) return reject("That's already this answer. Pick a different one.");
+  if (answers.some((b) => b.id !== elementId && normaliseText(b.label) === key)) {
+    return reject("That answer is already on this card. Pick a different one.");
+  }
+  return mapCard(stack, cardId, (c) =>
+    mapElements(c, (el) => (el.id === elementId && el.type === "button" ? { ...el, label } : el)),
+  );
 }

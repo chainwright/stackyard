@@ -187,11 +187,11 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1378** passing (`npm test`).
+- Tests: **1394** passing (`npm test`).
 - Player bundle: **12.3 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
-- Floppy test: **7** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
+- Floppy test: **6** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
   (1,457,664 bytes). That is a living export of
   `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
   The ready-made samples in `samples/` carry photos, so they are larger.

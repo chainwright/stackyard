@@ -5,8 +5,9 @@
 // string, so ~6.7 KB of CSS commentary, plus the indentation and the spaces
 // around ":", ";", "{", "}", "," and ">", rode in every lesson file.
 //
-// Squeezing them pays for the class-results feature and keeps the
-// water-cycle lesson inside the 7-on-a-floppy budget (tests/export-size.test.ts).
+// Squeezing them paid for the class-results feature (TASK-34b). TASK-35b moved
+// the floppy claim to 6 with a margin (tests/export-size.test.ts); the squeeze
+// is kept, because it is tested, and nothing more is squeezed.
 // The source is untouched; only the bundle changes.
 //
 // Safe because:

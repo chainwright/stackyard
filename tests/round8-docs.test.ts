@@ -128,13 +128,13 @@ describe("TASK-32g: the write-up is checked like the README", () => {
     expect(FLAT(read("README.md"))).toContain("docs/DEVPOST_WRITEUP.md");
   });
 
-  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 84, properties: 63, kb: 12.0, fileKb: 190, floppy: 7 };
+  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 84, properties: 63, kb: 12.0, fileKb: 190, floppy: 6 };
   const good = [
     "The commit we submit reports 109 of 109 and 1,180 tests; a generated lesson file is now about 185 KB.",
     "(109 of 109 by `npm run check:trace`) and (109 of 109 appear in test titles) | 109 of 109 lettered task ids traced",
     "an 84-mutant script (`npm run check:mutants`, 84 of 84 killed on 9 Nov) that reverts 84 of the review fixes",
     "63 fast-check properties. The player bundle is 12.0 KB gzipped.",
-    "It is small: 7 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
+    "It is small: 6 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
     "It shows 84 of 84 traced task ids, 1,003 tests (the video: history, not a claim).",
   ].join("\n");
 
@@ -221,14 +221,14 @@ describe("TASK-32h: a / an before a number", () => {
     for (const n of [1, 7, 9, 10, 12, 17, 19, 72, 79, 90, 100, 108, 111, 180, 1000, 1100, 1800, 9000, 12000]) expect(articleFor(n), String(n)).toBe("a");
   });
 
-  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 86, properties: 63, kb: 12.0, fileKb: 190, floppy: 7 };
+  const truth: WriteupNumbers = { traced: 109, tests: 1180, mutants: 86, properties: 63, kb: 12.0, fileKb: 190, floppy: 6 };
   const text = (article: string, n: number): string =>
     [
       "The commit we submit reports 109 of 109 and 1,180 tests; a generated lesson file is now about 185 KB.",
       "(109 of 109 by `npm run check:trace`) (109 of 109 appear in test titles) | 109 of 109 lettered task ids traced",
       `${article} ${n}-mutant script (\`npm run check:mutants\`, ${n} of ${n} killed) that reverts ${n} of the review fixes`,
       "63 fast-check properties. The bundle is 12.0 KB gzipped.",
-      "7 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
+      "6 lesson files like the water-cycle test deck fit on a 1.44 MB floppy.",
     ].join("\n");
 
   it("TASK-32h: the pattern accepts 'a' and 'an'; the wrong one for the number is a drift with a clear line", () => {

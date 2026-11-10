@@ -92,6 +92,21 @@ export function floppyBudget(n: number): number {
   return Math.floor(FLOPPY_BYTES / n);
 }
 
+/**
+ * TASK-35b: the count the README and the write-up STATE. The coordinator
+ * claims 6 (not the measured 7) so the claim has headroom; it is never more
+ * than what really fits, so it drops to the true count if the file grows past
+ * floppyBudget(6) = 242,944 B.
+ */
+export const FLOPPY_CLAIM = 6;
+
+/** TASK-35b: the size test's budget, a margin below the 6-file limit (242,944 − 232,000 = 10,944 B). */
+export const FLOPPY_MARGIN_BUDGET = 232_000;
+
+export function floppyClaim(bytes: number): number {
+  return Math.min(FLOPPY_CLAIM, floppyCount(bytes));
+}
+
 /** The README's claimed floppy count, or null when the sentence is missing. */
 export function readFloppyClaim(readme: string): number | null {
   const m = FLOPPY_README_RE.exec(readme);
@@ -111,7 +126,7 @@ export function compareFloppy(readme: string, measured: number): Check {
     claimed: claimed ?? "(missing)",
     actual: measured,
     ok: claimed !== null && measured > 0 && claimed === measured,
-    note: `floor(${withCommas(FLOPPY_BYTES)} / living export bytes)`,
+    note: `min(${FLOPPY_CLAIM}, floor(${withCommas(FLOPPY_BYTES)} / living export bytes))`,
   };
 }
 
