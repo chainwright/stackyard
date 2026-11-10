@@ -157,11 +157,12 @@ describe("TASK-33c9: the five v1 first-try failures were quizzes with no right a
 });
 
 describe("TASK-33c10: the card plan, near the top and at the end of the request", () => {
-  const PLAN = "Card plan: exactly 5 quiz cards, exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (11 cards in all). The story cards are not quiz cards. Write the end card only after quiz card 5.";
+  // TASK-36c4b: a 5-question sentence asks the model for 6 (one spare, trimmed by the server).
+  const PLAN = "Card plan: exactly 6 quiz cards (the last quiz card is a spare and may be removed), exactly 2 flash cards, 1 story card with its 2 consequence cards, 1 end card (12 cards in all). The story cards are not quiz cards. Write the end card only after quiz card 6.";
 
   it("TASK-33c10: the bench sentence gives the full plan; the count parser reads quiz 5 and flash 2", () => {
     expect(cardPlan(SENTENCE)).toBe(PLAN);
-    expect(cardPlan("a 6-question quiz on fractions")).toBe("Card plan: exactly 6 quiz cards, 1 end card. Write the end card only after quiz card 6.");
+    expect(cardPlan("a 6-question quiz on fractions")).toBe("Card plan: exactly 7 quiz cards (the last quiz card is a spare and may be removed), 1 end card. Write the end card only after quiz card 7.");
     expect(cardPlan("a quiz about the Vikings")).toBe("");
   });
 
@@ -170,7 +171,7 @@ describe("TASK-33c10: the card plan, near the top and at the end of the request"
       expect(user.startsWith(PLAN + "\n\n")).toBe(true);
       expect(user.endsWith("\n\n" + PLAN)).toBe(true);
       expect(user).toContain(`Generate a stack for: "${SENTENCE}"`);
-      expect(user).toContain("Write exactly 5 quiz cards and exactly 2 flash cards.");
+      expect(user).toContain("Write exactly 6 quiz cards and exactly 2 flash cards.");
     }
     expect(buildRetry({ prompt: SENTENCE }, ["quiz-answer"]).user.endsWith(PLAN)).toBe(true);
     expect(build({ prompt: "a quiz about the Vikings" }).user).not.toContain("Card plan");

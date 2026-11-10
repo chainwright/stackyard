@@ -963,6 +963,15 @@ const MUTANTS: Mutant[] = [
     gate: ["sh", "-c", "npm run build:player >/dev/null && npm run build:living >/dev/null && node --import tsx/esm scripts/check-living-mobile.ts"],
     rebuild: ["sh", "-c", "npm run build:player && npm run build:living && node --import tsx/esm scripts/check-living-mobile.ts"],
   },
+  // ---- TASK-36c4b: one spare quiz card asked for, exactly N kept ----
+  {
+    name: "generator: the spare quiz card is not trimmed",
+    reverts: "TASK-36c4b — the server keeps exactly N of the N + 1 quiz cards asked for",
+    file: "server/deckQuality.ts",
+    find: '  for (const kind of ["quiz", "flash"] as const) {',
+    replace: '  for (const kind of ["flash"] as const) {',
+    tests: ["tests/spare-quiz.test.ts"],
+  },
   // ---- TASK-36c3: notes never block ----
   {
     name: "share: restates-flash and joke-answer block the export again",

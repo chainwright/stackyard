@@ -662,3 +662,21 @@ Read first: `../judge_v2_2026-11-10_app_r3/` (SUMMARY; the hound's fact checks a
 
   The TASK-35 right-answer mutant was moved onto the new filter.
 - **Shell edits.** One `sed -i` on two test fixtures (`tests/a11y-claims.test.ts`, `tests/joke-answers-v3.test.ts`: adding `currentWrong: 1` to a key-review fixture). Everything else used the file tools.
+
+## 10 Nov 2026: one spare quiz card (TASK-36c4b)
+
+Live, the hero sentence gave 6, 5 and 6 quiz cards with the TASK-36c4 plan. Spec first: TASK-36c4b in `stack-generator/tasks.md`.
+- **What changed.**
+  - When a quiz count N is parsed, the stream, one-shot and retry prompts ask for N + 1. The plan says "the last quiz card is a spare and may be removed", and the end card comes after quiz card N + 1.
+  - The existing TASK-32b3 trim keeps exactly N, from the end, relinked.
+  - There is no spare when no quiz count is named, for flash counts, or at the 20-card cap. The word "spare" is only in the server prompt.
+- **Cost** (`scripts/spare-cost.ts`, measured on the fixtures):
+  - with today's "why": +837 characters per deck, +14.4 % of the stream, about 209 output tokens (an estimate at 4 characters per token);
+  - without "why": 425–504 characters per quiz card.
+- **Tests.**
+  - Prompt gating.
+  - A 300-run property: any N, any valid deck with at least N quiz cards (flash cards and story forks mixed in) finalises to exactly N, validates and stays reachable.
+  - Exactly N written means no trim; fewer than N keeps the notice.
+- **Mutant.** The spare not trimmed; killed.
+- **Next.** The coordinator re-records `bench/rerecord-counts.txt` and the hero sentence.
+- **Shell edits.** None.

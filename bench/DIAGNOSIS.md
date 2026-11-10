@@ -227,3 +227,12 @@ Live, the hero sentence ("A 6-question quiz …") gave 5 quiz cards: "You asked 
   - `bench/rerecord-counts.txt` lists the four objectives whose recording has `countsOk` false: the three above plus y4-electricity-2, which has had no valid file since v2.
   - The coordinator re-records them with `npm run bench:record -- --force --only-file bench/rerecord-counts.txt`.
   - Until then the bench numbers are from the old prompt.
+
+### One spare quiz card (TASK-36c4b)
+
+Three live runs of the hero sentence with the TASK-36c4 plan gave 6, 5 and 6 quiz cards, so the plan alone is not reliable.
+
+- **What changed.** When the sentence names N quiz cards, every prompt now asks for N + 1, and the server trims back to exactly N (TASK-32b3, from the end, relinked). There are no extra model calls.
+- **What it cannot fix.** A model that writes two short still falls short, and the notice says so.
+- **Cost.** One more quiz card of output: 837 characters, +14.4 % of today's stream, about 209 output tokens (`scripts/spare-cost.ts`).
+- **What still needs measuring.** As before, only a re-recording can tell whether it works: `bench/rerecord-counts.txt` plus the hero sentence.

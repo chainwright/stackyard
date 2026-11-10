@@ -570,3 +570,27 @@ reached the class (J2 P1-2).
     - Prompt tests: the plan names the quiz count first and carries the end-card sentence; both system prompts carry the end-card rule.
     - A server test checks that a 5-quiz deck asked for 6 is not padded and keeps its notice.
     - A test checks that `rerecord-counts.txt` equals the countsOk-false objectives.
+
+### TASK-36c4b: ask for one spare quiz card, keep exactly N  *(TASK-36c4 follow-up)*
+  - **Bug.** Three live runs of the hero sentence with the TASK-36c4 card plan gave 6, 5 and 6 quiz cards. A plan alone is not reliable.
+  - **Fix.** There are no extra model calls.
+    - **When the sentence asks for N quiz cards** (`parseRequestedCounts`), the stream, one-shot and retry prompts ask for N + 1:
+      - "exactly N+1 quiz cards (the last quiz card is a spare and may be removed)";
+      - the end card comes only after quiz card N+1.
+    - **No spare** in these cases:
+      - the sentence names no quiz count;
+      - N + 1 would pass the 20-card cap;
+      - flash cards (their counts never get a spare);
+      - a total-only count ("a 10-card quiz").
+    - **The server keeps exactly N.** `trimToRequestedCounts` (TASK-32b3) already drops extra quiz cards from the end and relinks with `removeCardRelinked` (TASK-32b2). It removes the spare, or the last quiz card if the model wrote more.
+      - Exactly N written: nothing is trimmed.
+      - Fewer than N written: the shortfall notice stays ("You asked for 6 questions; the model wrote 5.").
+    - The teacher never sees the word "spare". It is only in the prompt. The wait screen may deal the spare card while the stream runs, and the finished deck has N.
+  - **Cost.** One more quiz card of output, measured on the generation fixtures by `scripts/spare-cost.ts`. The test checks these figures against it:
+    - **Today's stream** (the why fixture, a "why" on every quiz answer): one quiz card line is 837 characters, +14.4 % of the 5,806-character stream. That is about 209 output tokens, an estimate at 4 characters per token.
+    - **Without "why"** (the four generation fixtures): one quiz card line is 425–504 characters.
+    - **Time.** If time scales with output, the 8.3 s p50 to done would grow by about 1.2 s. That is an estimate, not a measurement.
+  - **Acceptance criteria.**
+    - Prompt tests: N + 1 is asked for only when N was parsed, and nothing changes when no count was asked.
+    - A fast-check property: for any parsed N and any valid model deck with at least N quiz cards (linear, with flash and story cards, a fork among them), the finalised deck has exactly N quiz cards, validates, and every card stays reachable.
+    - A mutant (the spare not trimmed) is killed.

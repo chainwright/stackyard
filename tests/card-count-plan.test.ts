@@ -14,10 +14,10 @@ const HERO =
   "A 6-question quiz on the water cycle for 4th class, two flash cards (evaporation, condensation) and a short choose-your-path story about a raindrop, the right answer plays a cheer";
 
 describe("TASK-36c4: the card plan states the quiz count first and ties the end card to it", () => {
-  it("TASK-36c4: the hero sentence's plan names 6 quiz cards first and ends with the end-card sentence", () => {
+  it("TASK-36c4: TASK-36c4b: the hero sentence's plan names the quiz count first (6 asked, 7 with the spare) and ends with the end-card sentence", () => {
     const plan = cardPlan(HERO);
-    expect(plan.startsWith("Card plan: exactly 6 quiz cards, exactly 2 flash cards,")).toBe(true);
-    expect(plan.endsWith("Write the end card only after quiz card 6.")).toBe(true);
+    expect(plan.startsWith("Card plan: exactly 7 quiz cards (the last quiz card is a spare and may be removed), exactly 2 flash cards,")).toBe(true);
+    expect(plan.endsWith("Write the end card only after quiz card 7.")).toBe(true);
   });
 
   it("TASK-36c4: the plan is at the top and the end of the user message, in the stream, one-shot and retry prompts", () => {
@@ -26,7 +26,7 @@ describe("TASK-36c4: the card plan states the quiz count first and ties the end 
       expect(p.user.startsWith(plan)).toBe(true);
       expect(p.user.endsWith(plan)).toBe(true);
     }
-    expect(buildRetry({ prompt: HERO }, ["x"]).user).toContain("Write the end card only after quiz card 6.");
+    expect(buildRetry({ prompt: HERO }, ["x"]).user).toContain("Write the end card only after quiz card 7.");
   });
 
   it("TASK-36c4: both system prompts' end-card section says the end card comes only after the last planned quiz card", () => {

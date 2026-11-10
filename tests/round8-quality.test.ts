@@ -257,9 +257,9 @@ describe("TASK-32b.3: the counts the teacher asked for", () => {
     expect(build({ prompt: "a quiz about the Vikings for 4th class" }).user).not.toMatch(/Write exactly/);
   });
 
-  it("TASK-32b: the prompts carry the counts as hard numbers (one-shot, streaming and retry)", () => {
+  it("TASK-32b: TASK-36c4b: the prompts carry the counts as hard numbers, with one spare quiz card (one-shot, streaming and retry)", () => {
     const p = "A 6-question quiz on the water cycle, two flash cards and a story";
-    const line = "Write exactly 6 quiz cards and exactly 2 flash cards.";
+    const line = "Write exactly 7 quiz cards and exactly 2 flash cards.";
     expect(build({ prompt: p }).user).toContain(line);
     expect(buildStream({ prompt: p }).user).toContain(line);
     expect(buildRetry({ prompt: p }, ["quiz-answer"]).user).toContain(line);

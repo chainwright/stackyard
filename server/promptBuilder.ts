@@ -4,7 +4,7 @@
 
 import type { GenerateRequest } from "../src/shared/types.js";
 import { PICTOGRAM_NAMES } from "../src/shared/pictograms.js";
-import { parseRequestedCounts, countsInstruction } from "../src/shared/requestedCounts.js";
+import { parseRequestedCounts, countsInstruction, type RequestedCounts } from "../src/shared/requestedCounts.js";
 
 // ---------------------------------------------------------------------------
 // System prompt (constant)
@@ -261,12 +261,28 @@ function extractCardCount(prompt: string): number | null {
  * end): the story's own question stood in for the fifth. "" when the sentence
  * names no quiz or flash count.
  */
-export function cardPlan(prompt: string): string {
+/**
+ * TASK-36c4b: the counts the PROMPT asks for. When the sentence names N quiz
+ * cards, ask for N + 1: the model sometimes writes one short, and the server
+ * trims an extra from the end (trimToRequestedCounts keeps exactly N), so one
+ * spare turns a frequent shortfall into a trim. No spare when no quiz count
+ * was named, or when N + 1 would pass the 20-card cap. Flash counts never get
+ * one. The teacher never sees the word "spare": it lives only in the prompt.
+ */
+export function promptCounts(prompt: string): RequestedCounts & { spare: boolean } {
   const c = parseRequestedCounts(prompt);
+  if (c.quiz === undefined || c.quiz + 1 > MAX_CARDS) return { ...c, spare: false };
+  return { ...c, quiz: c.quiz + 1, spare: true };
+}
+
+export function cardPlan(prompt: string): string {
+  const c = promptCounts(prompt);
   if (c.quiz === undefined && c.flash === undefined) return "";
   const story = /\bstor(?:y|ies)\b/i.test(prompt);
   const parts: string[] = [];
-  if (c.quiz !== undefined) parts.push(`exactly ${c.quiz} quiz card${c.quiz === 1 ? "" : "s"}`);
+  if (c.quiz !== undefined) {
+    parts.push(`exactly ${c.quiz} quiz card${c.quiz === 1 ? "" : "s"}${c.spare ? " (the last quiz card is a spare and may be removed)" : ""}`);
+  }
   if (c.flash !== undefined) parts.push(`exactly ${c.flash} flash card${c.flash === 1 ? "" : "s"}`);
   if (story) parts.push("1 story card with its 2 consequence cards");
   parts.push("1 end card");
@@ -279,8 +295,9 @@ export function cardPlan(prompt: string): string {
 
 function buildUserBody(prompt: string): string {
   const detected = extractCardCount(prompt);
-  // TASK-32b.3: the counts the teacher named, as hard numbers.
-  const exact = countsInstruction(parseRequestedCounts(prompt));
+  // TASK-32b.3: the counts the teacher named, as hard numbers (TASK-36c4b: with the spare quiz card).
+  const { spare: _s, ...asked } = promptCounts(prompt);
+  const exact = countsInstruction(asked);
   const counts = exact.length > 0 ? `\n\n${exact}` : "";
   const plan = cardPlan(prompt);
   if (detected !== null && detected > MAX_CARDS) {
@@ -320,7 +337,8 @@ export function buildRetry(
   errors: string[]
 ): { system: string; user: string } {
   const bulletList = errors.map((e) => `  • ${e}`).join("\n");
-  const exact = countsInstruction(parseRequestedCounts(request.prompt));
+  const { spare: _s, ...asked } = promptCounts(request.prompt);
+  const exact = countsInstruction(asked);
   const plan = cardPlan(request.prompt);
   const user =
     `The previous stack had these validation errors:\n\n${bulletList}\n\n` +
