@@ -10,7 +10,7 @@ services:
   - type: web
     name: stackyard
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: npm ci && npm run build:player && npm run build:living && npm run build:maker
     startCommand: npm start
     healthCheckPath: /api/health
