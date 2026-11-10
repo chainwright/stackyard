@@ -191,6 +191,6 @@ describe("TASK-34a4: re-record only the affected objectives; keep v2", () => {
     expect(b).toBeGreaterThan(a);
     expect(c).toBeGreaterThan(b);
     expect(md.slice(b, c)).toContain("| Passed our automatic lesson check with no warnings | 48 of 55 |");
-    expect(md.slice(c)).toContain(`v3 re-records only the ${rerecord.ids.length} objectives listed in [\`rerecord.txt\`](rerecord.txt)`);
+    expect(md.slice(c)).toContain(`re-recorded only the ${rerecord.ids.length} objectives listed in [\`rerecord.txt\`](rerecord.txt)`);
   });
 });

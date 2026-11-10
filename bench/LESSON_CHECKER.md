@@ -214,3 +214,90 @@ Three key notes turned up as well (not distractor labels):
 - y3-light-3 card 5 has a **wrong key**: "What should you never do?" marks the safe "Look at the sun through a solar viewer" right.
 - y4-sound-2 card 4 is ambiguous (already in the key review).
 - y5-living-things-1 card 7 is ambiguous: "from the day they hatch" keys "A cow".
+
+## v3 distractor review (34 re-recorded decks)
+
+9 November 2026: run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's (TASK-34a5).
+
+The coordinator re-recorded exactly the 34 objectives in [`rerecord.txt`](rerecord.txt) with the TASK-34a prompt (34 model calls). The reviewer read each re-recorded file's `#stack-data` and labelled every wrong answer on every quiz card, using the same definitions as the v2 review. It also judged every answer key, because a prompt change can break keys. Every verdict is in [`distractor-review-v3.json`](distractor-review-v3.json); the judgement itself is in [`distractor-labels-v3.json`](distractor-labels-v3.json).
+
+**The same 34 decks, before and after:**
+
+| | v2 (before) | v3 (after) |
+|---|---|---|
+| Quiz cards | 169 | 169 |
+| Wrong answers | 339 | 336 |
+| Absurd wrong answers | 96 | 74 |
+| Absurd per 100 wrong answers | 28.3 | 22.0 |
+| Decks with at least one absurd wrong answer | 34 of 34 | 25 of 34 |
+| Wrong keys | not reviewed on these decks (v2 key review: a 12-deck sample, `key-review.json`) | 3 |
+| Ambiguous keys | — | 6 |
+
+**What this shows.**
+- The prompt change helped, but less than hoped: joke answers fell by about a fifth, not to zero.
+- 9 decks are now clean, including y3-animals-2 (was 6), y3-rocks-3 (4) and y5-materials-6 (3).
+- 10 decks got worse, for example y3-light-1 (3 → 5) and y4-sound-1 (3 → 5).
+- The kind of joke that remains is mostly "not even the right kind of thing": a chair or a book as a light source, a cloud or a rock as a plant, elbows and knees for talking. The prompt's pattern ("change the one part a pupil gets wrong") does not stop the model reaching for an obvious non-member of the category.
+
+**Per deck** (absurd of wrong answers):
+
+| Deck | v2 | v3 |
+|---|---|---|
+| y3-animals-1 | 1 of 10 | 3 of 8 |
+| y3-animals-2 | 6 of 10 | 0 of 10 |
+| y3-forces-magnets-2 | 2 of 10 | 0 of 10 |
+| y3-forces-magnets-6 | 2 of 10 | 0 of 10 |
+| y3-light-1 | 3 of 10 | 5 of 10 |
+| y3-light-2 | 2 of 10 | 2 of 10 |
+| y3-light-3 | 4 of 10 | 3 of 10 |
+| y3-light-4 | 2 of 10 | 2 of 10 |
+| y3-light-5 | 1 of 8 | 0 of 10 |
+| y3-plants-4 | 1 of 10 | 1 of 10 |
+| y3-rocks-2 | 2 of 10 | 1 of 10 |
+| y3-rocks-3 | 4 of 12 | 0 of 10 |
+| y4-animals-1 | 1 of 10 | 0 of 10 |
+| y4-animals-3 | 1 of 10 | 2 of 10 |
+| y4-electricity-1 | 6 of 10 | 5 of 10 |
+| y4-electricity-4 | 1 of 10 | 1 of 10 |
+| y4-electricity-5 | 2 of 10 | 3 of 10 |
+| y4-living-things-1 | 3 of 10 | 4 of 10 |
+| y4-living-things-2 | 4 of 10 | 4 of 10 |
+| y4-living-things-3 | 7 of 10 | 6 of 10 |
+| y4-sound-1 | 3 of 10 | 5 of 9 |
+| y4-sound-2 | 8 of 10 | 5 of 10 |
+| y4-states-of-matter-3 | 2 of 10 | 2 of 10 |
+| y5-animals-1 | 2 of 10 | 3 of 10 |
+| y5-earth-space-2 | 1 of 10 | 0 of 10 |
+| y5-earth-space-3 | 7 of 10 | 4 of 10 |
+| y5-forces-1 | 3 of 9 | 2 of 10 |
+| y5-forces-3 | 1 of 10 | 2 of 10 |
+| y5-living-things-2 | 2 of 10 | 3 of 10 |
+| y5-materials-2 | 2 of 10 | 0 of 9 |
+| y5-materials-3 | 1 of 10 | 1 of 10 |
+| y5-materials-4 | 5 of 10 | 4 of 10 |
+| y5-materials-5 | 1 of 10 | 1 of 10 |
+| y5-materials-6 | 3 of 10 | 0 of 10 |
+
+**The joke-answer check, out of sample.** Its markers were chosen from the v2 labels, so v3 is the honest test (`scripts/distractor-eval.ts bench/distractor-review-v3.json`):
+
+| | Precision | Recall |
+|---|---|---|
+| v2 (in-sample, the data it was tuned on) | 1.00 (20 of 20) | 0.21 (20 of 96) |
+| v3 (out-of-sample) | 1.00 (4 of 4) | 0.05 (4 of 74) |
+
+It still raised no false alarm, but it caught only 4 of the 74 jokes. Its markers match v2's phrasing, and v3's jokes are mostly a wrong kind of thing, which no marker names. The check is a small safety net, not the fix.
+
+**Keys** (all 169 v3 quiz cards). The prompt change did break keys:
+
+- **Wrong (3):**
+  - y5-forces-1 card 10: "Which pulls harder, the Earth or the object?" keys "The Earth pulls harder". They pull equally hard.
+  - y5-forces-3 card 3: the see-saw pivot is keyed "Far from the heavy friend, near your end". It should be close to the heavy friend.
+  - y5-forces-3 card 5: a small gear turning a big gear keys the big gear's turning force as "smaller". It gets bigger.
+- **Ambiguous (6):**
+  - y4-animals-3 card 9: "the chain fox to rabbit" reads, by the deck's own arrow rule, as the rabbit eating the fox.
+  - y4-living-things-1 card 10 and y4-living-things-3 card 8 ask about the lesson itself, not the topic.
+  - y4-living-things-2 card 1: is a fallen leaf "Living" or "Neither, it is a plant part"?
+  - y5-materials-5 card 4: water turning into ice is reversed by warming, not cooling.
+  - y5-materials-5 card 8: cocoa partly dissolves in milk.
+
+All three wrong keys are in two forces decks, and all three state the opposite of the physics. No mechanical check catches them.

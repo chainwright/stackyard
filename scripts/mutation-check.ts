@@ -854,6 +854,14 @@ const MUTANTS: Mutant[] = [
     tests: ["tests/joke-answers.test.ts"],
   },
   {
+    name: "claims: the joke-answer line is accepted whatever its numbers",
+    reverts: "34a6 — the joke-answer line is checked against the review JSONs",
+    file: "scripts/claims-lib.ts",
+    find: "      ok: (Object.keys(j) as Array<keyof JokeNumbers>).every((k) => claimed[k] === j[k]),",
+    replace: "      ok: true,",
+    tests: ["tests/joke-answers-v3.test.ts"],
+  },
+  {
     name: "prompt: the wrong-answer rule loses 'never silly, magic or impossible options'",
     reverts: "34a3 — a mistake a pupil might really make",
     file: "server/promptBuilder.ts",

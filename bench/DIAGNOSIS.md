@@ -158,3 +158,14 @@ Real misconceptions are new words too ("Gold", "Steam", "Petals", "Smell" as a p
 **Effect on the current run** (still the v2 recordings, today's checks): "passed our automatic lesson check with no warnings" falls from 48 to 38 of 55. The joke-answer warning is the only new warning.
 
 **v3** re-records only the 34 objectives in `rerecord.txt` (`npm run bench:record -- --force --only-file bench/rerecord.txt`). After the re-record, the lesson-checker labels those decks' distractors the same way.
+
+### v3: the 34 re-recorded decks (TASK-34a5)
+
+Same definitions, same reviewer (the lesson-checker persona; an AI review). Full tables in `LESSON_CHECKER.md`, "v3 distractor review".
+
+- **Joke answers:** 96 of 339 → **74 of 336** (28.3 → 22.0 per 100). Decks with at least one: 34 → 25 of 34. A fifth fewer, not none.
+- **The joke-answer check, out of sample:** precision **1.00 (4 of 4)**, recall **0.05 (4 of 74)**. In-sample on v2 it was 1.00 and 0.21. The markers fit v2's phrasing and miss v3's "wrong kind of thing" jokes.
+- **Keys:** **3 wrong** (y5-forces-1 card 10; y5-forces-3 cards 3 and 5) and 6 ambiguous. The wrong ones state the opposite of the physics (gears, levers, equal and opposite pulls).
+- **Could a prompt change fix what remains?**
+  - The remaining jokes are mostly an obvious non-member of the asked-for category ("A cloud" as a plant, "Your elbows" for talking). A rule such as "every wrong answer must belong to the category the question asks for" could plausibly reduce them.
+  - The wrong keys need a different fix: a reader, or a second model pass that checks each key. We have not changed the prompt in this task.

@@ -572,3 +572,91 @@ export function fixA11y(text: string, a: A11yNumbers, line: (a: A11yNumbers) => 
   lines.splice(at + 1, 0, line(a));
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// The joke-answer line (TASK-34a6): "In the 34 re-recorded decks, an AI review
+// found joke answers fell from A of N to B of M wrong answers; C wrong keys
+// (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's." Checked against
+// numbers RECOMPUTED from the per-card labels of bench/distractor-review.json
+// (v2, restricted to the re-recorded decks) and bench/distractor-review-v3.json.
+
+export interface JokeNumbers {
+  decks: number;
+  beforeAbsurd: number;
+  beforeTotal: number;
+  afterAbsurd: number;
+  afterTotal: number;
+  wrongKeys: number;
+}
+
+interface ReviewShape {
+  decks: Array<{ id: string; cards: Array<{ distractors: Array<{ label: string }>; key?: { verdict: string } }> }>;
+}
+
+export function jokeFromReviews(v2: ReviewShape, v3: ReviewShape): JokeNumbers {
+  const ids = new Set(v3.decks.map((d) => d.id));
+  const count = (r: ReviewShape, only: Set<string> | null): { absurd: number; total: number } => {
+    const xs = r.decks.filter((d) => only === null || only.has(d.id)).flatMap((d) => d.cards.flatMap((c) => c.distractors));
+    return { absurd: xs.filter((x) => x.label === "absurd").length, total: xs.length };
+  };
+  const before = count(v2, ids);
+  const after = count(v3, null);
+  return {
+    decks: v3.decks.length,
+    beforeAbsurd: before.absurd,
+    beforeTotal: before.total,
+    afterAbsurd: after.absurd,
+    afterTotal: after.total,
+    wrongKeys: v3.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length,
+  };
+}
+
+const JOKE_RE =
+  /In the (\d+) re-recorded decks, an AI review found joke answers fell from (\d+) of (\d+) to (\d+) of (\d+) wrong answers; (\d+) wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+
+export const JOKE_DISCLAIMER = "It is an AI review, not a teacher's.";
+
+export function jokeSentence(j: JokeNumbers): string {
+  return `In the ${j.decks} re-recorded decks, an AI review found joke answers fell from ${j.beforeAbsurd} of ${j.beforeTotal} to ${j.afterAbsurd} of ${j.afterTotal} wrong answers; ${j.wrongKeys} wrong key${j.wrongKeys === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
+}
+
+export function jokeLine(j: JokeNumbers): string {
+  return `- ${jokeSentence(j)} ${JOKE_DISCLAIMER}`;
+}
+
+export function readJokeClaim(text: string): JokeNumbers | null {
+  const m = JOKE_RE.exec(text);
+  return m
+    ? { decks: Number(m[1]), beforeAbsurd: Number(m[2]), beforeTotal: Number(m[3]), afterAbsurd: Number(m[4]), afterTotal: Number(m[5]), wrongKeys: Number(m[6]) }
+    : null;
+}
+
+export function compareJoke(text: string, where: string, j: JokeNumbers | null): Check[] {
+  const claimed = readJokeClaim(text);
+  const name = `${where} joke-answer line`;
+  if (j === null) {
+    return claimed === null ? [] : [{ name, claimed: jokeSentence(claimed), actual: "(no bench/distractor-review-v3.json)", ok: false, note: "nothing backs it" }];
+  }
+  if (claimed === null) return [{ name, claimed: "(missing)", actual: jokeSentence(j), ok: false, note: "the v3 review exists, so the line is required" }];
+  const checks: Check[] = [
+    {
+      name,
+      claimed: jokeSentence(claimed),
+      actual: jokeSentence(j),
+      ok: (Object.keys(j) as Array<keyof JokeNumbers>).every((k) => claimed[k] === j[k]),
+    },
+  ];
+  const line = text.split("\n").find((l) => JOKE_RE.test(l)) ?? "";
+  if (!line.includes(JOKE_DISCLAIMER)) checks.push({ name: `${name} disclaimer`, claimed: "(missing)", actual: JOKE_DISCLAIMER, ok: false, note: "the line must say it is an AI review" });
+  return checks;
+}
+
+/** Rewrite the line's numbers, or insert it after the key-review line. */
+export function fixJoke(text: string, j: JokeNumbers): string {
+  if (JOKE_RE.test(text)) return text.replace(JOKE_RE, jokeSentence(j));
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => KEY_RE.test(l));
+  if (at < 0) return text;
+  lines.splice(at + 1, 0, jokeLine(j));
+  return lines.join("\n");
+}

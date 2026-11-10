@@ -100,16 +100,25 @@ describe("TASK-33c15: the key-accuracy sample", () => {
     expect(keyReviewSample(fake, (id) => id !== "o5", ["o2"])).toEqual(["o0", "o6", "o10", "o2"]);
   });
 
-  it("TASK-33c15: each deck lists exactly its file's quiz cards, in order, with the file's question and key", () => {
+  it("TASK-33c15: each deck lists exactly its file's quiz cards, in order, with the file's question and key (while the deck is still its v2 recording)", () => {
+    // The sample was read on v2. A deck re-recorded for v3 (TASK-34a4) has new
+    // cards; its v3 keys are in bench/distractor-review-v3.json instead.
+    const rr = readFileSync(path.join(ROOT, "bench", "rerecord.txt"), "utf8");
+    const until = /#\s*v2-recorded-until:\s*(\S+)/.exec(rr)?.[1] ?? "";
+    const stillV2 = (id: string): boolean =>
+      (JSON.parse(readFileSync(path.join(ROOT, "bench", "cache", `${id}.json`), "utf8")) as { recordedAt: string }).recordedAt <= until;
     for (const d of review.decks) {
+      for (const c of d.cards) {
+        expect(["correct", "wrong", "ambiguous"]).toContain(c.verdict);
+        if (c.verdict !== "correct") expect((c.reason ?? "").length, `${d.id} card ${c.card} needs a reason`).toBeGreaterThan(10);
+      }
+      if (!stillV2(d.id)) continue;
       const s = stackOf(d.id);
       const quizzes = s.cards.map((c, i) => ({ c, i })).filter((x) => x.c.kind === "quiz");
       expect(d.cards.map((c) => c.card), d.id).toEqual(quizzes.map((x) => x.i + 1));
       d.cards.forEach((c, j) => {
         expect(c.question, `${d.id} card ${c.card}`).toBe(primaryText(quizzes[j]!.c));
         expect(c.key, `${d.id} card ${c.card}`).toBe(rightAnswer(quizzes[j]!.c)!.label);
-        expect(["correct", "wrong", "ambiguous"]).toContain(c.verdict);
-        if (c.verdict !== "correct") expect((c.reason ?? "").length, `${d.id} card ${c.card} needs a reason`).toBeGreaterThan(10);
       });
     }
   });

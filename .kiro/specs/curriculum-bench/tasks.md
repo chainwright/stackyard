@@ -177,5 +177,26 @@ Each task: Bug (what is missing) / Fix / Acceptance criteria.
     - `RESULTS.md` shows v1, v2 and the current run, and says v3 re-records only the listed objectives, with how many are re-recorded so far.
   - **Acceptance criteria.** Tests check: `rerecord.txt` equals the ground truth's affected decks; the file parser; the v2 summary (54 / 48 / 47); the order of the three tables and the v3 sentence.
 
-### Pending (TASK-34a, item 5; not a task id yet)
-  - After the coordinator re-records the ids in `rerecord.txt` and replays, the lesson-checker labels the re-recorded decks' distractors the same way.
+### TASK-34a5: the v3 distractor and key review  *(TASK-34a part 2)*
+  - **Fix.**
+    - Inside the Kiro session, acting read-only as the lesson-checker persona, label every wrong answer on every quiz card of the 34 re-recorded decks with the v2 definitions, and judge every key (correct / wrong / ambiguous, with a reason when it is not correct).
+    - The judgement is in `bench/distractor-labels-v3.json`. `scripts/build-distractor-review.ts --labels … --out bench/distractor-review-v3.json --only-file bench/rerecord.txt` expands it.
+    - The v2 review is frozen: its 34 decks were re-recorded, so it can no longer be rebuilt from the files.
+    - `scripts/distractor-eval.ts` now measures a review from its JSON alone, which gives the check's honest out-of-sample precision and recall on v3.
+    - `LESSON_CHECKER.md` "v3 distractor review (34 re-recorded decks)" compares the same 34 decks before and after: absurd count, per 100, decks with at least one; the out-of-sample numbers; every wrong and ambiguous key.
+  - **Acceptance criteria.**
+    - A fresh build equals `distractor-review-v3.json`.
+    - The totals recompute from the labels; every absurd label and every non-correct key has a reason.
+    - The section's numbers equal the JSONs and `evaluate()`.
+
+### TASK-34a6: the joke-answer claim line  *(TASK-34a part 2)*
+  - **Fix.**
+    - README and write-up: "In the 34 re-recorded decks, an AI review found joke answers fell from A of N to B of M wrong answers; C wrong keys (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's."
+    - `check:claims` checks it against numbers recomputed from `distractor-review.json` (restricted to the re-recorded decks) and `distractor-review-v3.json`. `--fix` inserts or rewrites it.
+    - `RESULTS.md` says the current run (v3) re-recorded only the 34 listed objectives.
+  - **Acceptance criteria.**
+    - Unit tests: a right line passes; each wrong number fails; the disclaimer is required; no v3 review plus a line fails.
+    - A mutant (the line accepted whatever its numbers) is killed.
+
+### Pending (TASK-34a, item 5)
+  - **Done (TASK-34a5).** The lesson-checker labelled the 34 re-recorded decks' distractors and keys; see `bench/LESSON_CHECKER.md`, "v3 distractor review".

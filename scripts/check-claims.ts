@@ -75,11 +75,23 @@ import {
   writeupA11yLine,
   a11yFromReport,
   type A11yNumbers,
+  compareJoke,
+  fixJoke,
+  jokeFromReviews,
+  type JokeNumbers,
   type WriteupNumbers,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
 
 const AXE_REPORT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs", "accessibility", "axe-report.json");
+
+/** The joke-answer line's numbers, or null while the v3 distractor review does not exist (TASK-34a6). */
+function jokeNumbers(): JokeNumbers | null {
+  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bench");
+  const v3 = path.join(dir, "distractor-review-v3.json");
+  if (!existsSync(v3)) return null;
+  return jokeFromReviews(JSON.parse(readFileSync(path.join(dir, "distractor-review.json"), "utf8")), JSON.parse(readFileSync(v3, "utf8")));
+}
 
 /** The accessibility line's numbers, or null while the axe report does not exist (TASK-33d6). */
 function a11yNumbers(): A11yNumbers | null {
@@ -188,6 +200,7 @@ async function run(): Promise<void> {
   const keys = keyNumbers();
   // TASK-33d6: the accessibility line, once docs/accessibility/axe-report.json exists.
   const a11y = a11yNumbers();
+  const jokes = jokeNumbers();
 
   if (fix) {
     if (actual.tests < 0 || actual.kb <= 0 || actual.invariants <= 0 || actual.runs <= 0 || file.floppy <= 0) {
@@ -201,6 +214,7 @@ async function run(): Promise<void> {
     fixed = fixFloppyClaim(fixed, file.floppy);
     if (bench !== null) fixed = fixBench(fixed, bench, README_BENCH_ANCHOR, readmeBenchLine);
     if (keys !== null) fixed = fixKeyReview(fixed, keys);
+    if (jokes !== null) fixed = fixJoke(fixed, jokes);
     if (a11y !== null) fixed = fixA11y(fixed, a11y);
     if (renderCmd !== null) fixed = fixBuildCommands(fixed, renderCmd);
     if (fixed !== readme) {
@@ -217,6 +231,7 @@ async function run(): Promise<void> {
   checks.push(compareFloppy(text, file.floppy));
   checks.push(...compareBench(text, "README", bench));
   checks.push(...compareKeyReview(text, "README", keys));
+  checks.push(...compareJoke(text, "README", jokes));
   checks.push(...compareA11y(text, "README", a11y));
   if (renderCmd !== null) {
     const ok = readmeBuildCommandsMatch(text, renderCmd);
@@ -239,6 +254,7 @@ async function run(): Promise<void> {
     let after = applyWriteupFix(before, writeupActual);
     if (bench !== null) after = fixBench(after, bench, WRITEUP_BENCH_ANCHOR, writeupBenchLine);
     if (keys !== null) after = fixKeyReview(after, keys);
+    if (jokes !== null) after = fixJoke(after, jokes);
     if (a11y !== null) after = fixA11y(after, a11y, writeupA11yLine);
     if (after !== before) {
       writeFileSync(WRITEUP, after, "utf8");
@@ -248,6 +264,7 @@ async function run(): Promise<void> {
   checks.push(...compareWriteup(readFileSync(WRITEUP, "utf8"), writeupActual));
   checks.push(...compareBench(readFileSync(WRITEUP, "utf8"), "write-up", bench));
   checks.push(...compareKeyReview(readFileSync(WRITEUP, "utf8"), "write-up", keys));
+  checks.push(...compareJoke(readFileSync(WRITEUP, "utf8"), "write-up", jokes));
   checks.push(...compareA11y(readFileSync(WRITEUP, "utf8"), "write-up", a11y));
 
   let failed = false;

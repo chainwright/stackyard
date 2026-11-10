@@ -577,7 +577,9 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null,
           ...(v2 === null
             ? []
             : [
-                `v3 re-records only the ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt) (the v2 decks with at least one absurd distractor); every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. The current run uses today's checks, including the joke-answer warning (TASK-34a2).`,
+                v2.rerecorded.length === v2.rerecord.length
+                  ? `The current run (v3) re-recorded only the ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt) (the v2 decks with at least one absurd distractor), with the TASK-34a prompt; every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v3.json\`](distractor-review-v3.json). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`
+                  : `v3 re-records only the ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt) (the v2 decks with at least one absurd distractor); every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. The current run uses today's checks, including the joke-answer warning (TASK-34a2).`,
                 "",
               ]),
         ];

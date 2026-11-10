@@ -483,3 +483,20 @@ Spec first: TASK-34a1 and a4 in `curriculum-bench/tasks.md`; TASK-34a2 and a3 in
 - **Tests and mutants.** 15 tests in `tests/joke-answers.test.ts`. The `two-answers` bench fixture had two real joke answers ("It glows", "Only when it is hot"); both were replaced with plausible ones so the fixture tests one thing. Two new mutants (markers never fire; the "never silly…" sentence dropped) are killed.
 - **Small fix.** `docs/accessibility/axe-report.json` stored the server's random port in every URL, so it changed on every run. It now stores paths only (`/samples/…`, `file:<name>`), and two runs in a row give the same file.
 - **Shell edits.** One: `cp bench/results.json bench/results-v2.json`, checked with `cmp` and followed by `check:invariants`. `npm run bench` regenerated `results.json` and `RESULTS.md`. Read-only probe scripts in `/tmp` were deleted.
+
+## 9 Nov 2026 (late night): the v3 distractor review (TASK-34a part 2)
+
+The coordinator re-recorded exactly the 34 objectives in `bench/rerecord.txt` with the new prompt (34 model calls) and replayed. The current run is 54 of 55 valid on the first try, 44 with no lesson warnings. Spec: TASK-34a5 and a6 in `curriculum-bench/tasks.md`; the pending relabel is marked done.
+
+- **a5 — review.** Inside this session, acting as the lesson-checker persona (read-only; an AI review, not a teacher's), I labelled all 336 wrong answers on the 169 quiz cards of the 34 re-recorded decks and judged all 169 keys.
+  - **Joke answers in the same 34 decks:** 96 of 339 → **74 of 336** (28.3 → 22.0 per 100). Decks with at least one: 34 → 25.
+  - **Keys:** **3 wrong** (y5-forces-1 card 10; y5-forces-3 cards 3 and 5, all stating the opposite of the physics) and 6 ambiguous.
+  - **The check out of sample:** precision 1.00 (4 of 4), recall **0.05** (4 of 74). It was 0.21 in-sample.
+  - The judgement is in `bench/distractor-labels-v3.json`, expanded into `bench/distractor-review-v3.json`. The section is in `LESSON_CHECKER.md` and a v3 paragraph in `DIAGNOSIS.md`.
+- **Plumbing.**
+  - `build-distractor-review.ts` takes `--labels / --out / --only-file`. The v2 review is frozen, because its files were re-recorded.
+  - `distractor-eval.ts` now measures from a review JSON alone.
+  - Two v2-era tests that compared reviews with the deck files now skip re-recorded decks.
+  - `RESULTS.md` says the current run (v3) re-recorded only the 34 listed objectives.
+- **a6 — claim.** README and write-up: "In the 34 re-recorded decks, an AI review found joke answers fell from 96 of 339 to 74 of 336 wrong answers; 3 wrong keys (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's." It is checked by `check:claims` against both review JSONs, with a mutant. The bench line moved to 44 via `--fix`.
+- **Shell edits.** None to lasting files. A read-only probe (`/tmp/d3.mts`) was deleted.
