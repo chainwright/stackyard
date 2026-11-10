@@ -537,3 +537,25 @@ reached the class (J2 P1-2).
 
 ### Pending (TASK-34a part 3)
   - **Done (TASK-34a9).** The coordinator re-recorded the 34 ids once with the why-field prompt; the lesson-checker relabelled them into `bench/distractor-review-v4.json` (see `curriculum-bench/tasks.md`, TASK-34a9).
+
+### TASK-34a10: "why" on quiz answer buttons only  *(TASK-34a part 5)*
+  - **Bug.** v4 put `"why"` in the generic button schema. The model then added it to Next Card and story buttons, twice with no value (`"why","actions"`). That is not valid JSON, so two decks failed (52 of 55 valid on the first try, against 54 in v3).
+  - **Fix.**
+    - The generic button schema in all three prompts (the retry uses the one-shot system prompt) no longer mentions `"why"`.
+    - The quiz answer rule (invariant 4) alone asks for it: every quiz answer button has a `"why"`, and Next Card, Continue and story buttons never do.
+    - The server strip (TASK-34a7) is kept; it handles any button.
+  - **Acceptance criteria.** Prompt tests: the button schema line has no `"why"`; the quiz rule asks for it on answer buttons only.
+    - A mutant (`"why"` back in the generic schema) is killed.
+
+### TASK-34a11: the category rule, concrete and general  *(TASK-34a part 5)*
+  - **Bug.** v3 and v4 jokes are mostly an obvious non-member of the category the question asks for (a thing that is not a light source offered as one). The old sentence "Prefer a different category from the right answer, not a close relative of it" (TASK-28p) pointed the model the wrong way.
+  - **Fix.**
+    - Before writing the wrong answers, the model names the category the question asks for at the start of the right answer's `"why"` ("Category: a part of a plant." / "a material" / "a number" / "a body part").
+    - Every wrong answer must be a real member of that same category that a pupil might confuse with the right one. "An object that is not a member of the category is never a wrong answer."
+    - The TASK-28p sentence becomes: "A wrong answer is a different member of the same category as the right answer, never a near-synonym or a close relative of it." The 28p test follows.
+    - No example is copied from the bench.
+  - **Acceptance criteria.** Prompt tests for the category sentence, the never-a-non-member sentence and the reworded 28p sentence in all three prompts, plus a test that no absurd bench answer is quoted.
+    - A mutant (the category rule removed) is killed.
+
+### Pending (TASK-34a part 5; the last model-call round for distractors)
+  - **Done (TASK-34a12).** The coordinator re-recorded the 34 ids once (v5); the lesson-checker relabelled them into `bench/distractor-review-v5.json` (see `curriculum-bench/tasks.md`, TASK-34a12). The distractor work stops here; the conclusion is in `bench/DIAGNOSIS.md`.

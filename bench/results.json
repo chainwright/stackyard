@@ -9,21 +9,21 @@
   "summary": {
     "objectives": 55,
     "recorded": 55,
-    "firstTry": 52,
-    "lessonClean": 48,
-    "countsOk": 49,
-    "allReachable": 52,
-    "endReachable": 52,
-    "fkGradeMedian": 2.1,
+    "firstTry": 54,
+    "lessonClean": 43,
+    "countsOk": 51,
+    "allReachable": 54,
+    "endReachable": 54,
+    "fkGradeMedian": 2.2,
     "fileBytesMin": 197346,
-    "fileBytesMax": 200305,
+    "fileBytesMax": 201030,
     "firstCardMs": {
-      "p50": 1443,
-      "p90": 2157
+      "p50": 1413,
+      "p90": 1988
     },
     "totalMs": {
-      "p50": 9180,
-      "p90": 10498
+      "p50": 8343,
+      "p90": 9945
     },
     "models": [
       "claude-haiku-5-5 (thinking off)"
@@ -138,22 +138,24 @@
       "topic": "Plants",
       "outcome": "explore the part that flowers play in the life cycle of flowering plants, including pollination, seed formation and seed dispersal",
       "timings": {
-        "firstContentMs": 772,
-        "firstCardMs": 1682,
-        "lastCardMs": 11138,
-        "totalMs": 11140
+        "firstContentMs": 631,
+        "firstCardMs": 1471,
+        "lastCardMs": 8377,
+        "totalMs": 8379
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "restates-flash"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.1,
+      "fkGrade": 3.1,
       "answersPerQuiz": [
         3,
         3,
@@ -163,7 +165,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 197612,
+      "fileBytes": 199022,
       "file": "files/y3-plants-4.html"
     },
     {
@@ -172,10 +174,10 @@
       "topic": "Animals, including humans",
       "outcome": "identify that animals, including humans, need the right types and amount of nutrition, and that they cannot make their own food; they get nutrition from what they eat",
       "timings": {
-        "firstContentMs": 615,
-        "firstCardMs": 1419,
-        "lastCardMs": 9177,
-        "totalMs": 9180
+        "firstContentMs": 619,
+        "firstCardMs": 1496,
+        "lastCardMs": 7900,
+        "totalMs": 7904
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -187,7 +189,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.7,
+      "fkGrade": 1.8,
       "answersPerQuiz": [
         3,
         3,
@@ -195,9 +197,9 @@
         3,
         3
       ],
-      "pictures": 1,
+      "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198800,
+      "fileBytes": 198331,
       "file": "files/y3-animals-1.html"
     },
     {
@@ -206,10 +208,10 @@
       "topic": "Animals, including humans",
       "outcome": "identify that humans and some other animals have skeletons and muscles for support, protection and movement",
       "timings": {
-        "firstContentMs": 760,
-        "firstCardMs": 1582,
-        "lastCardMs": 9331,
-        "totalMs": 9332
+        "firstContentMs": 641,
+        "firstCardMs": 1564,
+        "lastCardMs": 10206,
+        "totalMs": 10208
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -231,7 +233,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198337,
+      "fileBytes": 198808,
       "file": "files/y3-animals-2.html"
     },
     {
@@ -274,10 +276,10 @@
       "topic": "Rocks",
       "outcome": "describe in simple terms how fossils are formed when things that have lived are trapped within rock",
       "timings": {
-        "firstContentMs": 578,
-        "firstCardMs": 2275,
-        "lastCardMs": 10497,
-        "totalMs": 10498
+        "firstContentMs": 730,
+        "firstCardMs": 2319,
+        "lastCardMs": 10845,
+        "totalMs": 10846
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -289,7 +291,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.4,
+      "fkGrade": 2.6,
       "answersPerQuiz": [
         3,
         3,
@@ -297,9 +299,9 @@
         3,
         3
       ],
-      "pictures": 0,
+      "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 198689,
+      "fileBytes": 200433,
       "file": "files/y3-rocks-2.html"
     },
     {
@@ -308,22 +310,24 @@
       "topic": "Rocks",
       "outcome": "recognise that soils are made from rocks and organic matter",
       "timings": {
-        "firstContentMs": 501,
-        "firstCardMs": 2123,
-        "lastCardMs": 10082,
-        "totalMs": 10083
+        "firstContentMs": 462,
+        "firstCardMs": 1348,
+        "lastCardMs": 7914,
+        "totalMs": 7915
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "restates-flash"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.1,
+      "fkGrade": 1.7,
       "answersPerQuiz": [
         3,
         3,
@@ -333,7 +337,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198848,
+      "fileBytes": 198405,
       "file": "files/y3-rocks-3.html"
     },
     {
@@ -342,10 +346,10 @@
       "topic": "Light",
       "outcome": "recognise that they need light in order to see things and that dark is the absence of light",
       "timings": {
-        "firstContentMs": 491,
-        "firstCardMs": 1919,
-        "lastCardMs": 9184,
-        "totalMs": 9184
+        "firstContentMs": 1428,
+        "firstCardMs": 2970,
+        "lastCardMs": 11010,
+        "totalMs": 11012
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -357,7 +361,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": -0.3,
+      "fkGrade": 0.2,
       "answersPerQuiz": [
         3,
         3,
@@ -365,9 +369,9 @@
         3,
         3
       ],
-      "pictures": 1,
+      "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 198873,
+      "fileBytes": 200352,
       "file": "files/y3-light-1.html"
     },
     {
@@ -376,16 +380,52 @@
       "topic": "Light",
       "outcome": "notice that light is reflected from surfaces",
       "timings": {
-        "firstContentMs": 541,
-        "firstCardMs": 1265,
-        "lastCardMs": 10091,
-        "totalMs": 10093
+        "firstContentMs": 621,
+        "firstCardMs": 1349,
+        "lastCardMs": 8654,
+        "totalMs": 8657
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
       "lessonClean": true,
       "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 2.9,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 0,
+      "removedRepeats": 0,
+      "fileBytes": 198546,
+      "file": "files/y3-light-2.html"
+    },
+    {
+      "id": "y3-light-3",
+      "year": 3,
+      "topic": "Light",
+      "outcome": "recognise that light from the sun can be dangerous and that there are ways to protect their eyes",
+      "timings": {
+        "firstContentMs": 481,
+        "firstCardMs": 1679,
+        "lastCardMs": 8300,
+        "totalMs": 8301
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": false,
+      "warnings": [
+        "two-answers"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -395,49 +435,13 @@
       "answersPerQuiz": [
         3,
         3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 1,
-      "removedRepeats": 0,
-      "fileBytes": 198794,
-      "file": "files/y3-light-2.html"
-    },
-    {
-      "id": "y3-light-3",
-      "year": 3,
-      "topic": "Light",
-      "outcome": "recognise that light from the sun can be dangerous and that there are ways to protect their eyes",
-      "timings": {
-        "firstContentMs": 492,
-        "firstCardMs": 2242,
-        "lastCardMs": 10277,
-        "totalMs": 10277
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": false,
-      "warnings": [
-        "joke-answer"
-      ],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 1.8,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
+        2,
         3,
         3
       ],
-      "pictures": 1,
+      "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 199689,
+      "fileBytes": 199957,
       "file": "files/y3-light-3.html"
     },
     {
@@ -446,44 +450,10 @@
       "topic": "Light",
       "outcome": "recognise that shadows are formed when the light from a light source is blocked by an opaque object",
       "timings": {
-        "firstContentMs": 542,
-        "firstCardMs": 1902,
-        "lastCardMs": 10053,
-        "totalMs": 10055
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 1,
-      "countsOk": false,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 2.2,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 0,
-      "removedRepeats": 0,
-      "fileBytes": 197818,
-      "file": "files/y3-light-4.html"
-    },
-    {
-      "id": "y3-light-5",
-      "year": 3,
-      "topic": "Light",
-      "outcome": "find patterns in the way that the size of shadows change",
-      "timings": {
-        "firstContentMs": 503,
-        "firstCardMs": 1270,
-        "lastCardMs": 9045,
-        "totalMs": 9045
+        "firstContentMs": 495,
+        "firstCardMs": 1341,
+        "lastCardMs": 8620,
+        "totalMs": 8621
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -495,7 +465,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.5,
+      "fkGrade": 1.7,
       "answersPerQuiz": [
         3,
         3,
@@ -505,7 +475,41 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198541,
+      "fileBytes": 198500,
+      "file": "files/y3-light-4.html"
+    },
+    {
+      "id": "y3-light-5",
+      "year": 3,
+      "topic": "Light",
+      "outcome": "find patterns in the way that the size of shadows change",
+      "timings": {
+        "firstContentMs": 498,
+        "firstCardMs": 1245,
+        "lastCardMs": 8276,
+        "totalMs": 8277
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 1,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 1,
+      "removedRepeats": 0,
+      "fileBytes": 199637,
       "file": "files/y3-light-5.html"
     },
     {
@@ -548,10 +552,10 @@
       "topic": "Forces and magnets",
       "outcome": "notice that some forces need contact between 2 objects, but magnetic forces can act at a distance",
       "timings": {
-        "firstContentMs": 916,
-        "firstCardMs": 2468,
-        "lastCardMs": 9710,
-        "totalMs": 9711
+        "firstContentMs": 492,
+        "firstCardMs": 1661,
+        "lastCardMs": 7698,
+        "totalMs": 7699
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -563,7 +567,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.9,
+      "fkGrade": 2.8,
       "answersPerQuiz": [
         3,
         3,
@@ -573,7 +577,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 198975,
+      "fileBytes": 198937,
       "file": "files/y3-forces-magnets-2.html"
     },
     {
@@ -684,78 +688,10 @@
       "topic": "Forces and magnets",
       "outcome": "predict whether 2 magnets will attract or repel each other, depending on which poles are facing",
       "timings": {
-        "firstContentMs": 535,
-        "firstCardMs": 1443,
-        "lastCardMs": 8797,
-        "totalMs": 8798
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 2.2,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        2,
-        3
-      ],
-      "pictures": 1,
-      "removedRepeats": 0,
-      "fileBytes": 199016,
-      "file": "files/y3-forces-magnets-6.html"
-    },
-    {
-      "id": "y4-living-things-1",
-      "year": 4,
-      "topic": "Living things and their habitats",
-      "outcome": "recognise that living things can be grouped in a variety of ways",
-      "timings": {
-        "firstContentMs": 531,
-        "firstCardMs": 1350,
-        "lastCardMs": 9768,
-        "totalMs": 9769
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 1.8,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 0,
-      "removedRepeats": 0,
-      "fileBytes": 198696,
-      "file": "files/y4-living-things-1.html"
-    },
-    {
-      "id": "y4-living-things-2",
-      "year": 4,
-      "topic": "Living things and their habitats",
-      "outcome": "explore and use classification keys to help group, identify and name a variety of living things in their local and wider environment",
-      "timings": {
-        "firstContentMs": 739,
-        "firstCardMs": 2488,
-        "lastCardMs": 11433,
-        "totalMs": 11434
+        "firstContentMs": 1125,
+        "firstCardMs": 1893,
+        "lastCardMs": 8810,
+        "totalMs": 8812
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -775,55 +711,21 @@
         3,
         3
       ],
-      "pictures": 0,
+      "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 198795,
-      "file": "files/y4-living-things-2.html"
+      "fileBytes": 199460,
+      "file": "files/y3-forces-magnets-6.html"
     },
     {
-      "id": "y4-living-things-3",
+      "id": "y4-living-things-1",
       "year": 4,
       "topic": "Living things and their habitats",
-      "outcome": "recognise that environments can change and that this can sometimes pose dangers to living things",
+      "outcome": "recognise that living things can be grouped in a variety of ways",
       "timings": {
-        "firstContentMs": 629,
-        "firstCardMs": 2268,
-        "lastCardMs": 9913,
-        "totalMs": 9913
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 3.8,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 0,
-      "removedRepeats": 0,
-      "fileBytes": 198755,
-      "file": "files/y4-living-things-3.html"
-    },
-    {
-      "id": "y4-animals-1",
-      "year": 4,
-      "topic": "Animals, including humans",
-      "outcome": "describe the simple functions of the basic parts of the digestive system in humans",
-      "timings": {
-        "firstContentMs": 680,
-        "firstCardMs": 2112,
-        "lastCardMs": 9377,
-        "totalMs": 9377
+        "firstContentMs": 511,
+        "firstCardMs": 1356,
+        "lastCardMs": 8547,
+        "totalMs": 8549
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -845,7 +747,111 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 198967,
+      "fileBytes": 199543,
+      "file": "files/y4-living-things-1.html"
+    },
+    {
+      "id": "y4-living-things-2",
+      "year": 4,
+      "topic": "Living things and their habitats",
+      "outcome": "explore and use classification keys to help group, identify and name a variety of living things in their local and wider environment",
+      "timings": {
+        "firstContentMs": 451,
+        "firstCardMs": 1344,
+        "lastCardMs": 8258,
+        "totalMs": 8259
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 1.8,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 0,
+      "removedRepeats": 0,
+      "fileBytes": 198895,
+      "file": "files/y4-living-things-2.html"
+    },
+    {
+      "id": "y4-living-things-3",
+      "year": 4,
+      "topic": "Living things and their habitats",
+      "outcome": "recognise that environments can change and that this can sometimes pose dangers to living things",
+      "timings": {
+        "firstContentMs": 647,
+        "firstCardMs": 1826,
+        "lastCardMs": 8536,
+        "totalMs": 8537
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 3.1,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 1,
+      "removedRepeats": 0,
+      "fileBytes": 199339,
+      "file": "files/y4-living-things-3.html"
+    },
+    {
+      "id": "y4-animals-1",
+      "year": 4,
+      "topic": "Animals, including humans",
+      "outcome": "describe the simple functions of the basic parts of the digestive system in humans",
+      "timings": {
+        "firstContentMs": 486,
+        "firstCardMs": 1374,
+        "lastCardMs": 7918,
+        "totalMs": 7919
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": false,
+      "warnings": [
+        "restates-flash"
+      ],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 2.2,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 0,
+      "removedRepeats": 0,
+      "fileBytes": 198840,
       "file": "files/y4-animals-1.html"
     },
     {
@@ -888,10 +894,10 @@
       "topic": "Animals, including humans",
       "outcome": "construct and interpret a variety of food chains, identifying producers, predators and prey",
       "timings": {
-        "firstContentMs": 463,
-        "firstCardMs": 1341,
-        "lastCardMs": 8666,
-        "totalMs": 8666
+        "firstContentMs": 501,
+        "firstCardMs": 1291,
+        "lastCardMs": 9945,
+        "totalMs": 9945
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -903,7 +909,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.1,
+      "fkGrade": 1.4,
       "answersPerQuiz": [
         3,
         3,
@@ -913,7 +919,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198209,
+      "fileBytes": 198733,
       "file": "files/y4-animals-3.html"
     },
     {
@@ -990,34 +996,36 @@
       "topic": "States of matter",
       "outcome": "identify the part played by evaporation and condensation in the water cycle and associate the rate of evaporation with temperature",
       "timings": {
-        "firstContentMs": 514,
-        "firstCardMs": 1248,
-        "lastCardMs": 9629,
-        "totalMs": 9630
+        "firstContentMs": 512,
+        "firstCardMs": 1156,
+        "lastCardMs": 8403,
+        "totalMs": 8406
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
       "lessonClean": false,
       "warnings": [
-        "restates-flash"
+        "restates-flash",
+        "joke-answer",
+        "joke-answer"
       ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 3.4,
+      "fkGrade": 4.3,
       "answersPerQuiz": [
         3,
         3,
         3,
-        2,
+        3,
         3
       ],
-      "pictures": 1,
-      "removedRepeats": 0,
-      "fileBytes": 199348,
+      "pictures": 0,
+      "removedRepeats": 1,
+      "fileBytes": 198919,
       "file": "files/y4-states-of-matter-3.html"
     },
     {
@@ -1026,10 +1034,10 @@
       "topic": "Sound",
       "outcome": "identify how sounds are made, associating some of them with something vibrating",
       "timings": {
-        "firstContentMs": 502,
-        "firstCardMs": 1224,
-        "lastCardMs": 12603,
-        "totalMs": 12604
+        "firstContentMs": 496,
+        "firstCardMs": 1265,
+        "lastCardMs": 8001,
+        "totalMs": 8003
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1041,7 +1049,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.3,
+      "fkGrade": 1.5,
       "answersPerQuiz": [
         3,
         3,
@@ -1049,9 +1057,9 @@
         3,
         3
       ],
-      "pictures": 0,
+      "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 198731,
+      "fileBytes": 199364,
       "file": "files/y4-sound-1.html"
     },
     {
@@ -1060,10 +1068,10 @@
       "topic": "Sound",
       "outcome": "recognise that vibrations from sounds travel through a medium to the ear",
       "timings": {
-        "firstContentMs": 680,
-        "firstCardMs": 1489,
-        "lastCardMs": 10311,
-        "totalMs": 10311
+        "firstContentMs": 488,
+        "firstCardMs": 1128,
+        "lastCardMs": 7592,
+        "totalMs": 7592
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1075,7 +1083,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.8,
+      "fkGrade": 2.5,
       "answersPerQuiz": [
         3,
         3,
@@ -1085,7 +1093,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198837,
+      "fileBytes": 198622,
       "file": "files/y4-sound-2.html"
     },
     {
@@ -1196,22 +1204,24 @@
       "topic": "Electricity",
       "outcome": "identify common appliances that run on electricity",
       "timings": {
-        "firstContentMs": 517,
-        "firstCardMs": 1344,
-        "lastCardMs": 8956,
-        "totalMs": 8956
+        "firstContentMs": 506,
+        "firstCardMs": 1316,
+        "lastCardMs": 8930,
+        "totalMs": 8932
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "restates-flash"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 3.3,
+      "fkGrade": 4.2,
       "answersPerQuiz": [
         3,
         3,
@@ -1219,9 +1229,9 @@
         3,
         3
       ],
-      "pictures": 1,
+      "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198778,
+      "fileBytes": 198802,
       "file": "files/y4-electricity-1.html"
     },
     {
@@ -1295,22 +1305,24 @@
       "topic": "Electricity",
       "outcome": "recognise that a switch opens and closes a circuit and associate this with whether or not a lamp lights in a simple series circuit",
       "timings": {
-        "firstContentMs": 516,
-        "firstCardMs": 1285,
-        "lastCardMs": 9196,
-        "totalMs": 9197
+        "firstContentMs": 483,
+        "firstCardMs": 1447,
+        "lastCardMs": 9384,
+        "totalMs": 9386
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "answer-inside-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.2,
+      "fkGrade": 1.7,
       "answersPerQuiz": [
         3,
         3,
@@ -1320,7 +1332,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198365,
+      "fileBytes": 198972,
       "file": "files/y4-electricity-4.html"
     },
     {
@@ -1329,10 +1341,10 @@
       "topic": "Electricity",
       "outcome": "recognise some common conductors and insulators, and associate metals with being good conductors",
       "timings": {
-        "firstContentMs": 565,
-        "firstCardMs": 2046,
-        "lastCardMs": 9374,
-        "totalMs": 9375
+        "firstContentMs": 701,
+        "firstCardMs": 1352,
+        "lastCardMs": 7962,
+        "totalMs": 7962
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1344,7 +1356,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 6.5,
+      "fkGrade": 5.5,
       "answersPerQuiz": [
         3,
         3,
@@ -1352,9 +1364,9 @@
         3,
         3
       ],
-      "pictures": 0,
+      "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 198627,
+      "fileBytes": 199258,
       "file": "files/y4-electricity-5.html"
     },
     {
@@ -1397,44 +1409,10 @@
       "topic": "Living things and their habitats",
       "outcome": "describe the life process of reproduction in some plants and animals",
       "timings": {
-        "firstContentMs": 516,
-        "firstCardMs": 1418,
-        "lastCardMs": 9323,
-        "totalMs": 9324
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 2,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 1,
-      "removedRepeats": 0,
-      "fileBytes": 198966,
-      "file": "files/y5-living-things-2.html"
-    },
-    {
-      "id": "y5-animals-1",
-      "year": 5,
-      "topic": "Animals, including humans",
-      "outcome": "describe the changes as humans develop to old age",
-      "timings": {
-        "firstContentMs": 596,
-        "firstCardMs": 2157,
-        "lastCardMs": 9612,
-        "totalMs": 9613
+        "firstContentMs": 827,
+        "firstCardMs": 2576,
+        "lastCardMs": 11223,
+        "totalMs": 11223
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1454,9 +1432,45 @@
         3,
         3
       ],
+      "pictures": 3,
+      "removedRepeats": 0,
+      "fileBytes": 200856,
+      "file": "files/y5-living-things-2.html"
+    },
+    {
+      "id": "y5-animals-1",
+      "year": 5,
+      "topic": "Animals, including humans",
+      "outcome": "describe the changes as humans develop to old age",
+      "timings": {
+        "firstContentMs": 488,
+        "firstCardMs": 1413,
+        "lastCardMs": 8216,
+        "totalMs": 8217
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": false,
+      "warnings": [
+        "restates-flash"
+      ],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 2.9,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198651,
+      "fileBytes": 198608,
       "file": "files/y5-animals-1.html"
     },
     {
@@ -1499,10 +1513,112 @@
       "topic": "Properties and changes of materials",
       "outcome": "know that some materials will dissolve in liquid to form a solution, and describe how to recover a substance from a solution",
       "timings": {
-        "firstContentMs": 508,
-        "firstCardMs": 1258,
-        "lastCardMs": 10493,
-        "totalMs": 10494
+        "firstContentMs": 501,
+        "firstCardMs": 1301,
+        "lastCardMs": 9047,
+        "totalMs": 9047
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 2.6,
+      "answersPerQuiz": [
+        4,
+        3,
+        4,
+        4,
+        3
+      ],
+      "pictures": 0,
+      "removedRepeats": 0,
+      "fileBytes": 199104,
+      "file": "files/y5-materials-2.html"
+    },
+    {
+      "id": "y5-materials-3",
+      "year": 5,
+      "topic": "Properties and changes of materials",
+      "outcome": "use knowledge of solids, liquids and gases to decide how mixtures might be separated, including through filtering, sieving and evaporating",
+      "timings": {
+        "firstContentMs": 589,
+        "firstCardMs": 1439,
+        "lastCardMs": 8076,
+        "totalMs": 8077
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 5,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 0,
+      "removedRepeats": 0,
+      "fileBytes": 198869,
+      "file": "files/y5-materials-3.html"
+    },
+    {
+      "id": "y5-materials-4",
+      "year": 5,
+      "topic": "Properties and changes of materials",
+      "outcome": "give reasons, based on evidence from comparative and fair tests, for the particular uses of everyday materials, including metals, wood and plastic",
+      "timings": {
+        "firstContentMs": 444,
+        "firstCardMs": 2354,
+        "lastCardMs": 10348,
+        "totalMs": 10348
+      },
+      "model": "claude-haiku-5-5",
+      "thinking": "off",
+      "firstTry": true,
+      "lessonClean": true,
+      "warnings": [],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 3.8,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 4,
+      "removedRepeats": 0,
+      "fileBytes": 201030,
+      "file": "files/y5-materials-4.html"
+    },
+    {
+      "id": "y5-materials-5",
+      "year": 5,
+      "topic": "Properties and changes of materials",
+      "outcome": "demonstrate that dissolving, mixing and changes of state are reversible changes",
+      "timings": {
+        "firstContentMs": 437,
+        "firstCardMs": 1776,
+        "lastCardMs": 8664,
+        "totalMs": 8665
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1524,105 +1640,8 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198392,
-      "file": "files/y5-materials-2.html"
-    },
-    {
-      "id": "y5-materials-3",
-      "year": 5,
-      "topic": "Properties and changes of materials",
-      "outcome": "use knowledge of solids, liquids and gases to decide how mixtures might be separated, including through filtering, sieving and evaporating",
-      "timings": {
-        "firstContentMs": 486,
-        "firstCardMs": 1314,
-        "lastCardMs": 9501,
-        "totalMs": 9502
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 5,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 0,
-      "removedRepeats": 1,
-      "fileBytes": 198749,
-      "file": "files/y5-materials-3.html"
-    },
-    {
-      "id": "y5-materials-4",
-      "year": 5,
-      "topic": "Properties and changes of materials",
-      "outcome": "give reasons, based on evidence from comparative and fair tests, for the particular uses of everyday materials, including metals, wood and plastic",
-      "timings": {
-        "firstContentMs": 486,
-        "firstCardMs": 1333,
-        "lastCardMs": 11957,
-        "totalMs": 11958
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
-      "quiz": 5,
-      "flash": 2,
-      "countsOk": true,
-      "allReachable": true,
-      "endReachable": true,
-      "fkGrade": 3,
-      "answersPerQuiz": [
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "pictures": 0,
-      "removedRepeats": 0,
-      "fileBytes": 198986,
-      "file": "files/y5-materials-4.html"
-    },
-    {
-      "id": "y5-materials-5",
-      "year": 5,
-      "topic": "Properties and changes of materials",
-      "outcome": "demonstrate that dissolving, mixing and changes of state are reversible changes",
-      "timings": {
-        "firstContentMs": 537,
-        "firstCardMs": 2040,
-        "lastCardMs": 2040,
-        "totalMs": 2573
-      },
-      "model": "claude-haiku-5-5",
-      "thinking": "off",
-      "firstTry": false,
-      "failure": "the streamed deck was not valid (the live app would retry or fall back)",
-      "lessonClean": null,
-      "warnings": [],
-      "quiz": null,
-      "flash": null,
-      "countsOk": null,
-      "allReachable": null,
-      "endReachable": null,
-      "fkGrade": null,
-      "answersPerQuiz": [],
-      "pictures": null,
-      "removedRepeats": null,
-      "fileBytes": null,
-      "file": null
+      "fileBytes": 199222,
+      "file": "files/y5-materials-5.html"
     },
     {
       "id": "y5-materials-6",
@@ -1630,10 +1649,10 @@
       "topic": "Properties and changes of materials",
       "outcome": "explain that some changes result in the formation of new materials, and that this kind of change is not usually reversible, including changes associated with burning and the action of acid on bicarbonate of soda",
       "timings": {
-        "firstContentMs": 496,
-        "firstCardMs": 1337,
-        "lastCardMs": 11345,
-        "totalMs": 11346
+        "firstContentMs": 517,
+        "firstCardMs": 1310,
+        "lastCardMs": 8249,
+        "totalMs": 8251
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1655,7 +1674,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198979,
+      "fileBytes": 198822,
       "file": "files/y5-materials-6.html"
     },
     {
@@ -1697,10 +1716,10 @@
       "topic": "Earth and space",
       "outcome": "describe the movement of the moon relative to the Earth",
       "timings": {
-        "firstContentMs": 591,
-        "firstCardMs": 1407,
-        "lastCardMs": 9119,
-        "totalMs": 9120
+        "firstContentMs": 507,
+        "firstCardMs": 1377,
+        "lastCardMs": 8461,
+        "totalMs": 8462
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1712,7 +1731,7 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1,
+      "fkGrade": 1.4,
       "answersPerQuiz": [
         3,
         3,
@@ -1720,9 +1739,9 @@
         3,
         3
       ],
-      "pictures": 1,
+      "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 198876,
+      "fileBytes": 199074,
       "file": "files/y5-earth-space-2.html"
     },
     {
@@ -1731,28 +1750,35 @@
       "topic": "Earth and space",
       "outcome": "describe the sun, Earth and moon as approximately spherical bodies",
       "timings": {
-        "firstContentMs": 485,
-        "firstCardMs": 2107,
-        "lastCardMs": 5375,
-        "totalMs": 6132
+        "firstContentMs": 532,
+        "firstCardMs": 1260,
+        "lastCardMs": 8838,
+        "totalMs": 8839
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
-      "firstTry": false,
-      "failure": "the streamed deck was not valid (the live app would retry or fall back)",
-      "lessonClean": null,
-      "warnings": [],
-      "quiz": null,
-      "flash": null,
-      "countsOk": null,
-      "allReachable": null,
-      "endReachable": null,
-      "fkGrade": null,
-      "answersPerQuiz": [],
-      "pictures": null,
-      "removedRepeats": null,
-      "fileBytes": null,
-      "file": null
+      "firstTry": true,
+      "lessonClean": false,
+      "warnings": [
+        "joke-answer"
+      ],
+      "quiz": 5,
+      "flash": 2,
+      "countsOk": true,
+      "allReachable": true,
+      "endReachable": true,
+      "fkGrade": 0.5,
+      "answersPerQuiz": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "pictures": 3,
+      "removedRepeats": 0,
+      "fileBytes": 200288,
+      "file": "files/y5-earth-space-3.html"
     },
     {
       "id": "y5-earth-space-4",
@@ -1794,10 +1820,10 @@
       "topic": "Forces",
       "outcome": "explain that unsupported objects fall towards the Earth because of the force of gravity acting between the Earth and the falling object",
       "timings": {
-        "firstContentMs": 437,
-        "firstCardMs": 1258,
-        "lastCardMs": 10148,
-        "totalMs": 10150
+        "firstContentMs": 452,
+        "firstCardMs": 1160,
+        "lastCardMs": 7367,
+        "totalMs": 7369
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
@@ -1809,17 +1835,17 @@
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 2.2,
+      "fkGrade": 1.6,
       "answersPerQuiz": [
         3,
         3,
         3,
-        2,
+        3,
         3
       ],
-      "pictures": 1,
+      "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 198727,
+      "fileBytes": 199622,
       "file": "files/y5-forces-1.html"
     },
     {
@@ -1862,36 +1888,33 @@
       "topic": "Forces",
       "outcome": "recognise that some mechanisms including levers, pulleys and gears allow a smaller force to have a greater effect",
       "timings": {
-        "firstContentMs": 471,
-        "firstCardMs": 1480,
-        "lastCardMs": 9948,
-        "totalMs": 9948
+        "firstContentMs": 576,
+        "firstCardMs": 1464,
+        "lastCardMs": 7955,
+        "totalMs": 7956
       },
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
       "lessonClean": false,
       "warnings": [
-        "restates-flash",
-        "restates-flash",
         "restates-flash"
       ],
-      "quiz": 5,
+      "quiz": 4,
       "flash": 2,
-      "countsOk": true,
+      "countsOk": false,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 1.5,
+      "fkGrade": 2.5,
       "answersPerQuiz": [
-        3,
         3,
         3,
         3,
         3
       ],
-      "pictures": 0,
+      "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 199041,
+      "fileBytes": 199066,
       "file": "files/y5-forces-3.html"
     }
   ]

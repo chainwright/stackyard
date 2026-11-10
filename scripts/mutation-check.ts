@@ -846,6 +846,22 @@ const MUTANTS: Mutant[] = [
   },
   // ---- no joke distractors (TASK-34a) ----
   {
+    name: "prompt: 'why' is back in the generic button schema (every button)",
+    reverts: "34a10 — why on quiz answer buttons only",
+    file: "server/promptBuilder.ts",
+    find: '- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }',
+    replace: '- { "type": "button", "id": "<short unique id>", "label": "...", "why": "...", "actions": [...] }',
+    tests: ["tests/why-fields.test.ts"],
+  },
+  {
+    name: "prompt: the category rule is dropped (non-members allowed as wrong answers)",
+    reverts: "34a11 — every wrong answer is a member of the named category",
+    file: "server/promptBuilder.ts",
+    find: " An object that is not a member of the category is never a wrong answer.",
+    replace: "",
+    tests: ["tests/why-fields.test.ts"],
+  },
+  {
     name: "generator: a model 'why' field leaks into the stack (not stripped)",
     reverts: "34a7 — every why is stripped before validation and layout",
     file: "server/normalizeGenerated.ts",

@@ -85,15 +85,20 @@ import { fixtureLivingExportBytes } from "./lesson-size.js";
 
 const AXE_REPORT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs", "accessibility", "axe-report.json");
 
-/** The joke-answer line's numbers from the LATEST distractor review (v4, else v3), or null while there is none (TASK-34a6, a9). */
+/** The joke-answer line's numbers from the LATEST distractor review (v5, else v4, else v3), or null while there is none (TASK-34a6, a9, a12). */
 function jokeNumbers(): JokeNumbers | null {
   const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bench");
-  const latest = ["v4", "v3"].find((v) => existsSync(path.join(dir, `distractor-review-${v}.json`)));
+  const order = ["v5", "v4", "v3"];
+  const latest = order.find((v) => existsSync(path.join(dir, `distractor-review-${v}.json`)));
   if (latest === undefined) return null;
+  const read = (v: string) => JSON.parse(readFileSync(path.join(dir, `distractor-review-${v}.json`), "utf8"));
+  // The runs between v2 and the latest: only decks with a file in all of them count.
+  const between = order.slice(order.indexOf(latest) + 1).filter((v) => existsSync(path.join(dir, `distractor-review-${v}.json`)));
   return jokeFromReviews(
     JSON.parse(readFileSync(path.join(dir, "distractor-review.json"), "utf8")),
-    JSON.parse(readFileSync(path.join(dir, `distractor-review-${latest}.json`), "utf8")),
+    read(latest),
     latest,
+    between.map(read),
   );
 }
 

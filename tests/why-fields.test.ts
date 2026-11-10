@@ -62,15 +62,41 @@ describe("TASK-34a7: the prompts ask for a why on every quiz answer, and the cat
     ["streaming", buildStream({ prompt: fx.prompt }).system],
     ["retry", buildRetry({ prompt: fx.prompt }, ["quiz-answer"]).system],
   ];
-  it("TASK-34a7: the why field, its two meanings, the 'choose a different wrong answer' rule and the same-kind rule, in all three prompts", () => {
+  it("TASK-34a7: the why field, its two meanings and the 'choose a different wrong answer' rule, in all three prompts", () => {
     for (const [name, sys] of prompts()) {
       expect(sys, name).toContain("## Every answer has a why");
-      expect(sys, name).toContain('"why": "<quiz answers only: see \'Every answer has a why\'>"');
-      expect(sys, name).toContain("On the right answer: the fact that makes it right. Write it first and check it. If the fact shows another answer is right, fix which answer has delta 1.");
+      expect(sys, name).toContain("Write it first and check it. If the fact shows another answer is right, fix which answer has delta 1.");
       expect(sys, name).toContain("the real mistake a pupil of 8 to 10 makes that makes this option tempting");
       expect(sys, name).toContain("If you cannot name a real mistake a pupil makes, choose a different wrong answer.");
-      expect(sys, name).toContain("Every wrong answer must be the same kind of thing the question asks for: a part of a plant for a plant-part question, a force for a force question, a number for a how-many question.");
       expect(sys, name).toContain("Stackyard reads it and removes it; the class never sees it.");
+    }
+  });
+
+  it("TASK-34a10: 'why' is asked for on quiz answer buttons only: not in the generic button schema, but in the quiz rule", () => {
+    for (const [name, sys] of prompts()) {
+      const schema = sys.split("\n").find((l) => l.startsWith('- { "type": "button"'))!;
+      expect(schema, name).toBe('- { "type": "button", "id": "<short unique id>", "label": "...", "actions": [...] }');
+      const rule = sys.split("\n").find((l) => l.includes("**Quiz answer rule**"))!;
+      expect(rule, name).toContain('Every quiz answer button (a button with a score action) also has a "why" field');
+      expect(rule, name).toContain("no other button ever has one: never on Next Card, Continue or a story choice");
+      expect(sys, name).toContain('Never put "why" on any other button.');
+    }
+  });
+
+  it("TASK-34a11: the category rule — name it in the right answer's why; every wrong answer is a real member of it", () => {
+    for (const [name, sys] of prompts()) {
+      expect(sys, name).toContain("On the right answer: first name the category the question asks for, then the fact that makes it right");
+      expect(sys, name).toContain("Every wrong answer must be a real member of the category you named, one that a pupil might confuse with the right answer.");
+      expect(sys, name).toContain("An object that is not a member of the category is never a wrong answer.");
+      expect(sys, name).not.toContain("Prefer a different category from the right answer");
+    }
+    // No absurd bench answer is quoted as an example (v2, v3, v4 reviews).
+    const sys = buildStream({ prompt: fx.prompt }).system.toLowerCase();
+    for (const f of ["bench/distractor-review.json", "bench/distractor-review-v3.json", "bench/distractor-review-v4.json"]) {
+      const r = JSON.parse(read(f)) as { decks: Array<{ cards: Array<{ distractors: Array<{ option: string; label: string }> }> }> };
+      for (const x of r.decks.flatMap((d) => d.cards.flatMap((c) => c.distractors))) {
+        if (x.label === "absurd" && x.option.split(" ").length >= 2) expect(sys, x.option).not.toContain(`"${x.option.toLowerCase()}"`);
+      }
     }
   });
 });

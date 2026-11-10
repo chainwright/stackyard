@@ -214,7 +214,7 @@ describe("TASK-27: the generation prompts (round 3)", () => {
       expect(sys, name).toContain("## Wrong answers");
       expect(sys, name).toMatch(/clearly false for the age group/);
       expect(sys, name).toMatch(/partly true/);
-      expect(sys, name).toMatch(/different category from the right answer/);
+      expect(sys, name).toMatch(/a different member of the same category as the right answer, never a near-synonym or a close relative of it/);
       expect(sys, name).toMatch(/two defensible answers, rewrite the question/);
       expect(sys, name).not.toContain("grass seeds");
       expect(sys, name).not.toContain("field mouse");

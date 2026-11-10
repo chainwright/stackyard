@@ -213,3 +213,16 @@ Each task: Bug (what is missing) / Fix / Acceptance criteria.
     - The section's table and precision / recall equal the JSONs and `evaluate()`.
     - The order of the v1, v2, v3 and current tables in `RESULTS.md`.
     - The claim line equals `jokeFromReviews(v2, v4, "v4")`. The joke-line mutant still guards it.
+
+### TASK-34a12: the v5 review, and the conclusion  *(TASK-34a part 6; the last distractor round)*
+  - **Fix.**
+    - Inside the Kiro session, acting read-only as the lesson-checker persona, label every distractor and judge every key of the 34 objectives re-recorded with the TASK-34a10/a11 prompt: `bench/distractor-labels-v5.json` → `bench/distractor-review-v5.json` (same command, `--only-file bench/rerecord.txt`). The v4 review is now frozen, like v2 and v3.
+    - `LESSON_CHECKER.md` "v5 (category rule, why on quiz answers only)": the v2 → v3 → v4 → v5 table on the 32 decks that have a file in every run (and why 32), the per-deck table, the keys, the joke check's precision and recall on v5 with its false alarm, and what the 48 → 43 "no warnings" drop is made of (which warnings, which decks).
+    - `bench/results-v4.json` (saved by the coordinator) gives a "v4" table in `RESULTS.md`; the current run text names v5.
+    - The claim line is recounted from `distractor-review.json` and v5 on the decks that have a file in the latest review and every review in between (v3, v4): "In the 32 re-recorded decks that became lesson files in every run, … (v2) to B of M (v5) …". `--fix` replaces the TASK-34a9 wording.
+    - `DIAGNOSIS.md` gets the conclusion: what the prompt-only approach achieved over v2–v5, where it plateaus, and the next options with their cost (a critic pass, a stronger model, a Maker "swap this wrong answer"). None is built.
+  - **Acceptance criteria.**
+    - A fresh build equals `distractor-review-v5.json`, and its decks equal `rerecord.txt` (no `noFile`).
+    - The section's table, per-deck rows and precision / recall equal the JSONs and `evaluate()`.
+    - The order of the v1, v2, v3, v4 and current tables in `RESULTS.md`.
+    - The claim line equals `jokeFromReviews(v2, v5, "v5", [v3, v4])`. The joke-line mutant still guards it.

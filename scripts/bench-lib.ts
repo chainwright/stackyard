@@ -539,6 +539,8 @@ export interface V2Context {
   rerecorded: string[];
   /** The kept v3 run (bench/results-v3.json, TASK-34a9), when there is one. */
   v3?: BenchSummary;
+  /** The kept v4 run (bench/results-v4.json, TASK-34a12), when there is one. */
+  v4?: BenchSummary;
 }
 
 /**
@@ -568,6 +570,16 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null,
                 ...summaryRows(v2.v3),
                 "",
               ]),
+          ...(v2.v4 === undefined
+            ? []
+            : [
+                "## v4 (before the TASK-34a10/a11 prompt)",
+                "",
+                `Kept in \`bench/results-v4.json\`, as v4 was recorded and checked: the same ${v2.rerecord.length} objectives re-recorded with the TASK-34a7 why-field prompt, the rest still v2; model: ${v2.v4.models.join(", ") || "—"}. Its distractors and keys were reviewed in [\`distractor-review-v4.json\`](distractor-review-v4.json).`,
+                "",
+                ...summaryRows(v2.v4),
+                "",
+              ]),
         ];
   const v1Lines =
     v1 === null
@@ -589,7 +601,9 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null,
           ...(v2 === null
             ? []
             : [
-                v2.v3 !== undefined
+                v2.v4 !== undefined
+                  ? `The current run (v5) re-recorded only the same ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt), once more, with the TASK-34a10/a11 prompt ("why" on quiz answers only; every wrong answer a member of the question's category); every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v5.json\`](distractor-review-v5.json). This was the last model-call round for distractors; the conclusion is in [\`DIAGNOSIS.md\`](DIAGNOSIS.md). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`
+                  : v2.v3 !== undefined
                   ? `The current run (v4) re-recorded only the same ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt), once more, with the TASK-34a7 why-field prompt; every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v4.json\`](distractor-review-v4.json). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`
                   : v2.rerecorded.length === v2.rerecord.length
                   ? `The current run (v3) re-recorded only the ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt) (the v2 decks with at least one absurd distractor), with the TASK-34a prompt; every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v3.json\`](distractor-review-v3.json). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`

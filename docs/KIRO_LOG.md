@@ -532,3 +532,30 @@ The coordinator re-recorded the same 34 objectives with the TASK-34a7 prompt and
   - `RESULTS.md` adds a v3 table from `results-v3.json`.
   - The claim line now reads "In the 32 re-recorded decks that became lesson files, … fell from 88 of 319 (v2) to 72 of 317 (v4) wrong answers; 1 wrong key …", recounted from the review files.
 - **Shell edits.** None to lasting files. Read-only probes in `/tmp` were deleted.
+
+## 10 Nov 2026: why on quiz answers only, and the category rule (TASK-34a part 5)
+
+Spec first: TASK-34a10 and a11 in `stack-generator/tasks.md`, plus the pending v5 relabel, which is the last model-call round for distractors.
+
+- **a10.** `"why"` is gone from the generic button schema in both system prompts (the retry uses the one-shot one). The quiz answer rule alone asks for it, on answer buttons only, "never on Next Card, Continue or a story choice". That was v4's cause of 2 invalid decks. The server strip is unchanged.
+- **a11.** The right answer's why now starts by naming the category the question asks for ("Category: a part of a plant / a material / a number / a body part"). Every wrong answer must be a real member of that category that a pupil might confuse with the right one, and "an object that is not a member of the category is never a wrong answer."
+  - I also found that an old TASK-28p sentence, "Prefer a different category from the right answer, not a close relative of it", told the model the opposite. It now reads "a different member of the same category as the right answer, never a near-synonym or a close relative of it", and its test follows.
+- **Tests and mutants.** Prompt tests for a10 and a11 in all three prompts, plus a test that no absurd bench answer is quoted. Two new mutants (`"why"` back in the generic schema; the category rule dropped) are killed. The why-size figure (TASK-34a8) is unchanged: the fixture's whys don't yet start with a category, so the real cost will be a little higher.
+- **Shell edits.** None.
+
+## 10 Nov 2026: the v5 review and the conclusion (TASK-34a part 6, the last distractor round)
+
+The coordinator saved `bench/results-v4.json` and re-recorded the same 34 objectives with the TASK-34a10/a11 prompt. Current run: 54 of 55 valid on the first try, 43 with no warnings, 51 kept counts, p50 done 8.3 s. Spec: TASK-34a12 in `curriculum-bench/tasks.md`; the pending v5 relabel in `stack-generator/tasks.md` is marked done.
+
+- **Review.** Acting as the lesson-checker persona (read-only; an AI review, not a teacher's), I labelled the 340 wrong answers and 169 keys of all 34 decks into `bench/distractor-review-v5.json`. On the 32 decks with a file in every run, v2 → v3 → v4 → v5:
+  - absurd per 100 wrong answers: 27.6 → 21.8 → 22.7 → **22.2**;
+  - wrong keys: — → 3 → 1 → **1** (the same equal-pull misconception, y5-forces-1 card 3); ambiguous: — → 4 → 5 → 5;
+  - the check on v5: precision 0.67 (2 of 3; its first false alarm), recall 0.03.
+- **Finding.** The model wrote the "why", where the category rule lives, in only 6 of the 34 recorded decks (v4: 34 of 34). So the category rule was barely tested.
+- **48 → 43 "no warnings".** Six decks clean in v4 now warn: five restate a flash card, and y4-electricity-4 has "Open" inside "Half open". y5-materials-5 is newly clean. y5-earth-space-3 is valid again but warned.
+- **Plumbing.**
+  - `RESULTS.md` gains a v4 table from `results-v4.json`, and the current run is named v5.
+  - The claim line counts only the decks with a file in every run, "in every run": 88 of 319 (v2) to 71 of 320 (v5), 1 wrong key. `--fix` replaces the v4-era wording.
+  - The v4 review is frozen.
+- **Conclusion** in `bench/DIAGNOSIS.md`: prompt changes reached a plateau at about 22 per 100. The next options are a critic pass, a stronger model or a Maker swap, each with its cost; none is built.
+- **Shell edits.** None to lasting files; read-only probes only, and the `/tmp` scratch files were deleted.

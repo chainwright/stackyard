@@ -180,3 +180,37 @@ Same 34 objectives, re-recorded once more. Full tables in `LESSON_CHECKER.md`, "
   - Likely cause: `"why"` sits in the generic button schema.
   - Two fixes would plausibly stop it: move `"why"` out of the generic schema into the quiz-answer rule only, and/or let the stream parser drop a valueless `"why"` key before JSON parsing. Neither is made in this task.
 - **Time to done:** p50 9.2 s, p90 10.5 s (v3 8.3 / 9.3), from the recording. That is close to the 10.5 s TASK-34a8 estimated.
+
+### v5: the category rule, and the end of the prompt-only work (TASK-34a12)
+
+Same 34 objectives, re-recorded once more with the TASK-34a10/a11 prompt. Full tables in `LESSON_CHECKER.md`, "v5 (category rule, why on quiz answers only)". This was the last model-call round for distractors.
+
+- **Joke answers on the same 32 decks** (the decks with a file in every run): v2 27.6 → v3 21.8 → v4 22.7 → v5 22.2 per 100.
+- **Wrong keys:** 1, the same equal-and-opposite-pull misconception for the third run (y5-forces-1, now card 3). 5 ambiguous.
+- **Validity:** both v4 breakages are fixed; 54 of 55 valid on the first try, as in v3.
+- **The category rule was barely tested.** The model wrote the "why" (where the rule lives) in only 6 of 34 decks, against 34 of 34 in v4 when "why" sat in the button schema.
+
+## Conclusion: what prompt changes achieved, and what next
+
+Written at the end of the distractor work. Every number is from an AI review (the lesson-checker persona), not a teacher's.
+
+**What it achieved.**
+- One prompt change (TASK-34a3, "change the one part a pupil gets wrong") cut joke answers by about a fifth: 27.6 → 21.8 per 100 on the same 32 decks. Decks with at least one joke fell from 32 to 23.
+- Later changes fixed real faults, not the jokes. The v4 "why" breakage is gone (54 of 55 valid). Wrong keys fell from 3 (v3) to 1 (v4, v5).
+
+**Where it plateaus.**
+- Three runs with three different prompts (v3, v4, v5) sit at 21.8, 22.7 and 22.2 per 100. That is one level plus noise. Single decks swing by up to five jokes between runs, so a gain on one deck says nothing.
+- About one wrong answer in five is still a joke. In a five-question deck that is about two jokes the teacher has to spot.
+- The remaining jokes are mostly a thing that is not even the right kind of thing. The rule aimed at that (v5) was mostly not followed: the model skipped the "why" that carried it in 28 of 34 decks. More prompt text competes with the rest of a long prompt and gets dropped.
+- The one wrong key is a misconception the model holds (the Earth pulls harder than the object), not a slip. No wording has changed it in three runs.
+- The joke-answer check (markers) does not generalise: recall 0.21 in-sample, then 0.05, 0.01 and 0.03 out of sample, with its first false alarm in v5. It is a small net, not a measure.
+
+**The next options, with their cost.** None is built.
+
+| Option | What it does | Model calls | Latency for the teacher | Other cost |
+|---|---|---|---|---|
+| A second "distractor critic" pass per deck | A separate call reads the finished deck, marks wrong answers that are not a plausible member of the category, and proposes replacements. It could check each key too. | 2 per deck instead of 1. The bench: 34 → 68 calls for the re-recorded set, 55 → 110 for all of it. | If it runs after generation, it adds one whole non-streamed call before "done" (not measured; one call is several seconds, against 8.3 s p50 done today). It could run while the teacher reads the first cards, but then cards change under her. | Twice the tokens per deck. The critic is a model too: it needs its own review against these labels before it is trusted. |
+| A stronger model for generation | Today: claude-haiku-5-5, thinking off. Try thinking on, or a larger model. | Same count (1 per deck); one bench re-record (55 calls) to measure it. | Higher time to the first card (1.4 s p50 today) and to done. Not measured. | A higher price per token. It might also fix the misconception key; it might not. |
+| "Swap this wrong answer" in the Maker | The teacher clicks a wrong answer and types her own, or asks for another. | None if she types it; one small call per swap if she asks for one. | Only when she asks, a short call per answer. | Her time: about two answers per five-question deck at today's rate. It fits the product's edit step, and it is the only option that puts a teacher's judgement in. |
+
+**What the bench would need.** Whichever option is chosen, the same 32 decks and the same labelling definitions give a like-for-like number. A teacher's review of a sample would test whether the AI labels match a teacher's.

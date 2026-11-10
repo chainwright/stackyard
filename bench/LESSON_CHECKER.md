@@ -376,3 +376,100 @@ The coordinator re-recorded the same 34 objectives once more, with the TASK-34a7
 | y5-materials-4 | 5 of 10 | 4 of 10 | 5 of 10 |
 | y5-materials-5 | 1 of 10 | 1 of 10 | no file (failed validation) |
 | y5-materials-6 | 3 of 10 | 0 of 10 | 2 of 10 |
+
+## v5 (category rule, why on quiz answers only)
+
+10 November 2026: run inside Kiro by the lesson-checker persona; read-only; an AI review, not a teacher's (TASK-34a12).
+
+The coordinator re-recorded the same 34 objectives once more, with the TASK-34a10/a11 prompt: "why" only on quiz answer buttons, and every wrong answer must be a member of the category the question asks for. The reviewer labelled every wrong answer and judged every key on the quiz cards, with the same definitions as v2, v3 and v4 ("absurd" = off-topic, physically silly, or no 8–10-year-old would believe it). Results: [`distractor-review-v5.json`](distractor-review-v5.json); judgement: [`distractor-labels-v5.json`](distractor-labels-v5.json). This was the last model-call round for distractors.
+
+**All 34 decks have a lesson file in v5.** v4 had none for y5-materials-5 and y5-earth-space-3, so the table counts the 32 decks that have a file in every run (v2, v3, v4 and v5).
+
+| The same 32 decks | v2 | v3 | v4 | v5 |
+|---|---|---|---|---|
+| Absurd wrong answers | 88 of 319 | 69 of 316 | 72 of 317 | 71 of 320 |
+| Absurd per 100 wrong answers | 27.6 | 21.8 | 22.7 | 22.2 |
+| Decks with at least one absurd wrong answer | 32 of 32 | 23 of 32 | 26 of 32 | 25 of 32 |
+| Wrong keys | not reviewed | 3 | 1 | 1 |
+| Ambiguous keys | not reviewed | 4 | 5 | 5 |
+
+(On all 34 decks, v5 is 77 of 340 absurd, 27 decks with at least one, 1 wrong and 5 ambiguous keys.)
+
+**What this shows.**
+- **Joke answers: flat for the third run.** 21.8, 22.7, 22.2 per 100 is noise around one level.
+- **The category rule was mostly not followed, so it was barely tested.** It lives in the right answer's "why". Once "why" left the generic button schema (TASK-34a10), the model wrote it in only 6 of the 34 recorded decks (v4: 34 of 34; read offline from `bench/cache/`, which holds the text before the server strips it). Only those 6 name a category. They have 11 absurd of 60 (18 per 100), the other 28 decks 66 of 280 (24 per 100). Six decks are too few to call that a gain.
+- **Decks move, the total does not.** y3-rocks-3 (2 → 6), y4-living-things-2 (1 → 6) and y4-states-of-matter-3 (0 → 3) got worse; y3-light-3 (8 → 4), y4-sound-2 (4 → 2), y3-animals-2 (4 → 0) and y3-rocks-2 (3 → 0) got better. y4-electricity-1 is 8 of 10 again.
+- **Keys: level with v4.** One wrong key, and it is the same misconception for the third run in a row.
+- **The two v4 breakages are fixed.** Both decks are valid in v5 (the "why" no longer appears on Next Card or story buttons).
+
+**Keys** (all 169 v5 quiz cards):
+
+- **Wrong (1):** y5-forces-1 card 3 keys "Earth pulls harder". The Earth and the object pull on each other equally hard. v3 (card 10) and v4 (card 9) made the same error.
+- **Ambiguous (5):**
+  - y3-light-2 card 10: a rough brick and a still pond are both offered, and the pond also reflects.
+  - y3-light-5 card 10: moving the object away from the torch also makes the shadow shorter.
+  - y3-plants-4 card 9: the question gives its own answer away.
+  - y4-living-things-1 card 3: a fish is also an animal without legs.
+  - y5-earth-space-2 card 10: the question is garbled.
+
+**The joke-answer check on v5** (out of sample; `scripts/distractor-eval.ts bench/distractor-review-v5.json`):
+
+| | Precision | Recall |
+|---|---|---|
+| v2 (in-sample) | 1.00 (20 of 20) | 0.21 (20 of 96) |
+| v3 | 1.00 (4 of 4) | 0.05 (4 of 74) |
+| v4 | 1.00 (1 of 1) | 0.01 (1 of 72) |
+| v5 | 0.67 (2 of 3) | 0.03 (2 of 77) |
+
+Its first false alarm: y4-states-of-matter-3 card 3, "It turns into solid ice" for "What happens to water during evaporation?". The "turns to ice" marker fires because the question has no cold word, but this is a real (wrong) state change a pupil might pick. The markers are tuned to v2's phrasing; out of sample they catch almost nothing.
+
+**Why "no lesson warnings" fell from 48 (v4) to 43 (v5).** Compared deck by deck (`results-v4.json` against `results.json`):
+
+- **6 decks clean in v4 now have a warning:**
+  - "restates a flash card" on y3-plants-4, y3-rocks-3, y4-animals-1, y4-electricity-1 and y5-animals-1;
+  - "one answer inside another" on y4-electricity-4 ("Open" and "Half open").
+- **1 deck newly clean:** y5-materials-5 (no file in v4).
+- **1 deck newly valid but warned:** y5-earth-space-3 (a joke-answer warning).
+- Net: 48 − 6 + 1 = 43.
+- Warnings in total: v4 had restates-flash 5 and joke-answer 1; v5 has restates-flash 8, joke-answer 3, two-answers 1 (y3-light-3) and answer-inside-answer 1.
+
+So the drop is mostly quiz questions that repeat a flash card's wording. That is a mild warning (the lesson still works), not a broken deck. The only invalid deck is y4-electricity-2, invalid since v2 and not re-recorded.
+
+**Per deck** (absurd of wrong answers):
+
+| Deck | v2 | v3 | v4 | v5 |
+|---|---|---|---|---|
+| y3-animals-1 | 1 of 10 | 3 of 8 | 3 of 10 | 1 of 10 |
+| y3-animals-2 | 6 of 10 | 0 of 10 | 4 of 10 | 0 of 10 |
+| y3-forces-magnets-2 | 2 of 10 | 0 of 10 | 1 of 10 | 0 of 10 |
+| y3-forces-magnets-6 | 2 of 10 | 0 of 10 | 0 of 9 | 0 of 10 |
+| y3-light-1 | 3 of 10 | 5 of 10 | 4 of 10 | 4 of 10 |
+| y3-light-2 | 2 of 10 | 2 of 10 | 1 of 10 | 2 of 10 |
+| y3-light-3 | 4 of 10 | 3 of 10 | 8 of 10 | 4 of 9 |
+| y3-light-4 | 2 of 10 | 2 of 10 | 2 of 10 | 1 of 10 |
+| y3-light-5 | 1 of 8 | 0 of 10 | 1 of 10 | 0 of 10 |
+| y3-plants-4 | 1 of 10 | 1 of 10 | 0 of 10 | 1 of 10 |
+| y3-rocks-2 | 2 of 10 | 1 of 10 | 3 of 10 | 0 of 10 |
+| y3-rocks-3 | 4 of 12 | 0 of 10 | 2 of 10 | 6 of 10 |
+| y4-animals-1 | 1 of 10 | 0 of 10 | 1 of 10 | 1 of 10 |
+| y4-animals-3 | 1 of 10 | 2 of 10 | 1 of 10 | 2 of 10 |
+| y4-electricity-1 | 6 of 10 | 5 of 10 | 8 of 10 | 8 of 10 |
+| y4-electricity-4 | 1 of 10 | 1 of 10 | 1 of 10 | 1 of 10 |
+| y4-electricity-5 | 2 of 10 | 3 of 10 | 1 of 10 | 1 of 10 |
+| y4-living-things-1 | 3 of 10 | 4 of 10 | 2 of 10 | 4 of 10 |
+| y4-living-things-2 | 4 of 10 | 4 of 10 | 1 of 10 | 6 of 10 |
+| y4-living-things-3 | 7 of 10 | 6 of 10 | 5 of 10 | 6 of 10 |
+| y4-sound-1 | 3 of 10 | 5 of 9 | 3 of 10 | 4 of 10 |
+| y4-sound-2 | 8 of 10 | 5 of 10 | 4 of 10 | 2 of 10 |
+| y4-states-of-matter-3 | 2 of 10 | 2 of 10 | 0 of 9 | 3 of 10 |
+| y5-animals-1 | 2 of 10 | 3 of 10 | 2 of 10 | 3 of 10 |
+| y5-earth-space-2 | 1 of 10 | 0 of 10 | 2 of 10 | 2 of 10 |
+| y5-earth-space-3 | 7 of 10 | 4 of 10 | no file (failed validation) | 5 of 10 |
+| y5-forces-1 | 3 of 9 | 2 of 10 | 0 of 9 | 1 of 10 |
+| y5-forces-3 | 1 of 10 | 2 of 10 | 3 of 10 | 1 of 8 |
+| y5-living-things-2 | 2 of 10 | 3 of 10 | 2 of 10 | 1 of 10 |
+| y5-materials-2 | 2 of 10 | 0 of 9 | 0 of 10 | 2 of 13 |
+| y5-materials-3 | 1 of 10 | 1 of 10 | 0 of 10 | 0 of 10 |
+| y5-materials-4 | 5 of 10 | 4 of 10 | 5 of 10 | 4 of 10 |
+| y5-materials-5 | 1 of 10 | 1 of 10 | no file (failed validation) | 1 of 10 |
+| y5-materials-6 | 3 of 10 | 0 of 10 | 2 of 10 | 0 of 10 |

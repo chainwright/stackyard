@@ -596,37 +596,48 @@ interface ReviewShape {
   decks: Array<{ id: string; cards: Array<{ distractors: Array<{ label: string }>; key?: { verdict: string } }> }>;
 }
 
-export function jokeFromReviews(v2: ReviewShape, latest: ReviewShape, version = "v3"): JokeNumbers {
-  const ids = new Set(latest.decks.map((d) => d.id));
-  const count = (r: ReviewShape, only: Set<string> | null): { absurd: number; total: number } => {
-    const xs = r.decks.filter((d) => only === null || only.has(d.id)).flatMap((d) => d.cards.flatMap((c) => c.distractors));
+/**
+ * `between` (TASK-34a12) are the reviews of the runs in between (v3, v4). Only
+ * the decks that have a lesson file in the latest review AND in every one of
+ * them are counted, on both sides, so the line uses the same deck set as the
+ * LESSON_CHECKER.md table.
+ */
+export function jokeFromReviews(v2: ReviewShape, latest: ReviewShape, version = "v3", between: ReviewShape[] = []): JokeNumbers {
+  const ids = new Set(latest.decks.map((d) => d.id).filter((id) => between.every((r) => r.decks.some((d) => d.id === id))));
+  const decksOf = (r: ReviewShape) => r.decks.filter((d) => ids.has(d.id));
+  const count = (r: ReviewShape): { absurd: number; total: number } => {
+    const xs = decksOf(r).flatMap((d) => d.cards.flatMap((c) => c.distractors));
     return { absurd: xs.filter((x) => x.label === "absurd").length, total: xs.length };
   };
-  const before = count(v2, ids);
-  const after = count(latest, null);
+  const before = count(v2);
+  const after = count(latest);
   return {
-    decks: latest.decks.length,
+    decks: ids.size,
     beforeAbsurd: before.absurd,
     beforeTotal: before.total,
     afterAbsurd: after.absurd,
     afterTotal: after.total,
     version,
-    wrongKeys: latest.decks.flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length,
+    wrongKeys: decksOf(latest).flatMap((d) => d.cards).filter((c) => c.key?.verdict === "wrong").length,
   };
 }
 
 // TASK-34a9: the sentence names the latest review ("v4") and counts only the
 // re-recorded decks that became lesson files (both sides of the comparison).
+// TASK-34a12: "in every run": only the decks with a file in v3, v4 and v5.
 const JOKE_RE =
-  /In the (\d+) re-recorded decks that became lesson files, an AI review found joke answers fell from (\d+) of (\d+) \(v2\) to (\d+) of (\d+) \((v\d+)\) wrong answers; (\d+) wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+  /In the (\d+) re-recorded decks that became lesson files in every run, an AI review found joke answers fell from (\d+) of (\d+) \(v2\) to (\d+) of (\d+) \((v\d+)\) wrong answers; (\d+) wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
 /** The pre-TASK-34a9 wording, recognised only so `--fix` can replace it. */
 const OLD_JOKE_RE =
   /In the \d+ re-recorded decks, an AI review found joke answers fell from \d+ of \d+ to \d+ of \d+ wrong answers; \d+ wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
+/** The TASK-34a9 wording (no "in every run"), recognised only so `--fix` can replace it. */
+const V4_JOKE_RE =
+  /In the \d+ re-recorded decks that became lesson files, an AI review found joke answers fell from \d+ of \d+ \(v2\) to \d+ of \d+ \(v\d+\) wrong answers; \d+ wrong keys? \(bench\/LESSON_CHECKER\.md\)\./;
 
 export const JOKE_DISCLAIMER = "It is an AI review, not a teacher's.";
 
 export function jokeSentence(j: JokeNumbers): string {
-  return `In the ${j.decks} re-recorded decks that became lesson files, an AI review found joke answers fell from ${j.beforeAbsurd} of ${j.beforeTotal} (v2) to ${j.afterAbsurd} of ${j.afterTotal} (${j.version}) wrong answers; ${j.wrongKeys} wrong key${j.wrongKeys === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
+  return `In the ${j.decks} re-recorded decks that became lesson files in every run, an AI review found joke answers fell from ${j.beforeAbsurd} of ${j.beforeTotal} (v2) to ${j.afterAbsurd} of ${j.afterTotal} (${j.version}) wrong answers; ${j.wrongKeys} wrong key${j.wrongKeys === 1 ? "" : "s"} (bench/LESSON_CHECKER.md).`;
 }
 
 export function jokeLine(j: JokeNumbers): string {
@@ -664,6 +675,7 @@ export function compareJoke(text: string, where: string, j: JokeNumbers | null):
 export function fixJoke(text: string, j: JokeNumbers): string {
   if (JOKE_RE.test(text)) return text.replace(JOKE_RE, jokeSentence(j));
   if (OLD_JOKE_RE.test(text)) return text.replace(OLD_JOKE_RE, jokeSentence(j));
+  if (V4_JOKE_RE.test(text)) return text.replace(V4_JOKE_RE, jokeSentence(j));
   const lines = text.split("\n");
   const at = lines.findIndex((l) => KEY_RE.test(l));
   if (at < 0) return text;
