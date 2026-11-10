@@ -20,6 +20,7 @@ import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT, STORY_BODY_MAX }
 import { gotoOf } from "../shared/flow.js";
 import { isStockEndLine } from "../shared/endLine.js";
 import { isPictogramCredit } from "../shared/pictogramCredit.js";
+import { encodeCode, foldInitials, formatCode, lessonFingerprint, quizAnswerButtons, resultsOf, spellCode } from "../shared/resultsCode.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -657,6 +658,62 @@ const PLAYER_STYLES = `
   font-size: 24px;
   font-weight: 700;
 }
+/* TASK-34b2: the class results code under the stamps. Ink on paper; never
+   stamp red (a code is not an earned stamp). With a code shown the end card
+   tightens so it still fits 600 px: smaller gaps, a 44px score, 48px stamp
+   slots (32px above 20 questions). Nothing goes below the 18px floor. */
+.sy-end-has-code { gap: 12px; padding-top: 28px; padding-bottom: 28px; }
+.sy-end-has-code .sy-end-score { font-size: 44px; }
+.sy-end-has-code .sy-end-heading { font-size: 36px; }
+.sy-end-has-code .sy-end-slot { width: 48px; height: 48px; }
+.sy-end-has-code .sy-end-slot-earned { font-size: 26px; }
+.sy-end-many .sy-end-slot { width: 32px; height: 32px; border-width: 2px; }
+.sy-end-many .sy-end-slot-earned { font-size: 20px; }
+.sy-end-many .sy-end-stamps { gap: 6px; }
+.sy-end-code-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Stackyard Digits', 'Stackyard Reading', 'Arial', sans-serif;
+  font-size: var(--text-meta);
+  color: var(--color-ink);
+}
+.sy-end-code-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+}
+.sy-end-code {
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sy-end-initials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sy-end-initials input {
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  width: 4.5em;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  border: 2px solid var(--color-ink);
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-ink);
+}
+.sy-end-initials input:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+}
 
 /* ---- Animations ---- */
 @keyframes stamp-land {
@@ -893,6 +950,14 @@ function renderEndCard(
     container.appendChild(stampsRow);
   }
 
+  // TASK-34b2: the class results code (class-results design §2), for the
+  // teacher's "Class results" panel. Only when there are questions to report.
+  if (total > 0) {
+    container.classList.add("sy-end-has-code");
+    if (total > 20) container.classList.add("sy-end-many");
+    container.appendChild(buildResultsCode(state, ariaLive));
+  }
+
   // Announce to screen readers. The heading usually ends in its own punctuation
   // ("…journey." / "Well done!"), so strip it before joining, or the announcement
   // reads "journey.. Score" (TASK-27l).
@@ -939,6 +1004,90 @@ function renderEndCard(
   }
 
   cardEl.appendChild(container);
+}
+
+// ---------------------------------------------------------------------------
+// End-card results code (TASK-34b2)
+
+let initialsFieldSeq = 0;
+
+/** The pupil's current code, from the first answers, the play tag and any initials. */
+export function currentResultsCode(state: RuntimeState): string {
+  return encodeCode({
+    fingerprint: lessonFingerprint(state.stack),
+    results: resultsOf(state.stack, state.answers),
+    tag: state.playTag,
+    initials: state.initials,
+  });
+}
+
+/**
+ * "Your results code ABCD-EFGH-J" and the optional initials field. Ink on
+ * paper (never stamp red: a code is not an earned stamp). The visual code is
+ * hidden from screen readers; a spelled-out twin is read instead, so it is
+ * read letter by letter, not as a word.
+ */
+function buildResultsCode(state: RuntimeState, ariaLive: HTMLElement): HTMLElement {
+  const block = document.createElement("div");
+  block.className = "sy-end-code-block";
+
+  const row = document.createElement("p");
+  row.className = "sy-end-code-row";
+  const label = document.createElement("span");
+  label.className = "sy-end-code-label";
+  label.textContent = "Your results code";
+  label.setAttribute("aria-hidden", "true");
+  const shown = document.createElement("span");
+  shown.className = "sy-end-code";
+  shown.setAttribute("data-testid", "results-code");
+  shown.setAttribute("aria-hidden", "true");
+  const spoken = document.createElement("span");
+  spoken.className = "sy-sr-only";
+  row.appendChild(label);
+  row.appendChild(shown);
+  row.appendChild(spoken);
+  block.appendChild(row);
+
+  const show = (): string => {
+    const code = currentResultsCode(state);
+    shown.textContent = formatCode(code);
+    shown.setAttribute("data-code", code);
+    spoken.textContent = `Your results code: ${spellCode(code)}.`;
+    return code;
+  };
+  show();
+
+  const field = document.createElement("div");
+  field.className = "sy-end-initials";
+  const id = `sy-initials-${++initialsFieldSeq}`;
+  const fieldLabel = document.createElement("label");
+  fieldLabel.htmlFor = id;
+  fieldLabel.textContent = "Your initials (only if your teacher asks)";
+  const input = document.createElement("input");
+  input.id = id;
+  input.type = "text";
+  input.maxLength = 3;
+  input.value = state.initials;
+  input.setAttribute("data-testid", "results-initials");
+  input.setAttribute("autocomplete", "off");
+  input.setAttribute("autocapitalize", "characters");
+  input.spellcheck = false;
+  let speakTimer: ReturnType<typeof setTimeout> | null = null;
+  input.addEventListener("input", () => {
+    const folded = foldInitials(input.value);
+    if (input.value !== folded) input.value = folded;
+    state.initials = folded;
+    const code = show();
+    // Say the new code once the pupil stops typing, not on every key.
+    if (speakTimer !== null) clearTimeout(speakTimer);
+    speakTimer = setTimeout(() => announce(ariaLive, `Your results code is now ${spellCode(code)}.`), 700);
+  });
+  // Typing here is never a card action (Space / Enter must not reach the card).
+  input.addEventListener("keydown", (e) => e.stopPropagation());
+  field.appendChild(fieldLabel);
+  field.appendChild(input);
+  block.appendChild(field);
+  return block;
 }
 
 // ---------------------------------------------------------------------------
@@ -1294,12 +1443,7 @@ export function renderCard(
   // four coloured, shaped answer tiles (built-app review P1 "Add Button
   // destroys the quiz"). The tile colour/shape is the button's index among the
   // answer buttons only.
-  const answerButtons = isQuizCard
-    ? card.elements.filter(
-        (el): el is ButtonElement =>
-          el.type === "button" && el.actions.length > 0,
-      )
-    : [];
+  const answerButtons = isQuizCard ? quizAnswerButtons(card) : [];
   let answerSlotIndex = 0;
   // Sibling choices (story branches, plain buttons) share one font size.
   const sharedChoices = sharedChoiceFit(
@@ -1546,6 +1690,12 @@ function handleButtonClick(
   if (el.actions.some((a) => a.type === "score")) {
     const n = state.variables["_answered"];
     state.variables["_answered"] = (typeof n === "number" ? n : 0) + 1;
+  }
+
+  // TASK-34b2: the FIRST answer on this quiz card is its result for the class
+  // results code; a revisit never changes it.
+  if (slot !== undefined && state.answers[state.currentCardId] === undefined) {
+    state.answers[state.currentCardId] = hasPositiveScore;
   }
 
   // Fire score/sound/set actions now (no navigation yet).

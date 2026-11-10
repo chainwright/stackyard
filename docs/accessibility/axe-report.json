@@ -111,6 +111,28 @@
       "passes": 33
     },
     {
+      "page": "Sample vikings-in-ireland.html: end card with results code",
+      "url": "/samples/vikings-in-ireland.html",
+      "violations": {
+        "critical": [],
+        "serious": [],
+        "moderate": [],
+        "minor": []
+      },
+      "passes": 37
+    },
+    {
+      "page": "Sample vikings-in-ireland.html: Class results panel",
+      "url": "/samples/vikings-in-ireland.html",
+      "violations": {
+        "critical": [],
+        "serious": [],
+        "moderate": [],
+        "minor": []
+      },
+      "passes": 44
+    },
+    {
       "page": "Bench y3-animals-1.html: Play",
       "url": "file:y3-animals-1.html",
       "violations": {
@@ -167,7 +189,7 @@
     }
   ],
   "totals": {
-    "pages": 14,
+    "pages": 16,
     "critical": 0,
     "serious": 0,
     "moderate": 0,

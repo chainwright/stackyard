@@ -519,13 +519,18 @@ export function a11yFromReport(r: AxeReportShape): A11yNumbers {
   };
 }
 
+const A11Y_PAGES = "the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files";
+
 const A11Y_RE =
-  /axe-core (\d+\.\d+\.\d+) audited (\d+) pages \(the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files\) and found (\d+) serious or critical violations; the keyboard-only play-through (passes|fails) and the one-switch scan play-through (passes|fails)/;
+  /axe-core (\d+\.\d+\.\d+) audited (\d+) pages \(the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files\) and found (\d+) serious or critical violations; the keyboard-only play-through (passes|fails) and the one-switch scan play-through (passes|fails)/;
+/** The pre-TASK-34b7 page list, recognised only so `--fix` can replace it. */
+const OLD_A11Y_RE =
+  /axe-core \d+\.\d+\.\d+ audited \d+ pages \(the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files\) and found \d+ serious or critical violations; the keyboard-only play-through (?:passes|fails) and the one-switch scan play-through (?:passes|fails)/;
 
 export const A11Y_DISCLAIMER = "No screen-reader user or disabled pupil has tested it.";
 
 export function a11ySentence(a: A11yNumbers): string {
-  return `axe-core ${a.axeVersion} audited ${a.pages} pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found ${a.seriousOrCritical} serious or critical violations; the keyboard-only play-through ${a.keyboard ? "passes" : "fails"} and the one-switch scan play-through ${a.scan ? "passes" : "fails"}`;
+  return `axe-core ${a.axeVersion} audited ${a.pages} pages (${A11Y_PAGES}) and found ${a.seriousOrCritical} serious or critical violations; the keyboard-only play-through ${a.keyboard ? "passes" : "fails"} and the one-switch scan play-through ${a.scan ? "passes" : "fails"}`;
 }
 
 export function a11yLine(a: A11yNumbers): string {
@@ -565,6 +570,7 @@ export function compareA11y(text: string, where: string, a: A11yNumbers | null):
 /** Rewrite the line's numbers, or insert it after the key-review line (else the bench line). */
 export function fixA11y(text: string, a: A11yNumbers, line: (a: A11yNumbers) => string = a11yLine): string {
   if (A11Y_RE.test(text)) return text.replace(A11Y_RE, a11ySentence(a));
+  if (OLD_A11Y_RE.test(text)) return text.replace(OLD_A11Y_RE, a11ySentence(a));
   const lines = text.split("\n");
   let at = lines.findIndex((l) => KEY_RE.test(l));
   if (at < 0) at = lines.findIndex((l) => BENCH_RE.test(l));

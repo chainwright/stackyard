@@ -8,16 +8,17 @@ Written for TASK-33d (`.kiro/specs/maker/tasks.md`, `.kiro/specs/exporter/tasks.
 
 [axe-core](https://github.com/dequelabs/axe-core) **4.14.0** is a pinned devDependency (exact version in `package.json` and `package-lock.json`). `scripts/check-a11y.ts` injects its source into headless Chrome through the DevTools protocol. It never adds a `<script src>`, so every page keeps its real Content Security Policy.
 
-It runs the WCAG 2.0, 2.1 and 2.2 A and AA rules plus Deque's best-practice rules (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`) on **14 pages**:
+It runs the WCAG 2.0, 2.1 and 2.2 A and AA rules plus Deque's best-practice rules (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`) on **16 pages**:
 
 - the Maker's Start screen and its editor with a ready-made deck, served by the real server (its strict CSP) from `dist/maker`;
 - the 3 samples, served by the real server at `/samples/`, each in Play and with the Teacher tab open (6 pages);
 - a class (play-only) export of the Vikings deck;
+- the Vikings sample's end card with its class results code and initials field, and its Teacher tab's Class results panel holding codes, with both tables and a bad code listed (TASK-34b7);
 - the first 5 files in `bench/files/`.
 
 The result is [`axe-report.json`](axe-report.json): per page, the violations by impact with their rule ids and node counts, the passes count, the axe version and the date. The gate fails on any serious or critical violation.
 
-**Before and after our fixes** (axe 4.14.0, the same 14 pages, 9 Nov 2026):
+**Before and after our fixes** (axe 4.14.0, the same 14 pages, 9 Nov 2026; the 2 class-results pages were added on 10 Nov with 0 violations of any impact):
 
 | Impact | Before (first run) | After |
 |---|---|---|

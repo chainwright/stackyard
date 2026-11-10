@@ -36,6 +36,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createServer } from "../server/index.js";
 import { exportStack } from "../server/exporter.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
+import { encodeCode, lessonKey } from "../src/shared/resultsCode.js";
 import { Cdp, CHROME_PATH, launchChrome, sleep } from "./cdp.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -131,6 +132,45 @@ async function runAxe(cdp: Cdp, base: string, tmp: string, problems: string[]): 
   const classFile = path.join(tmp, "vikings-class.html");
   writeFileSync(classFile, await exportStack(vikingsStack()), "utf8");
   await add("Class export (Vikings, play-only)", pathToFileURL(classFile).href, `document.querySelector("#player-root .sy-card")`);
+
+  // TASK-34b7: the end card with its results code and initials field, and the
+  // Teacher tab's Class results panel holding codes (a table, a bad code).
+  const vikingsUrl = `${base}samples/vikings-in-ireland.html`;
+  await add("Sample vikings-in-ireland.html: end card with results code", vikingsUrl, `document.querySelector("#player-root .sy-card")`, async () => {
+    for (let step = 0; step < 40; step++) {
+      await cdp.eval(settle);
+      const done = await cdp.eval<boolean>(`(() => {
+        const r = document.getElementById("player-root");
+        if (r.querySelector(".sy-end-card")) return true;
+        const t = r.querySelector(".sy-tile[data-correct='true']") || r.querySelector(".sy-flash-next button") || r.querySelector(".sy-flash") || r.querySelector(".sy-button:not([disabled])");
+        if (t) t.click();
+        return false;
+      })()`);
+      if (done) break;
+      await sleep(1300);
+    }
+    if (!(await cdp.until(`document.querySelector("[data-testid='results-code']")`))) problems.push("TASK-34b7: the Vikings end card never showed a results code");
+    await cdp.eval(settle);
+  });
+  const vk = lessonKey(vikingsStack());
+  const pasteCodes = [
+    encodeCode({ fingerprint: vk.fingerprint, results: Array(vk.n).fill("right"), tag: 11, initials: "AB" }),
+    encodeCode({ fingerprint: vk.fingerprint, results: Array(vk.n).fill("wrong"), tag: 12 }),
+    "NOT-A-CODE",
+  ].join("\\n");
+  await add("Sample vikings-in-ireland.html: Class results panel", vikingsUrl, `document.querySelector(".sy-teacher-tab")`, async () => {
+    await cdp.eval(`window.confirm = () => true; document.querySelector(".sy-teacher-tab").click(); true`);
+    if (!(await cdp.until(`document.querySelector("[data-testid='class-results-toggle']")`))) problems.push("TASK-34b7: no Class Results button in the Teacher tab");
+    await cdp.eval(`(() => {
+      document.querySelector("[data-testid='class-results-toggle']").click();
+      document.querySelector("[data-testid='results-codes-input']").value = "${pasteCodes}";
+      document.querySelector("[data-testid='results-add']").click();
+      return true;
+    })()`);
+    if (!(await cdp.until(`document.querySelector("[data-testid='results-pupils']")`))) problems.push("TASK-34b7: the Class results panel never showed a table");
+    await sleep(300);
+    await cdp.eval(settle);
+  });
 
   const benchDir = path.join(ROOT, "bench", "files");
   const bench = readdirSync(benchDir).filter((f) => f.endsWith(".html")).sort().slice(0, 5);

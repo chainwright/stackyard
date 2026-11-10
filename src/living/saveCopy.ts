@@ -15,7 +15,7 @@
 
 import type { Stack } from "../shared/types.js";
 import { validate } from "../shared/validator.js";
-import { replaceStackData, readCopyCount, withCopyCount } from "../shared/escapeStackJson.js";
+import { replaceStackData, readCopyCount, withClassResults, withCopyCount } from "../shared/escapeStackJson.js";
 import { copyFileName } from "../shared/messages.js";
 
 export type SaveResult =
@@ -33,6 +33,11 @@ export interface SaveCopyOptions {
   doc?: Document;
   /** Performs the download; defaults to a Blob + anchor click (no network). */
   download?: (html: string, filename: string) => void;
+  /**
+   * TASK-34b6: the class results codes the copy keeps (design §5). [] or
+   * omitted: the copy has no results block (an old one is removed).
+   */
+  classCodes?: string[];
 }
 
 /**
@@ -58,7 +63,7 @@ export function saveCopy(stack: Stack, opts: SaveCopyOptions): SaveResult {
   // Count this copy: the file remembers how many times it has been copied, so a
   // copy of a copy is "(copy 2)", not "(copy)" again (TASK-27g).
   const copyNumber = readCopyCount(opts.pristineHtml) + 1;
-  const html = withCopyCount(replaced, copyNumber);
+  const html = withClassResults(withCopyCount(replaced, copyNumber), opts.classCodes ?? []);
 
   const filename = copyFileName(stack.title, copyNumber);
   const doc = opts.doc ?? document;

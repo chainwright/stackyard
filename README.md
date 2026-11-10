@@ -37,6 +37,46 @@ a typo, change which answer is right, add or remove a card, drag on quiz and sto
 the Wi-Fi off. The copy is itself a living file. "Export for class (smaller)" is
 the play-only alternative.
 
+### Class results (no server)
+
+A class of 24 pupils plays the same lesson file on class laptops, with no network
+and no accounts. Each pupil's last card shows a short **results code**, for
+example `Y3A7-8GPK-2`, and an optional box for their initials (at most three
+letters). The teacher types or pastes the codes into the **Class Results** panel
+in the Teacher tab of *her* copy of the same file. The panel shows, for each
+question, how many got it right, how many got it wrong and how many never
+reached it ("Q4 missed by 9 of 24"), the class's middle score (median), and
+which questions to revisit (any that a third or more of the pupils who answered
+got wrong). She can copy the table as plain text or print it.
+
+- **The code.**
+  - It uses 31 letters and digits, with no 0, O, 1, I or L, and is shown in
+    groups of four. Lower case, spaces and missing dashes are all fine.
+  - It names the lesson. A code from a different lesson, or from before its
+    questions changed, is turned away: "This code is from a different
+    lesson…".
+  - It ends in a check character. Any one wrong letter, or two neighbouring
+    letters swapped, is caught: "Check the code; one letter looks wrong."
+  - It carries a random tag, so two pupils with the same answers still get
+    different codes. The same code pasted twice counts once.
+  - Length: nine characters for five questions, 11 for ten and 14 for 20
+    (three more with initials).
+  - "Not reached" (a story branch skipped the question) is not the same as
+    "wrong". Only a pupil's first answer to a question counts.
+- **Where the codes are kept.** Only in the open page, until she presses
+  **Save a Copy**. The copy then keeps the codes (nothing else), so she can
+  come back to the table. If she changed the questions first, the copy does
+  not keep them, and says so. **Clear Codes** removes them.
+  - The class file ("Export for class") never carries results.
+  - Use it, not a saved copy with codes in, for the pupils' laptops.
+
+**Privacy.** No personal data is collected: no names and no accounts, only
+three optional initials the pupil chooses to type. No network is used: a person
+reads the code and a person types it. The results exist only on the pupil's
+screen, then only where the teacher types them (and in a copy she chooses to
+save). It is not analytics or tracking; nothing is collected automatically.
+Design and proofs: `.kiro/specs/class-results/`.
+
 ## See it
 
 <!-- The screens below are real: `scripts/make-readme-media.ts` drives the built
@@ -80,8 +120,8 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 
 - **Steering** — five always-on files describe the product, audience, tech,
   stack format and design system: [`.kiro/steering/`](.kiro/steering/).
-- **Specs** — requirements, design and tasks for four features (the Maker, the
-  stack generator, the exporter and the curriculum bench), each written by Kiro from a chat request
+- **Specs** — requirements, design and tasks for five features (the Maker, the
+  stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request
   and then reviewed: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
   fails if a lettered task id in the specs is not mentioned by a test, a gate
   script or a hook; today it reports the true count (see its output, not a
@@ -147,8 +187,8 @@ is never inlined into, the exported file. Fonts are listed under
 These figures are checked against the code by `scripts/check-claims` (run by the
 `pre-submit` hook), so the docs can't drift:
 
-- Tests: **1333** passing (`npm test`).
-- Player bundle: **13.6 KB** gzipped (budget 50 KB).
+- Tests: **1378** passing (`npm test`).
+- Player bundle: **12.3 KB** gzipped (budget 50 KB).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 - Floppy test: **7** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
@@ -158,7 +198,7 @@ These figures are checked against the code by `scripts/check-claims` (run by the
 - Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 43 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
 - A read-only AI review of 60 quiz cards from 12 generated decks found 0 wrong keys and 2 ambiguous ones (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
 - In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
-- Accessibility: axe-core 4.14.0 audited 14 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
+- Accessibility: axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
 
 The **curriculum bench** ([`bench/`](bench/README.md)) runs all 55 statutory Years 3–5
 objectives of England's KS2 science programme of study through the generator. It

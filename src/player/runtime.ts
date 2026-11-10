@@ -3,6 +3,7 @@
 // No framework. No external dependencies. Vanilla TypeScript.
 
 import type { Stack, Action } from "../shared/types.js";
+import { drawTag } from "../shared/resultsCode.js";
 
 // ---------------------------------------------------------------------------
 // Runtime state
@@ -20,6 +21,16 @@ export interface RuntimeState {
    * If this reaches 20 the player shows a fatal error and stops navigating.
    */
   autoNavCount: number;
+  /**
+   * TASK-34b2: the FIRST answer on each quiz card in this play-through, by card
+   * id (true = right). A revisit never changes it; the end card's results code
+   * is built from it (class-results design §2).
+   */
+  answers: Record<string, boolean>;
+  /** TASK-34b2: this play-through's random tag (0 … 31³−1), so two pupils never share a code. */
+  playTag: number;
+  /** TASK-34b2: the optional initials the pupil typed on the end card ("" for none). */
+  initials: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -36,6 +47,9 @@ export function createRuntime(stack: Stack): RuntimeState {
     variables: { score: 0 },
     currentCardId: stack.cards[0]!.id,
     autoNavCount: 0,
+    answers: {},
+    playTag: drawTag(),
+    initials: "",
   };
 }
 
@@ -43,11 +57,16 @@ export function createRuntime(stack: Stack): RuntimeState {
  * Reset runtime state for a fresh play-through: score back to zero, every other
  * variable cleared, and the auto-navigation guard reset. Used by the end card's
  * "Play Again" button so a class can go again from the start with a clean score
- * (built-app review round 3, P2 #5). The stack itself is unchanged.
+ * (built-app review round 3, P2 #5). The stack itself is unchanged. The results
+ * are cleared and a new play tag is drawn, so the next end card shows a new
+ * code (TASK-34b2).
  */
 export function resetRuntime(state: RuntimeState): void {
   state.variables = { score: 0 };
   state.autoNavCount = 0;
+  state.answers = {};
+  state.playTag = drawTag();
+  state.initials = "";
 }
 
 // ---------------------------------------------------------------------------

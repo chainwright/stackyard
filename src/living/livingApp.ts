@@ -14,6 +14,10 @@ import { ensureLivingStyles } from "./styles.js";
 import { LivingEditor } from "./editor.js";
 import { saveCopy } from "./saveCopy.js";
 import { snapshotPristine } from "./pristine.js";
+import { renderClassResults } from "./classResults.js";
+import { readClassResults } from "../shared/escapeStackJson.js";
+import { decodeCode, lessonFingerprint, lessonKey } from "../shared/resultsCode.js";
+import { countWords } from "../shared/classResults.js";
 
 export interface LivingAppOptions {
   /**
@@ -47,6 +51,11 @@ export function mountLivingApp(
   // The stack the file currently plays. Edits in the Teacher view update this
   // so returning to Play reflects them (and Save a Copy writes them).
   let current = stack;
+  // TASK-34b5/b6: the class results codes. They live in this page, and come from
+  // the file only when a saved copy kept them; they are read against the lesson
+  // AS THE FILE OPENED (`stack`), the one the class played (design §4, §5).
+  const openedKey = lessonKey(stack);
+  let classCodes: string[] = readClassResults(pristineHtml).filter((c) => decodeCode(c, openedKey).ok);
 
   const teacherTab = document.createElement("button");
   teacherTab.type = "button";
@@ -94,6 +103,9 @@ export function mountLivingApp(
     spacer.className = "sy-spacer";
     bar.appendChild(spacer);
     bar.appendChild(barButton("Play", "sy-living-btn ghost", returnToPlay));
+    const resultsToggle = barButton("Class Results", "sy-living-btn ghost", toggleResults);
+    resultsToggle.setAttribute("data-testid", "class-results-toggle");
+    bar.appendChild(resultsToggle);
     bar.appendChild(barButton("Save a Copy", "sy-living-btn primary", doSaveCopy));
     overlay.appendChild(bar);
 
@@ -102,7 +114,37 @@ export function mountLivingApp(
     editorHost.style.minHeight = "0";
     editorHost.style.display = "flex";
     overlay.appendChild(editorHost);
+    const resultsHost = document.createElement("div");
+    resultsHost.className = "sy-results-host";
+    resultsHost.hidden = true;
+    overlay.appendChild(resultsHost);
     document.body.appendChild(overlay);
+
+    // TASK-34b5: "Class Results" swaps the card editor for the panel (the editor
+    // is only hidden, so its edits and undo history are kept); "Edit Cards" back.
+    function toggleResults(): void {
+      if (resultsHost.hidden) {
+        const panel = renderClassResults(resultsHost, {
+          lesson: stack,
+          edited: () => (editor ? editor.getStack() : current),
+          getCodes: () => classCodes,
+          setCodes: (codes) => {
+            classCodes = codes;
+          },
+          toast: showToast,
+        });
+        editorHost.style.display = "none";
+        resultsHost.hidden = false;
+        resultsToggle.textContent = "Edit Cards";
+        panel.focus();
+      } else {
+        resultsHost.hidden = true;
+        resultsHost.innerHTML = "";
+        editorHost.style.display = "flex";
+        resultsToggle.textContent = "Class Results";
+        resultsToggle.focus({ preventScroll: true });
+      }
+    }
 
     editor = new LivingEditor(current, editorHost, showToast);
     editor.render();
@@ -153,9 +195,18 @@ export function mountLivingApp(
         return;
       }
     }
-    const result = saveCopy(edited, { pristineHtml });
+    // TASK-34b6: the copy keeps the codes only while its quiz content is the
+    // lesson the codes were read against; otherwise they would all read as
+    // "from a different lesson" (design §5).
+    const n = classCodes.length;
+    const sameQuiz = lessonFingerprint(edited) === openedKey.fingerprint && lessonKey(edited).n === openedKey.n;
+    const keep = n > 0 && sameQuiz;
+    const result = saveCopy(edited, { pristineHtml, classCodes: keep ? classCodes : [] });
     if (result.ok) {
-      showToast(`Saved a copy: ${result.filename}`);
+      const codesWord = `${countWords(n)} results code${n === 1 ? "" : "s"}`;
+      if (keep) showToast(`Saved a copy with ${codesWord}: ${result.filename}`);
+      else if (n > 0) showToast(`Saved a copy: ${result.filename}. The questions changed, so the ${codesWord} ${n === 1 ? "was" : "were"} not kept in it.`);
+      else showToast(`Saved a copy: ${result.filename}`);
     } else {
       showToast(result.message);
     }

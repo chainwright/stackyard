@@ -99,6 +99,30 @@ export const LIVING_STYLES = `
 /* The "Cards" toggle only exists on a phone (TASK-31b). */
 .sy-cards-toggle { display: none; }
 
+/* TASK-34b5: the "Class results" panel. Ink on paper, 18px floor, no stamp red. */
+.sy-results-host { flex: 1 1 auto; overflow-y: auto; background: #FBF8F1; }
+.sy-results { max-width: 960px; margin: 0 auto; padding: 18px 20px 40px; font-size: 18px; line-height: 1.45; }
+.sy-results h2 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 28px; margin: 0 0 8px; }
+.sy-results h3 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 22px; margin: 18px 0 6px; }
+.sy-results textarea { min-height: 120px; text-transform: uppercase; }
+.sy-results-status { font-weight: 700; margin: 8px 0; min-height: 1.45em; }
+.sy-results-problems { margin: 0 0 8px; padding-left: 22px; }
+.sy-results-summary { font-size: 22px; font-weight: 700; margin: 10px 0; }
+.sy-results-table { border-collapse: collapse; margin: 8px 0; background: #fff; }
+.sy-results-table caption { text-align: left; font-weight: 700; padding: 4px 0; }
+.sy-results-table th, .sy-results-table td { border: 1px solid #C9D3E3; padding: 6px 10px; text-align: left; vertical-align: top; }
+.sy-results-table td { text-align: center; min-width: 3em; }
+.sy-results-scroll { overflow-x: auto; max-width: 100%; }
+.sy-results button:focus-visible, .sy-results textarea:focus-visible, .sy-results-scroll:focus-visible,
+.sy-living-bar button:focus-visible {
+  outline: 3px solid #1E2A47; outline-offset: 2px; box-shadow: 0 0 0 2px #FBF8F1;
+}
+.sy-results h2:focus, .sy-results-status:focus { outline: none; }
+@media print {
+  .sy-printing body > :not(.sy-living-overlay), .sy-printing .sy-living-bar, .sy-printing .sy-noprint { display: none !important; }
+  .sy-printing .sy-living-overlay, .sy-printing .sy-results-host { position: static; overflow: visible; background: #fff; }
+}
+
 /* TASK-31b: on a phone the card list folds behind a one-line "Cards" toggle,
    the preview gets the full width (scaled to fit by the editor) and the
    inspector sits BELOW the card. Desktop is untouched. */

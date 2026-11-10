@@ -533,8 +533,8 @@ const MUTANTS: Mutant[] = [
     name: "living: Save a Copy serialises the live DOM",
     reverts: "26a — pristine snapshot",
     file: "src/living/livingApp.ts",
-    find: "const result = saveCopy(edited, { pristineHtml });",
-    replace: 'const result = saveCopy(edited, { pristineHtml: "<!doctype html>\\n" + document.documentElement.outerHTML });',
+    find: "const result = saveCopy(edited, { pristineHtml, classCodes: keep ? classCodes : [] });",
+    replace: 'const result = saveCopy(edited, { pristineHtml: "<!doctype html>\\n" + document.documentElement.outerHTML, classCodes: keep ? classCodes : [] });',
     tests: ["tests/living.test.ts"],
   },
   {
@@ -900,6 +900,47 @@ const MUTANTS: Mutant[] = [
     find: "  if (!line.includes(BENCH_MECHANICAL)) {",
     replace: "  if (false) {",
     tests: ["tests/bench-v3.test.ts"],
+  },
+  // ---- TASK-34b8: class results (no server) ----
+  {
+    name: "class results: the check character is ignored when decoding",
+    reverts: "TASK-34b8 / 34b1 — checksum off: a typo would tally as a pupil",
+    file: "src/shared/resultsCode.ts",
+    find: '  if (!checkOk(values)) return { ok: false, code, error: "check" };',
+    replace: "  /* mutant: checksum off */",
+    tests: ["tests/results-code.property.test.ts", "tests/class-results.test.ts"],
+  },
+  {
+    name: "class results: the lesson fingerprint is not compared",
+    reverts: "TASK-34b8 / 34b1 — fingerprint ignored: another lesson's code would tally",
+    file: "src/shared/resultsCode.ts",
+    find: '  if (fingerprint !== lesson.fingerprint) return { ok: false, code, error: "lesson" };',
+    replace: "  /* mutant: fingerprint ignored */",
+    tests: ["tests/results-code.property.test.ts", "tests/class-results.test.ts"],
+  },
+  {
+    name: "class results: a card the pupil never reached is encoded as wrong",
+    reverts: "TASK-34b8 / 34b2 — not reached is not wrong",
+    file: "src/shared/resultsCode.ts",
+    find: '(answers[c.id] === undefined ? "none" :',
+    replace: '(answers[c.id] === undefined ? "wrong" :',
+    tests: ["tests/results-code.property.test.ts", "tests/results-endcard.dom.test.ts"],
+  },
+  {
+    name: "class results: a repeated code is counted as another pupil",
+    reverts: "TASK-34b8 / 34b4 — same code twice = one pupil",
+    file: "src/shared/classResults.ts",
+    find: "    if (seen.has(d.code)) continue;",
+    replace: "    /* mutant: duplicates double-counted */",
+    tests: ["tests/class-results.test.ts"],
+  },
+  {
+    name: "class results: the saved-codes block pattern matches any script content",
+    reverts: "TASK-34b8 / 34b6 — a loose pattern matched the tag inside the living bundle and cut the runtime out of every saved copy",
+    file: "src/shared/escapeStackJson.ts",
+    find: '<script id="class-results" type="application\\/json">(\\[[^<]*\\])<\\/script>',
+    replace: '<script id="class-results" type="application\\/json">([\\s\\S]*?)<\\/script>',
+    tests: ["tests/class-results-panel.dom.test.ts"],
   },
 ];
 

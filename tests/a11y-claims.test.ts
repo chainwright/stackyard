@@ -51,7 +51,7 @@ describe("TASK-33d5: contrast is computed from the source, never typed", () => {
 });
 
 describe("TASK-33d6: what was checked, what was not, and the checked line", () => {
-  const a: A11yNumbers = { axeVersion: "4.14.0", pages: 14, seriousOrCritical: 0, keyboard: true, scan: true };
+  const a: A11yNumbers = { axeVersion: "4.14.0", pages: 16, seriousOrCritical: 0, keyboard: true, scan: true };
 
   it("TASK-33d6: the README says what was NOT checked: no screen-reader user, no VoiceOver/NVDA, no disabled pupils", () => {
     const md = read("docs/accessibility/README.md");
@@ -73,8 +73,8 @@ describe("TASK-33d6: what was checked, what was not, and the checked line", () =
     };
     expect(r.axeVersion).toBe(pkg.devDependencies["axe-core"]);
     expect(r.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(r.pages.length).toBe(14);
-    expect(r.totals.pages).toBe(14);
+    expect(r.pages.length).toBe(16);
+    expect(r.totals.pages).toBe(16);
     for (const p of r.pages) {
       expect(Object.keys(p.violations).sort()).toEqual(["critical", "minor", "moderate", "serious"]);
       expect(p.passes).toBeGreaterThan(0);
@@ -85,7 +85,7 @@ describe("TASK-33d6: what was checked, what was not, and the checked line", () =
   it("TASK-33d6: the sentence, read back; a right line passes, every wrong number fails, the disclaimer is required", () => {
     const line = a11yLine(a);
     expect(a11ySentence(a)).toBe(
-      "axe-core 4.14.0 audited 14 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes",
+      "axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes",
     );
     expect(readA11yClaim(line)).toEqual(a);
     expect(compareA11y(line, "README", a).every((c) => c.ok)).toBe(true);
@@ -105,6 +105,10 @@ describe("TASK-33d6: what was checked, what was not, and the checked line", () =
     const moved = fixA11y(inserted, { ...a, pages: 15 });
     expect(readA11yClaim(moved)!.pages).toBe(15);
     expect(moved.split("axe-core 4.14.0 audited").length).toBe(2);
+    // TASK-34b7: the 14-page wording (before the class-results pages) is replaced too.
+    const old = "axe-core 4.14.0 audited 14 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes";
+    expect(readA11yClaim(old)).toBeNull();
+    expect(readA11yClaim(fixA11y(old, a))).toEqual(a);
   });
 
   it("TASK-33d6: the README and the write-up carry the line, matching the report", () => {

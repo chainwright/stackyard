@@ -80,3 +80,37 @@ export function withCopyCount(html: string, n: number): string {
   if (head === -1) return html;
   return `${html.slice(0, head)}  ${tag}\n${html.slice(head)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Class results kept in a saved copy (TASK-34b6, class-results design §5)
+
+// The content must be a JSON array (codes only: no "<"). The living bundle itself
+// contains the opening tag as text (in withClassResults below), so a looser
+// pattern would match inside the runtime and cut it (caught by check-living-file).
+const CLASS_RESULTS_RE = /[ \t]*<script id="class-results" type="application\/json">(\[[^<]*\])<\/script>\n?/;
+
+/** The results codes a saved copy keeps (strings only), or [] when it has none. */
+export function readClassResults(html: string): string[] {
+  const m = CLASS_RESULTS_RE.exec(html);
+  if (!m) return [];
+  try {
+    const parsed: unknown = JSON.parse(m[1]!);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Write `codes` into the file's results block, just before `</head>`, or
+ * remove the block when there are none. A file with no codes therefore never
+ * has the block, and saves of it stay byte-identical (TASK-26a).
+ */
+export function withClassResults(html: string, codes: string[]): string {
+  const without = html.replace(CLASS_RESULTS_RE, "");
+  if (codes.length === 0) return without;
+  const head = without.indexOf("</head>");
+  if (head === -1) return without;
+  const tag = `  <script id="class-results" type="application/json">${toEscapedStackJson(codes)}</script>\n`;
+  return `${without.slice(0, head)}${tag}${without.slice(head)}`;
+}

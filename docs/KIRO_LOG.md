@@ -559,3 +559,37 @@ The coordinator saved `bench/results-v4.json` and re-recorded the same 34 object
   - The v4 review is frozen.
 - **Conclusion** in `bench/DIAGNOSIS.md`: prompt changes reached a plateau at about 22 per 100. The next options are a critic pass, a stronger model or a Maker swap, each with its cost; none is built.
 - **Shell edits.** None to lasting files; read-only probes only, and the `/tmp` scratch files were deleted.
+
+## 10 Nov 2026: class results without a server (TASK-34b)
+
+From `../CLONES_TEARDOWN_2026-11-09.md` §4 row 5. A new spec, `.kiro/specs/class-results/` (requirements in EARS form, design, tasks TASK-34b1…b9), was written first and reviewed by a read-only sub-agent before any code.
+- **The review found two P0s, both fixed in the spec before coding.**
+  - Joining codes typed with spaces by length rules mis-split mixed lengths. It became a partition of each line into valid-length pieces that pass the check.
+  - Reading only against the lesson as the file opened rejected codes from the same open page after an in-session edit. They now get their own message.
+- **The code.**
+  - Format: `fingerprint(3) · play tag(3) · results(K) · [initials(3)] · check(1)`.
+  - Alphabet: 31 characters, no 0 O 1 I L. A weighted mod-31 check provably catches every single substitution and every adjacent swap.
+  - Lengths: 9 / 11 / 14 characters for 5 / 10 / 20 quiz cards, plus 3 with initials.
+  - Results: right, wrong or not reached per quiz card in deck order, from the pupil's first answer. The random tag keeps two pupils with the same answers apart, so "same code twice = one pupil" is true.
+  - No BigInt, so it still runs in 2018 browsers.
+- **The product.**
+  - The end card shows the code (ink, with a spelled-out twin for screen readers) and an optional initials field.
+  - The Teacher tab gets a Class Results panel: per-question table, "Qk missed by W of P", the middle score (median), questions to revisit, a pupil table, Copy as Text and Print Results.
+  - Save a Copy keeps the codes in a `#class-results` block, only while the quiz questions are unchanged. A file with no codes has no block.
+  - The class export never carries results.
+- **Size.** The feature pushed the water-cycle lesson to 220,178 B, over the 7-on-a-floppy budget (208,237 B).
+  - A build-only Vite plugin (`vite.cssComments.ts`) now drops the CSS comments and spaces that rode inside two template strings (6.7 KB of commentary), plus a more compact panel. Now 208,187 B.
+  - A test proves the plugin changes no JavaScript.
+  - The player bundle fell to 12.3 KB gzipped.
+- **Proof.**
+  - Tests: fast-check round trip, exhaustive substitution and swap checks (including the weight wrap on 62+ character strings), the fingerprint, an aggregation property, a paste-recovery property, DOM tests for the end card and the panel, and storage tests.
+  - New gate `scripts/check-class-results.ts` (in `pre-submit`): the Vikings sample played offline three times, three codes read off the end card, pasted into the Teacher tab with a repeat and a typo, every table number asserted; then Save a Copy, and the reopened copy shows the same table.
+  - check:a11y has 2 new pages (16 in all, 0 violations).
+  - 5 new mutants, all killed.
+- **A bug the browser gates caught.**
+  - The minified living bundle contains `<script id="class-results" …>` as text (the code that writes the block). The first, loose block pattern matched there and cut the runtime out of every saved copy, so copies opened blank.
+  - The jsdom tests use a stand-in bundle and missed it; check:living-file (part B) caught it.
+  - The pattern now only matches a JSON array without `<`.
+  - Guards: a test on the real bundle, the fifth mutant, and the gate's save-and-reopen step.
+- **Docs.** The README has a "Class results (no server)" section with the privacy statement. The write-up has one "What it does" line with no number, and the feature is gone from "What's next".
+- **Shell edits.** None; source files were written with the file tools.

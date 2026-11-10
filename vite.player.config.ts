@@ -4,8 +4,10 @@
 // Target: ES2018 (Chrome 70, Firefox 63, Safari 12, Edge 18)
 
 import { defineConfig } from "vite";
+import { stripCssComments } from "./vite.cssComments.js";
 
 export default defineConfig({
+  plugins: [stripCssComments()],
   build: {
     target: "es2018",
     minify: true,
