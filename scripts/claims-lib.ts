@@ -727,3 +727,85 @@ export function fixJoke(text: string, j: JokeNumbers): string {
   lines.splice(at + 1, 0, jokeLine(j));
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// TASK-37a: the mutant count is backed by a logged run (docs/mutation-runs/).
+// `npm run check:mutants:log` writes a log only when every mutant was killed.
+// The write-up's "N of N killed" must match the NEWEST log, and that log must
+// have been made with the CURRENT scripts/mutation-check.ts (same sha256).
+
+export const MUTATION_RERUN = "re-run npm run check:mutants:log";
+
+export interface MutationLog {
+  file: string;
+  /** ISO UTC date-time of the run. */
+  date: string;
+  head: string;
+  clean: boolean;
+  node: string;
+  sha256: string;
+  killed: string[];
+  /** N from the final "mutation-check: N of N mutants killed." line. */
+  n: number;
+}
+
+/** The log's text, from the run's facts and its raw output. */
+export function formatMutationLog(f: Omit<MutationLog, "file" | "killed" | "n">, output: string): string {
+  const lines = output.split(/\r?\n/);
+  const killed = lines.filter((l) => /^\s*KILLED\s/.test(l)).map((l) => l.trimEnd());
+  const final = [...lines].reverse().find((l) => /^mutation-check: \d+ of \d+ mutants killed\.$/.test(l.trim()));
+  if (final === undefined) throw new Error("the mutation check printed no final line");
+  return [
+    `Date (UTC): ${f.date}`,
+    `HEAD: ${f.head}`,
+    `Working tree clean: ${f.clean ? "yes" : "no (uncommitted changes)"}`,
+    `Node: ${f.node}`,
+    `sha256 scripts/mutation-check.ts: ${f.sha256}`,
+    "",
+    ...killed,
+    "",
+    final.trim(),
+    "",
+  ].join("\n");
+}
+
+export function parseMutationLog(file: string, text: string): MutationLog | null {
+  const get = (k: string): string | undefined => new RegExp(`^${k}: (.+)$`, "m").exec(text)?.[1]?.trim();
+  const date = get("Date \\(UTC\\)");
+  const sha256 = get("sha256 scripts/mutation-check\\.ts");
+  const final = /^mutation-check: (\d+) of (\d+) mutants killed\.$/m.exec(text);
+  if (date === undefined || sha256 === undefined || final === null || final[1] !== final[2]) return null;
+  return {
+    file,
+    date,
+    head: get("HEAD") ?? "",
+    clean: (get("Working tree clean") ?? "").startsWith("yes"),
+    node: get("Node") ?? "",
+    sha256,
+    killed: text.split("\n").filter((l) => /^\s*KILLED\s/.test(l)),
+    n: Number(final[1]),
+  };
+}
+
+/** The newest log in `logs` (by the date-time inside each), or null. */
+export function newestMutationLog(logs: Array<{ file: string; text: string }>): MutationLog | null {
+  const parsed = logs.map((l) => parseMutationLog(l.file, l.text)).filter((l): l is MutationLog => l !== null);
+  parsed.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return parsed[0] ?? null;
+}
+
+/** The write-up's "N of N killed" against the newest log and the current mutation-check.ts hash. */
+export function compareMutationLog(text: string, where: string, log: MutationLog | null, currentSha256: string): Check[] {
+  const m = /, (\d+) of (\d+) killed/.exec(text);
+  const name = `${where} mutants killed vs docs/mutation-runs`;
+  if (m === null) return [];
+  const claimed = Number(m[1]);
+  if (log === null) return [{ name, claimed, actual: "(no log)", ok: false, note: `no run is logged in docs/mutation-runs/; ${MUTATION_RERUN}` }];
+  const checks: Check[] = [
+    { name, claimed, actual: log.n, ok: claimed === log.n && Number(m[2]) === log.n, note: `${log.file}; ${MUTATION_RERUN} if it is out of date` },
+  ];
+  if (log.sha256 !== currentSha256) {
+    checks.push({ name: `${where} mutation log matches scripts/mutation-check.ts`, claimed: log.sha256.slice(0, 12), actual: currentSha256.slice(0, 12), ok: false, note: `the mutant set changed since ${log.file}; ${MUTATION_RERUN}` });
+  }
+  return checks;
+}

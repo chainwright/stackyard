@@ -78,12 +78,27 @@ import {
   a11yFromReport,
   type A11yNumbers,
   compareJoke,
+  compareMutationLog,
+  newestMutationLog,
+  type MutationLog,
   fixJoke,
   jokeFromReviews,
   type JokeNumbers,
   type WriteupNumbers,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
+import { createHash } from "node:crypto";
+
+/** TASK-37a: the newest log in docs/mutation-runs/ and the current mutation-check.ts sha256. */
+function mutationLogNow(): { log: MutationLog | null; sha256: string } {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const dir = path.join(root, "docs", "mutation-runs");
+  const logs = existsSync(dir)
+    ? readdirSync(dir).filter((f) => f.endsWith(".log")).map((f) => ({ file: `docs/mutation-runs/${f}`, text: readFileSync(path.join(dir, f), "utf8") }))
+    : [];
+  const sha256 = createHash("sha256").update(readFileSync(path.join(root, "scripts", "mutation-check.ts"))).digest("hex");
+  return { log: newestMutationLog(logs), sha256 };
+}
 
 const AXE_REPORT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "docs", "accessibility", "axe-report.json");
 
@@ -286,6 +301,10 @@ async function run(): Promise<void> {
   checks.push(...compareBench(readFileSync(WRITEUP, "utf8"), "write-up", bench));
   checks.push(...compareKeyReview(readFileSync(WRITEUP, "utf8"), "write-up", keys));
   checks.push(...compareJoke(readFileSync(WRITEUP, "utf8"), "write-up", jokes));
+  // TASK-37a: the mutant count must be backed by the newest logged run, made with this mutation-check.ts.
+  const mlog = mutationLogNow();
+  checks.push(...compareMutationLog(readFileSync(WRITEUP, "utf8"), "write-up", mlog.log, mlog.sha256));
+  checks.push(...compareMutationLog(text, "README", mlog.log, mlog.sha256));
   checks.push(...compareA11y(readFileSync(WRITEUP, "utf8"), "write-up", a11y));
 
   let failed = false;

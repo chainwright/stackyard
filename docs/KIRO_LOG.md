@@ -690,3 +690,16 @@ A separate Kiro session (`sess_b006fe90-9722-4630-a0b1-13ecc2981ef9`, kiro-cli 3
 - **MCP sentences.** In the README, the write-up's MCP row and "Built with", and the 5 Nov KIRO_LOG entry, each sentence keeps the script history and adds: "its search was also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions)".
 - **check:trace.** It now also reads Kiro's checkbox task lines (`- [x] TASK-36d1: …`), so TASK-36d1 is counted and traced (`tests/kiro-evidence.test.ts`).
 - **Shell edits.** None.
+
+## 10 Nov 2026: mutation evidence, v8 credits and video note (TASK-37)
+
+Spec first: maker `tasks.md` Phase 22 (TASK-37a–c).
+- **a. Mutation runs are logged.**
+  - `npm run check:mutants:log` (`scripts/mutation-log.ts`) runs the same mutation check. Only when it exits 0 does it write `docs/mutation-runs/<UTC date>-<short sha>.log`, with the date-time, full HEAD, clean flag, node version, the sha256 of `mutation-check.ts`, every KILLED line and the final line.
+  - check:claims requires the write-up's "N of N killed" to equal the newest log's N, and that log's sha256 to equal the current file's. Otherwise it says "re-run npm run check:mutants:log".
+  - The write-up's count now points at `docs/mutation-runs/`; the README states no count.
+  - A new mutant removes the hash check; it is killed.
+  - We ran it once on this working tree. The log says "Working tree clean: no", as it should; the coordinator re-runs it on a clean tree before committing.
+- **b. Credits.** "About 24 s in six sequences, eight shots" (video v8) in the write-up and the README.
+- **c. Video note.** The write-up's paragraph under the video link now describes v8 (commit 4703964) in two sentences. The v7 caveats are gone, and the traced, tests, player KB and file-size numbers are still checked. Line 3 (the link) is unchanged.
+- **Shell edits.** None.

@@ -2052,3 +2052,43 @@ Source: `../judge_v2_2026-11-10_app_r3/` (SUMMARY.md; J05_hound.md §4–§6; J0
 - `npm run check:mutants` kills every mutant.
 - `npm run check:claims:fix` if counts moved.
 - check:a11y reports 0 serious or critical violations.
+
+## Phase 22 - TASK-37: mutation evidence, v8 credits and the video note
+
+### TASK-37a: a logged mutation run backs the mutant count  *(TASK-37 a)*
+  - **Why.** The write-up's "N of N killed" was counted from the mutant list, not from a run. Nothing showed that the run happened at this commit.
+  - **Fix.**
+    - `npm run check:mutants:log` runs the same mutation check (its output still goes to the console). Only if the check exits 0, it writes `docs/mutation-runs/<UTC date>-<short HEAD sha>.log` with:
+      - the UTC date-time;
+      - the full `git rev-parse HEAD`;
+      - whether the working tree was clean;
+      - the node version;
+      - the sha256 of `scripts/mutation-check.ts`;
+      - every KILLED line;
+      - the final "mutation-check: N of N mutants killed." line, verbatim.
+    - A failed run writes no log.
+    - **check:claims.** The write-up's "N of N killed" must equal N from the NEWEST log in `docs/mutation-runs/` (newest by the date-time inside it), and that log's sha256 must equal the current file's. So a changed mutant set forces a fresh run. If either fails, the message ends "re-run npm run check:mutants:log". A missing log fails too.
+    - Where the docs state the mutant count (the write-up's Property-based testing row), one short clause points at `docs/mutation-runs/`. The README states no mutant count.
+  - **Acceptance criteria.**
+    - Temp-dir tests: a stale hash fails, a mismatched N fails, a matching log passes, the newest log wins, and no log fails.
+    - A test checks the log format.
+    - A mutant (the hash check removed) is killed.
+    - A real log exists from a run on this working tree, and it says honestly that the tree was not clean.
+
+### TASK-37b: the credits count the v8 footage  *(TASK-37 b)*
+  - **Fix.** In the write-up's Credits and the README's demo-video paragraph, "about 28 s in five sequences, ten shots" becomes "about 24 s in six sequences, eight shots", as our judges counted video v8.
+  - **Acceptance criteria.** The test that pinned the old wording checks the new one.
+
+### TASK-37c: the write-up's video note describes v8  *(TASK-37 c)*
+  - **Fix.** The paragraph under the video link is rewritten for v8, recorded on the live app at commit 4703964, in two or three sentences.
+    - It names what v8 shows:
+      - a real generation in real time (13.7 s from Build Cards to the editor in the take; usually 10–20 s);
+      - Swap with Undo;
+      - one-switch Scan;
+      - a pupil's results code on the end card and the teacher's Class Results table (two of the three pupil codes were played by script off camera, as the video says);
+      - Save a Copy offline with files of about 212 KB;
+      - check:trace and check:claims at that commit.
+    - The v7 caveats are dropped.
+    - The numbers check:claims owns (traced ids, tests, player KB, file size) stay checked.
+    - Line 3 (the video link) is not touched.
+  - **Acceptance criteria.** A test finds the new sentences, finds no v7 caveat, and checks that check:claims still reads the paragraph's numbers.

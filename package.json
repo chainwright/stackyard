@@ -41,6 +41,7 @@
     "check:trace": "node --import tsx/esm scripts/check-task-trace.ts",
     "check:claims:fix": "node --import tsx/esm scripts/check-claims.ts --fix",
     "check:mutants": "node --import tsx/esm scripts/mutation-check.ts",
+    "check:mutants:log": "node --import tsx/esm scripts/mutation-log.ts",
     "check:text-fit": "node --import tsx/esm scripts/check-text-fit.ts && node --import tsx/esm scripts/check-maker-fit.ts"
   },
   "dependencies": {

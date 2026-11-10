@@ -963,6 +963,15 @@ const MUTANTS: Mutant[] = [
     gate: ["sh", "-c", "npm run build:player >/dev/null && npm run build:living >/dev/null && node --import tsx/esm scripts/check-living-mobile.ts"],
     rebuild: ["sh", "-c", "npm run build:player && npm run build:living && node --import tsx/esm scripts/check-living-mobile.ts"],
   },
+  // ---- TASK-37a: the mutant count is backed by a logged run ----
+  {
+    name: "claims: a mutation log made with a different mutation-check.ts is accepted",
+    reverts: "TASK-37a — a changed mutant set forces a fresh check:mutants:log",
+    file: "scripts/claims-lib.ts",
+    find: "  if (log.sha256 !== currentSha256) {",
+    replace: "  if (false) {",
+    tests: ["tests/mutation-log.test.ts"],
+  },
   // ---- TASK-36c4b: one spare quiz card asked for, exactly N kept ----
   {
     name: "generator: the spare quiz card is not trimmed",

@@ -32,9 +32,9 @@ describe("TASK-30b: the README media script never makes a wrong option right", (
 describe("TASK-30e: README truth (video hound R1–R4)", () => {
   const readme = FLAT(read("README.md"));
 
-  it("R1: the AI footage is described as ten dramatised shots, about 28 s, each tagged", () => {
+  it("R1: TASK-37b: the AI footage is described as dramatised shots (v8: about 24 s, eight shots), each tagged", () => {
     expect(readme).toContain(
-      "The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 28 s, ten shots), each tagged on screen; app screens in them are real recordings composited in.",
+      "The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 24 s in six sequences, eight shots), each tagged on screen; app screens in them are real recordings composited in.",
     );
     expect(readme).not.toContain("two short shots are AI-generated footage");
   });

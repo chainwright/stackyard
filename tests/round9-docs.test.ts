@@ -16,10 +16,11 @@ const W = (): string => read("docs/DEVPOST_WRITEUP.md");
 const R = (): string => FLAT(read("README.md"));
 
 describe("TASK-36a1: the write-up's video note is true", () => {
-  it("TASK-36a1: the hound's §5b paragraph, with the measured file size and 'added after the video'", async () => {
+  it("TASK-36a1: TASK-37c: the video note (now v8) carries the measured file size, and the v7 caveats are gone", async () => {
     const w = W();
-    expect(w).toContain("It shows 84 of 84 traced task ids, 1,003 tests, an 11.7 KB player, a 170 KB file, a 20–45 s wait, and no pictures, dragging or class results in the Teacher tab.");
-    expect(w).toContain('Class results, one-switch Scan and "Swap this wrong answer" were added after the video and are not shown in it.');
+    expect(w).toContain("The video (v8) was recorded on the live app at commit 4703964:");
+    expect(w).not.toContain("It shows 84 of 84 traced task ids");
+    expect(w).not.toContain("were added after the video and are not shown in it");
     expect(w).not.toContain("about 185 KB");
     const kb = Math.round((await fixtureLivingExportBytes()) / 1000);
     const claimed = Number(/lesson file is now about (\d+) KB/.exec(w)![1]);
@@ -57,7 +58,7 @@ describe("TASK-36a2: 'about N KB' is decimal KB at ±3 %", () => {
       expect(fixed).toContain(`lesson file is now about ${kb} KB`);
       expect(compareWriteup(fixed, truth).filter((c) => !c.ok)).toEqual([]);
       // ±3 % exactly: 3 % off passes, 4 % off fails.
-      const at = (n: number): boolean => compareWriteup(real.replace(/about \d+ KB/, `about ${n} KB`), truth).every((c) => c.ok);
+      const at = (n: number): boolean => compareWriteup(real.replace(/lesson file is now about \d+ KB/, `lesson file is now about ${n} KB`), truth).every((c) => c.ok);
       expect(at(Math.ceil(kb * 0.975))).toBe(true);
       expect(at(Math.floor(kb * 0.96))).toBe(false);
       expect(at(Math.ceil(kb * 1.04))).toBe(false);
