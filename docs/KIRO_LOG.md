@@ -776,3 +776,4 @@ Text fixes from the coordinator's field scan of 11 Nov, which read 60+ Kiroween 
   - the CLAIMS.md line numbers;
   - tests 1485 → 1499 in the README, the write-up, JUDGES.md and EVIDENCE.md;
   - traced ids 189 → 195 in the write-up, JUDGES.md and EVIDENCE.md.
+- **g. The blog sentences are live (TASK-40g).** The coordinator applied the two TASK-40e sentences to the live dev.to post through the dev.to API at 14:41 UTC (`edited_at` 2026-11-11T14:41:11Z) and checked both on the live body. CLAIMS.md C60 and C61 are now TRUE, with the proof "on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand)". The Status line in `BLOG_DRAFT.md` says the same. `tests/round12-docs.test.ts` now expects TRUE (TASK-40g in its title). Shell edits: none, except the counts that `check:claims -- --fix` wrote.

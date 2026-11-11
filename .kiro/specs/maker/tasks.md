@@ -2242,4 +2242,9 @@ Source: the coordinator's field scan of 11 Nov 2026, which read 60+ Kiroween 202
     - `check:claims -- --fix` sets the line numbers.
   - **Acceptance criteria.** check:claims passes, and a test finds rows C53 onward with their statuses.
 
-**Status (11 Nov).** TASK-40a–f are done. Both files lead with R1, Where it sits names the 2026 field, the README's Why HyperCard and Prior art are updated, the blog draft is edited (not yet live), and CLAIMS.md has C1–C61. `tests/round12-docs.test.ts` checks the wording, and the gates pass.
+### TASK-40g: the blog rows C60 and C61 are TRUE  *(TASK-40 g)*
+  - **Bug.** C60 and C61 were PARTIAL ("in the draft, not yet on the live post"). The coordinator has since applied both TASK-40e sentences to the live dev.to post through the dev.to API (11 Nov 2026, 14:41 UTC, `edited_at` 2026-11-11T14:41:11Z) and checked both on the live body.
+  - **Fix.** In CLAIMS.md, C60 and C61 become TRUE, with the proof "on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand)". Nothing else in CLAIMS.md changes. The Status 11.11 line in `BLOG_DRAFT.md` says the two edits were applied to the live post at 14:41 UTC.
+  - **Acceptance criteria.** A test checks that both rows are TRUE with the 14:41 UTC proof, and check:claims passes.
+
+**Status (11 Nov).** TASK-40a–f are done. Both files lead with R1, Where it sits names the 2026 field, the README's Why HyperCard and Prior art are updated, the blog draft is edited, and CLAIMS.md has C1–C61. `tests/round12-docs.test.ts` checks the wording, and the gates pass. TASK-40g is done too: the two blog sentences have been on the live post since 14:41 UTC, so C60 and C61 are TRUE.

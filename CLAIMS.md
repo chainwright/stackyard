@@ -65,5 +65,5 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C57 | "Syllabind, a Claude Code skill, turns a topic into a course" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/Khalidfpv/syllabind (README) |
 | C58 | "The typed codes are the part we have not seen in the tools above." | docs/DEVPOST_WRITEUP.md:35 | PARTIAL | Missing: from the public pages we read (11 Nov), not proof that none exists; Egatari's player spec reports progress to a SCORM LMS, the host page or local storage, and we did not check every tool's reporting. |
 | C59 | "plays offline, it edits itself, and the pupils' results come back to her as short codes she types in" | docs/DEVPOST_WRITEUP.md:5, README.md:5 | TRUE | For the lesson file (the Maker needs the internet, as the same line says): `npm run check:class-results`, `npm run check:living-file` |
-| C60 | "a few tools now hand you an offline lesson file" | blog | PARTIAL | Missing: in the draft, not yet on the live post (11 Nov) |
-| C61 | "the teacher types the codes into her own copy" | blog | PARTIAL | Missing: in the draft, not yet on the live post (11 Nov) |
+| C60 | "a few tools now hand you an offline lesson file" | blog | TRUE | on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand) |
+| C61 | "the teacher types the codes into her own copy" | blog | TRUE | on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand) |

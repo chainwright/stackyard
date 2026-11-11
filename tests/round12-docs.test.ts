@@ -153,13 +153,14 @@ describe("TASK-40e / TASK-40f: CLAIMS.md follows the new text", () => {
     expect(row("C59").refs).toEqual([{ file: "docs/DEVPOST_WRITEUP.md", line: 5 }, { file: "README.md", line: 5 }]);
   });
 
-  it("TASK-40e the two new blog sentences are PARTIAL: in the draft, not yet on the live post", () => {
+  it("TASK-40e: TASK-40g: the two new blog sentences are TRUE: on the live dev.to post since 11 Nov 2026, 14:41 UTC", () => {
     for (const [id, quote] of [["C60", "a few tools now hand you an offline lesson file"], ["C61", "the teacher types the codes into her own copy"]] as const) {
       const x = row(id);
       expect(x.quote).toBe(quote);
       expect(x.refs).toEqual([{ file: "blog" }]);
-      expect(x.status).toBe("PARTIAL");
-      expect(x.proof).toBe("Missing: in the draft, not yet on the live post (11 Nov)");
+      expect(x.status).toBe("TRUE");
+      expect(x.proof).toBe("on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand)");
     }
+    expect(claims).not.toContain("not yet on the live post");
   });
 });
