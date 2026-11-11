@@ -2093,3 +2093,51 @@ Source: `../judge_v2_2026-11-10_app_r3/` (SUMMARY.md; J05_hound.md §4–§6; J0
     - Line 3 (the video link) is not touched.
   - **Acceptance criteria.** A test finds the new sentences, finds no v7 caveat, and checks that check:claims still reads the paragraph's numbers.
   - **Follow-up (v8b, the final cut).** The credits say "about 23 s" (the final cut's real AI-shot total). The note names the video "v8b": its app takes were recorded on the live app at commit 4703964, and the check:trace and check:claims shown in it ran at commit 8e24ecd. Nothing else in the line changes.
+
+## Phase 23 - TASK-38: judge round 4 text fixes
+
+Source: judge round 4, the hound seat (11 Nov 2026). These are text fixes to `README.md` and `docs/DEVPOST_WRITEUP.md` and the tests that pin them. Nothing under `src/`, `server/`, `mcp/`, `scripts/`, `.github/`, `docs/ops/`, `render.yaml` or `package.json` changes.
+
+### TASK-38a: the hosting text matches render.yaml  *(TASK-38 a)*
+  - **Bug.** `render.yaml` says `plan: starter`, a paid instance that does not spin down, and the `keep-warm` workflow is disabled (`disabled_manually` in the GitHub Actions API, checked 11 Nov). The docs still described the live app as a free instance with a slow first load, a keep-warm workflow it needed, and a second pinger.
+  - **Fix.**
+    - Write-up: the live app is "a paid Render instance, so it stays awake".
+    - README "Deploy": the heading names the paid Starter plan (and how to switch to `free`), and the health check "makes no model call".
+    - The two README paragraphs "Keep-warm" and "The 60-day rule" become one paragraph: keep-warm is no longer needed, the workflow is disabled, and the two `docs/ops/` files are kept for a free deploy.
+  - **Acceptance criteria.** A test finds the new sentences. "free instance; if it has been idle", "up to a minute", "second pinger" and "free web service" are gone from both files.
+
+### TASK-38b: six specs, not five  *(TASK-38 b)*
+  - **Bug.** `.kiro/specs/` has six folders, the sixth being `kiro-evidence`, but the docs said five specs.
+  - **Fix.** The write-up's Specs and Spec-vs-vibe rows and the README's Specs bullet say six specs: five product features in EARS form plus the small `kiro-evidence` spec for the MCP call record.
+  - **Acceptance criteria.** A test checks that `.kiro/specs/` has exactly 6 folders, that the write-up says "Six specs", and that "Five specs", "5 specs" and "for five features" are gone.
+
+### TASK-38c: seven on-screen AI windows, not six sequences  *(TASK-38 c)*
+  - **Bug.** The YouTube description of v8b lists seven AI-tagged on-screen windows (0:00–0:02, 0:12–0:15, 0:40–0:41, 1:14–1:20, 1:24–1:28, 1:42–1:44, 2:46–2:49). The credits said "six sequences".
+  - **Fix.** "About 23 s in seven on-screen windows, eight shots" in the write-up's Credits and the README's demo-video paragraph.
+  - **Acceptance criteria.** A test finds the new wording in both files, and "six sequences" is gone.
+
+### TASK-38d: the category line  *(TASK-38 d)*
+  - **Bug.** Neither file named the contest category.
+  - **Fix.** Line 3 of each file, under the title and before a blank line: "Category: Resurrection (HyperCard, 1987)".
+  - **Acceptance criteria.** A test checks that line 3 of each file is exactly that. The tests that read the write-up by line number follow the inserted line.
+
+### TASK-38e: prior art: OpenMAIC added; AfterStack and NecroCard softened  *(TASK-38 e)*
+  - **Bug.**
+    - "AfterStack … has no AI and no self-saving copy" claims more than we checked.
+    - "another Kiroween 2026 entry (NecroCard)" asserts its entry status.
+    - OpenMAIC, an open-source tool that also exports an offline HTML lesson player, was not named.
+  - **Fix.**
+    - AfterStack: "we found no AI generation or self-saving copy in it".
+    - NecroCard: "another project built for Kiroween 2026 (NecroCard, per its own README)".
+    - One OpenMAIC sentence in the write-up's "Where it sits" and one bullet in the README's "Prior art".
+  - **Acceptance criteria.** A test finds the new sentences, and "has no AI and no self-saving copy" and "another Kiroween 2026 entry (NecroCard)" are gone.
+
+### TASK-38f: the player KB unit is stated  *(TASK-38 f)*
+  - **Bug.** The player size is in KiB (1 KB = 1,024 bytes) and lesson files are in decimal KB (TASK-36a2), but neither file said which unit each size used.
+  - **Fix.**
+    - Write-up: the video note says "(gzipped, 1 KB = 1,024 bytes)", and Accomplishments adds "(1 KB = 1,024 bytes here; lesson-file sizes are decimal KB)".
+    - README: the Player bundle line adds "1 KB = 1,024 bytes here".
+    - check:claims still reads each number.
+  - **Acceptance criteria.** A test finds the unit notes, and check:claims passes.
+
+**Status (11 Nov).** TASK-38a–f are done: the edits are applied, `tests/round10-docs.test.ts` checks them, and the gates pass.

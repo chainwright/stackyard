@@ -72,12 +72,12 @@ describe("TASK-36a2: 'about N KB' is decimal KB at ±3 %", () => {
 });
 
 describe("TASK-36b1: the round-3 hound's exact replacements", () => {
-  it("TASK-36b1: the write-up carries E9, E13, E25, E31, E46, E53 and E62 word for word, and the old wording is gone", () => {
+  it("TASK-36b1: TASK-38a: TASK-38e: the write-up carries E13, E31, E46, E53 and E62 word for word, E9 and E25 as revised in round 4, and the old wording is gone", () => {
     const w = FLAT(W());
     const want = [
-      "(free instance; if it has been idle, the first load can take up to a minute)",
+      "(a paid Render instance, so it stays awake)",
       "or ask a chatbot for a one-off HTML quiz with no editor inside it.",
-      "Their stacks travel as JSON files or as links back to their tool; the closest, AfterStack, is itself one offline page with a form editor, but has no AI and no self-saving copy.",
+      "Their stacks travel as JSON files or as links back to their tool; the closest, AfterStack, is itself one offline page with a form editor; we found no AI generation or self-saving copy in it.",
       "AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter;",
       "The numbers in the README's \"By the numbers\" block are checked by a script, and the pre-submit gate fails if they drift beyond its tolerances (±0.5 KB for the bundle, ±3 % for the file size).",
       "Kiro (CLI, specs, steering, hooks, one custom agent; an MCP server registered in .kiro, run as a script, and its search also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions))",
@@ -91,11 +91,11 @@ describe("TASK-36b1: the round-3 hound's exact replacements", () => {
     expect(w).toContain("An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.");
   });
 
-  it("TASK-36b1: the README carries R8, R17, R20, R25 and R26b word for word", () => {
+  it("TASK-36b1: TASK-38e: the README carries R8, R17 (NecroCard softened in round 4), R20, R25 and R26b", () => {
     const r = R();
     for (const s of [
       "No names or accounts are collected; the only personal detail is up to three optional initials a pupil may choose to type.",
-      "Successors like HyperStudio and Decker exist, and another Kiroween 2026 entry (NecroCard) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline.",
+      "Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline.",
       "Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.",
       "These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.",
       "An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md).",
@@ -127,11 +127,11 @@ describe("TASK-36c6: keep-warm survives GitHub's 60-day rule, or says it may not
     expect(wf).not.toContain("${{ secrets.");
   });
 
-  it("TASK-36c6: the README's Deploy section states the 60-day rule, the unverified reset and the second pinger", () => {
+  it("TASK-36c6: TASK-38a: the README's Deploy section keeps keepalive.yml for a free deploy and names the 60-day rule (no second pinger: the instance is paid)", () => {
     const r = R();
     const deploy = r.slice(r.indexOf("### Deploy to Render"));
-    expect(deploy).toContain("GitHub disables scheduled workflows in public repositories after 60 days without repository activity");
-    expect(deploy).toContain("We have not been able to verify that the enable call resets that 60-day timer, so a second pinger runs outside GitHub (our own machine) until results.");
+    expect(deploy).toContain("because GitHub disables scheduled workflows in public repositories after 60 days without activity");
     expect(deploy).toContain("[`docs/ops/keepalive.yml`](docs/ops/keepalive.yml)");
+    expect(deploy).not.toContain("second pinger");
   });
 });

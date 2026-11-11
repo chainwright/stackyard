@@ -84,20 +84,20 @@ describe("TASK-37a: the mutant count is backed by the newest logged run", () => 
 });
 
 describe("TASK-37b: the credits count the v8 footage", () => {
-  it("TASK-37b: about 23 s (v8b) in six sequences, eight shots, in the write-up and the README; the old count is gone", () => {
+  it("TASK-37b: TASK-38c: about 23 s (v8b) in seven on-screen windows, eight shots, in the write-up and the README; the old count is gone", () => {
     const w = FLAT(read("docs/DEVPOST_WRITEUP.md"));
     const r = FLAT(read("README.md"));
-    expect(w).toContain("(about 23 s in six sequences, eight shots in all)");
-    expect(r).toContain("(about 23 s in six sequences, eight shots)");
-    for (const t of [w, r]) expect(t).not.toMatch(/about 28 s|about 24 s|ten shots/);
+    expect(w).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
+    expect(r).toContain("(about 23 s in seven on-screen windows, eight shots)");
+    for (const t of [w, r]) expect(t).not.toMatch(/about 28 s|about 24 s|ten shots|six sequences/);
   });
 });
 
 describe("TASK-37c: the write-up's video note describes v8", () => {
-  it("TASK-37c: two or three sentences naming what v8 shows; check:claims still reads its numbers; the link line is untouched", () => {
+  it("TASK-37c: TASK-38d: two or three sentences naming what v8 shows; check:claims still reads its numbers; the link line is untouched (now line 5, under the category line)", () => {
     const lines = read("docs/DEVPOST_WRITEUP.md").split("\n");
-    expect(lines[2]).toBe("Video (public, AI disclosure set on YouTube, v8b uploaded 10.11): https://youtu.be/x6W2BzhpAyU");
-    const p = lines[4]!;
+    expect(lines[4]).toBe("Video (public, AI disclosure set on YouTube, v8b uploaded 10.11): https://youtu.be/x6W2BzhpAyU");
+    const p = lines[6]!;
     for (const s of [
       "recorded on the live app at commit 4703964",
       "a real generation in real time (Build Cards to the editor in 13.7 s in that take; usually 10–20 s)",

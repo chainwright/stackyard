@@ -34,8 +34,8 @@ describe("TASK-31a: README and docs say only what is true", () => {
   const readmeLines = read("README.md").split("\n");
   const readme = FLAT(read("README.md"));
 
-  it("TASK-31a: README line 7 links the submitted video and the live app", () => {
-    expect(readmeLines[6]).toBe("**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com");
+  it("TASK-31a: TASK-38d: README line 9 (after the category line) links the submitted video and the live app", () => {
+    expect(readmeLines[8]).toBe("**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com");
     expect(read("README.md")).not.toContain("G5aNDWg8UGY");
     expect(read("README.md")).not.toContain("xQvUPdifiVE");
   });

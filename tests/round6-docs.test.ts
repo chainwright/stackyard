@@ -32,9 +32,9 @@ describe("TASK-30b: the README media script never makes a wrong option right", (
 describe("TASK-30e: README truth (video hound R1–R4)", () => {
   const readme = FLAT(read("README.md"));
 
-  it("R1: TASK-37b: TASK-37c: the AI footage is described as dramatised shots (v8b: about 23 s, eight shots), each tagged", () => {
+  it("R1: TASK-37b: TASK-37c: TASK-38c: the AI footage is described as dramatised shots (v8b: about 23 s in seven on-screen windows, eight shots), each tagged", () => {
     expect(readme).toContain(
-      "The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 23 s in six sequences, eight shots), each tagged on screen; app screens in them are real recordings composited in.",
+      "The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 23 s in seven on-screen windows, eight shots), each tagged on screen; app screens in them are real recordings composited in.",
     );
     expect(readme).not.toContain("two short shots are AI-generated footage");
   });
@@ -45,9 +45,9 @@ describe("TASK-30e: README truth (video hound R1–R4)", () => {
     expect(readme).toContain("invariants-after-shell-edit");
     expect(read("README.md")).not.toMatch(/five hooks/i);
   });
-  it("R3: HyperCard successors are named, and 'nothing really replaced it' is gone", () => {
-    // TASK-36b1: R17 adds NecroCard and narrows the claim.
-    expect(readme).toContain("Successors like HyperStudio and Decker exist, and another Kiroween 2026 entry (NecroCard) builds a stack from a plain-English description;");
+  it("R3: TASK-38e: HyperCard successors are named, and 'nothing really replaced it' is gone", () => {
+    // TASK-36b1: R17 adds NecroCard and narrows the claim; TASK-38e softens its status.
+    expect(readme).toContain("Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description;");
   });
   it("R4: AI quiz makers are described without the refuted claim", () => {
     expect(readme).toContain("usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.");

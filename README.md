@@ -1,5 +1,7 @@
 # Stackyard
 
+Category: Resurrection (HyperCard, 1987)
+
 Make a clickable lesson from one sentence. The **lesson is the file**: one HTML file you can hand to a class, which plays, scores and edits itself offline. HyperCard revivals usually bring back the editor; Stackyard brings back the stack you could hand to someone. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
@@ -123,9 +125,9 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 
 - **Steering** — five always-on files describe the product, audience, tech,
   stack format and design system: [`.kiro/steering/`](.kiro/steering/).
-- **Specs** — requirements, design and tasks for five features (the Maker, the
+- **Specs** — six specs: requirements, design and tasks for five product features (the Maker, the
   stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request
-  and then reviewed: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
+  and then reviewed, plus a small `kiro-evidence` spec for the MCP call record: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
   fails if a lettered task id in the specs is not mentioned by a test, a gate
   script or a hook; today it reports the true count (see its output, not a
   claim in this file).
@@ -155,7 +157,7 @@ Stackyard was planned and built in Kiro. The pieces, and where to look:
 ## Why HyperCard
 
 HyperCard let non-programmers build clickable, branching "stacks" in 1987.
-Successors like HyperStudio and Decker exist, and another Kiroween 2026 entry (NecroCard) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline. Stackyard brings that back for a teacher
+Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline. Stackyard brings that back for a teacher
 with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
 scored lesson the class plays, every stack satisfies nine validity invariants, and a 'before you share' check warns if any card can't reach the end score, and the exported file is re-importable
 (round-tripped losslessly, checked by a 1,000-run property test).
@@ -166,6 +168,7 @@ scored lesson the class plays, every stack satisfies nine validity invariants, a
   the runtime inside — but it has no generation and uses a scripting language.
 - Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.
 - **AI quiz makers** turn a topic into a quiz — but they usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.
+- **OpenMAIC** (open source) turns a topic or a document into an AI-generated lesson with quizzes and can export it as an offline HTML player, but the file has no editor inside and no class results.
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
 always-playable stack → direct card editing → one self-contained offline file that
@@ -193,8 +196,8 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1437** passing (`npm test`).
-- Player bundle: **12.8 KB** gzipped (budget 50 KB).
+- Tests: **1443** passing (`npm test`).
+- Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 - Floppy test: **6** lesson files like the water-cycle test deck fit on a 1.44 MB floppy
@@ -321,33 +324,15 @@ Because the public instance holds a paid key, `/api/generate` has two guards:
 A request that is served from a ready-made deck (budget spent, or no key) makes
 no model call and does not consume a per-client rate-limit slot.
 
-### Deploy to Render (free web service)
+### Deploy to Render (the blueprint uses the paid Starter plan; change `plan:` to `free` for a free instance)
 
 `render.yaml` is a one-service blueprint. In Render, choose **New → Blueprint**,
 point it at this repo, and set `STACKYARD_LLM_API_KEY` in the dashboard (it is
 `sync: false`, so it is never read from the repo). The build runs
 `npm ci && npm run build:player && npm run build:living && npm run build:maker`, the service starts with
-`npm start`, and `/api/health` is the health check (a cheap keep-warm ping that
-makes no model call).
+`npm start`, and `/api/health` is the health check (it makes no model call).
 
-**Keep-warm.** The GitHub Actions workflow is installed as
-`.github/workflows/keep-warm.yml` on GitHub and runs every 10 minutes: it pings
-`/api/health`, with one retry, no secrets and no repository permissions.
-[`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml) is the reviewed copy (a token
-without the `workflow` scope can't push workflow files, so it was installed through
-the GitHub web editor; a test checks the two are byte-identical when both are
-present). GitHub may delay scheduled runs, so a free instance can still be cold
-after a quiet spell: the first load then takes up to a minute.
-
-**The 60-day rule.** GitHub disables scheduled workflows in public repositories
-after 60 days without repository activity, which would stop keep-warm during
-judging. [`docs/ops/keepalive.yml`](docs/ops/keepalive.yml) is ready to install
-the same way: once a month it calls GitHub's REST API to re-enable
-`keep-warm.yml` (`PUT /repos/{owner}/{repo}/actions/workflows/keep-warm.yml/enable`,
-with the job's own `GITHUB_TOKEN` and `permissions: actions: write`; no
-third-party action, no secrets). We have not been able to verify that the enable
-call resets that 60-day timer, so a second pinger runs outside GitHub (our own
-machine) until results.
+**Keep-warm is no longer needed:** the live service runs on a paid instance, which does not spin down, and the `keep-warm` workflow in `.github/workflows/keep-warm.yml` is disabled in the repository's Actions settings. [`docs/ops/keep-warm.yml`](docs/ops/keep-warm.yml) (a ping to `/api/health` every 10 minutes) and [`docs/ops/keepalive.yml`](docs/ops/keepalive.yml) (a monthly re-enable, because GitHub disables scheduled workflows in public repositories after 60 days without activity) are kept for anyone who deploys on a free instance. A test checks that the two keep-warm copies stay byte-identical.
 
 ## Third-party assets
 
@@ -407,7 +392,7 @@ full link.
 
 The demo video is not part of the app. Its music was generated by the team with
 ElevenLabs Music on a paid plan, on 27 Oct 2026 for an earlier project of ours,
-and reused here (details: [`docs/MUSIC_LICENCE.md`](docs/MUSIC_LICENCE.md)). The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 23 s in six sequences, eight shots), each tagged on screen; app screens in them are real recordings composited in.
+and reused here (details: [`docs/MUSIC_LICENCE.md`](docs/MUSIC_LICENCE.md)). The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 23 s in seven on-screen windows, eight shots), each tagged on screen; app screens in them are real recordings composited in.
 
 ### Design reference image (AI-generated)
 
