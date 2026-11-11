@@ -8,6 +8,8 @@ Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
 **Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com
 
+**For judges:** [a 3-minute path](JUDGES.md) · [every number and how to reproduce it](EVIDENCE.md) · [every claim and its status](CLAIMS.md)
+
 ## What it is
 
 A teacher types one sentence — "a 10-card quiz about the Vikings in Ireland, the
@@ -121,38 +123,17 @@ saves is opened and played (screen 9).
 
 ## Built with Kiro
 
-Stackyard was planned and built in Kiro. The pieces, and where to look:
+Stackyard was planned and built in Kiro. One claim per row, and where to look. What Kiro did not do here is in [EVIDENCE.md](EVIDENCE.md#kiros-limits-in-this-build).
 
-- **Steering** — five always-on files describe the product, audience, tech,
-  stack format and design system: [`.kiro/steering/`](.kiro/steering/).
-- **Specs** — six specs: requirements, design and tasks for five product features (the Maker, the
-  stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request
-  and then reviewed, plus a small `kiro-evidence` spec for the MCP call record: [`.kiro/specs/`](.kiro/specs/). `npm run check:trace`
-  fails if a lettered task id in the specs is not mentioned by a test, a gate
-  script or a hook; today it reports the true count (see its output, not a
-  claim in this file).
-- **Hooks** — six hooks (invariants on save, living-file gate, export check,
-  ready-made content check, `invariants-after-shell-edit` — a `PostToolUse` hook
-  on the agent's shell commands that re-runs the invariants after a shell edit —
-  and a `pre-submit` gate set to fire when a spec task is marked done (not yet recorded firing; run on demand as `/pre-submit`)):
-  [`.kiro/hooks/`](.kiro/hooks/). The `pre-submit` hook is a `PostTaskExec`
-  hook: kiro-cli sessions have no task-status tool (a task ticked there is a file
-  edit, which does not fire it), and we did not drive the Kiro IDE's tasks view,
-  which is the documented trigger. Kiro's session store recorded 493 hook
-  firings in our main session (5 to 9 Nov), counted per hook in
-  [`docs/kiro-sessions/`](docs/kiro-sessions/).
-- **Custom agent** — the lesson checker that reads a set of cards (we ran it on
-  the ready-made decks) for factual errors, ambiguous questions and reading
-  level: [`.kiro/agents/`](.kiro/agents/).
-- **MCP server** — `mcp/openverse` finds public-domain pictures for the
-  ready-made decks; its search and allowlisted-fetch code was run as a script
-  outside Kiro (Kiro's sandbox had no network) to pick them; its search was
-  also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions).
-- **Property-based tests** — every stack invariant has a `fast-check` property.
-- **Excerpts** from real Kiro sessions (the TASK-26 prompt, hook firings, the
-  lesson-checker run): [`docs/kiro-sessions/`](docs/kiro-sessions/). The running
-  log of what Kiro did and what we did outside it is
-  [`docs/KIRO_LOG.md`](docs/KIRO_LOG.md).
+| Kiro feature | Claim | Proof |
+|---|---|---|
+| Steering | Five always-on files describe the product, audience, tech, stack format and design system; a sixth, on demand, is the pre-submit gate. | [`.kiro/steering/`](.kiro/steering/) |
+| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request and then reviewed, plus a small `kiro-evidence` spec for the MCP call record. `npm run check:trace` fails if a lettered task id is not named in a test title, a gate script or a hook. | [`.kiro/specs/`](.kiro/specs/); `npm run check:trace` |
+| Hooks | Six hooks: invariants on save, the living-file gate, an export check, a ready-made content check, `invariants-after-shell-edit` (a `PostToolUse` hook on the agent's shell commands that re-runs the invariants after a shell edit) and a `pre-submit` gate set to fire when a spec task is marked done (not yet recorded firing; run on demand as `/pre-submit`). Kiro's session store recorded 493 hook firings in our main session (5 to 9 Nov). | [`.kiro/hooks/`](.kiro/hooks/); [`docs/kiro-sessions/`](docs/kiro-sessions/) |
+| Custom agent | The lesson checker reads a set of cards for factual errors, ambiguous questions and reading level. Run on the ready-made decks, it caught an ambiguous Vikings question. | [`.kiro/agents/`](.kiro/agents/) |
+| MCP server | `mcp/openverse` finds public-domain pictures for the ready-made decks. Its code was run as a script outside Kiro to pick them (Kiro's sandbox had no network); its search was also called once through Kiro as an MCP tool (10 Nov). | [`mcp/openverse/`](mcp/openverse/); [`docs/kiro-sessions/`](docs/kiro-sessions/) |
+| Property-based tests | Every stack invariant has a `fast-check` property. | `tests/*.property.test.ts` |
+| Session excerpts | The TASK-26 prompt, hook firings, the lesson-checker run and the MCP call, from Kiro's own session store, plus the running log of what Kiro did and what we did outside it. | [`docs/kiro-sessions/`](docs/kiro-sessions/); [`docs/KIRO_LOG.md`](docs/KIRO_LOG.md) |
 
 ## Why HyperCard
 
@@ -196,7 +177,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1443** passing (`npm test`).
+- Tests: **1485** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

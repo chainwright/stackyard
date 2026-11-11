@@ -2141,3 +2141,58 @@ Source: judge round 4, the hound seat (11 Nov 2026). These are text fixes to `RE
   - **Acceptance criteria.** A test finds the unit notes, and check:claims passes.
 
 **Status (11 Nov).** TASK-38a–f are done: the edits are applied, `tests/round10-docs.test.ts` checks them, and the gates pass.
+
+## Phase 24 - TASK-39: judge files and a claim + proof Kiro table
+
+Source: judge round 4 (11 Nov 2026), P1 "JUDGES/EVIDENCE/CLAIMS.md + Kiro table claim+proof", and seat 1-rev's fix "turn each Kiro row into one claim + one proof link; move the caveats to one Limits note". Docs and the docs checker only. Nothing under `src/`, `server/`, `mcp/`, `.github/`, `docs/ops/`, `render.yaml` or `package.json` changes, and `scripts/mutation-check.ts` keeps its 118 mutants. The honesty labels stay in the write-up in short form; the longer explanations move to `EVIDENCE.md`.
+
+### TASK-39a: a 3-minute judging path  *(TASK-39 a)*
+  - **Bug.** A judge had to piece the path together from the README, the write-up and the video: where to click, what to look for, and how to check the offline claim.
+  - **Fix.** A new `JUDGES.md` at the repo root gives the path in four timed steps (make a lesson, play it with the Wi-Fi off, the file that edits itself and collects class results, how Kiro built it), an optional terminal path, and what the path does not show.
+  - **Acceptance criteria.** A test finds the live URL, the sample URL, Build Cards, Export for class, Wi-Fi off and the Network tab, Class Results and Add Codes, Save a Copy, and a link to `EVIDENCE.md#not-proven`.
+
+### TASK-39b: every number with the command that reproduces it  *(TASK-39 b)*
+  - **Bug.** The numbers were spread through the README and the write-up, with no single place that said how to reproduce each one or what is not proven.
+  - **Fix.** A new `EVIDENCE.md` at the repo root has four sections: "Numbers you can reproduce" (number, meaning, command, file), "Measured once", "Kiro's limits in this build" and "Not proven". The write-up's four long Accomplishments sentences (bench, key review, joke answers, accessibility) are copied in word for word.
+  - **Acceptance criteria.** A test finds the four sections and the not-proven labels (no teacher or pupil, AI-reviewed keys, Kiro CLI only). check:claims reads the numbers (TASK-39f).
+
+### TASK-39c: every claim with its status  *(TASK-39 c)*
+  - **Bug.** No file listed our public claims with what backs each one and what is missing.
+  - **Fix.** A new `CLAIMS.md` at the repo root lists the claims C1–C52 from the README, the write-up and the blog. Each row has a verbatim quote, where it is (file:line or `blog`), a status (TRUE or PARTIAL) and the proof, or "Missing: …" for a PARTIAL row.
+  - **Acceptance criteria.** check:claims checks every row (TASK-39g).
+
+### TASK-39d: the write-up's Kiro table is claim + proof  *(TASK-39 d)*
+  - **Bug.** The write-up's Kiro rows mixed each claim with long caveats, so they were hard to scan, and the Built-with line repeated the MCP caveat.
+  - **Fix.**
+    - The Kiro table becomes `| Kiro feature | Claim | Proof |` with nine rows and a link to EVIDENCE.md's Kiro limits.
+    - The short labels stay: "not yet recorded firing", "mostly run as a script outside Kiro", "we used no Powers".
+    - "Try it in 10 seconds" gains a last bullet linking the three judge files by full GitHub URL.
+    - Built with: "Kiro (CLI, specs, steering, hooks, one custom agent and an MCP server; see the Kiro table)".
+  - **Acceptance criteria.** A test checks the header, 9 rows, no row longer than 700 characters, the three labels and the three URLs.
+
+### TASK-39e: the README's Built with Kiro is the same kind of table  *(TASK-39 e)*
+  - **Bug.** The README's Kiro bullets had the same mix of claim and caveat, and the README did not link the judge files.
+  - **Fix.** README line 11 is "**For judges:** …", linking the three files. The Built with Kiro bullets become a `| Kiro feature | Claim | Proof |` table with a link to EVIDENCE.md's Kiro limits.
+  - **Acceptance criteria.** A test checks line 11, the header, and that "(not yet recorded firing; run on demand as `/pre-submit`)" is still there.
+
+### TASK-39f: check:claims reads the judge docs and every hook-firings count  *(TASK-39 f)*
+  - **Bug.** The new files repeat headline numbers. Without a check they would drift the way the README once did. The "493 hook firings" figure was not checked anywhere.
+  - **Fix.**
+    - `JUDGES.md`, `EVIDENCE.md` and `CLAIMS.md` must exist.
+    - In JUDGES.md and EVIDENCE.md, every one of these phrases must match the measured value: tests, lettered task ids, stack invariants, fast-check properties, round-trip runs, mutants killed, player KB gzipped, lesson-file KB, the floppy count, bench lesson files and hook firings. EVIDENCE.md must carry each phrase; JUDGES.md may omit any of them.
+    - EVIDENCE.md must also carry the bench, key-review, joke-answer and accessibility sentences.
+    - "N hook firings" is checked against the session recount's "Whole session" total, in the README and the write-up too.
+    - `--fix` rewrites drifted numbers in those files and never invents one.
+  - **Acceptance criteria.** Unit tests in `tests/claims-docs.test.ts` cover the following: each phrase is read; a drifted number fails; a missing EVIDENCE phrase fails; JUDGES may omit a phrase; the fix logic rewrites a drifted number; and the hook-firings total is read from a sample table.
+
+### TASK-39g: check:claims checks CLAIMS.md  *(TASK-39 g)*
+  - **Bug.** A claims table can rot too: a quote edited away in the README, a line number that moved, or a PARTIAL row with nothing marked missing.
+  - **Fix.**
+    - Each row's ids must be unique, and there must be at least 40 rows.
+    - README.md, the write-up and the blog must each be cited at least once.
+    - Each status must be TRUE or PARTIAL, and every PARTIAL row must start its last cell with "Missing:".
+    - Every `README.md:<n>` or `docs/DEVPOST_WRITEUP.md:<n>` ref must have the quote on line n.
+    - `--fix` moves n when the quote is on exactly one other line, and otherwise reports the row.
+  - **Acceptance criteria.** Unit tests cover each rule. A quote moved one line fails, and the fix corrects it. A quote that is nowhere fails and is not fixed. A bad status fails. A PARTIAL row without "Missing:" fails.
+
+**Status (11 Nov).** TASK-39a–g are done. `JUDGES.md`, `EVIDENCE.md` and `CLAIMS.md` are at the repo root, and both Kiro tables are claim + proof. check:claims checks the judge files and CLAIMS.md (`tests/claims-docs.test.ts`), `tests/round11-docs.test.ts` checks the wording, and the gates pass.

@@ -42,24 +42,29 @@ describe("TASK-36d1: the Openverse MCP call made inside Kiro is on record", () =
 });
 
 describe("TASK-36d: PostTaskExec is still not recorded firing, said plainly with the reason", () => {
-  it("TASK-36d: the sessions README, the README and the write-up say why (no task-status tool in kiro-cli; the IDE was not driven)", () => {
+  it("TASK-36d: TASK-39d: the sessions README, the README and EVIDENCE.md say why (no task-status tool in kiro-cli; the IDE was not driven); the write-up keeps the short label", () => {
     expect(read("docs/kiro-sessions/README.md")).toContain("So `pre-submit` (`PostTaskExec`) is **still not recorded firing**.");
-    const r = FLAT(read("README.md"));
-    expect(r).toContain("kiro-cli sessions have no task-status tool (a task ticked there is a file edit, which does not fire it), and we did not drive the Kiro IDE's tasks view, which is the documented trigger.");
-    expect(FLAT(read("docs/DEVPOST_WRITEUP.md"))).toContain("(not yet recorded firing: kiro-cli sessions have no task-status tool, so a task ticked there is a file edit, and we did not drive the Kiro IDE's tasks view;");
+    // TASK-39e: the README's Hooks row keeps the short label; the reason moved to EVIDENCE.md.
+    expect(FLAT(read("README.md"))).toContain("(not yet recorded firing; run on demand as `/pre-submit`)");
+    const ev = FLAT(read("EVIDENCE.md"));
+    expect(ev).toContain("kiro-cli sessions have no task-status tool, so a task ticked there is a file edit, and that does not fire it. The documented trigger is a task-status change in the Kiro IDE's tasks view, which we did not drive.");
+    expect(FLAT(read("docs/DEVPOST_WRITEUP.md"))).toContain("The pre-submit hook (`PostTaskExec`) is not yet recorded firing.");
   });
 
-  it("TASK-36d: every MCP sentence keeps the script history and adds the one call through Kiro", () => {
-    const add = "its search was also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions)";
+  it("TASK-36d: TASK-39d: every MCP sentence keeps the script history and adds the one call through Kiro", () => {
+    const add = "its search was also called once through Kiro as an MCP tool (10 Nov)";
     const w = FLAT(read("docs/DEVPOST_WRITEUP.md"));
     const mcpRow = w.slice(w.indexOf("| MCP |"), w.indexOf("| CLI |"));
-    expect(mcpRow).toContain("run as a script outside Kiro");
+    expect(mcpRow).toContain("mostly run as a script outside Kiro");
     expect(mcpRow).toContain(add);
+    // TASK-39d: Built with points at the table; the long history is in EVIDENCE.md.
     const built = w.slice(w.indexOf("## Built with"));
-    expect(built).toContain("run as a script, and its search also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions)");
+    expect(built).toContain("one custom agent and an MCP server; see the Kiro table");
+    const ev = FLAT(read("EVIDENCE.md"));
+    expect(ev).toContain("The Openverse server's search and allowlisted fetch were run as a script outside Kiro (Kiro's sandbox had no network) to pick the deck photos. Through Kiro, its search was called once, on 10 Nov");
     const r = FLAT(read("README.md"));
-    expect(r).toContain("was run as a script outside Kiro (Kiro's sandbox had no network) to pick them; " + add + ".");
-    expect(read("docs/KIRO_LOG.md")).toContain("this script run stays the history of how the pictures were picked; " + add);
+    expect(r).toContain("Its code was run as a script outside Kiro to pick them (Kiro's sandbox had no network); " + add + ".");
+    expect(read("docs/KIRO_LOG.md")).toContain("this script run stays the history of how the pictures were picked; its search was also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions)");
   });
 });
 

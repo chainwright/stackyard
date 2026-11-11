@@ -62,9 +62,9 @@ describe("TASK-31a: README and docs say only what is true", () => {
     expect(readme).toContain("Playwright's Chromium, Firefox and WebKit builds (run on 6 Nov on files exported before TASK-29/30)");
   });
 
-  it("TASK-31a: TASK-36d: the MCP bullet keeps the script history and adds the one call made through Kiro", () => {
+  it("TASK-31a: TASK-36d: TASK-39e: the MCP row keeps the script history and adds the one call made through Kiro", () => {
     expect(readme).toContain(
-      "`mcp/openverse` finds public-domain pictures for the ready-made decks; its search and allowlisted-fetch code was run as a script outside Kiro (Kiro's sandbox had no network) to pick them; its search was also called once through Kiro as an MCP tool (10 Nov, docs/kiro-sessions).",
+      "| MCP server | `mcp/openverse` finds public-domain pictures for the ready-made decks. Its code was run as a script outside Kiro to pick them (Kiro's sandbox had no network); its search was also called once through Kiro as an MCP tool (10 Nov).",
     );
   });
 

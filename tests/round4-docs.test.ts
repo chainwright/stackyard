@@ -66,8 +66,9 @@ describe("TASK-28c: KIRO_LOG corrections", () => {
   it("says plainly that TASK-27 was mostly shell edits, which do not trigger save hooks", () => {
     expect(FLAT(log)).toContain("In TASK-27 Kiro edited mostly through shell scripts, which don't trigger file-save hooks, so the gates ran as `npm run pre-submit` instead.");
   });
-  it("the README no longer says the lesson checker read 'generated' cards", () => {
-    expect(FLAT(read("README.md"))).toContain("we ran it on the ready-made decks");
+  it("TASK-39e: the README no longer says the lesson checker read 'generated' cards", () => {
+    // TASK-39e: the Custom agent row says where it was run: "Run on the ready-made decks".
+    expect(FLAT(read("README.md"))).toContain("Run on the ready-made decks, it caught an ambiguous Vikings question.");
     expect(FLAT(read("README.md"))).not.toContain("reads a generated set of cards");
   });
 });

@@ -12,7 +12,7 @@ import { compareMutationLog, newestMutationLog } from "../scripts/claims-lib.js"
 const read = (f: string): string => readFileSync(f, "utf8");
 
 describe("TASK-37a: the real mutation log", () => {
-  it("TASK-37a: the newest log in docs/mutation-runs/ matches the write-up and the current scripts/mutation-check.ts", () => {
+  it("TASK-37a: TASK-39d: the newest log in docs/mutation-runs/ matches the write-up and the current scripts/mutation-check.ts", () => {
     const d = "docs/mutation-runs";
     expect(existsSync(d), "run npm run check:mutants:log").toBe(true);
     const log = newestMutationLog(readdirSync(d).filter((f) => f.endsWith(".log")).map((f) => ({ file: f, text: read(path.join(d, f)) })));
@@ -22,6 +22,9 @@ describe("TASK-37a: the real mutation log", () => {
     expect(log!.killed.length).toBe(log!.n);
     expect(log!.head).toMatch(/^[0-9a-f]{40}$/);
     expect(read("package.json")).toContain('"check:mutants:log": "node --import tsx/esm scripts/mutation-log.ts"');
-    expect(read("docs/DEVPOST_WRITEUP.md")).toContain("killed in the newest run logged in docs/mutation-runs/)");
+    // TASK-39d: the claim + proof row says "newest logged run" and cites docs/mutation-runs/ as its proof.
+    const row = read("docs/DEVPOST_WRITEUP.md").split("\n").find((l) => l.startsWith("| Property-based testing |")) ?? "";
+    expect(row).toContain("killed in the newest logged run)");
+    expect(row).toContain("`docs/mutation-runs/`");
   });
 });

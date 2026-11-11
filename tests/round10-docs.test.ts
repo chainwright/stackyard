@@ -29,15 +29,15 @@ describe("TASK-38a: the hosting text matches render.yaml", () => {
 });
 
 describe("TASK-38b: six specs, not five", () => {
-  it("TASK-38b: .kiro/specs/ has exactly 6 folders, and both files say six specs (five product features plus kiro-evidence)", () => {
+  it("TASK-38b: TASK-39d: TASK-39e: .kiro/specs/ has exactly 6 folders, and both files say six specs (five product features plus kiro-evidence)", () => {
     const dirs = readdirSync(".kiro/specs").filter((d) => statSync(path.join(".kiro/specs", d)).isDirectory());
     expect(dirs.sort()).toEqual(["class-results", "curriculum-bench", "exporter", "kiro-evidence", "maker", "stack-generator"]);
     const w = W();
-    expect(w).toContain("| Specs | Six specs: five product features (generator, exporter + player, Maker, curriculum bench, class results) in EARS form and a small `kiro-evidence` spec for the MCP call record;");
-    expect(w).toContain("| 6 specs;");
-    expect(w).toContain("requirements → design → tasks for five product features, each written by Kiro from a chat request, reviewed and sent back (plus the small kiro-evidence spec, written by Kiro's quick spec workflow),");
+    expect(w).toContain("| Specs | Six specs: five product features (generator, exporter + player, Maker, curriculum bench, class results) in EARS form and a small `kiro-evidence` spec for the MCP call record.");
+    // TASK-39d: the Spec-vs-vibe row is now one claim: Kiro wrote each feature's spec, we reviewed it.
+    expect(w).toContain("| Spec vs vibe | The spec format is the plan of record. Kiro wrote each feature's requirements, design and tasks from a chat request, and we reviewed them like pull requests and sent them back.");
     expect(R()).toContain(
-      "- **Specs** — six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request and then reviewed, plus a small `kiro-evidence` spec for the MCP call record: [`.kiro/specs/`](.kiro/specs/).",
+      "| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request and then reviewed, plus a small `kiro-evidence` spec for the MCP call record.",
     );
     gone("Five specs", "5 specs", "for five features");
   });

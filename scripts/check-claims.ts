@@ -27,6 +27,14 @@
 //     (TASK-33c14: "our automatic lesson check", plus the mechanical note.)
 //   - (TASK-33c16) Once bench/key-review.json exists: the key-review line in
 //     both files, against totals recomputed from its per-card verdicts.
+//   - (TASK-39f) JUDGES.md, EVIDENCE.md and CLAIMS.md exist; every headline
+//     phrase in JUDGES.md / EVIDENCE.md ("N tests pass", "N of M mutants
+//     killed", "N hook firings", …) matches, EVIDENCE.md carries each one and
+//     the four content sentences; "N hook firings" in the README and write-up
+//     matches the session recount's "Whole session" total.
+//   - (TASK-39g) CLAIMS.md: unique ids, at least 40 rows, TRUE / PARTIAL
+//     statuses ("Missing:" on PARTIAL), each quote on its cited line (`--fix`
+//     moves a line number when the quote is on exactly one other line).
 //
 // Exits 0 when every claim matches, 1 (with a report) when any has drifted.
 //
@@ -85,6 +93,14 @@ import {
   jokeFromReviews,
   type JokeNumbers,
   type WriteupNumbers,
+  compareJudgeDoc,
+  applyJudgeFix,
+  compareJudgeFilesExist,
+  hookFiringsTotal,
+  EVIDENCE_REQUIRED,
+  type JudgeNumbers,
+  compareClaimsTable,
+  fixClaimsTable,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
 import { createHash } from "node:crypto";
@@ -128,6 +144,10 @@ function a11yNumbers(): A11yNumbers | null {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const README = path.join(ROOT, "README.md");
 const WRITEUP = path.join(ROOT, "docs", "DEVPOST_WRITEUP.md");
+// TASK-39f/g: the judge files at the repo root.
+const JUDGES = path.join(ROOT, "JUDGES.md");
+const EVIDENCE = path.join(ROOT, "EVIDENCE.md");
+const CLAIMS = path.join(ROOT, "CLAIMS.md");
 const BENCH_RESULTS = path.join(ROOT, "bench", "results.json");
 const KEY_REVIEW = path.join(ROOT, "bench", "key-review.json");
 
@@ -307,23 +327,95 @@ async function run(): Promise<void> {
   checks.push(...compareMutationLog(text, "README", mlog.log, mlog.sha256));
   checks.push(...compareA11y(readFileSync(WRITEUP, "utf8"), "write-up", a11y));
 
+  // TASK-39f: the judge files exist, and their numbers (plus every "N hook firings") match.
+  checks.push(...compareJudgeFilesExist((f) => existsSync(path.join(ROOT, f))));
+  const judge: JudgeNumbers = {
+    tests: actual.tests,
+    traced: writeupActual.traced,
+    invariants: actual.invariants,
+    properties: writeupActual.properties,
+    runs: actual.runs,
+    mutants: writeupActual.mutants,
+    mutantsLogged: mlog.log?.n ?? -1,
+    kb: actual.kb,
+    fileKb: file.fileKb,
+    floppy: file.floppy,
+    benchFiles: benchFileCount(),
+    hookFirings: hookFiringsNow(),
+  };
+  const HOOKS_ONLY = ["hookFirings"] as const;
+  if (fix) {
+    for (const [p, only] of [[README, HOOKS_ONLY], [WRITEUP, HOOKS_ONLY], [JUDGES, undefined], [EVIDENCE, undefined]] as const) {
+      if (!existsSync(p)) continue;
+      const before = readFileSync(p, "utf8");
+      let after = applyJudgeFix(before, judge, only);
+      if (p === EVIDENCE) {
+        if (bench !== null) after = fixBench(after, bench, "\u0000", writeupBenchLine);
+        if (keys !== null) after = fixKeyReview(after, keys);
+        if (jokes !== null) after = fixJoke(after, jokes);
+        if (a11y !== null) after = fixA11y(after, a11y, writeupA11yLine);
+      }
+      if (after !== before) {
+        writeFileSync(p, after, "utf8");
+        console.log(`check-claims --fix: ${path.relative(ROOT, p)} rewritten from measured values.`);
+      }
+    }
+  }
+  checks.push(...compareJudgeDoc(readFileSync(README, "utf8"), "README", judge, [], HOOKS_ONLY));
+  checks.push(...compareJudgeDoc(readFileSync(WRITEUP, "utf8"), "write-up", judge, [], HOOKS_ONLY));
+  if (existsSync(JUDGES)) checks.push(...compareJudgeDoc(readFileSync(JUDGES, "utf8"), "JUDGES", judge));
+  if (existsSync(EVIDENCE)) {
+    const ev = readFileSync(EVIDENCE, "utf8");
+    checks.push(...compareJudgeDoc(ev, "EVIDENCE", judge, EVIDENCE_REQUIRED));
+    checks.push(...compareBench(ev, "EVIDENCE", bench));
+    checks.push(...compareKeyReview(ev, "EVIDENCE", keys));
+    checks.push(...compareJoke(ev, "EVIDENCE", jokes));
+    checks.push(...compareA11y(ev, "EVIDENCE", a11y));
+  }
+
+  // TASK-39g: CLAIMS.md quotes are on the lines they cite; statuses are TRUE or PARTIAL.
+  if (existsSync(CLAIMS)) {
+    const files = { "README.md": readFileSync(README, "utf8"), "docs/DEVPOST_WRITEUP.md": readFileSync(WRITEUP, "utf8") };
+    if (fix) {
+      const before = readFileSync(CLAIMS, "utf8");
+      const after = fixClaimsTable(before, files);
+      if (after !== before) {
+        writeFileSync(CLAIMS, after, "utf8");
+        console.log("check-claims --fix: CLAIMS.md line numbers rewritten.");
+      }
+    }
+    checks.push(...compareClaimsTable(readFileSync(CLAIMS, "utf8"), files));
+  }
+
   let failed = false;
   for (const c of checks) {
     const mark = c.ok ? "OK " : "DRIFT";
     const note = c.note ? ` (${c.note})` : "";
-    const where = c.name.startsWith("write-up ") ? "DEVPOST_WRITEUP" : "README";
-    console.log(`  [${mark}] ${c.name}: ${where} ${c.claimed} vs actual ${c.actual}${note}`);
+    const where = c.name.startsWith("write-up ") ? "DEVPOST_WRITEUP" : /^(JUDGES|EVIDENCE|CLAIMS|README)\b/.test(c.name) ? "" : "README";
+    console.log(`  [${mark}] ${c.name}: ${where ? `${where} ` : ""}${c.claimed} vs actual ${c.actual}${note}`);
     if (!c.ok) failed = true;
   }
 
   if (failed) {
     console.error(
-      "check-claims: a README or write-up number has drifted from reality." +
+      "check-claims: a number or claim in the README, the write-up or the judge files has drifted from reality." +
         (fix ? "" : " Run `npm run check:claims -- --fix` to rewrite them from measured values."),
     );
     process.exit(1);
   }
-  console.log("check-claims: OK — every README and write-up number matches the code.");
+  console.log("check-claims: OK — every number in the README, the write-up and the judge files matches the code, and every CLAIMS.md quote is on its line.");
+}
+
+/** TASK-39f: the lesson files in bench/files/. */
+function benchFileCount(): number {
+  const dir = path.join(ROOT, "bench", "files");
+  return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".html")).length : -1;
+}
+
+/** TASK-39f: the "Whole session" hook-firings total in docs/kiro-sessions/README.md (-1 if unreadable). */
+function hookFiringsNow(): number {
+  const p = path.join(ROOT, "docs", "kiro-sessions", "README.md");
+  return existsSync(p) ? hookFiringsTotal(readFileSync(p, "utf8")) ?? -1 : -1;
 }
 
 /** The numbers docs/DEVPOST_WRITEUP.md is checked against (TASK-32g). */

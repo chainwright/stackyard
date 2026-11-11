@@ -121,12 +121,15 @@ describe("TASK-32f: keep-warm is in the repo, ready to install", () => {
 describe("TASK-32g: the write-up is checked like the README", () => {
   const writeup = read("docs/DEVPOST_WRITEUP.md");
 
-  it("TASK-32g: docs/DEVPOST_WRITEUP.md exists, titled, with no draft heading, status paragraph or judge-loop notes", () => {
+  it("TASK-32g: TASK-39d: docs/DEVPOST_WRITEUP.md exists, titled, with no draft heading, status paragraph or judge-loop notes", () => {
     expect(writeup.startsWith("# Stackyard: Devpost write-up\n")).toBe(true);
     expect(writeup).not.toMatch(/numbers to refresh/);
     expect(writeup).not.toMatch(/^Status: draft for the judge loop/m);
     expect(writeup).not.toContain("## Notes for the judge loop");
-    expect(writeup).toContain("the deck-content hook also fired 11 times on 5 Nov (16:07–16:25 UTC)");
+    // TASK-39d: the per-hook firing detail left the write-up's claim + proof table;
+    // the 5 Nov deck-content firings stay on record in KIRO_LOG and the recount table.
+    expect(read("docs/KIRO_LOG.md")).toContain("only the unanchored `readyMadeStacks\\.ts$` hook ever fired (11 times, 16:07–16:25 UTC)");
+    expect(writeup).toContain("`docs/kiro-sessions/README.md` (firings counted per hook)");
     expect(writeup).not.toContain("during the picture work");
     expect(FLAT(read("README.md"))).toContain("docs/DEVPOST_WRITEUP.md");
   });
@@ -253,9 +256,15 @@ describe("TASK-32h: a / an before a number", () => {
     expect(compareWriteup(fixed, seventyTwo).filter((c) => !c.ok)).toEqual([]);
   });
 
-  it("TASK-32h: the write-up's article before the mutant count is the one the number is spoken with ('an 86', 'a 90')", () => {
-    const m = /\b(an?) (\d+)-mutant script/.exec(read("docs/DEVPOST_WRITEUP.md"));
+  it("TASK-32h: TASK-39d: the write-up's article before the mutant count is the one the number is spoken with ('an 86', 'a 90'; 'A 118' at a sentence start)", () => {
+    const m = /\b([Aa]n?) (\d+)-mutant script/.exec(read("docs/DEVPOST_WRITEUP.md"));
     expect(m).not.toBeNull();
-    expect(m![1]).toBe(articleFor(Number(m![2])));
+    expect(m![1]!.toLowerCase()).toBe(articleFor(Number(m![2])));
+  });
+
+  it("TASK-32h: TASK-39d: a capitalised article is checked and fixed, keeping its capital", () => {
+    expect(compareWriteup("An 118-mutant script", truth).filter((c) => c.name.endsWith("article"))).toHaveLength(1);
+    expect(compareWriteup("A 118-mutant script", truth).filter((c) => c.name.endsWith("article"))).toHaveLength(0);
+    expect(applyWriteupFix("A 86-mutant script", { ...truth, mutants: 86 })).toBe("An 86-mutant script");
   });
 });

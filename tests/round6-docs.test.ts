@@ -38,10 +38,11 @@ describe("TASK-30e: README truth (video hound R1–R4)", () => {
     );
     expect(readme).not.toContain("two short shots are AI-generated footage");
   });
-  it("R2: the hooks bullet counts the hook files, and names the after-shell hook", () => {
+  it("R2: TASK-39e: the hooks row counts the hook files, and names the after-shell hook", () => {
     const files = readdirSync(path.join(ROOT, ".kiro", "hooks")).filter((f) => f.endsWith(".json")).length;
     const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-    expect(readme).toMatch(new RegExp(`\\*\\*Hooks\\*\\* — ${words[files]} hooks`));
+    const W = (n: number): string => words[n]!.charAt(0).toUpperCase() + words[n]!.slice(1);
+    expect(readme).toMatch(new RegExp(`\\| Hooks \\| ${W(files)} hooks:`));
     expect(readme).toContain("invariants-after-shell-edit");
     expect(read("README.md")).not.toMatch(/five hooks/i);
   });

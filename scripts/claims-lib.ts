@@ -233,7 +233,7 @@ const WRITEUP_PATTERNS: WriteupPattern[] = [
   { name: "traced", label: "traced ids (N of N appear)", re: /(\()(\d+)( of )(\d+)( appear in test titles)/g, format: int },
   { name: "traced", label: "traced ids (N of N lettered)", re: /(\| )(\d+)( of )(\d+)( lettered task ids traced)/g, format: int },
   { name: "tests", label: "tests (reports … and N tests)", re: /(reports \d+ of \d+ and )([\d,]+)( tests)/g, format: withCommas },
-  { name: "mutants", label: "mutants (N-mutant script)", re: /\b(an? )(\d+)(-mutant script)/g, format: int, lead: (n) => `${articleFor(n)} ` },
+  { name: "mutants", label: "mutants (N-mutant script)", re: /\b([Aa]n? )(\d+)(-mutant script)/g, format: int, lead: (n) => `${articleFor(n)} ` },
   { name: "mutants", label: "mutants (N of N killed)", re: /(, )(\d+)( of )(\d+)( killed)/g, format: int },
   { name: "mutants", label: "mutants (reverts N)", re: /(reverts )(\d+)( of the review fixes)/g, format: int },
   { name: "properties", label: "fast-check properties", re: /()(\d+)( fast-check properties)/g, format: int },
@@ -292,7 +292,8 @@ export function compareWriteup(text: string, actual: WriteupNumbers): Check[] {
     if (p.lead === undefined) continue;
     for (const m of text.matchAll(p.re)) {
       const want = p.lead(Number(m[2]!.replace(/,/g, "")));
-      if (m[1] !== want) {
+      // TASK-39d: "A 118-mutant script" at a sentence start keeps its capital.
+      if (m[1]!.toLowerCase() !== want.toLowerCase()) {
         checks.push({ name: `write-up ${p.label} article`, claimed: `${m[1]}${m[2]}`, actual: `${want}${m[2]}`, ok: false, note: "a / an by how the number is spoken" });
       }
     }
@@ -311,7 +312,10 @@ export function applyWriteupFix(text: string, actual: WriteupNumbers): string {
       if (pair) return `${s[0]}${v}${s[2]}${v}${s[4]}`;
       // A file size within tolerance is left as written (it is an "about").
       if (p.name === "fileKb" && close("fileKb", Number(s[1]), actual.fileKb)) return whole;
-      return `${p.lead ? p.lead(actual[p.name]) : s[0]}${v}${s[2]}`;
+      const lead = p.lead ? p.lead(actual[p.name]) : (s[0] ?? "");
+      // TASK-39d: keep a capitalised article capitalised ("A 118-mutant script").
+      const cased = p.lead && /^[A-Z]/.test(s[0]!) ? lead.charAt(0).toUpperCase() + lead.slice(1) : lead;
+      return `${cased}${v}${s[2]}`;
     });
   }
   return out;
@@ -808,4 +812,282 @@ export function compareMutationLog(text: string, where: string, log: MutationLog
     checks.push({ name: `${where} mutation log matches scripts/mutation-check.ts`, claimed: log.sha256.slice(0, 12), actual: currentSha256.slice(0, 12), ok: false, note: `the mutant set changed since ${log.file}; ${MUTATION_RERUN}` });
   }
   return checks;
+}
+
+// ---------------------------------------------------------------------------
+// TASK-39f: the judge docs (JUDGES.md, EVIDENCE.md) repeat the headline
+// numbers, so every phrase below is checked wherever it appears. EVIDENCE.md
+// must carry each one at least once; JUDGES.md may omit any. "N hook firings"
+// is also checked in the README and the write-up (presence not required).
+
+/** The judge files at the repo root. */
+export const JUDGE_FILES = ["JUDGES.md", "EVIDENCE.md", "CLAIMS.md"] as const;
+
+/** What the judge-doc phrases are measured against. */
+export interface JudgeNumbers {
+  /** Vitest total. */
+  tests: number;
+  /** check:trace traced ids (only when traced = total; else -1). */
+  traced: number;
+  /** Numbered invariants in the validator. */
+  invariants: number;
+  /** fc.property / fc.asyncProperty calls in tests/. */
+  properties: number;
+  /** numRuns of the round-trip property test. */
+  runs: number;
+  /** Mutants defined in scripts/mutation-check.ts. */
+  mutants: number;
+  /** N of the newest mutation log (-1 when there is none). */
+  mutantsLogged: number;
+  /** Player bundle, gzipped KB (KiB). */
+  kb: number;
+  /** The living export of the water-cycle fixture, decimal KB. */
+  fileKb: number;
+  /** The floppy claim. */
+  floppy: number;
+  /** bench/files/*.html. */
+  benchFiles: number;
+  /** The bold "Whole session" total in docs/kiro-sessions/README.md. */
+  hookFirings: number;
+}
+
+export type JudgeKey = "tests" | "traced" | "invariants" | "properties" | "runs" | "mutants" | "kb" | "fileKb" | "floppy" | "benchFiles" | "hookFirings";
+
+interface JudgePattern {
+  key: JudgeKey;
+  label: string;
+  /** Group 1 is the (first) number; "N of M" patterns carry M in group 3. */
+  re: RegExp;
+  pair?: boolean;
+  format: (n: number) => string;
+}
+
+const num = (s: string): number => Number(s.replace(/,/g, ""));
+
+const JUDGE_PATTERNS: JudgePattern[] = [
+  { key: "tests", label: "N tests pass", re: /\b(\d[\d,]*)( tests pass)\b/g, format: withCommas },
+  { key: "traced", label: "N of M lettered task ids", re: /\b(\d+)( of )(\d+)( lettered task ids)/g, pair: true, format: int },
+  { key: "invariants", label: "N stack invariants", re: /\b(\d+)( stack invariants)\b/g, format: int },
+  { key: "properties", label: "N fast-check properties", re: /\b(\d+)( fast-check properties)/g, format: int },
+  { key: "runs", label: "N-run round trip", re: /\b(\d[\d,]*)(-run round trip)/g, format: withCommas },
+  { key: "mutants", label: "N of M mutants killed", re: /\b(\d+)( of )(\d+)( mutants killed)/g, pair: true, format: int },
+  { key: "kb", label: "N KB gzipped", re: /\b(\d+(?:\.\d+)?)( KB gzipped)/g, format: (n) => n.toFixed(1) },
+  { key: "fileKb", label: "about N KB", re: /\babout (\d+)( KB)\b/g, format: int },
+  { key: "floppy", label: "N lesson files … fit on a 1.44 MB floppy", re: /\b(\d+)( lesson files like the water-cycle test deck fit on a 1\.44 MB floppy)/g, format: int },
+  { key: "benchFiles", label: "N bench lesson files", re: /\b(\d+)( bench lesson files)/g, format: int },
+  { key: "hookFirings", label: "N hook firings", re: /\b(\d[\d,]*)( hook firings)/g, format: withCommas },
+];
+
+/** Every judge-doc phrase in `text`, in pattern order, with the numbers it states. */
+export function readJudgeClaims(text: string): Array<{ key: JudgeKey; label: string; values: number[] }> {
+  const out: Array<{ key: JudgeKey; label: string; values: number[] }> = [];
+  for (const p of JUDGE_PATTERNS) {
+    for (const m of text.matchAll(p.re)) {
+      const values = [num(m[1]!)];
+      if (p.pair) values.push(num(m[3]!));
+      out.push({ key: p.key, label: p.label, values });
+    }
+  }
+  return out;
+}
+
+/** The value a phrase must state (mutants: the script AND the newest log must agree). */
+function judgeTarget(key: JudgeKey, a: JudgeNumbers): number {
+  if (key === "mutants") return a.mutants === a.mutantsLogged ? a.mutants : -1;
+  return a[key];
+}
+
+function judgeClose(key: JudgeKey, claimed: number, actual: number): boolean {
+  if (actual <= 0) return false;
+  if (key === "kb") return Math.abs(actual - claimed) <= 0.5;
+  if (key === "fileKb") return Math.abs(actual - claimed) <= actual * FILE_KB_TOLERANCE;
+  return claimed === actual;
+}
+
+/**
+ * One Check per phrase found in `text` (`where` names the file). `required`
+ * lists the phrases the file must carry at least once (all of them for
+ * EVIDENCE.md, none for JUDGES.md, the README and the write-up).
+ */
+export function compareJudgeDoc(text: string, where: string, a: JudgeNumbers, required: readonly JudgeKey[] = [], only?: readonly JudgeKey[]): Check[] {
+  const claims = readJudgeClaims(text).filter((c) => only === undefined || only.includes(c.key));
+  const checks: Check[] = claims.map((c) => {
+    const target = judgeTarget(c.key, a);
+    return {
+      name: `${where} ${c.label}`,
+      claimed: c.values.map((v) => (c.key === "kb" ? String(v) : withCommas(v))).join(" of "),
+      actual: c.key === "mutants" ? `${a.mutants} in the script, ${a.mutantsLogged} in the newest log` : target,
+      ok: c.values.every((v) => judgeClose(c.key, v, target)),
+      ...(c.key === "kb" ? { note: "±0.5 KB" } : c.key === "fileKb" ? { note: "±3 %, decimal KB (bytes / 1000)" } : {}),
+    };
+  });
+  for (const key of required) {
+    if (!claims.some((c) => c.key === key)) {
+      const label = JUDGE_PATTERNS.find((p) => p.key === key)!.label;
+      checks.push({ name: `${where} ${label}`, claimed: "(missing)", actual: judgeTarget(key, a), ok: false, note: `${where} must state it` });
+    }
+  }
+  return checks;
+}
+
+/** Every phrase EVIDENCE.md must carry. */
+export const EVIDENCE_REQUIRED: readonly JudgeKey[] = JUDGE_PATTERNS.map((p) => p.key).filter((k, i, xs) => xs.indexOf(k) === i);
+
+/**
+ * Rewrite the judge-doc numbers in `text` from MEASURED values. A phrase whose
+ * measured value is unknown (≤ 0, or the mutant script and log disagree) is
+ * left alone: `--fix` never invents a number. "about N KB" within tolerance is
+ * left as written.
+ */
+export function applyJudgeFix(text: string, a: JudgeNumbers, only?: readonly JudgeKey[]): string {
+  let out = text;
+  for (const p of JUDGE_PATTERNS) {
+    if (only !== undefined && !only.includes(p.key)) continue;
+    const target = judgeTarget(p.key, a);
+    if (target <= 0) continue;
+    const v = p.format(target);
+    out = out.replace(p.re, (whole: string, ...g: unknown[]) => {
+      const s = g.map((x) => (typeof x === "string" ? x : ""));
+      if (judgeClose(p.key, num(s[0]!), target) && (!p.pair || judgeClose(p.key, num(s[2]!), target))) return whole;
+      if (p.key === "fileKb") return `about ${v}${s[1]}`;
+      return p.pair ? `${v}${s[1]}${v}${s[3]}` : `${v}${s[1]}`;
+    });
+  }
+  return out;
+}
+
+/** The bold total in the "| Whole session …" row of docs/kiro-sessions/README.md's recount table (null if absent). */
+export function hookFiringsTotal(sessionsReadme: string): number | null {
+  const row = sessionsReadme.split("\n").find((l) => l.startsWith("| Whole session"));
+  if (row === undefined) return null;
+  const m = /\*\*(\d[\d,]*)\*\*/.exec(row);
+  return m ? num(m[1]!) : null;
+}
+
+/** One failed Check per missing judge file. */
+export function compareJudgeFilesExist(exists: (file: string) => boolean): Check[] {
+  return JUDGE_FILES.filter((f) => !exists(f)).map((f) => ({ name: `${f} exists`, claimed: "(missing)", actual: f, ok: false, note: "the judge files must be at the repo root" }));
+}
+
+// ---------------------------------------------------------------------------
+// TASK-39g: CLAIMS.md. Each row `| C<n> | "<quote>" … | <where> | <status> | <proof> |`.
+// The quote must be on the cited line of README.md / docs/DEVPOST_WRITEUP.md;
+// `blog` refs are checked by hand.
+
+export const CLAIM_FILES = ["README.md", "docs/DEVPOST_WRITEUP.md"] as const;
+export const MIN_CLAIM_ROWS = 40;
+
+export interface ClaimRow {
+  /** 1-based line of the row in CLAIMS.md. */
+  line: number;
+  id: string;
+  quote: string | null;
+  refs: Array<{ file: string; line: number } | { file: "blog" } | { file: string; line: null }>;
+  where: string;
+  status: string;
+  proof: string;
+}
+
+/** Split a markdown table row into its cells (no escaped pipes in CLAIMS.md). */
+function cells(row: string): string[] {
+  return row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+}
+
+export function parseClaimRows(claims: string): ClaimRow[] {
+  const rows: ClaimRow[] = [];
+  claims.split("\n").forEach((l, i) => {
+    if (!/^\|\s*C\d+\s*\|/.test(l)) return;
+    const c = cells(l);
+    const [id = "", claim = "", where = "", status = ""] = c;
+    const proof = c.slice(4).join("|");
+    const q = /"([^"]+)"/.exec(claim);
+    const refs = where.split(",").map((r) => r.trim()).filter((r) => r !== "").map((r) => {
+      if (r === "blog") return { file: "blog" as const };
+      const m = /^(.+):(\d+)$/.exec(r);
+      return m ? { file: m[1]!, line: Number(m[2]) } : { file: r, line: null };
+    });
+    rows.push({ line: i + 1, id, quote: q ? q[1]! : null, refs, where, status, proof });
+  });
+  return rows;
+}
+
+/** The 1-based lines of `file` that contain `quote`. */
+function linesWith(file: string, quote: string): number[] {
+  const out: number[] = [];
+  file.split("\n").forEach((l, i) => {
+    if (l.includes(quote)) out.push(i + 1);
+  });
+  return out;
+}
+
+/** Every CLAIMS.md rule; `files` maps "README.md" / "docs/DEVPOST_WRITEUP.md" to their text. */
+export function compareClaimsTable(claims: string, files: Record<string, string>): Check[] {
+  const rows = parseClaimRows(claims);
+  const checks: Check[] = [];
+  const bad = (name: string, claimed: string | number, actual: string | number, note: string): void => {
+    checks.push({ name: `CLAIMS ${name}`, claimed, actual, ok: false, note });
+  };
+  checks.push({ name: "CLAIMS rows", claimed: rows.length, actual: `at least ${MIN_CLAIM_ROWS}`, ok: rows.length >= MIN_CLAIM_ROWS });
+  const seen = new Set<string>();
+  for (const r of rows) {
+    if (seen.has(r.id)) bad(`${r.id} id`, r.id, "a unique id", "the id is used twice");
+    seen.add(r.id);
+    if (r.quote === null) bad(`${r.id} quote`, "(no quote)", "a claim in straight double quotes", "the claim cell must quote the claim");
+    if (r.status !== "TRUE" && r.status !== "PARTIAL") bad(`${r.id} status`, r.status, "TRUE or PARTIAL", "the status must be exactly TRUE or PARTIAL");
+    if (r.status === "PARTIAL" && !r.proof.startsWith("Missing:")) bad(`${r.id} missing`, r.proof.slice(0, 40), "Missing: …", "a PARTIAL row must say what is missing");
+    if (r.refs.length === 0) bad(`${r.id} where`, "(empty)", "README.md:<n>, docs/DEVPOST_WRITEUP.md:<n> or blog", "the row must say where the claim is");
+    for (const ref of r.refs) {
+      if (ref.file === "blog") continue;
+      const text = files[ref.file];
+      if (text === undefined || !("line" in ref) || ref.line === null) {
+        bad(`${r.id} where`, r.where, "README.md:<n>, docs/DEVPOST_WRITEUP.md:<n> or blog", "unknown file or no line number");
+        continue;
+      }
+      if (r.quote === null) continue;
+      const line = text.split("\n")[ref.line - 1] ?? "";
+      if (line.includes(r.quote)) continue;
+      const found = linesWith(text, r.quote);
+      bad(
+        `${r.id} quote on ${ref.file}:${ref.line}`,
+        `"${r.quote.slice(0, 50)}"`,
+        found.length === 0 ? `(not in ${ref.file})` : `${ref.file}:${found.join(", ")}`,
+        found.length === 1 ? "the line moved; npm run check:claims -- --fix corrects it" : found.length === 0 ? "the quote is not in the file: shorten the quote or mark the claim" : "the quote is on several lines: cite one",
+      );
+    }
+  }
+  for (const want of [...CLAIM_FILES, "blog"]) {
+    if (!rows.some((r) => r.refs.some((ref) => ref.file === want))) bad(`cites ${want}`, "(none)", want, `at least one row must cite ${want}`);
+  }
+  return checks;
+}
+
+/**
+ * `--fix` for CLAIMS.md: when a quote is not on its cited line but is on
+ * exactly one line of that file, rewrite the line number. Anything else (no
+ * line, several lines, a blog ref) is left for the report.
+ */
+export function fixClaimsTable(claims: string, files: Record<string, string>): string {
+  const lines = claims.split("\n");
+  for (const r of parseClaimRows(claims)) {
+    if (r.quote === null) continue;
+    const quote = r.quote;
+    let where = r.where;
+    for (const ref of r.refs) {
+      if (ref.file === "blog" || !("line" in ref) || ref.line === null) continue;
+      const text = files[ref.file];
+      if (text === undefined) continue;
+      if ((text.split("\n")[ref.line - 1] ?? "").includes(quote)) continue;
+      const found = linesWith(text, quote);
+      if (found.length !== 1) continue;
+      where = where.replace(`${ref.file}:${ref.line}`, `${ref.file}:${found[0]}`);
+    }
+    if (where !== r.where) {
+      const row = lines[r.line - 1]!;
+      const c = row.split("|");
+      // cells: ["", id, claim, where, status, proof…, ""]
+      c[3] = c[3]!.replace(r.where, where);
+      lines[r.line - 1] = c.join("|");
+    }
+  }
+  return lines.join("\n");
 }
