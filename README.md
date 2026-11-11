@@ -2,7 +2,7 @@
 
 Category: Resurrection (HyperCard, 1987)
 
-Make a clickable lesson from one sentence. The **lesson is the file**: one HTML file you can hand to a class, which plays, scores and edits itself offline. HyperCard revivals usually bring back the editor; Stackyard brings back the stack you could hand to someone. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
+**Stackyard turns one sentence into a lesson file the teacher hands to the class.** The lesson is the file: it plays offline, it edits itself, and the pupils' results come back to her as short codes she types in, with no internet, no accounts and no server. HyperCard gave a teacher a stack she could hand on; Stackyard brings that stack back, and this time the results come back too. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
@@ -138,7 +138,7 @@ Stackyard was planned and built in Kiro. One claim per row, and where to look. W
 ## Why HyperCard
 
 HyperCard let non-programmers build clickable, branching "stacks" in 1987.
-Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline. Stackyard brings that back for a teacher
+Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; another exports a stack as one play-only HTML file; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline and brings the class's results back without a server. Stackyard brings that back for a teacher
 with patchy classroom Wi-Fi: the authoring input is a sentence, the output is a
 scored lesson the class plays, every stack satisfies nine validity invariants, and a 'before you share' check warns if any card can't reach the end score, and the exported file is re-importable
 (round-tripped losslessly, checked by a 1,000-run property test).
@@ -150,10 +150,12 @@ scored lesson the class plays, every stack satisfies nine validity invariants, a
 - Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.
 - **AI quiz makers** turn a topic into a quiz — but they usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.
 - **OpenMAIC** (open source) turns a topic or a document into an AI-generated lesson with quizzes and can export it as an offline HTML player, but the file has no editor inside and no class results.
+- **Egatari** turns a lesson into one HTML file that plays offline and carries its own source, so it can be reopened in the Egatari Studio editor, edited and saved again; a chat AI can draft the lesson.
+- **LessonRemix**, **Doppel** and **Syllabind** also export offline single-file lessons: LessonRemix from a browser studio with multiple-choice checks, Doppel from product screenshots with AI-suggested steps, Syllabind from a topic through a Claude Code skill (offline HTML and a PDF).
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
 always-playable stack → direct card editing → one self-contained offline file that
-can edit itself and save a copy of itself, offline.**
+can edit itself and save a copy of itself, offline → the class's results back to the teacher as short typed codes, with no server.**
 
 ## Libraries and model
 
@@ -177,7 +179,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1485** passing (`npm test`).
+- Tests: **1499** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

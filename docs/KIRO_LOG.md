@@ -742,3 +742,37 @@ This round adds the judge-round-4 P1 judge files and makes the Kiro tables in th
 - **Shell edits.** None. Every edit went through the file tools, except the count updates that `npm run check:claims -- --fix` wrote itself:
   - tests 1443 → 1485 in the README, the write-up, JUDGES.md and EVIDENCE.md;
   - traced ids 182 → 189 in the write-up, JUDGES.md and EVIDENCE.md.
+
+## 11 Nov 2026: field scan text fixes (TASK-40)
+
+Text fixes from the coordinator's field scan of 11 Nov, which read 60+ Kiroween 2026 project pages and new offline-lesson tools outside the contest. Spec first: maker `tasks.md` Phase 25 (TASK-40a–f). Only docs and docs tests changed. Nothing under `src/`, `server/`, `mcp/`, `.github/`, `docs/ops/`, `render.yaml`, `package.json` or `scripts/mutation-check.ts` changed, and the video is untouched.
+- **a. Write-up lead.** Line 5 is the R1 lead: one sentence becomes a lesson file that plays offline, edits itself, and brings the pupils' results back as typed codes, with no server. HyperCard's hand-on stack (R2) is the setup. The video link is now line 7 and the video note line 9.
+- **b. Where it sits.** The section is now four paragraphs.
+  - The Kiroween entries: one builds a stack from a description, another exports a play-only HTML file. "Their stacks travel as JSON files or as links back to their tool" is gone, because it is no longer true.
+  - Offline lesson files are not new on their own: Egatari, OpenMAIC, LessonRemix, Doppel, Syllabind and Decker.
+  - The old Lumi / H5P / quiz-maker paragraph, word for word.
+  - What Stackyard puts together, with the typed codes as the part we have not seen.
+- **c. README lead.** Line 5 is the R1 lead. Lines 3, 7, 9 and 11 are unchanged.
+- **d. README Why HyperCard and Prior art.**
+  - Why HyperCard names the play-only export and adds "brings the class's results back without a server".
+  - Prior art gains an Egatari bullet and a LessonRemix / Doppel / Syllabind bullet.
+  - "What we haven't found elsewhere" ends with the typed results codes.
+- **e. Blog draft.** `BLOG_DRAFT.md` is outside the repo. Its two sentences are replaced, and its Status line says the edits are not yet on the live dev.to post.
+- **f. CLAIMS.md.**
+  - C9 and C10 quote the new paragraph 1, and C15 cites the README only.
+  - New rows C53–C61 cover the play-only export (PARTIAL), Egatari, LessonRemix, Doppel and Syllabind (TRUE), "the typed codes" (PARTIAL), the R1 lead (TRUE, for the lesson file) and the two new blog sentences (PARTIAL: in the draft only).
+  - The R1 quote starts at "plays offline, …", because README line 5 has a lowercase "it" there and the write-up a capital "It".
+- **Tests.** The new `tests/round12-docs.test.ts` covers TASK-40a–f. The tests that pinned the replaced wording now carry a TASK-40 id and check the new text:
+  - `round6-docs` R3: the play-only export.
+  - `round7-docs`: the Why HyperCard tail.
+  - `round8-docs` TASK-32h: four paragraphs.
+  - `round9-docs` TASK-36b1: the write-up's AfterStack sentence, with the old "Their stacks travel" now in the gone list, and the README's R17.
+  - `round10-docs` TASK-38e: AfterStack and OpenMAIC.
+  - `round11-docs` TASK-39c and `claims-docs` TASK-39g: 61 rows.
+  - `mutation-log` TASK-37c: the video link and note, now two lines lower.
+
+  `class-results-docs` still passes unchanged: it slices What it does up to Where it sits, and neither heading moved.
+- **Shell edits.** None. Every edit went through the file tools, except what `npm run check:claims -- --fix` wrote itself:
+  - the CLAIMS.md line numbers;
+  - tests 1485 → 1499 in the README, the write-up, JUDGES.md and EVIDENCE.md;
+  - traced ids 189 → 195 in the write-up, JUDGES.md and EVIDENCE.md.

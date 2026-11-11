@@ -2196,3 +2196,50 @@ Source: judge round 4 (11 Nov 2026), P1 "JUDGES/EVIDENCE/CLAIMS.md + Kiro table 
   - **Acceptance criteria.** Unit tests cover each rule. A quote moved one line fails, and the fix corrects it. A quote that is nowhere fails and is not fixed. A bad status fails. A PARTIAL row without "Missing:" fails.
 
 **Status (11 Nov).** TASK-39a–g are done. `JUDGES.md`, `EVIDENCE.md` and `CLAIMS.md` are at the repo root, and both Kiro tables are claim + proof. check:claims checks the judge files and CLAIMS.md (`tests/claims-docs.test.ts`), `tests/round11-docs.test.ts` checks the wording, and the gates pass.
+
+## Phase 25 - TASK-40: field scan text fixes
+
+Source: the coordinator's field scan of 11 Nov 2026, which read 60+ Kiroween 2026 project pages and new offline-lesson tools outside the contest. Two findings. First, another Kiroween 2026 entry exports a stack as one play-only HTML file, so "Their stacks travel as JSON files or as links back to their tool" is no longer true. Second, several tools outside the contest now export offline single-file lessons, so "a file you can hand on" is no longer ours alone. What no look-alike has is the return trip: the class's results come back as typed codes, with no server. That leads (R1), and "HyperCard's stack you could hand on" (R2) stays as the setup line. This round changes docs and docs tests only. Nothing under `src/`, `server/`, `mcp/`, `.github/`, `docs/ops/`, `render.yaml`, `package.json` or `scripts/mutation-check.ts` changes.
+
+### TASK-40a: the write-up leads with R1  *(TASK-40 a)*
+  - **Bug.** The write-up opened with the category and the video. Its first claim, further down, was "a file you can hand on", which other tools now also offer.
+  - **Fix.** Line 5 is a new lead paragraph: one sentence becomes a lesson file that plays offline, edits itself, and brings the pupils' results back as typed codes, with no server. HyperCard's hand-on stack is the setup, and the Maker's need for the internet is stated. The video link moves to line 7 and the video note to line 9.
+  - **Acceptance criteria.** A test checks lines 3, 5, 7 and 9. Inspiration and What it does are unchanged.
+
+### TASK-40b: the write-up's "Where it sits" for the 2026 field  *(TASK-40 b)*
+  - **Bug.** "Their stacks travel as JSON files or as links back to their tool" is false for one entry. The section did not name the new offline single-file lesson tools (Egatari, LessonRemix, Doppel, Syllabind).
+  - **Fix.** Four paragraphs:
+    - the other Kiroween entries, including the one with a play-only HTML export;
+    - offline lesson files are not new, with Egatari, OpenMAIC, LessonRemix, Doppel, Syllabind and Decker as examples;
+    - the old Lumi / H5P / quiz-maker / chat-tool paragraph, word for word;
+    - what Stackyard puts together, with the typed codes as the part we have not seen.
+  - **Acceptance criteria.** A test checks that there are exactly four paragraphs, that the third keeps its old wording, and that "Their stacks travel" and "Some AI lesson tools" are gone.
+
+### TASK-40c: the README top leads with R1  *(TASK-40 c)*
+  - **Bug.** README line 5 led with "a file you can hand to a class".
+  - **Fix.** Line 5 leads with the same R1 claim as the write-up, keeps "The lesson is the file", and keeps the Maker / offline note. Lines 3, 7, 9 and 11 stay where they are.
+  - **Acceptance criteria.** A test checks line 5 word for word, and lines 3, 7, 9 and 11.
+
+### TASK-40d: the README's Why HyperCard and Prior art  *(TASK-40 d)*
+  - **Bug.** Why HyperCard and Prior art did not name the play-only HTML export, Egatari or the other single-file tools. "What we haven't found elsewhere" stopped at the self-editing file.
+  - **Fix.**
+    - Why HyperCard names the play-only export and adds "brings the class's results back without a server".
+    - Prior art gains two bullets: Egatari, then LessonRemix, Doppel and Syllabind.
+    - "What we haven't found elsewhere" ends with the typed results codes.
+  - **Acceptance criteria.** A test finds each new sentence.
+
+### TASK-40e: the blog draft  *(TASK-40 e)*
+  - **Bug.** The blog draft's opening made the same "hand-on file" claim and did not mention class results.
+  - **Fix.** Two sentences in `BLOG_DRAFT.md` (outside the repo) are replaced, and its "Status 11.11" line says these edits are in the draft but not yet on the live post.
+  - **Acceptance criteria.** The blog is not in the repo, so CLAIMS.md marks both new sentences PARTIAL ("in the draft, not yet on the live post"). A test checks those rows.
+
+### TASK-40f: CLAIMS.md follows the new text  *(TASK-40 f)*
+  - **Bug.** C9, C10 and C15 quote or cite text that moved or is gone, and the new claims had no rows.
+  - **Fix.**
+    - C9 and C10 take quotes from the new paragraph 1.
+    - C15 cites the README only.
+    - New rows from C53 cover the play-only HTML export, Egatari, LessonRemix, Doppel, Syllabind, "the typed codes", the R1 lead and the two blog sentences.
+    - `check:claims -- --fix` sets the line numbers.
+  - **Acceptance criteria.** check:claims passes, and a test finds rows C53 onward with their statuses.
+
+**Status (11 Nov).** TASK-40a–f are done. Both files lead with R1, Where it sits names the 2026 field, the README's Why HyperCard and Prior art are updated, the blog draft is edited (not yet live), and CLAIMS.md has C1–C61. `tests/round12-docs.test.ts` checks the wording, and the gates pass.

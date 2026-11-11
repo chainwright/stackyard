@@ -209,14 +209,16 @@ describe("TASK-32g: the write-up is checked like the README", () => {
 describe("TASK-32h: the write-up's Where it sits is the coordinator's current text", () => {
   const writeup = read("docs/DEVPOST_WRITEUP.md");
   const section = writeup.slice(writeup.indexOf("## Where it sits"), writeup.indexOf("## How we built it"));
-  it("TASK-32h: TASK-38e: the two current paragraphs, verbatim (the second now ends with the OpenMAIC sentence); the old Decker paragraph and the closing sentence are gone", () => {
+  it("TASK-32h: TASK-38e: TASK-40b: the four current paragraphs (the 2026 field), verbatim where they carry old wording; the old Decker paragraph and the closing sentence are gone", () => {
     const paras = section.split("\n").filter((l) => l.trim().length > 0 && !l.startsWith("##"));
-    expect(paras).toHaveLength(2);
-    expect(paras[0]!.startsWith("Other Kiroween 2026 entries revive HyperCard's editor too, and at least one also builds a stack from a description.")).toBe(true);
+    expect(paras).toHaveLength(4);
+    expect(paras[0]!.startsWith("Other Kiroween 2026 entries revive HyperCard's editor too. At least one builds a stack from a description, and another exports a stack as one play-only HTML file.")).toBe(true);
     expect(paras[0]).toContain("Caramel, made by two teachers, turns a subject, level and objective into H5P activities that need a host or Lumi.");
-    expect(paras[1]!.startsWith("Decker revives HyperCard's decks")).toBe(true);
-    expect(paras[1]).toContain("and nothing in them checks that the class can't get stuck.");
-    expect(paras[1]!.endsWith("but the file has no editor inside and no class results.")).toBe(true);
+    expect(paras[1]!.startsWith("Handing on one offline lesson file is not new on its own.")).toBe(true);
+    expect(paras[1]!.endsWith("Decker revives HyperCard's decks and saves one self-contained HTML file that keeps its editor, but it has no AI generation.")).toBe(true);
+    expect(paras[2]!.startsWith("Lumi's desktop app exports most H5P activities")).toBe(true);
+    expect(paras[2]!.endsWith("and nothing in them checks that the class can't get stuck.")).toBe(true);
+    expect(paras[3]!.endsWith("The typed codes are the part we have not seen in the tools above.")).toBe(true);
     expect(writeup).not.toContain("Decker already keeps its editor inside an exported HTML deck.");
     expect(writeup).not.toContain("Stackyard joins these:");
   });

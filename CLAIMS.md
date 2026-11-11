@@ -6,41 +6,41 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 
 | # | Claim | Where | Status | Proof, or what is missing |
 |---|---|---|---|---|
-| C1 | "one HTML file that plays, scores and edits itself with the Wi-Fi off" | docs/DEVPOST_WRITEUP.md:16 | TRUE | `npm run check:living-file`; `npm run check:bench` (lesson files opened with the network blocked, 0 requests) |
-| C2 | "Stackyard deals the cards as the model writes them" | docs/DEVPOST_WRITEUP.md:19 | TRUE | `tests/stream-generate.test.ts`; video 0:24–0:38 (real time, labelled) |
-| C3 | "no model call, and one Undo puts it back" | docs/DEVPOST_WRITEUP.md:20 | TRUE | `src/editor/swapCandidates.ts`; the swap mutants in `scripts/mutation-check.ts` |
-| C4 | "lesson files like the water-cycle test deck fit on a 1.44 MB floppy" | docs/DEVPOST_WRITEUP.md:21, README.md:184 | TRUE | `npm run check:claims` (floppy count); EVIDENCE.md |
-| C5 | "with no account, no install and no internet" | docs/DEVPOST_WRITEUP.md:21 | TRUE | For the exported file (the Maker needs the internet, as the README's first paragraph says): `npm run check:export-opens`, `npm run check:bench` |
-| C6 | "Save a Copy writes a new file that can edit itself too" | docs/DEVPOST_WRITEUP.md:22 | TRUE | `npm run check:living-file` (a copy of a copy plays and saves) |
-| C7 | "with nothing leaving the laptop" | docs/DEVPOST_WRITEUP.md:23 | TRUE | `npm run check:class-results`; `src/living` and `src/player` make no fetch, XHR, WebSocket or beacon call |
-| C8 | "Every path ends in the same playable file." | docs/DEVPOST_WRITEUP.md:24 | TRUE | `src/editor/StartScreen.tsx`: a ready-made deck and typed questions open in the same Maker and export the same way |
-| C9 | "at least one also builds a stack from a description" | docs/DEVPOST_WRITEUP.md:27 | PARTIAL | Missing: from our own web search of public pages (9 Nov); the Kiroween 2026 gallery was not public yet. NecroCard says so in its own README. |
-| C10 | "we found no AI generation or self-saving copy in it" | docs/DEVPOST_WRITEUP.md:27 | PARTIAL | Missing: this is what AfterStack's public page shows; we did not test the tool itself. |
-| C11 | "Caramel, made by two teachers" | docs/DEVPOST_WRITEUP.md:27 | TRUE | outilstice.com's article on Caramel ("créée par deux enseignants") |
-| C12 | "saves one self-contained HTML file that keeps its editor, but it has no AI generation" | docs/DEVPOST_WRITEUP.md:28 | TRUE | https://beyondloom.com/decker/ |
-| C13 | "at least 500 characters of pasted text" | docs/DEVPOST_WRITEUP.md:28 | TRUE | H5P's Smart Import step-by-step tutorial (help.h5p.com) |
-| C14 | "Wayground also exports printable PDF or DOC worksheets" | docs/DEVPOST_WRITEUP.md:28 | PARTIAL | Missing: a link to Wayground's own help page. |
-| C15 | "but the file has no editor inside and no class results" | docs/DEVPOST_WRITEUP.md:28, README.md:152 | PARTIAL | Missing: read from OpenMAIC's README; one third-party guide describes its export as a ZIP, which we have not checked. |
-| C16 | "Six specs: five product features" | docs/DEVPOST_WRITEUP.md:36 | TRUE | `.kiro/specs/` has six folders (test TASK-38b) |
-| C17 | "Every lettered task id is named in a test title, a gate or a hook" | docs/DEVPOST_WRITEUP.md:36 | TRUE | `npm run check:trace`; EVIDENCE.md |
-| C18 | "75 fast-check properties" | docs/DEVPOST_WRITEUP.md:38 | TRUE | `npm run check:claims` counts them; EVIDENCE.md |
-| C19 | "118 of 118 killed in the newest logged run" | docs/DEVPOST_WRITEUP.md:38 | TRUE | `docs/mutation-runs/2026-11-10-a215331.log`; `check:claims` ties the count to the newest log and the script's hash |
-| C20 | "Kiro's session store recorded 493 hook firings" | docs/DEVPOST_WRITEUP.md:39, README.md:132 | PARTIAL | Missing: the raw session store is not in the repo; the excerpts and the per-hook counts are in `docs/kiro-sessions/README.md`. |
-| C21 | "is not yet recorded firing" | docs/DEVPOST_WRITEUP.md:39 | TRUE | A stated limit: `docs/kiro-sessions/README.md` (sections 5 and 6); EVIDENCE.md |
-| C22 | "that an earlier fix of ours had introduced" | docs/DEVPOST_WRITEUP.md:40 | TRUE | `docs/KIRO_LOG.md` (the lesson-checker entry: "introduced by the earlier TASK-22 … fix"); `docs/kiro-sessions/README.md` section 3 |
-| C23 | "its search was also called once through Kiro as an MCP tool (10 Nov)" | docs/DEVPOST_WRITEUP.md:41, README.md:134 | TRUE | `docs/kiro-sessions/README.md` section 6; `docs/kiro-sessions/mcp-call-2026-11-10.md` |
-| C24 | "Kiro CLI wrote the steering and specs and built almost all of the code" | docs/DEVPOST_WRITEUP.md:42 | PARTIAL | Missing: the session excerpts in the repo start on 5 Nov; 30 Oct to 4 Nov rests on `docs/KIRO_LOG.md` and the git history. |
-| C25 | "12.8 KB gzipped against a 50 KB budget" | docs/DEVPOST_WRITEUP.md:56 | TRUE | `npm run check:claims`; the size guard in `npm test` |
-| C26 | "a generated lesson file is now about 211 KB" | docs/DEVPOST_WRITEUP.md:7 | TRUE | `npm run check:claims` (decimal KB, ±3 %) |
-| C27 | "became a valid lesson file on the first try" | docs/DEVPOST_WRITEUP.md:57, README.md:188 | TRUE | `bench/RESULTS.md`; `npm run check:bench`. The checks are mechanical and do not verify facts. |
-| C28 | "found 0 serious or critical violations" | docs/DEVPOST_WRITEUP.md:60, README.md:191 | TRUE | `npm run check:a11y`; `docs/accessibility/axe-report.json`. An automated audit, not a user test. |
-| C29 | "an AI review found joke answers fell from" | docs/DEVPOST_WRITEUP.md:59, README.md:190 | TRUE | `bench/LESSON_CHECKER.md`; `bench/distractor-review*.json`. An AI review, not a teacher's. |
-| C30 | "113 green tests still let a real defect through" | docs/DEVPOST_WRITEUP.md:48 | TRUE | `docs/KIRO_LOG.md`, 30 Oct (113/113 tests, then the UUID v4 defect from a live run) |
-| C31 | "All jsdom tests were green while real Chrome showed five problems" | docs/DEVPOST_WRITEUP.md:49 | TRUE | `docs/KIRO_LOG.md`, 31 Oct ("five problems the tests could not see") |
-| C32 | "keyed the limit on the address Cloudflare sets" | docs/DEVPOST_WRITEUP.md:50 | TRUE | `server/clientAddress.ts`; `tests/client-address.test.ts` |
-| C33 | "A test now fails if any bundle the server reads is missing from the build." | docs/DEVPOST_WRITEUP.md:51 | TRUE | `tests/render-build.test.ts` |
-| C34 | "about 23 s in seven on-screen windows, eight shots in all" | docs/DEVPOST_WRITEUP.md:72 | TRUE | the YouTube description lists the seven windows; each shot is tagged on screen |
-| C35 | "a paid Render instance, so it stays awake" | docs/DEVPOST_WRITEUP.md:10 | TRUE | `render.yaml` (`plan: starter`) |
+| C1 | "one HTML file that plays, scores and edits itself with the Wi-Fi off" | docs/DEVPOST_WRITEUP.md:18 | TRUE | `npm run check:living-file`; `npm run check:bench` (lesson files opened with the network blocked, 0 requests) |
+| C2 | "Stackyard deals the cards as the model writes them" | docs/DEVPOST_WRITEUP.md:21 | TRUE | `tests/stream-generate.test.ts`; video 0:24–0:38 (real time, labelled) |
+| C3 | "no model call, and one Undo puts it back" | docs/DEVPOST_WRITEUP.md:22 | TRUE | `src/editor/swapCandidates.ts`; the swap mutants in `scripts/mutation-check.ts` |
+| C4 | "lesson files like the water-cycle test deck fit on a 1.44 MB floppy" | docs/DEVPOST_WRITEUP.md:23, README.md:186 | TRUE | `npm run check:claims` (floppy count); EVIDENCE.md |
+| C5 | "with no account, no install and no internet" | docs/DEVPOST_WRITEUP.md:23 | TRUE | For the exported file (the Maker needs the internet, as the README's first paragraph says): `npm run check:export-opens`, `npm run check:bench` |
+| C6 | "Save a Copy writes a new file that can edit itself too" | docs/DEVPOST_WRITEUP.md:24 | TRUE | `npm run check:living-file` (a copy of a copy plays and saves) |
+| C7 | "with nothing leaving the laptop" | docs/DEVPOST_WRITEUP.md:25 | TRUE | `npm run check:class-results`; `src/living` and `src/player` make no fetch, XHR, WebSocket or beacon call |
+| C8 | "Every path ends in the same playable file." | docs/DEVPOST_WRITEUP.md:26 | TRUE | `src/editor/StartScreen.tsx`: a ready-made deck and typed questions open in the same Maker and export the same way |
+| C9 | "At least one builds a stack from a description" | docs/DEVPOST_WRITEUP.md:29 | PARTIAL | Missing: from our own web search of public pages (9 Nov); the Kiroween 2026 gallery was not public yet. NecroCard says so in its own README. |
+| C10 | "we found no AI generation or self-saving copy in it" | docs/DEVPOST_WRITEUP.md:29 | PARTIAL | Missing: this is what AfterStack's public page shows; we did not test the tool itself. |
+| C11 | "Caramel, made by two teachers" | docs/DEVPOST_WRITEUP.md:29 | TRUE | outilstice.com's article on Caramel ("créée par deux enseignants") |
+| C12 | "saves one self-contained HTML file that keeps its editor, but it has no AI generation" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://beyondloom.com/decker/ |
+| C13 | "at least 500 characters of pasted text" | docs/DEVPOST_WRITEUP.md:33 | TRUE | H5P's Smart Import step-by-step tutorial (help.h5p.com) |
+| C14 | "Wayground also exports printable PDF or DOC worksheets" | docs/DEVPOST_WRITEUP.md:33 | PARTIAL | Missing: a link to Wayground's own help page. |
+| C15 | "but the file has no editor inside and no class results" | README.md:152 | PARTIAL | Missing: read from OpenMAIC's README; one third-party guide describes its export as a ZIP, which we have not checked. |
+| C16 | "Six specs: five product features" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `.kiro/specs/` has six folders (test TASK-38b) |
+| C17 | "Every lettered task id is named in a test title, a gate or a hook" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `npm run check:trace`; EVIDENCE.md |
+| C18 | "75 fast-check properties" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `npm run check:claims` counts them; EVIDENCE.md |
+| C19 | "118 of 118 killed in the newest logged run" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `docs/mutation-runs/2026-11-10-a215331.log`; `check:claims` ties the count to the newest log and the script's hash |
+| C20 | "Kiro's session store recorded 493 hook firings" | docs/DEVPOST_WRITEUP.md:46, README.md:132 | PARTIAL | Missing: the raw session store is not in the repo; the excerpts and the per-hook counts are in `docs/kiro-sessions/README.md`. |
+| C21 | "is not yet recorded firing" | docs/DEVPOST_WRITEUP.md:46 | TRUE | A stated limit: `docs/kiro-sessions/README.md` (sections 5 and 6); EVIDENCE.md |
+| C22 | "that an earlier fix of ours had introduced" | docs/DEVPOST_WRITEUP.md:47 | TRUE | `docs/KIRO_LOG.md` (the lesson-checker entry: "introduced by the earlier TASK-22 … fix"); `docs/kiro-sessions/README.md` section 3 |
+| C23 | "its search was also called once through Kiro as an MCP tool (10 Nov)" | docs/DEVPOST_WRITEUP.md:48, README.md:134 | TRUE | `docs/kiro-sessions/README.md` section 6; `docs/kiro-sessions/mcp-call-2026-11-10.md` |
+| C24 | "Kiro CLI wrote the steering and specs and built almost all of the code" | docs/DEVPOST_WRITEUP.md:49 | PARTIAL | Missing: the session excerpts in the repo start on 5 Nov; 30 Oct to 4 Nov rests on `docs/KIRO_LOG.md` and the git history. |
+| C25 | "12.8 KB gzipped against a 50 KB budget" | docs/DEVPOST_WRITEUP.md:63 | TRUE | `npm run check:claims`; the size guard in `npm test` |
+| C26 | "a generated lesson file is now about 211 KB" | docs/DEVPOST_WRITEUP.md:9 | TRUE | `npm run check:claims` (decimal KB, ±3 %) |
+| C27 | "became a valid lesson file on the first try" | docs/DEVPOST_WRITEUP.md:64, README.md:190 | TRUE | `bench/RESULTS.md`; `npm run check:bench`. The checks are mechanical and do not verify facts. |
+| C28 | "found 0 serious or critical violations" | docs/DEVPOST_WRITEUP.md:67, README.md:193 | TRUE | `npm run check:a11y`; `docs/accessibility/axe-report.json`. An automated audit, not a user test. |
+| C29 | "an AI review found joke answers fell from" | docs/DEVPOST_WRITEUP.md:66, README.md:192 | TRUE | `bench/LESSON_CHECKER.md`; `bench/distractor-review*.json`. An AI review, not a teacher's. |
+| C30 | "113 green tests still let a real defect through" | docs/DEVPOST_WRITEUP.md:55 | TRUE | `docs/KIRO_LOG.md`, 30 Oct (113/113 tests, then the UUID v4 defect from a live run) |
+| C31 | "All jsdom tests were green while real Chrome showed five problems" | docs/DEVPOST_WRITEUP.md:56 | TRUE | `docs/KIRO_LOG.md`, 31 Oct ("five problems the tests could not see") |
+| C32 | "keyed the limit on the address Cloudflare sets" | docs/DEVPOST_WRITEUP.md:57 | TRUE | `server/clientAddress.ts`; `tests/client-address.test.ts` |
+| C33 | "A test now fails if any bundle the server reads is missing from the build." | docs/DEVPOST_WRITEUP.md:58 | TRUE | `tests/render-build.test.ts` |
+| C34 | "about 23 s in seven on-screen windows, eight shots in all" | docs/DEVPOST_WRITEUP.md:79 | TRUE | the YouTube description lists the seven windows; each shot is tagged on screen |
+| C35 | "a paid Render instance, so it stays awake" | docs/DEVPOST_WRITEUP.md:12 | TRUE | `render.yaml` (`plan: starter`) |
 | C36 | "plays offline in Chrome (checked by our gates)" | README.md:19 | TRUE | `npm run check:export-opens`; `npm run check:bench`; the one-off Firefox and WebKit run is in `docs/cross-browser/` |
 | C37 | "it makes **zero network requests**" | README.md:31 | TRUE | `npm run check:bench`; `npm run check:living-file` (network blocked) |
 | C38 | "Any one wrong letter, or two neighbouring" | README.md:66 | TRUE | `tests/results-code.property.test.ts` (every substitution and adjacent swap, exhaustively) |
@@ -58,3 +58,12 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C50 | "In the last logged run, all 118 were caught." | blog | TRUE | as C19 |
 | C51 | "gate on day one, not day seven" | blog | TRUE | the export-opens hook came on 5 Nov, day 7 (`docs/KIRO_LOG.md`); review in a real browser began on 31 Oct, day 2 |
 | C52 | "ours grew to six" | blog | TRUE | `.kiro/steering/` has six files |
+| C53 | "another exports a stack as one play-only HTML file" | docs/DEVPOST_WRITEUP.md:29, README.md:141 | PARTIAL | Missing: from that entry's public repository (its spec: "File -> Export Standalone HTML", a browse-only player); it was not on Devpost on 11 Nov and we did not run it. |
+| C54 | "Egatari's lesson file plays offline and carries its own source" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/egatari/egatari-spec and https://github.com/egatari/egatari-studio (README: "--portable writes one HTML file ... that plays offline and also carries its source"; the editor app at studio.egatari.org opens and saves it) |
+| C55 | "LessonRemix, a browser studio, exports a lesson with multiple-choice checks as one HTML file that works offline" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/Vertex-blip/lesson-remix (README) |
+| C56 | "Doppel turns product screenshots into a practice lesson with AI-suggested steps" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/coldrazer/doppel (README: "Offline HTML export") |
+| C57 | "Syllabind, a Claude Code skill, turns a topic into a course" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/Khalidfpv/syllabind (README) |
+| C58 | "The typed codes are the part we have not seen in the tools above." | docs/DEVPOST_WRITEUP.md:35 | PARTIAL | Missing: from the public pages we read (11 Nov), not proof that none exists; Egatari's player spec reports progress to a SCORM LMS, the host page or local storage, and we did not check every tool's reporting. |
+| C59 | "plays offline, it edits itself, and the pupils' results come back to her as short codes she types in" | docs/DEVPOST_WRITEUP.md:5, README.md:5 | TRUE | For the lesson file (the Maker needs the internet, as the same line says): `npm run check:class-results`, `npm run check:living-file` |
+| C60 | "a few tools now hand you an offline lesson file" | blog | PARTIAL | Missing: in the draft, not yet on the live post (11 Nov) |
+| C61 | "the teacher types the codes into her own copy" | blog | PARTIAL | Missing: in the draft, not yet on the live post (11 Nov) |

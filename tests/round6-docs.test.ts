@@ -46,9 +46,11 @@ describe("TASK-30e: README truth (video hound R1–R4)", () => {
     expect(readme).toContain("invariants-after-shell-edit");
     expect(read("README.md")).not.toMatch(/five hooks/i);
   });
-  it("R3: TASK-38e: HyperCard successors are named, and 'nothing really replaced it' is gone", () => {
+  it("R3: TASK-38e: TASK-40d: HyperCard successors are named, and 'nothing really replaced it' is gone", () => {
     // TASK-36b1: R17 adds NecroCard and narrows the claim; TASK-38e softens its status.
     expect(readme).toContain("Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description;");
+    // TASK-40d: the play-only HTML export entry follows.
+    expect(readme).toContain("builds a stack from a plain-English description; another exports a stack as one play-only HTML file;");
   });
   it("R4: AI quiz makers are described without the refuted claim", () => {
     expect(readme).toContain("usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.");

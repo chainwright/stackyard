@@ -64,11 +64,12 @@ describe("TASK-38d: the category line", () => {
 });
 
 describe("TASK-38e: prior art: OpenMAIC added; AfterStack and NecroCard softened", () => {
-  it("TASK-38e: the new sentences are in place and the stronger claims are gone", () => {
+  it("TASK-38e: TASK-40b: the new sentences are in place and the stronger claims are gone", () => {
     const w = W();
-    expect(w).toContain("the closest, AfterStack, is itself one offline page with a form editor; we found no AI generation or self-saving copy in it.");
+    // TASK-40b: AfterStack is no longer "the closest"; OpenMAIC moved to the paragraph on offline lesson files.
+    expect(w).toContain("AfterStack is itself one offline page with a form editor; we found no AI generation or self-saving copy in it.");
     expect(w).toContain(
-      "and nothing in them checks that the class can't get stuck. Some AI lesson tools, such as the open-source OpenMAIC, also export a lesson with quizzes as an offline HTML player, but the file has no editor inside and no class results.",
+      "OpenMAIC (open source) turns a topic or a document into an AI-generated lesson with quizzes and can export it as an offline HTML player.",
     );
     const r = R();
     expect(r).toContain("and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description;");

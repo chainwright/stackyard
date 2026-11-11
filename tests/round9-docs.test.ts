@@ -72,30 +72,30 @@ describe("TASK-36a2: 'about N KB' is decimal KB at ±3 %", () => {
 });
 
 describe("TASK-36b1: the round-3 hound's exact replacements", () => {
-  it("TASK-36b1: TASK-38a: TASK-38e: TASK-39d: the write-up carries E13, E31, E46, E53 and E62 word for word, E9 and E25 as revised in round 4, E62's Built-with line as shortened in TASK-39d, and the old wording is gone", () => {
+  it("TASK-36b1: TASK-38a: TASK-38e: TASK-39d: TASK-40b: the write-up carries E13, E31, E46, E53 and E62 word for word, E9 and E25 as revised in round 4, E62's Built-with line as shortened in TASK-39d, E25's AfterStack sentence as rewritten for the 2026 field, and the old wording is gone", () => {
     const w = FLAT(W());
     const want = [
       "(a paid Render instance, so it stays awake)",
       "or ask a chatbot for a one-off HTML quiz with no editor inside it.",
-      "Their stacks travel as JSON files or as links back to their tool; the closest, AfterStack, is itself one offline page with a form editor; we found no AI generation or self-saving copy in it.",
+      "Other Kiroween 2026 entries revive HyperCard's editor too. At least one builds a stack from a description, and another exports a stack as one play-only HTML file. AfterStack is itself one offline page with a form editor; we found no AI generation or self-saving copy in it.",
       "AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter;",
       "The numbers in the README's \"By the numbers\" block are checked by a script, and the pre-submit gate fails if they drift beyond its tolerances (±0.5 KB for the bundle, ±3 % for the file size).",
       "Kiro (CLI, specs, steering, hooks, one custom agent and an MCP server; see the Kiro table)",
       "the cursor, sounds, labels, the OFFLINE stamp and the network-request badge were added in editing; the badge shows the count from the real recording.",
     ];
     for (const s of want) expect(w, s).toContain(s);
-    for (const old of ["the first load can take a few seconds", "she can't easily edit", "Their stacks travel as JSON or as a link back", "(Kahoot, Wayground) or hand", "fails if they drift.", "hooks, agents, MCP)", "the cursor, sounds and the network-request badge"]) {
+    for (const old of ["the first load can take a few seconds", "she can't easily edit", "Their stacks travel as JSON or as a link back", "Their stacks travel as JSON files or as links back to their tool", "(Kahoot, Wayground) or hand", "fails if they drift.", "hooks, agents, MCP)", "the cursor, sounds and the network-request badge"]) {
       expect(w, old).not.toContain(old);
     }
     // E49 is the check:claims key-review line (TASK-36b3).
     expect(w).toContain("An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.");
   });
 
-  it("TASK-36b1: TASK-38e: the README carries R8, R17 (NecroCard softened in round 4), R20, R25 and R26b", () => {
+  it("TASK-36b1: TASK-38e: TASK-40d: the README carries R8, R17 (NecroCard softened in round 4, the play-only export and the results' return trip added in TASK-40d), R20, R25 and R26b", () => {
     const r = R();
     for (const s of [
       "No names or accounts are collected; the only personal detail is up to three optional initials a pupil may choose to type.",
-      "Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline.",
+      "Successors like HyperStudio and Decker exist, and another project built for Kiroween 2026 (NecroCard, per its own README) builds a stack from a plain-English description; another exports a stack as one play-only HTML file; we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline and brings the class's results back without a server.",
       "Lumi's desktop app exports H5P activities as an offline HTML file, but authoring is per content type, and H5P.com's Smart Import drafts from a document, link or long pasted text, not one sentence.",
       "These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.",
       "An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md).",
