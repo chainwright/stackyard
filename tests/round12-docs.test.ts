@@ -69,9 +69,9 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
     }
   });
 
-  it("TASK-40b paragraph 3 keeps the old Lumi / H5P / quiz-maker wording exactly", () => {
+  it("TASK-40b: TASK-41h: paragraph 3 keeps the old Lumi / H5P / quiz-maker wording exactly, except the chat-tools clause (no negative claim about other tools)", () => {
     expect(paras[2]).toBe(
-      "Lumi's desktop app exports most H5P activities as an all-in-one HTML file for teachers, and H5P.com's Smart Import drafts activities from a document, web page, video or at least 500 characters of pasted text, rather than a one-line request. AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter; general AI chat tools such as Claude can write a single offline HTML quiz, which arrives without an editor inside unless you ask for one, and nothing in them checks that the class can't get stuck.",
+      "Lumi's desktop app exports most H5P activities as an all-in-one HTML file for teachers, and H5P.com's Smart Import drafts activities from a document, web page, video or at least 500 characters of pasted text, rather than a one-line request. AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter; general AI chat tools such as Claude can write a single offline HTML quiz, which arrives without an editor inside, or a check that every card leads somewhere, unless you ask for them.",
     );
   });
 
@@ -153,14 +153,16 @@ describe("TASK-40e / TASK-40f: CLAIMS.md follows the new text", () => {
     expect(row("C59").refs).toEqual([{ file: "docs/DEVPOST_WRITEUP.md", line: 5 }, { file: "README.md", line: 5 }]);
   });
 
-  it("TASK-40e: TASK-40g: the two new blog sentences are TRUE: on the live dev.to post since 11 Nov 2026, 14:41 UTC", () => {
+  it("TASK-40e: TASK-40g: TASK-41i: the two new blog sentences are TRUE, each with a proof of its content", () => {
     for (const [id, quote] of [["C60", "a few tools now hand you an offline lesson file"], ["C61", "the teacher types the codes into her own copy"]] as const) {
       const x = row(id);
       expect(x.quote).toBe(quote);
       expect(x.refs).toEqual([{ file: "blog" }]);
       expect(x.status).toBe("TRUE");
-      expect(x.proof).toBe("on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand)");
     }
+    // TASK-41i: the proofs back what each sentence says (they went live at 14:41 UTC on 11 Nov, TASK-40g).
+    expect(row("C60").proof).toBe("Egatari, OpenMAIC and LessonRemix export offline lesson files (C54, C15, C55 and their sources)");
+    expect(row("C61").proof).toBe("`npm run check:class-results` (three pupils' codes typed into the Teacher tab rebuild the table)");
     expect(claims).not.toContain("not yet on the live post");
   });
 });

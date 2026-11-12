@@ -95,10 +95,10 @@ describe("TASK-39b: EVIDENCE.md", () => {
 });
 
 describe("TASK-39c: CLAIMS.md", () => {
-  it("TASK-39c: TASK-40f: has the header, the dev.to link and rows C1–C61", () => {
+  it("TASK-39c: TASK-40f: TASK-41i: has the header, the dev.to link and rows C1–C68", () => {
     expect(claims).toContain("| # | Claim | Where | Status | Proof, or what is missing |");
     expect(claims).toContain("https://dev.to/automate_ai/we-brought-back-hypercards-stack-not-its-editor-3g3g");
-    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(61);
+    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(68);
   });
 });
 

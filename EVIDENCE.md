@@ -6,14 +6,15 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,499 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
-| 196 of 196 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
+| 1,514 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 206 of 206 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
 | 75 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
 | 1,000-run round trip | stack → HTML file → stack, lossless | `npm run check:invariants` | `numRuns` in `tests/roundtrip.property.test.ts` |
 | 118 of 118 mutants killed | a script reverts 118 review fixes one at a time; each must turn a test red | `npm run check:mutants` (slow), or read the log | `docs/mutation-runs/2026-11-10-a215331.log` (clean tree); `check:claims` ties the count to the newest log and to the script's sha256 |
 | 12.8 KB gzipped | the player runtime inlined in every lesson file (1 KB = 1,024 bytes) | `npm test` (size guard, budget 50 KB) | `dist/player/player.iife.js` |
 | about 211 KB | a living export of the water-cycle test deck (decimal KB, bytes / 1000) | `npm run check:claims` | `tests/fixtures/generation/water-cycle-g2.json`; `tests/export-size.test.ts` |
+| 149 KB | the play-only class export of the same water-cycle test deck (decimal KB, bytes / 1000) | `npx vitest run tests/round13-docs.test.ts` | `tests/fixtures/generation/water-cycle-g2.json` |
 | 6 lesson files like the water-cycle test deck fit on a 1.44 MB floppy | floor(1,457,664 / that file's bytes), stated as at most 6 | `npm run check:claims` | `scripts/claims-lib.ts` (`FLOPPY_CLAIM`) |
 | 54 bench lesson files, 0 network requests | every bench lesson file opened from disk in headless Chrome with the network blocked: a card renders, the first card plays, no request, no page error | `npm run check:bench` (Chrome) | `scripts/check-bench-offline.ts`; `bench/files/` |
 | a living file that edits itself offline | export, edit in the Teacher tab, Save a Copy, open the copy and a copy of the copy with the network blocked, play to the end card | `npm run check:living-file` (Chrome) | `scripts/check-living-file.ts`; also the `living-file-gate` hook |
@@ -44,6 +45,7 @@ Each sentence below is checked word for word against its data file by `npm run c
 - **Session excerpts start on 5 Nov.** The excerpts in `docs/kiro-sessions/` come from sessions of 5 to 10 Nov. The steering, the first specs and the core code (30 Oct to 4 Nov) are recorded in `docs/KIRO_LOG.md` and the git history, not in session excerpts.
 - **Some fixes were made outside Kiro,** such as the live-deploy model switches, the picture swap, a test follow-up for the video link and the hosting change. Each is logged in `docs/KIRO_LOG.md`.
 - **The AI review panel.** Our own AI agents played judges in review rounds; the tasks they led to are marked in the specs (TASK-22 onwards) and logged in `docs/KIRO_LOG.md`.
+- **Our coordinator worked outside Kiro.** The coordinator, an AI agent working outside Kiro, wrote the task briefs, recorded the bench runs, installed CI and keep-warm, changed the Render plan and edited parts of the write-up. Each is logged in `docs/KIRO_LOG.md`. Commits carry "(built in Kiro)" from TASK-30 (9 Nov) on; earlier Kiro work rests on `docs/KIRO_LOG.md`.
 
 ## Not proven
 - **No real classroom.** No teacher or pupil has used Stackyard. The curriculum bench measures the generator against curriculum objectives; it is not a classroom study. The teacher and class in the video are AI-generated and tagged on screen.

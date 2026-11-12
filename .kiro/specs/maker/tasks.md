@@ -2248,3 +2248,80 @@ Source: the coordinator's field scan of 11 Nov 2026, which read 60+ Kiroween 202
   - **Acceptance criteria.** A test checks that both rows are TRUE with the 14:41 UTC proof, and check:claims passes.
 
 **Status (11 Nov).** TASK-40a–f are done. Both files lead with R1, Where it sits names the 2026 field, the README's Why HyperCard and Prior art are updated, the blog draft is edited, and CLAIMS.md has C1–C61. `tests/round12-docs.test.ts` checks the wording, and the gates pass. TASK-40g is done too: the two blog sentences have been on the live post since 14:41 UTC, so C60 and C61 are TRUE.
+
+## Phase 26 - TASK-41: judge round r7 fact fixes
+
+Source: judge round r7, the hound seat (12 Nov 2026). The coordinator checked each finding against git and the code:
+- **Steering.** The first commit, `c68ffc7` (30 Oct), added four steering files. `design-system.md` came in `90fa2d8` (31 Oct), after the first code commits but before the player was styled. `pre-submit.md` came in `cd20abf` (6 Nov). So "six steering files … written before any code" is false.
+- **Hooks.** Four hooks are `PostFileSave`, one is `PostToolUse` and one is `PostTaskExec` (never fired). "Six hooks run the real checks when Kiro saves the files they watch" overstates it.
+- **Class Results.** The table shows counts per question, plus a row of marks per pupil, by initials or "Pupil N". It does not show who got each question right.
+- **Joke-answer marker.** Its out-of-sample recall is 0.05, 0.01 and 0.03 (`bench/DIAGNOSIS.md`), so "a suspected joke answer is marked" overstates it.
+- **Spec reviews.** KIRO_LOG records review rounds that sent the exporter, Maker and class-results specs back. It records none for the first spec (stack generator), so "we reviewed them like pull requests and sent them back" overstates it.
+- **CLI.** The "(built in Kiro)" commit mark starts at TASK-30 (9 Nov). The coordinator, an AI agent working outside Kiro, wrote the briefs, recorded the bench, set up CI, keep-warm and hosting, and edited parts of the write-up. "Built almost all of the code … the few fixes made outside Kiro are logged" is not backed as worded.
+- **File size.** About 211 KB is the living file. The play-only class export of the same fixture is 148,880 B.
+- **OpenMAIC.** Its README lists the Classroom ZIP as a separate export from the offline HTML, which resolves C15's open question.
+- **"Can't get stuck".** "Nothing in them checks that the class can't get stuck" is a negative claim with no source.
+- **Blog and social drafts.** "All 176" and "(176 of 176)" are out of date, because the trace count has grown since.
+
+This round changes docs, docs tests and one size test only. Nothing under `src/`, `server/`, `mcp/`, `scripts/`, `.github/`, `docs/ops/`, `render.yaml` or `package.json` changes, and the video, thumbnail and tagline are untouched.
+
+### TASK-41a: steering: four files before any code, not six  *(TASK-41 a)*
+  - **Bug.** The write-up's Steering row said all six steering files were "written before any code".
+  - **Fix.** The row says the first four (product, tech, stack format, audience) came before any code, the design system the next day before the player was styled, and the pre-submit file on 6 Nov. Its proof cites `c68ffc7`, `90fa2d8` and `cd20abf`.
+  - **Acceptance criteria.** A test finds the new sentence and checks git: exactly four steering files were added in the first commit. If git is not available, the test skips. "written before any code. The stack format" is gone.
+
+### TASK-41b: hooks: four on save, one after shell writes, one never fired  *(TASK-41 b)*
+  - **Bug.** "Six hooks run the real checks when Kiro saves the files they watch" counted the `PostToolUse` and `PostTaskExec` hooks as save hooks.
+  - **Fix.** The Hooks row names four `PostFileSave` hooks, one `PostToolUse` hook and the never-fired `PostTaskExec` gate. "493 hook firings" stays, labelled as our count from the store.
+  - **Acceptance criteria.** A test reads the six hook files and finds four `PostFileSave`, one `PostToolUse` and one `PostTaskExec`. The old sentence is gone, and check:claims still reads "493 hook firings".
+
+### TASK-41c: class results: how many per question, a row per pupil by initials or number  *(TASK-41 c)*
+  - **Bug.** "Per question, who got it right, wrong or never reached it" described a list of names the table does not show.
+  - **Fix.** The write-up says how many got each question right or wrong or never reached it, plus a row of marks per pupil, by initials or Pupil 1, Pupil 2….
+  - **Acceptance criteria.** A test finds the new sentence, and "who got it right" is gone.
+
+### TASK-41d: joke-answer marker: say it misses most  *(TASK-41 d)*
+  - **Bug.** "(a suspected joke answer is marked)" implied the marker catches joke answers. Out of sample it finds very few.
+  - **Fix.** The write-up and the README say "(our check marks a few likely joke answers but misses most, so read every answer)".
+  - **Acceptance criteria.** A test finds the new parenthesis in both files, and the old one is gone.
+
+### TASK-41e: spec reviews: which specs went back, and the first one did not  *(TASK-41 e)*
+  - **Bug.** "We reviewed them like pull requests and sent them back" implied every spec was sent back.
+  - **Fix.** The Spec-vs-vibe row names the three specs that went back (exporter, Maker, class results) and says the first, the stack generator, went straight to code. Its proof cites the KIRO_LOG entries.
+  - **Acceptance criteria.** A test finds the new sentence, and "like pull requests and sent them back" is gone.
+
+### TASK-41f: the CLI row: most of the code, and what the coordinator did outside Kiro  *(TASK-41 f)*
+  - **Bug.** "Built almost all of the code … The few fixes made outside Kiro are logged" left out the coordinator's work outside Kiro.
+  - **Fix.** The CLI row says "most of the code" and names the coordinator's work. Its proof notes that the "(built in Kiro)" mark starts at TASK-30. EVIDENCE.md's Kiro limits section gains a matching bullet.
+  - **Acceptance criteria.** A test finds the new row and the new EVIDENCE bullet, and "built almost all of the code" is gone.
+
+### TASK-41g: file size: the living file and the play-only class file, both measured  *(TASK-41 g)*
+  - **Bug.** "A generated lesson file is now about 211 KB" did not say that this size is the living file.
+  - **Fix.** The write-up adds "with its Teacher tab inside; the play-only class file of the same lesson is 149 KB", and EVIDENCE.md gains a "149 KB" row.
+  - **Acceptance criteria.** A test exports the water-cycle fixture with `exportStack` and checks that the "149 KB" in the write-up and EVIDENCE.md is within ±3 % of bytes / 1000. check:claims still reads "about 211 KB".
+
+### TASK-41h: "can't get stuck": no negative claim about other tools  *(TASK-41 h)*
+  - **Bug.** "Nothing in them checks that the class can't get stuck" was an unsourced claim about other tools.
+  - **Fix.** The write-up says the chat tools' quiz "arrives without an editor inside, or a check that every card leads somewhere, unless you ask for them".
+  - **Acceptance criteria.** A test finds the new clause, and the old one is gone.
+
+### TASK-41i: CLAIMS.md re-statuses and new rows  *(TASK-41 i)*
+  - **Bug.** Several rows quote replaced wording or have out-of-date statuses (C15, C24, C44, C45), and C60 and C61 had a proof that only said the sentences were live.
+  - **Fix.**
+    - C15 becomes TRUE, with OpenMAIC's export table as proof.
+    - C24 quotes "most of the code" and stays PARTIAL.
+    - C44 and C45 quote the new blog sentences and become TRUE.
+    - C60 and C61 get proofs that back the content of each sentence.
+    - New rows: C62 (the 149 KB file), then C63 onward for the new Steering, Class Results, Hooks, joke-answer and spec-review sentences and the new blog sentence.
+  - **Acceptance criteria.** check:claims passes, and a test checks the changed rows.
+
+### TASK-41j: blog and social drafts (outside the repo)  *(TASK-41 j)*
+  - **Bug.** The blog and social drafts carry the same overstated sentences, and their trace counts are out of date.
+  - **Fix.** The sentences in `BLOG_DRAFT.md` and `SOCIAL_DRAFT.md` follow the repo text. The 176 counts become "176 on 10 Nov; N on 12 Nov", and each draft's Status line says the coordinator applies the edits to the live post.
+  - **Acceptance criteria.** The drafts are not in the repo and have no checker. CLAIMS.md C45 quotes the new blog sentence.
+
+**Status (12 Nov).** TASK-41a–j are done:
+- The Steering, Hooks, Class Results, joke-answer, spec-review, CLI, file-size and chat-tools sentences follow the checked facts.
+- CLAIMS.md has C1–C68.
+- The blog and social drafts are edited and carry "206".
+- `tests/round13-docs.test.ts` checks it all, and the gates pass.

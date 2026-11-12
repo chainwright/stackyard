@@ -777,3 +777,32 @@ Text fixes from the coordinator's field scan of 11 Nov, which read 60+ Kiroween 
   - tests 1485 → 1499 in the README, the write-up, JUDGES.md and EVIDENCE.md;
   - traced ids 189 → 195 in the write-up, JUDGES.md and EVIDENCE.md.
 - **g. The blog sentences are live (TASK-40g).** The coordinator applied the two TASK-40e sentences to the live dev.to post through the dev.to API at 14:41 UTC (`edited_at` 2026-11-11T14:41:11Z) and checked both on the live body. CLAIMS.md C60 and C61 are now TRUE, with the proof "on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand)". The Status line in `BLOG_DRAFT.md` says the same. `tests/round12-docs.test.ts` now expects TRUE (TASK-40g in its title). Shell edits: none, except the counts that `check:claims -- --fix` wrote.
+
+## 12 Nov 2026: judge round r7 fact fixes (TASK-41)
+
+Fact fixes from judge round r7 (the hound seat). The coordinator checked each finding against git and the code on 12 Nov. Spec first: maker `tasks.md` Phase 26 (TASK-41a–j). Only docs, docs tests and one size test changed. Nothing under `src/`, `server/`, `mcp/`, `scripts/`, `.github/`, `docs/ops/`, `render.yaml` or `package.json` changed, and the video, thumbnail and tagline are untouched. No model calls.
+- **a. Steering.** The write-up's Steering row says the first four files (product, tech, stack format, audience) came before any code. The design system came on 31 Oct, before the player was styled, and the pre-submit file on 6 Nov. The proof cites `c68ffc7`, `90fa2d8` and `cd20abf`.
+- **b. Hooks.** The Hooks row names four `PostFileSave` hooks, one `PostToolUse` hook and the `PostTaskExec` gate, which is not yet recorded firing. "493 hook firings" is labelled as our count from the store.
+- **c. Class results.** The write-up says how many pupils got each question right or wrong or never reached it, and adds a row of marks per pupil, by initials or Pupil 1, Pupil 2…. It no longer says "who got it right".
+- **d. Joke answers.** The write-up and the README say "(our check marks a few likely joke answers but misses most, so read every answer)". Out-of-sample recall is 0.05, 0.01 and 0.03 (`bench/DIAGNOSIS.md`).
+- **e. Spec reviews.** The Spec-vs-vibe row says the exporter, Maker and class-results specs went back with changes, and the first spec, the stack generator, went straight to code. The proof cites the KIRO_LOG entries.
+- **f. CLI.** The CLI row says "most of the code" and names the coordinator's work outside Kiro: the briefs, the bench runs, CI, keep-warm, hosting and write-up edits. The "(built in Kiro)" commit mark starts at TASK-30. EVIDENCE.md's Kiro limits section has a matching bullet.
+- **g. File size.** The write-up says the 211 KB file is the one with the Teacher tab inside, and that the play-only class file of the same lesson is 149 KB (148,880 B). EVIDENCE.md has a "149 KB" row. A test measures it with `exportStack`.
+- **h. "Can't get stuck".** The chat-tools clause now says the quiz arrives without an editor inside, or a check that every card leads somewhere, unless you ask for them. The unsourced negative claim is gone.
+- **i. CLAIMS.md.** C15 is TRUE (OpenMAIC's README export table, checked 12 Nov). C24 quotes "most of the code" and stays PARTIAL. C44 and C45 quote the new blog sentences and are TRUE. C60 and C61 have content proofs. New rows C62–C68 cover the 149 KB file, the Steering, Class Results, Hooks, joke-answer and spec-review sentences, and the new blog sentence.
+- **j. Drafts.** The fixes are applied to `BLOG_DRAFT.md` and `SOCIAL_DRAFT.md`, which are outside the repo. The trace count is now "all 206 do" and "(206 of 206 on 12 Nov)", and each draft gains a "Status 12.11" sentence ahead of the earlier ones.
+- **Tests.** The new `tests/round13-docs.test.ts` covers TASK-41a–j. The TASK-41a git check skips without git, and the TASK-41j draft check skips when the drafts are not beside the repo. These tests pinned the replaced wording and now carry a TASK-41 id:
+  - `round8-docs` TASK-32h: paragraph 3's ending.
+  - `round9-docs` TASK-36b2: the Swap parenthesis.
+  - `round10-docs` TASK-38b: the Spec-vs-vibe row.
+  - `round11-docs` TASK-39c: 68 rows.
+  - `round12-docs` TASK-40b paragraph 3: the chat-tools clause.
+  - `round12-docs` TASK-40e/g: the C60 and C61 proofs.
+  - `claims-docs` TASK-39g: C1–C68.
+  - `class-results-docs` TASK-34b9: the class-results line may carry "Pupil 1, Pupil 2…" as labels, but still states no number.
+  - `kiro-evidence` TASK-36d: the Hooks row's "The sixth, the pre-submit gate (`PostTaskExec`), is not yet recorded firing."
+- **Shell edits.** None. Every edit, including the two drafts outside the repo, went through the file tools. The only exception is what `npm run check:claims -- --fix` wrote itself:
+  - tests 1499 → 1514 in the README, the write-up, JUDGES.md and EVIDENCE.md;
+  - traced ids 196 → 206 in the write-up, JUDGES.md and EVIDENCE.md.
+
+  The CLAIMS.md line numbers needed no change.

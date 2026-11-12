@@ -107,10 +107,10 @@ describe("TASK-36b1: the round-3 hound's exact replacements", () => {
 });
 
 describe("TASK-36b2: Swap is described where a reader looks", () => {
-  it("TASK-36b2: the write-up's Maker bullet and the README say what Swap does, that it makes no model call and that it is undoable", () => {
+  it("TASK-36b2: TASK-41d: the write-up's Maker bullet and the README say what Swap does, that it makes no model call and that it is undoable", () => {
     const maker = W().split("\n").find((l) => l.startsWith("- In the Maker she edits any card"))!;
-    expect(maker).toContain("Swap replaces a wrong answer she doesn't like (a suspected joke answer is marked) with another answer from the same deck, or one she types: no model call, and one Undo puts it back.");
-    expect(R()).toContain("**Swap** replaces a wrong answer the teacher doesn't like (a suspected joke answer is marked) with another answer from the same deck, or one she types. It makes no model call, and it is one undo step.");
+    expect(maker).toContain("Swap replaces a wrong answer she doesn't like (our check marks a few likely joke answers but misses most, so read every answer) with another answer from the same deck, or one she types: no model call, and one Undo puts it back.");
+    expect(R()).toContain("**Swap** replaces a wrong answer the teacher doesn't like (our check marks a few likely joke answers but misses most, so read every answer) with another answer from the same deck, or one she types. It makes no model call, and it is one undo step.");
   });
 });
 

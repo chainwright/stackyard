@@ -20,7 +20,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C12 | "saves one self-contained HTML file that keeps its editor, but it has no AI generation" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://beyondloom.com/decker/ |
 | C13 | "at least 500 characters of pasted text" | docs/DEVPOST_WRITEUP.md:33 | TRUE | H5P's Smart Import step-by-step tutorial (help.h5p.com) |
 | C14 | "Wayground also exports printable PDF or DOC worksheets" | docs/DEVPOST_WRITEUP.md:33 | PARTIAL | Missing: a link to Wayground's own help page. |
-| C15 | "but the file has no editor inside and no class results" | README.md:152 | PARTIAL | Missing: read from OpenMAIC's README; one third-party guide describes its export as a ZIP, which we have not checked. |
+| C15 | "but the file has no editor inside and no class results" | README.md:152 | TRUE | OpenMAIC's README Export table (checked 12 Nov 2026): 'Offline HTML: One file that plays the classroom without a network connection'; the Classroom ZIP is a separate export for backup or sharing. Nothing in it describes an editor or class results inside the HTML file. |
 | C16 | "Six specs: five product features" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `.kiro/specs/` has six folders (test TASK-38b) |
 | C17 | "Every lettered task id is named in a test title, a gate or a hook" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `npm run check:trace`; EVIDENCE.md |
 | C18 | "75 fast-check properties" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `npm run check:claims` counts them; EVIDENCE.md |
@@ -29,7 +29,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C21 | "is not yet recorded firing" | docs/DEVPOST_WRITEUP.md:46 | TRUE | A stated limit: `docs/kiro-sessions/README.md` (sections 5 and 6); EVIDENCE.md |
 | C22 | "that an earlier fix of ours had introduced" | docs/DEVPOST_WRITEUP.md:47 | TRUE | `docs/KIRO_LOG.md` (the lesson-checker entry: "introduced by the earlier TASK-22 … fix"); `docs/kiro-sessions/README.md` section 3 |
 | C23 | "its search was also called once through Kiro as an MCP tool (10 Nov)" | docs/DEVPOST_WRITEUP.md:48, README.md:134 | TRUE | `docs/kiro-sessions/README.md` section 6; `docs/kiro-sessions/mcp-call-2026-11-10.md` |
-| C24 | "Kiro CLI wrote the steering and specs and built almost all of the code" | docs/DEVPOST_WRITEUP.md:49 | PARTIAL | Missing: the session excerpts in the repo start on 5 Nov; 30 Oct to 4 Nov rests on `docs/KIRO_LOG.md` and the git history. |
+| C24 | "Kiro CLI wrote the steering and specs and most of the code" | docs/DEVPOST_WRITEUP.md:49 | PARTIAL | Missing: the session excerpts start on 5 Nov; 30 Oct to 8 Nov rests on `docs/KIRO_LOG.md` and the git history (the '(built in Kiro)' mark starts at TASK-30). |
 | C25 | "12.8 KB gzipped against a 50 KB budget" | docs/DEVPOST_WRITEUP.md:63 | TRUE | `npm run check:claims`; the size guard in `npm test` |
 | C26 | "a generated lesson file is now about 211 KB" | docs/DEVPOST_WRITEUP.md:9 | TRUE | `npm run check:claims` (decimal KB, ±3 %) |
 | C27 | "became a valid lesson file on the first try" | docs/DEVPOST_WRITEUP.md:64, README.md:190 | TRUE | `bench/RESULTS.md`; `npm run check:bench`. The checks are mechanical and do not verify facts. |
@@ -49,8 +49,8 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C41 | "we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline" | README.md:141 | PARTIAL | Missing: a search result, not proof that none exists. |
 | C42 | "round-tripped losslessly, checked by a 1,000-run property test" | README.md:144 | TRUE | `tests/roundtrip.property.test.ts` |
 | C43 | "We built it with Kiro over about ten days." | blog | TRUE | first commit 30 Oct (`c68ffc7`), build commits until 10 Nov (git log) |
-| C44 | "The class-results spec changed twice on serious problems before a single line of it existed." | blog | PARTIAL | Missing: `.kiro/specs/class-results/design.md` records the review's P0-1 and P0-2, but the spec and its code landed in one commit (`10809f8`), so git cannot show the order. |
-| C45 | "When the hackathon build was done, all 176 did." | blog | PARTIAL | Missing: true when the post was written (176 of 176 on 10 Nov); later tasks added task ids, and today's count is in EVIDENCE.md. |
+| C44 | "The review of the class-results spec found two serious problems, and its design doc records both." | blog | TRUE | `.kiro/specs/class-results/design.md` (P0-1, P0-2) |
+| C45 | "On 10 Nov all 176 did; on 12 Nov, after more tasks, all 206 do." | blog | TRUE | `npm run check:trace` (176 of 176 at the 10 Nov commits; 206 of 206 on 12 Nov) |
 | C46 | "Before we had that script, the count was quietly drifting." | blog | PARTIAL | Missing: `docs/KIRO_LOG.md` records that the stricter script found the real count was 51 of 84; there is no record of the count over time. |
 | C47 | "Across 5–9 November the session store recorded 493 hook firings" | blog | PARTIAL | Missing: as C20, the raw store is not in the repo. |
 | C48 | "an ambiguous Vikings question that one of our own fixes had introduced" | blog | TRUE | as C22 |
@@ -65,5 +65,12 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C57 | "Syllabind, a Claude Code skill, turns a topic into a course" | docs/DEVPOST_WRITEUP.md:31 | TRUE | https://github.com/Khalidfpv/syllabind (README) |
 | C58 | "The typed codes are the part we have not seen in the tools above." | docs/DEVPOST_WRITEUP.md:35 | PARTIAL | Missing: from the public pages we read (11 Nov), not proof that none exists; Egatari's player spec reports progress to a SCORM LMS, the host page or local storage, and we did not check every tool's reporting. |
 | C59 | "plays offline, it edits itself, and the pupils' results come back to her as short codes she types in" | docs/DEVPOST_WRITEUP.md:5, README.md:5 | TRUE | For the lesson file (the Maker needs the internet, as the same line says): `npm run check:class-results`, `npm run check:living-file` |
-| C60 | "a few tools now hand you an offline lesson file" | blog | TRUE | on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand) |
-| C61 | "the teacher types the codes into her own copy" | blog | TRUE | on the live dev.to post since 11 Nov 2026, 14:41 UTC (dev.to API edit, checked by hand) |
+| C60 | "a few tools now hand you an offline lesson file" | blog | TRUE | Egatari, OpenMAIC and LessonRemix export offline lesson files (C54, C15, C55 and their sources) |
+| C61 | "the teacher types the codes into her own copy" | blog | TRUE | `npm run check:class-results` (three pupils' codes typed into the Teacher tab rebuild the table) |
+| C62 | "the play-only class file of the same lesson is 149 KB" | docs/DEVPOST_WRITEUP.md:9 | TRUE | `tests/round13-docs.test.ts` (TASK-41g measures the class export) |
+| C63 | "The first four (product, tech, stack format, audience) were written before any code" | docs/DEVPOST_WRITEUP.md:42 | TRUE | git: `c68ffc7` (the first commit) adds the four; `90fa2d8` adds the design system; `cd20abf` adds pre-submit |
+| C64 | "how many got it right, got it wrong or never reached it" | docs/DEVPOST_WRITEUP.md:25 | TRUE | `src/living/classResults.ts`; `npm run check:class-results` |
+| C65 | "Four run the real checks when Kiro saves the files they watch" | docs/DEVPOST_WRITEUP.md:46 | TRUE | `.kiro/hooks/*.json` triggers: four `PostFileSave`, one `PostToolUse`, one `PostTaskExec` |
+| C66 | "our check marks a few likely joke answers but misses most, so read every answer" | docs/DEVPOST_WRITEUP.md:22 | TRUE | `bench/DIAGNOSIS.md` (recall 0.05, 0.01 and 0.03 out of sample) |
+| C67 | "the exporter, Maker and class-results specs went back to Kiro with changes before their code" | docs/DEVPOST_WRITEUP.md:44 | TRUE | `docs/KIRO_LOG.md` (the 30 Oct, 4 Nov and 10 Nov entries) |
+| C68 | "sees how many missed each question" | blog | TRUE | `src/living/classResults.ts` (counts per question) |

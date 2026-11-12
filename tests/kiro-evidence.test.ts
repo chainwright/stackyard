@@ -42,13 +42,14 @@ describe("TASK-36d1: the Openverse MCP call made inside Kiro is on record", () =
 });
 
 describe("TASK-36d: PostTaskExec is still not recorded firing, said plainly with the reason", () => {
-  it("TASK-36d: TASK-39d: the sessions README, the README and EVIDENCE.md say why (no task-status tool in kiro-cli; the IDE was not driven); the write-up keeps the short label", () => {
+  it("TASK-36d: TASK-39d: TASK-41b: the sessions README, the README and EVIDENCE.md say why (no task-status tool in kiro-cli; the IDE was not driven); the write-up keeps the short label", () => {
     expect(read("docs/kiro-sessions/README.md")).toContain("So `pre-submit` (`PostTaskExec`) is **still not recorded firing**.");
     // TASK-39e: the README's Hooks row keeps the short label; the reason moved to EVIDENCE.md.
     expect(FLAT(read("README.md"))).toContain("(not yet recorded firing; run on demand as `/pre-submit`)");
     const ev = FLAT(read("EVIDENCE.md"));
     expect(ev).toContain("kiro-cli sessions have no task-status tool, so a task ticked there is a file edit, and that does not fire it. The documented trigger is a task-status change in the Kiro IDE's tasks view, which we did not drive.");
-    expect(FLAT(read("docs/DEVPOST_WRITEUP.md"))).toContain("The pre-submit hook (`PostTaskExec`) is not yet recorded firing.");
+    // TASK-41b: the Hooks row names the gate as the sixth hook.
+    expect(FLAT(read("docs/DEVPOST_WRITEUP.md"))).toContain("The sixth, the pre-submit gate (`PostTaskExec`), is not yet recorded firing.");
   });
 
   it("TASK-36d: TASK-39d: every MCP sentence keeps the script history and adds the one call through Kiro", () => {

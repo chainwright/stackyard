@@ -19,8 +19,8 @@ any card (move a button, change an answer, link a card to another) and then
 **export the whole lesson as one self-contained HTML file**. That file is built for ES2018 and plays offline in Chrome (checked by our gates) and, in a one-off run, in Playwright's Firefox and WebKit builds, with no internet, no account and no install.
 
 On a quiz card in the Maker, **Swap** replaces a wrong answer the teacher doesn't
-like (a suspected joke answer is marked) with another answer from the same deck,
-or one she types. It makes no model call, and it is one undo step.
+like (our check marks a few likely joke answers but misses most, so read every
+answer) with another answer from the same deck, or one she types. It makes no model call, and it is one undo step.
 
 Two halves:
 
@@ -179,7 +179,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1499** passing (`npm test`).
+- Tests: **1514** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

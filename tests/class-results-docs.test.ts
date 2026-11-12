@@ -25,12 +25,13 @@ describe("TASK-34b9: class results are documented, privacy first", () => {
     expect(s).toContain("(three more with initials)");
   });
 
-  it("TASK-34b9: the write-up's 'What it does' has one class-results line, and 'What's next' no longer promises it", () => {
+  it("TASK-34b9: TASK-41c: the write-up's 'What it does' has one class-results line, and 'What's next' no longer promises it", () => {
     const w = read("docs/DEVPOST_WRITEUP.md");
     const does = w.slice(w.indexOf("## What it does"), w.indexOf("## Where it sits"));
     const lines = does.split("\n").filter((l) => l.startsWith("- Class results without a server"));
     expect(lines).toHaveLength(1);
-    expect(lines[0]).not.toMatch(/\d/); // no number, so check:claims has nothing to check
+    // No claimed number, so check:claims has nothing to check; TASK-41c's "Pupil 1, Pupil 2…" are labels, not counts.
+    expect(lines[0]!.replace("Pupil 1, Pupil 2…", "")).not.toMatch(/\d/);
     expect(w.slice(w.indexOf("## What's next"))).not.toContain("class results");
   });
 });
