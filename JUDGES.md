@@ -33,7 +33,7 @@ Node 24 or later:
 git clone https://github.com/chainwright/stackyard && cd stackyard
 npm ci
 npm test               # 1,514 tests pass
-npm run check:trace    # 206 of 206 lettered task ids traced
+npm run check:trace    # 207 of 207 lettered task ids traced
 npm run check:claims   # every number in the README, the write-up and EVIDENCE.md, against the code
 ```
 `npm run pre-submit` runs every gate. The browser gates need a local Chrome or Chromium; without one they say so and skip.

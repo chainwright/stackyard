@@ -50,7 +50,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C42 | "round-tripped losslessly, checked by a 1,000-run property test" | README.md:144 | TRUE | `tests/roundtrip.property.test.ts` |
 | C43 | "We built it with Kiro over about ten days." | blog | TRUE | first commit 30 Oct (`c68ffc7`), build commits until 10 Nov (git log) |
 | C44 | "The review of the class-results spec found two serious problems, and its design doc records both." | blog | TRUE | `.kiro/specs/class-results/design.md` (P0-1, P0-2) |
-| C45 | "On 10 Nov all 176 did; on 12 Nov, after more tasks, all 206 do." | blog | TRUE | `npm run check:trace` (176 of 176 at the 10 Nov commits; 206 of 206 on 12 Nov) |
+| C45 | "On 10 Nov all 176 did; on 12 Nov, after more tasks, all 207 do." | blog | TRUE | `npm run check:trace` (176 of 176 at the 10 Nov commits; 207 of 207 on 12 Nov) |
 | C46 | "Before we had that script, the count was quietly drifting." | blog | PARTIAL | Missing: `docs/KIRO_LOG.md` records that the stricter script found the real count was 51 of 84; there is no record of the count over time. |
 | C47 | "Across 5–9 November the session store recorded 493 hook firings" | blog | PARTIAL | Missing: as C20, the raw store is not in the repo. |
 | C48 | "an ambiguous Vikings question that one of our own fixes had introduced" | blog | TRUE | as C22 |

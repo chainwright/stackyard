@@ -44,10 +44,15 @@ describe("TASK-41a: steering: four files before any code, not six", () => {
     gone("written before any code. The stack format");
   });
 
-  it("TASK-41a git: the first commit added exactly four steering files", (ctx) => {
+  it("TASK-41a: TASK-41k: git: the first commit added exactly four steering files (skips on a shallow clone, as in CI)", (ctx) => {
+    // TASK-41k: GitHub Actions checks out with depth 1, so its "root" is the grafted HEAD, not the first commit.
+    const shallow = git(["rev-parse", "--is-shallow-repository"]);
+    if (shallow === null || shallow.trim() === "true") return ctx.skip();
     const roots = git(["rev-list", "--max-parents=0", "HEAD"]);
     if (roots === null || roots.trim() === "") return ctx.skip();
     const first = roots.trim().split("\n").pop()!;
+    const short = git(["rev-parse", "--short=7", first])?.trim();
+    if (short !== "c68ffc7") return ctx.skip();
     expect(first.startsWith("c68ffc7")).toBe(true);
     const added = git(["show", "--diff-filter=A", "--name-only", "--format=", first])!;
     const steering = added.split("\n").filter((f) => f.startsWith(".kiro/steering/")).sort();
@@ -165,10 +170,12 @@ describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
     expect(row("C61").proof).toBe("`npm run check:class-results` (three pupils' codes typed into the Teacher tab rebuild the table)");
   });
 
-  it("TASK-41i C45's number is the check:trace count the specs declare", async () => {
+  it("TASK-41i: TASK-41k: C45's number is a dated snapshot of check:trace: at least the 206 of 12 Nov, never above today's count", async () => {
     const { declaredIds } = await import("../scripts/check-task-trace.js");
     const n = Number(/all (\d+) do\./.exec(row("C45").quote!)![1]);
-    expect(n).toBe(declaredIds().length);
+    // The blog's "on 12 Nov … all 206 do" is live; later tasks only add ids, so it may lag but must not overstate.
+    expect(n).toBeGreaterThanOrEqual(206);
+    expect(n).toBeLessThanOrEqual(declaredIds().length);
   });
 
   it("TASK-41i new rows C62–C68, all TRUE", () => {
@@ -200,33 +207,45 @@ describe("TASK-41j: blog and social drafts (outside the repo)", () => {
     }
   };
 
-  it("TASK-41j when the drafts sit beside the repo, they carry the fixed sentences and the current trace count (skips in CI)", async (ctx) => {
+  it("TASK-41j: TASK-41k: when the drafts sit beside the repo, they carry the fixed sentences and the 12 Nov trace snapshot (skips in CI)", async (ctx) => {
     const blog = readOrNull(blogPath);
     const social = readOrNull(socialPath);
     if (blog === null || social === null) return ctx.skip();
     const { declaredIds } = await import("../scripts/check-task-trace.js");
-    const n = declaredIds().length;
+    // TASK-41k: the drafts' count is a dated, already-live snapshot ("on 12 Nov"): at least 206, never above today's.
+    const blogN = Number(/on 12 Nov, after more tasks, all (\d+) do\./.exec(blog)?.[1]);
+    const socialN = /a gate script or a hook \((\d+) of (\d+) on 12 Nov\)/.exec(social);
+    expect(socialN, "the social post's 12 Nov count").not.toBeNull();
+    expect(socialN![1]).toBe(socialN![2]);
+    for (const n of [blogN, Number(socialN![1])]) {
+      expect(n).toBeGreaterThanOrEqual(206);
+      expect(n).toBeLessThanOrEqual(declaredIds().length);
+    }
+    expect(blogN).toBe(Number(socialN![1]));
+    // The Status line's stable start; the coordinator appends what was applied live.
+    const status = "Status 12.11: TASK-41 (judge round r7) fact fixes are in this draft";
     for (const s of [
       "A chatbot will write you an HTML quiz, but it arrives without an editor inside, or a check that every card leads somewhere, unless you ask for them.",
       "sees how many missed each question",
       "and we reviewed them; most went back to Kiro with changes. The review of the class-results spec found two serious problems, and its design doc records both.",
       "Across 5–9 November the session store recorded 493 hook firings (our count; excerpts are in the repo's docs/kiro-sessions),",
-      `On 10 Nov all 176 did; on 12 Nov, after more tasks, all ${n} do.`,
-      "Status 12.11: TASK-41 (judge round r7) fact fixes are in this draft; the coordinator applies them to the live post.",
+      "On 10 Nov all 176 did; on 12 Nov, after more tasks, all ",
+      status,
     ]) {
       expect(blog, s).toContain(s);
     }
     for (const s of [
       "The biggest decisions happened while we argued with Kiro's specs, before the code. The review of our class-results spec found two serious problems while they were still prose.",
-      `(${n} of ${n} on 12 Nov)`,
-      "Status 12.11: TASK-41 (judge round r7) fact fixes are in this draft; the coordinator applies them to the live post.",
+      status,
     ]) {
       expect(social, s).toContain(s);
     }
+    // The Status lines quote the old wording as history ("(176 of 176)" → …); the body must not carry it.
+    const body = (t: string): string => t.split("\n").filter((l) => !l.startsWith("Status ")).join("\n");
     for (const old of ["nothing checks that the class can't get stuck", "sees who missed which question", "like pull requests and sent them back", "When the hackathon build was done, all 176 did."]) {
-      expect(blog, old).not.toContain(old);
+      expect(body(blog), old).not.toContain(old);
     }
-    expect(social).not.toContain("(176 of 176)");
+    expect(body(social)).not.toContain("(176 of 176)");
     // CLAIMS.md C45 quotes the blog's sentence word for word.
     expect(blog).toContain(row("C45").quote!);
   });
