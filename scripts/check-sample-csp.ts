@@ -141,10 +141,13 @@ async function main(): Promise<void> {
       if (csp !== "BLOCKED") problems.push(`${name}: a fetch() from the sample was NOT blocked by connect-src 'none' (got ${String(csp).slice(0, 60)})`);
 
       if (name === "vikings-in-ireland.html") {
-        await cdp.eval(`window.confirm = () => true`);
+        // TASK-42a4: Teacher → "Are you the teacher?" → Open the Editor, by clicking.
         await cdp.eval(`document.querySelector(".sy-teacher-tab")?.click()`);
+        if (!(await cdp.until(`document.querySelector(".sy-dialog")`, 8000))) problems.push(`${name}: the Teacher tab did not ask "Are you the teacher?"`);
+        await cdp.eval(`document.querySelector('.sy-dialog [data-sy-dialog="confirm"]')?.click()`);
         if (!(await cdp.until(`document.querySelector(".sy-living-overlay")`, 8000))) problems.push(`${name}: the Teacher tab did not open`);
         await cdp.eval(`[...document.querySelectorAll(".sy-living-bar button")].find((b) => /Save a Copy/i.test(b.textContent))?.click()`);
+        await cdp.eval(`document.querySelector('.sy-dialog [data-sy-dialog="confirm"]')?.click()`); // "Before you share", if it asks
         let copy: string | undefined;
         for (let i = 0; i < 60 && copy === undefined; i++) {
           copy = readdirSync(downloads).find((f) => f.includes("(copy") && !f.endsWith(".crdownload"));

@@ -578,6 +578,9 @@ on an exported living file and provides:
     simple confirm ("Are you the teacher?") — a guard, not security — then opens
     the editor. Play is the default each time the file opens (the tab state is
     never persisted).
+    *(16 Nov 2026, TASK-42a2: the confirm is now the living file's own in-file
+    box, "Are you the teacher?" with **Open the Editor** / **Back to the
+    Lesson**, not the browser's `confirm()`; still a guard, not security.)*
   - **Editor**: edit text, edit button labels, set a button's "go to card…",
     add a card, remove a card, and **Try It** (play the current card in place),
     all through the shared pure `operations.ts` so every edit stays valid.

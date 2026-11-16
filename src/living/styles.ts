@@ -1,5 +1,6 @@
 // src/living/styles.ts
-// The living file's own chrome CSS (TASK-24): the Teacher tab, the confirm, the
+// The living file's own chrome CSS (TASK-24): the Teacher tab, the in-file
+// "are you sure?" box (TASK-42a1; it replaced the browser confirm), the
 // editor panel, and the Save a Copy controls. Injected once at mount. The
 // player's own styles are injected by the renderer; this is only the editor
 // shell that sits over the play surface. Kept small and dependency-free.
@@ -86,6 +87,37 @@ export const LIVING_STYLES = `
   border-radius: 8px; font-size: 18px; max-width: 80vw;
   font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif;
 }
+
+/* TASK-42a1: the in-file "are you sure?" box (replaces the browser's confirm box). Ink on
+   paper, 18px floor, 44px buttons, no stamp red, no blur, fits 390px. */
+.sy-dialog-backdrop {
+  position: fixed; inset: 0; z-index: 100; background: rgba(30,42,71,0.55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  box-sizing: border-box; overflow-y: auto;
+}
+.sy-dialog {
+  box-sizing: border-box; width: 100%; max-width: 520px;
+  background: #FBF8F1; color: #1E2A47; border: 2px solid #1E2A47; border-radius: 10px;
+  padding: 20px 22px; font-family: 'Stackyard Digits', 'Stackyard Reading', system-ui, sans-serif;
+  font-size: 18px; line-height: 1.5; overflow-wrap: anywhere;
+  animation: sy-dialog-in 120ms ease-out;
+}
+.sy-dialog-title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 24px;
+  line-height: 1.3; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid #C9D3E3;
+}
+.sy-dialog-body { margin: 0 0 8px; }
+.sy-dialog-list { margin: 0 0 8px; padding-left: 22px; }
+.sy-dialog-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.sy-dialog-btn {
+  font-family: inherit; font-size: 18px; font-weight: 700; cursor: pointer; border-radius: 10px;
+  min-height: 44px; min-width: 44px; padding: 8px 16px; border: 2px solid #1E2A47;
+}
+.sy-dialog-btn.primary { background: #1E2A47; color: #FFFFFF; }
+.sy-dialog-btn.quiet { background: #FBF8F1; color: #1E2A47; }
+.sy-dialog-btn:focus-visible { outline: 3px solid #1E2A47; outline-offset: 2px; box-shadow: 0 0 0 2px #FBF8F1; }
+@keyframes sy-dialog-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sy-dialog { animation: none; } }
 
 .sy-living-tryit { position: relative; padding-top: 48px; } /* the pill sits above the rings */
 .sy-living-tryit .sy-back {

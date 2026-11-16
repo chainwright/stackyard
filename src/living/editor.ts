@@ -27,6 +27,7 @@ import { renderCard } from "../player/renderer.js";
 import { createRuntime } from "../player/runtime.js";
 import { mountPlayer } from "../player/mount.js";
 import { primaryText, truncateLabel, distinctCardLabels } from "../shared/cardTitle.js";
+import { ask } from "./dialog.js";
 
 type ApplyFn = (s: Stack) => Stack | import("../editor/types.js").Rejected;
 
@@ -430,13 +431,23 @@ export class LivingEditor {
         // OK → Remove (J2 P2 #3, TASK-28n): ask first.
         const n = this.stack.cards.findIndex((c) => c.id === card.id) + 1;
         const words = truncateLabel(primaryText(card), 40);
-        const ok = window.confirm(`Remove card ${n}${words.length > 0 ? ` — ${words}` : ""}? This can't be undone.`);
-        if (!ok) return;
-        if (this.apply((s) => removeCard(s, card.id))) {
-          this.selectedCardId = this.stack.cards[0]!.id;
-          this.selectedElementId = null;
-          this.render();
-        }
+        // TASK-42a3: the in-file box, not the browser's confirm().
+        ask(
+          {
+            heading: `Remove card ${n}?`,
+            body: words.length > 0 ? [`“${words}”`, "This can't be undone."] : "This can't be undone.",
+            confirmLabel: "Remove the Card",
+            cancelLabel: "Keep the Card",
+          },
+          (ok) => {
+            if (!ok) return;
+            if (this.apply((s) => removeCard(s, card.id))) {
+              this.selectedCardId = this.stack.cards[0]!.id;
+              this.selectedElementId = null;
+              this.render();
+            }
+          },
+        );
       });
       row.appendChild(rm);
     }

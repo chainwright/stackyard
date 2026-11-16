@@ -56,12 +56,12 @@ Each of these is checked by DOM tests in `tests/a11y-player.dom.test.ts`. We did
   - On every card, Tab reaches the card's choices before the Teacher tab.
   - Every control it lands on has the 3px solid ink focus ring.
 - **Teacher tab.** Then, still by keyboard:
-  1. Tab to the Teacher tab, press Enter.
+  1. Tab to the Teacher tab, press Enter. The "Are you the teacher?" box opens with focus inside it; Tab to **Open the Editor** and press Enter (TASK-42a4).
   2. Tab to the question in the preview, press Enter. The cursor moves into its text box.
-  3. Type, then Shift+Tab to Save a Copy and press Enter. The copy carries the new text.
+  3. Type, then Shift+Tab to Save a Copy and press Enter. The copy carries the new text. If the "Before you share" box asks, Tab to **Save Anyway** and press Enter.
   4. Escape returns to Play.
-- **Escape** also leaves Try It (in the Maker and in the Teacher tab) and closes the Maker's "Before you share" dialog (nothing is exported).
-- **Harness shortcut.** The native `confirm()` dialogs are browser UI that a keyboard can already answer; the harness answers them itself so the run never blocks.
+- **Escape** also leaves Try It (in the Maker and in the Teacher tab), closes the Maker's "Before you share" dialog (nothing is exported) and declines the living file's own "are you sure?" boxes.
+- **No native dialogs (16 Nov, TASK-42a).** The living file used to ask with the browser's `confirm()`, which the harness answered itself. It now asks in its own in-file box (a named modal dialog that keeps focus inside it), and the harness clicks or keys its buttons like a teacher. The open box is not one of the audited pages, so the page count is unchanged.
 
 ### 4. One-switch scanning
 

@@ -22,6 +22,7 @@ import { copyFileName } from "../src/shared/messages.js";
 import { validate } from "../src/shared/validator.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 import type { Stack } from "../src/shared/types.js";
+import { answerDialog, answerIfAsked, enterTeacher, openDialog } from "./helpers/living-dialog.js";
 
 // jsdom has no ResizeObserver; the scaler/editor use one.
 class FakeResizeObserver {
@@ -150,10 +151,11 @@ async function bootAndSave(
 ): Promise<string> {
   openFile(html);
   teardown = bootLivingFile();
-  tab().click();
+  enterTeacher();
   if (edit !== undefined) editFirstQuestion(edit);
   const before = cap.blobs.length;
   barButton("Save a Copy").click();
+  answerIfAsked(true); // "Before you share" appears only when a card needs a look
   expect(cap.blobs.length, "Save a Copy should download one file").toBe(before + 1);
   const saved = await blobText(cap.blobs[cap.blobs.length - 1]!);
   teardown?.();
@@ -179,20 +181,35 @@ describe("living file: Play by default + Teacher guard", () => {
     expect(document.body.textContent).toContain("Original question?");
   });
 
-  it("the Teacher tab asks to confirm; declining keeps Play", () => {
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("TASK-42a2: TASK-42a5: the Teacher tab asks \"Are you the teacher?\" in the file's own box; Back to the Lesson keeps Play and returns focus to the tab", () => {
+    const native = vi.spyOn(window, "confirm");
     teardown = bootLivingFile();
     tab().click();
-    expect(confirmSpy).toHaveBeenCalled();
+    expect(native).not.toHaveBeenCalled();
+    const box = openDialog()!;
+    expect(box).not.toBeNull();
+    expect(box.getAttribute("role")).toBe("dialog");
+    expect(box.getAttribute("aria-modal")).toBe("true");
+    const title = document.getElementById(box.getAttribute("aria-labelledby")!)!;
+    expect(title.textContent).toBe("Are you the teacher?");
+    expect(box.textContent).toContain("Editing this lesson is for the teacher.");
+    const labels = Array.from(box.querySelectorAll("button")).map((b) => b.textContent);
+    expect(labels).toEqual(["Back to the Lesson", "Open the Editor"]);
+    expect(answerDialog(false)).toBe("Are you the teacher?");
+    expect(openDialog()).toBeNull();
     expect(document.querySelector(".sy-living-overlay")).toBeNull();
+    expect(document.querySelector("#player-root .sy-card")).not.toBeNull();
+    expect(document.activeElement).toBe(tab());
   });
 
-  it("confirming opens the editor overlay", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("TASK-42a2: TASK-42a5: Open the Editor opens the editor overlay", () => {
     teardown = bootLivingFile();
     tab().click();
+    expect(document.querySelector(".sy-living-overlay")).toBeNull(); // nothing opens until she answers
+    answerDialog(true);
     expect(document.querySelector(".sy-living-overlay")).not.toBeNull();
     expect(document.querySelector(".sy-living-list")).not.toBeNull();
+    expect(document.activeElement?.id).toBe("sy-living-title");
   });
 });
 
@@ -200,10 +217,6 @@ describe("living file: Play by default + Teacher guard", () => {
 // TASK-26a — the REAL save path
 
 describe("TASK-26a: Save a Copy writes the pristine file, not the live DOM", () => {
-  beforeEach(() => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-  });
-
   it("a copy saved from inside the open editor has no overlay, no Teacher tab and no rendered card", async () => {
     const cap = captureDownloads();
     const original = exportedFile(twoCardStack());
@@ -322,8 +335,9 @@ describe("TASK-26a: Save a Copy writes the pristine file, not the live DOM", () 
     const root = document.getElementById("player-root")!;
     teardown = mountLivingApp(twoCardStack(), root);
     const cap = captureDownloads();
-    tab().click();
+    enterTeacher();
     barButton("Save a Copy").click();
+    answerIfAsked(true);
     const saved = await blobText(cap.blobs[0]!);
     // Replace the stack in the same pristine snapshot: nothing else differs
     // (apart from the copy counter, which this save bumps from 0 to 1).
@@ -363,7 +377,6 @@ describe("living file: Save a Copy guards", () => {
   });
 
   it("hostile text survives the REAL boot → save → reopen path without executing", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const cap = captureDownloads();
     const hostileTitle = "</title><script>window.__pwned2=1</script>";
     const stack = twoCardStack("</script><img src=x onerror=window.__pwned3=1>");
@@ -397,10 +410,9 @@ describe("living file: Save a Copy keeps the file a living file", () => {
 
 describe("TASK-26e: living editor selection and right answer", () => {
   beforeEach(() => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     openFile(exportedFile(twoCardStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
   });
 
   function answerElements(): HTMLElement[] {
@@ -433,6 +445,7 @@ describe("TASK-26e: living editor selection and right answer", () => {
     // Save and check the stack that would be written.
     const cap = captureDownloads();
     barButton("Save a Copy").click();
+    answerIfAsked(true);
     return blobText(cap.blobs[0]!).then((saved) => {
       const m = saved.match(/<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/)!;
       const stack = JSON.parse(m[1]!) as Stack;
@@ -457,15 +470,11 @@ describe("TASK-26e: living editor selection and right answer", () => {
 // TASK-27x/j — flash preview refresh, wording, add-an-answer, list labels
 
 describe("TASK-27: living editor round-3 fixes", () => {
-  beforeEach(() => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-  });
-
   it("x: editing a flash card's front refreshes the card preview", async () => {
     const { irishWordsStack } = await import("../src/shared/readyMadeStacks.js");
     openFile(exportedFile(irishWordsStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     const ta = document.querySelector<HTMLTextAreaElement>(".sy-living-inspector textarea")!;
     expect(ta).not.toBeNull();
     ta.value = "Zebra crossing";
@@ -477,7 +486,7 @@ describe("TASK-27: living editor round-3 fixes", () => {
   it("TASK-27j: wording matches the website; list labels are 'Card N — …' on one ellipsis line", async () => {
     openFile(exportedFile(vikingsStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     const first = document.querySelector<HTMLElement>(".sy-living-list button")!;
     expect(first.querySelector(".num")!.textContent).toBe("Card 1");
     expect(first.querySelector(".txt")!.textContent!.startsWith("— ")).toBe(true);
@@ -486,7 +495,7 @@ describe("TASK-27: living editor round-3 fixes", () => {
     teardown?.();
     openFile(exportedFile(irishWordsStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     const labels = Array.from(document.querySelectorAll(".sy-living-inspector label")).map((l) => l.textContent);
     expect(labels).toContain("Front (the term)");
   });
@@ -494,7 +503,7 @@ describe("TASK-27: living editor round-3 fixes", () => {
   it("j: '+ Add an answer' on a quiz card adds a tile and stays valid", () => {
     openFile(exportedFile(twoCardStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     const btn = Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button")).find((b) =>
       (b.textContent ?? "").includes("Add an answer"),
     );
@@ -539,11 +548,10 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
   function openTeacher(stack: Stack): void {
     openFile(exportedFile(stack));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
   }
 
   it("TASK-28j: list labels of different cards differ, even when the questions share their first words", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     openTeacher(sharedPrefixStack());
     const labels = Array.from(document.querySelectorAll(".sy-living-list button")).map((b) => b.textContent ?? "");
     expect(labels).toHaveLength(5);
@@ -554,7 +562,6 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
   });
 
   it("TASK-28q: the 'show card…' dropdown uses '—' like the list and the website, never '·'", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     openTeacher(sharedPrefixStack());
     // Select an answer button so the dropdown shows.
     const tile = document.querySelector<HTMLElement>(".sy-living-canvas .sy-tile")!;
@@ -569,24 +576,25 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
     }
   });
 
-  it("TASK-28n: Remove this card asks first; cancel keeps the card, OK removes it", () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true); // the "Are you the teacher?" gate
+  it("TASK-28n: TASK-42a3: Remove this card asks first in the file's own box; Keep the Card keeps it, Remove the Card removes it", () => {
+    const native = vi.spyOn(window, "confirm");
     openTeacher(sharedPrefixStack());
     const remove = (): HTMLButtonElement =>
       Array.from(document.querySelectorAll<HTMLButtonElement>(".sy-living-inspector button")).find((b) => (b.textContent ?? "").includes("Remove this card"))!;
 
-    confirm.mockReturnValueOnce(false);
     remove().click();
-    expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining("Remove card 1"));
+    expect(openDialog()!.textContent).toContain("This can't be undone.");
+    expect(Array.from(openDialog()!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Keep the Card", "Remove the Card"]);
+    expect(answerDialog(false)).toBe("Remove card 1?");
     expect(document.querySelectorAll(".sy-living-list button")).toHaveLength(5); // nothing removed
 
-    confirm.mockReturnValueOnce(true);
     remove().click();
+    answerDialog(true);
     expect(document.querySelectorAll(".sy-living-list button")).toHaveLength(4);
+    expect(native).not.toHaveBeenCalled();
   });
 
   it("TASK-28o: after '+ Add an answer' the NEW answer is selected, so typing goes into it", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     // A card with room: only two answers.
     openTeacher(sharedPrefixStack());
     // Select the existing "Wrong" answer first (the J2 repro: it stays selected).
@@ -620,10 +628,9 @@ describe("TASK-28: Teacher tab (J2 n/o, J4 j, q)", () => {
 
 describe("TASK-29n and TASK-29a: the Teacher tab follows the same rules", () => {
   function openTeacher(stack: Stack): void {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     openFile(exportedFile(stack));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
   }
 
   it("29n: '+ Add an answer' leaves the cursor in the new Answer box with its text selected", () => {
@@ -665,10 +672,6 @@ describe("TASK-29n and TASK-29a: the Teacher tab follows the same rules", () => 
 });
 
 describe("TASK-30g: the Teacher tab edits the last card's heading and message", () => {
-  beforeEach(() => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-  });
-
   it("TASK-30g: heading and message edits survive Save a Copy", async () => {
     const stack = twoCardStack();
     const end = stack.cards[1]!;
@@ -676,7 +679,7 @@ describe("TASK-30g: the Teacher tab edits the last card's heading and message", 
     const cap = captureDownloads();
     openFile(exportedFile(stack));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     const items = document.querySelectorAll<HTMLButtonElement>(".sy-living-list button");
     items[items.length - 1]!.click();
 
@@ -694,6 +697,7 @@ describe("TASK-30g: the Teacher tab edits the last card's heading and message", 
     expect(document.querySelector(".sy-living-canvas .sy-end-body")?.textContent).toBe("See you on Monday.");
 
     barButton("Save a Copy").click();
+    answerIfAsked(true);
     const saved = await blobText(cap.blobs[cap.blobs.length - 1]!);
     const m = saved.match(/<script id="stack-data"[^>]*>([\s\S]*?)<\/script>/)!;
     const reopened = JSON.parse(m[1]!) as Stack;
@@ -704,20 +708,20 @@ describe("TASK-30g: the Teacher tab edits the last card's heading and message", 
 });
 
 describe("TASK-32b: the Teacher tab's Save a Copy shows the lesson warnings too", () => {
-  it("TASK-32b: a two-answer quiz is named in the Before-you-share confirm; OK still saves", async () => {
-    const messages: string[] = [];
-    vi.spyOn(window, "confirm").mockImplementation((m?: string) => {
-      messages.push(String(m ?? ""));
-      return true;
-    });
+  it("TASK-32b: TASK-42a3: a two-answer quiz is named in the Before-you-share box; Save Anyway still saves, Go to the Card writes nothing", async () => {
     const cap = captureDownloads();
     openFile(exportedFile(twoCardStack()));
     teardown = bootLivingFile();
-    tab().click();
+    enterTeacher();
     barButton("Save a Copy").click();
-    const share = messages.find((m) => m.startsWith("Before you share:"));
-    expect(share, "the share check should list the two-answer quiz").toBeDefined();
-    expect(share).toContain("has only two answers: add one.");
+    const box = openDialog();
+    expect(box, "the share check should ask before saving").not.toBeNull();
+    expect(box!.textContent).toContain("has only two answers: add one.");
+    expect(Array.from(box!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Go to the Card", "Save Anyway"]);
+    expect(answerDialog(false)).toBe("Before you share");
+    expect(cap.blobs.length).toBe(0); // declining writes nothing
+    barButton("Save a Copy").click();
+    answerDialog(true);
     expect(cap.blobs.length).toBe(1); // a warning, not a block
   });
 });

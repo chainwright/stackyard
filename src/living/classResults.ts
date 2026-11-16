@@ -12,6 +12,7 @@
 import type { Stack } from "../shared/types.js";
 import { lessonFingerprint, lessonKey } from "../shared/resultsCode.js";
 import { addCodes, countWords, formatScore, missedLine, resultsText, statusLine, tally, type Problem } from "../shared/classResults.js";
+import { ask } from "./dialog.js";
 
 export interface ClassResultsContext {
   /** The lesson as this file opened: what the class played (design §4). */
@@ -94,11 +95,23 @@ export function renderClassResults(host: HTMLElement, ctx: ClassResultsContext):
 
   on("results-clear", () => {
     const n = ctx.getCodes().length;
-    if (n === 0 || !window.confirm(n === 1 ? "Clear the one code?" : `Clear all ${countWords(n)} codes?`)) return;
-    ctx.setCodes([]);
-    showProblems([]);
-    status.textContent = "All codes cleared.";
-    draw();
+    if (n === 0) return;
+    // TASK-42a3: the in-file box, not the browser's confirm().
+    ask(
+      {
+        heading: n === 1 ? "Clear the one code?" : `Clear all ${countWords(n)} codes?`,
+        body: "This can't be undone. You can paste the codes in again.",
+        confirmLabel: n === 1 ? "Clear the Code" : "Clear the Codes",
+        cancelLabel: n === 1 ? "Keep the Code" : "Keep the Codes",
+      },
+      (yes) => {
+        if (!yes) return;
+        ctx.setCodes([]);
+        showProblems([]);
+        status.textContent = "All codes cleared.";
+        draw();
+      },
+    );
   });
 
   on("results-copy", () => {

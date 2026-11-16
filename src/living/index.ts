@@ -3,7 +3,7 @@
 // (vite.living.config.ts) and inlined into an exported living file.
 //
 // The living file PLAYS by default (exactly as the class file), and carries a
-// small "Teacher" tab that, behind a confirm, opens an offline in-file editor
+// small "Teacher" tab that, behind an in-file "Are you the teacher?" box (TASK-42a2), opens an offline in-file editor
 // with a "Save a Copy" that writes a new self-contained living file. No server,
 // no network, ever.
 //

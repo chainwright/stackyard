@@ -15,6 +15,7 @@ import { CardList } from "../src/editor/CardList.js";
 import { EditorStore } from "../src/editor/store.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 import type { Card, Stack } from "../src/shared/types.js";
+import { enterTeacher } from "./helpers/living-dialog.js";
 
 class FakeResizeObserver { observe(): void {} unobserve(): void {} disconnect(): void {} }
 (globalThis as unknown as Record<string, unknown>)["ResizeObserver"] = FakeResizeObserver;
@@ -268,14 +269,13 @@ describe("TASK-33d4: one-switch scanning", () => {
   });
 });
 
-describe("TASK-33d3: the Teacher tab by keyboard, and Escape", () => {
+describe("TASK-33d3: TASK-42a4: the Teacher tab by keyboard, and Escape", () => {
   function open(): void {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const root = document.createElement("main");
     root.id = "player-root";
     document.body.appendChild(root);
     teardowns.push(mountLivingApp(stack(), root, { pristineHtml: "<html><body></body></html>" }));
-    document.querySelector<HTMLButtonElement>(".sy-teacher-tab")!.click();
+    enterTeacher(); // TASK-42a4: Teacher → "Are you the teacher?" → Open the Editor
   }
 
   it("TASK-33d1: the editor is a named modal dialog, and every inspector box has a label tied to it", () => {

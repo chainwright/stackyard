@@ -132,7 +132,7 @@ async function openTeacher(cdp: Cdp, url: string, width: number, height: number)
   await cdp.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 2, mobile: false });
   await cdp.send("Page.navigate", { url });
   if (!(await cdp.until(`document.querySelector(".sy-teacher-tab")`))) throw new Error("the living file did not boot");
-  await cdp.eval(`window.confirm = () => true; document.querySelector(".sy-teacher-tab").click(); 1`);
+  await cdp.eval(`document.querySelector(".sy-teacher-tab").click(); document.querySelector('.sy-dialog [data-sy-dialog="confirm"]').click(); 1`); // TASK-42a4: Open the Editor
   if (!(await cdp.until(`document.querySelector(".sy-living-canvas .sy-card")`))) throw new Error("the Teacher tab did not show a card");
   await sleep(700); // the card settles (flip-in, fit scale)
 }

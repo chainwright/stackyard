@@ -61,7 +61,24 @@ const PRELUDE = `
   }
   function q(sel) { return document.querySelector(sel); }
   function all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
-  window.confirm = function () { return true; };
+  // TASK-42a4: the living file asks in its own box; a native confirm is a failure.
+  window.confirm = function () { report("FAIL", "the living file used the browser's confirm() box, not its own dialog"); return false; };
+  // Click the in-file box's primary (yes) button, as a teacher would; returns its heading, or null when none is open.
+  function answerBox() {
+    var box = q(".sy-dialog");
+    if (!box) return null;
+    var h = box.querySelector("h2");
+    box.querySelector('[data-sy-dialog="confirm"]').click();
+    return h ? h.textContent : "";
+  }
+  // Teacher → "Are you the teacher?" → Open the Editor.
+  function enterTeacher() {
+    var tab = q(".sy-teacher-tab");
+    if (!tab) { report("FAIL", "no Teacher tab"); return false; }
+    tab.click();
+    if (answerBox() !== "Are you the teacher?") { report("FAIL", "the Teacher tab did not ask \\"Are you the teacher?\\" in the file's own box"); return false; }
+    return true;
+  }
   window.fetch = function () { report("FAIL", "the file tried to fetch"); throw new Error("network blocked"); };
   function settle() {
     if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.finish(); } catch (e) {} });
@@ -117,9 +134,7 @@ const PUPIL = `
 const TEACHER = `
   function run() {
     try {
-      var tab = q(".sy-teacher-tab");
-      if (!tab) { report("FAIL", "no Teacher tab"); return; }
-      tab.click();
+      if (!enterTeacher()) return;
       var toggle = q("[data-testid='class-results-toggle']");
       if (!toggle) { report("FAIL", "no Class Results button in the Teacher tab"); return; }
       toggle.click();
@@ -145,6 +160,7 @@ const TEACHER = `
       var save = all(".sy-living-bar button").filter(function (b) { return b.textContent === "Save a Copy"; })[0];
       if (!save) { report("FAIL", "no Save a Copy button"); return; }
       save.click();
+      answerBox(); // "Before you share" appears only when a card needs a look: Save Anyway
       facts.toast = (q(".sy-living-toast") || {}).textContent || "";
       if (!blob) { report("FAIL", "Save a Copy produced no file"); return; }
       blob.text().then(function (html) {
@@ -162,7 +178,7 @@ const TEACHER = `
 const REOPEN = `
   function run() {
     try {
-      q(".sy-teacher-tab").click();
+      if (!enterTeacher()) return;
       q("[data-testid='class-results-toggle']").click();
       facts.status = q("[data-testid='results-status']").textContent;
       facts.rows = all("[data-testid='results-questions'] tbody tr").map(function (tr) {

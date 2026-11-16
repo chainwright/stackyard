@@ -808,3 +808,41 @@ Fact fixes from judge round r7 (the hound seat). The coordinator checked each fi
   - traced ids 196 → 206 in the write-up, JUDGES.md and EVIDENCE.md.
 
   The CLAIMS.md line numbers needed no change.
+
+## 16 Nov 2026: judge round r7 product and text fixes (TASK-42)
+
+Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behind the living file's Teacher tab as the one unpolished state. Spec: maker `tasks.md` Phase 27 (TASK-42a, sub-ids a1–a7). TASK-42b–d follow in later rounds.
+- **a. An in-file "are you sure?" box instead of `confirm()`.**
+  - **What changed.**
+    - The new `src/living/dialog.ts` (`ask`) has no dependency and no network. It is a named modal dialog: focus moves in and goes back to the opener, Tab is trapped, and Escape, the quiet button or the backdrop decline. Enter presses the focused button, and keys don't reach the lesson behind it.
+    - Its styles are the `.sy-dialog*` block in `src/living/styles.ts`: ink on paper, a navy primary button, no stamp red, no blur, 44 px buttons, 18 px text, fits 390 px, and no fade under reduced motion.
+    - The living file's four native confirms all use it, so no `confirm(` is left under `src/living`:
+      - the Teacher tab's guard;
+      - Class Results' Clear;
+      - the editor's Remove this card;
+      - Save a Copy's "Before you share". The brief named three confirms; this fourth was also there.
+    - The Teacher tab's guard is "Are you the teacher?" / "Editing this lesson is for the teacher." / **Open the Editor** · **Back to the Lesson**. It is still a gentle guard, not security, and there is no PIN.
+    - JUDGES.md step 8 names the box and the button to press.
+    - `.kiro/specs/class-results/design.md` and `.kiro/specs/exporter/tasks.md` keep their history, plus one dated note each.
+    - `docs/accessibility/README.md` describes the new keyboard path.
+  - **Tests.**
+    - New: `tests/living-dialog.dom.test.ts` (TASK-42a, a1–a7) and `tests/helpers/living-dialog.ts`, which clicks the box like a teacher.
+    - Changed to the new behaviour, with TASK-42 ids in their titles:
+      - `tests/living.test.ts`: the Teacher guard, Remove card and Before you share.
+      - `tests/class-results-panel.dom.test.ts`: Clear Codes.
+      - `tests/a11y-player.dom.test.ts`: the keyboard suite.
+    - The `vi.spyOn(window, "confirm").mockReturnValue(true)` lines that no longer did anything are gone.
+  - **Gates.** These Chrome gates now click the box's button instead of answering `window.confirm`: `check-living-file`, `check-class-results`, `check-living-mobile`, `check-a11y`, `check-sample-csp` and `make-readme-media`. The two in-page drivers (`check-living-file`, `check-class-results`) now report FAIL if the file ever calls the native confirm again. `check-a11y`'s keyboard path answers "Are you the teacher?" with Tab and Enter and checks the focus ring on **Open the Editor**.
+  - **Not done.**
+    - The open box was not added to the axe audit as a page. That would change the "16 pages" claim and the checked page list in `scripts/claims-lib.ts`, so the count stays 16.
+    - No mutant was added, so `scripts/mutation-check.ts` and its logged run (118 of 118) are unchanged. No new mutation log is needed.
+    - No mutant's `find` text was touched: the Save a Copy `saveCopy(...)` line and the phone `@media (max-width: 699px)` rule are as they were.
+  - **Honest notes.**
+    - Order: I began the dialog code (dialog.ts and the four call sites) before writing Phase 27 in `tasks.md`. The spec was written straight after, before the tests, gates and docs.
+    - The sub-ids were first written as bold bullets, which check:trace does not count, so they became `- [x] TASK-42aN:` lines.
+    - The living file grew from 210,983 B to 214,996 B. That is still inside the ±3 % of "about 211 KB", so the stated size and the floppy count (6) are unchanged. The play-only class file (149 KB) does not carry the living code.
+    - One `npm test` run, after pre-submit had passed, reported 1 failure out of 1,530. I did not capture which test. The next five full runs and a second pre-submit were all green, so it looks intermittent, but its cause is unknown.
+  - **Shell edits.** None to hand-written repo files; every edit went through the file tools. These generated files were rewritten by the repo's own scripts:
+    - `npm run check:claims:fix` moved the counts: tests 1514 → 1530 in the README, the write-up, JUDGES.md and EVIDENCE.md, and traced ids 207 → 215 in the write-up, JUDGES.md and EVIDENCE.md.
+    - `npm run samples` regenerated the three `samples/*.html`. They carry the living bundle, so `check-samples` reported them stale.
+    - `npm run bench` replayed `bench/cache` offline, with no model call, and rewrote the 54 `bench/files/*.html`, `bench/results.json` and `bench/RESULTS.md`, which `bench --check` reported stale. The headline numbers are unchanged (54 of 55 on the first try, 43 with no warnings, 54 files). Only the per-file sizes moved: "205 KB to 209 KB" became "209 KB to 212 KB" in `bench/RESULTS.md`, and no doc quotes that range.

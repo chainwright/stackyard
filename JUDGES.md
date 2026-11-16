@@ -20,7 +20,7 @@ If the model is busy or the day's model calls are used up, the app hands you a r
 
 ## 1:30–2:30 · The file edits itself and collects class results
 7. Open the ready-made lesson file (link above). Play it to the last card and copy the results code.
-8. Press **Teacher** in the corner, then **Class Results**. Paste the code and press **Add Codes**. **Look for:** a row per question (right, wrong, not reached), the middle score and the questions to revisit. The code is typed in, so nothing is uploaded.
+8. Press **Teacher** in the corner. An "Are you the teacher?" box opens in the file (a gentle guard for the class, not a password): press **Open the Editor**. Then press **Class Results**, paste the code and press **Add Codes**. **Look for:** a row per question (right, wrong, not reached), the middle score and the questions to revisit. The code is typed in, so nothing is uploaded.
 9. Still in the Teacher tab, change a word on a card and press **Save a Copy**. **Look for:** a new file, `<title> (copy).html`, that plays and can edit itself too.
 
 ## 2:30–3:00 · How Kiro built it
@@ -32,8 +32,8 @@ Node 24 or later:
 ```sh
 git clone https://github.com/chainwright/stackyard && cd stackyard
 npm ci
-npm test               # 1,514 tests pass
-npm run check:trace    # 207 of 207 lettered task ids traced
+npm test               # 1,530 tests pass
+npm run check:trace    # 215 of 215 lettered task ids traced
 npm run check:claims   # every number in the README, the write-up and EVIDENCE.md, against the code
 ```
 `npm run pre-submit` runs every gate. The browser gates need a local Chrome or Chromium; without one they say so and skip.

@@ -371,6 +371,9 @@ table (caption "Each pupil") Pupil | Score | Q1 … Qn (✓ / ✗ / –, with sr
   again.
 - **Clear Codes.** It asks "Clear all N codes?" (`confirm`), then empties the
   list.
+  *(16 Nov 2026, TASK-42a3: the question is now asked in the living file's own
+  in-file box, with the buttons "Clear the Codes" and "Keep the Codes", not the
+  browser's `confirm`.)*
 - **Copy as Text.**
   - It tries `navigator.clipboard.writeText`. `file:` counts as a secure
     context in Chrome, Edge and Firefox.

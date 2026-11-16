@@ -108,7 +108,18 @@ const PRELUDE = `
       setTimeout(tick, 100);
     })();
   }
-  window.confirm = function () { return true; };
+  // TASK-42a4: the living file asks in its own box; a native confirm is a failure.
+  window.confirm = function () { report("FAIL", "the living file used the browser's confirm() box, not its own dialog"); return false; };
+  // Click the in-file box's primary (yes) or quiet (no) button, as a teacher would. Returns its heading, or null when none is open.
+  function answerBox(yes) {
+    var box = q(".sy-dialog");
+    if (!box) return null;
+    var h = box.querySelector("h2");
+    var b = box.querySelector('[data-sy-dialog="' + (yes ? "confirm" : "cancel") + '"]');
+    if (!b) return null;
+    b.click();
+    return h ? h.textContent : "";
+  }
   window.fetch = function () {
     report("FAIL", "the living file tried to fetch - it must be fully offline");
     throw new Error("network blocked");
@@ -145,6 +156,9 @@ const PRELUDE = `
     var tab = q(".sy-teacher-tab");
     if (!tab) return false;
     tab.click();
+    // TASK-42a4: "Are you the teacher?" → Open the Editor.
+    var asked = answerBox(true);
+    if (asked !== "Are you the teacher?") { report("FAIL", "the Teacher tab did not ask \\"Are you the teacher?\\" in the file's own box"); return false; }
     return !!q(".sy-living-overlay");
   }
   function barButton(text) {
@@ -160,6 +174,7 @@ const PRELUDE = `
     if (!save) { report("FAIL", "no Save a Copy button in the editor"); return; }
     lastBlob = null;
     save.click();
+    answerBox(true); // "Before you share" appears only when a card needs a look: Save Anyway
     if (!lastBlob) { report("FAIL", "Save a Copy produced no file"); return; }
     lastBlob.text().then(function (html) {
       if (html.indexOf("stack-data") < 0 || html.length < 1000) {

@@ -2335,3 +2335,29 @@ This round changes docs, docs tests and one size test only. Nothing under `src/`
 - The blog and social drafts are edited and carry "206".
 - `tests/round13-docs.test.ts` checks it all, and the gates pass.
 - TASK-41k is done too: the git steering test skips on a shallow clone (as in CI) and runs on a full one.
+
+## Phase 27 - TASK-42: judge round r7 product and text fixes (16 Nov)
+
+Source: judge round r7 (P2-8). Every seat named the browser's `window.confirm("Are you the teacher? Editing is for the teacher.")` in the living file's Teacher tab as the one visibly unpolished state, and JUDGES.md step 8 did not warn about it. The living file had three more native confirms: Class Results' "Clear all … codes?", the editor's "Remove card N…?" and Save a Copy's "Before you share". TASK-42b, c and d follow in later rounds.
+
+### TASK-42a: an in-file "are you sure?" box instead of the browser's confirm  *(TASK-42 a)*
+  - **Bug.** The living file asked its four yes / no questions with `window.confirm()`. That is a grey browser box, outside the Stamp Pad look, with "OK" and "Cancel" as the only words, and it looks different in every browser.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-42a1: **the dialog helper.**
+      - `src/living/dialog.ts` (`ask`), with no dependency and no network, styled `.sy-dialog*` in `src/living/styles.ts`.
+      - Ink on paper: a navy primary button, a paper quiet button, no stamp red and no blur.
+      - Accessibility: `role="dialog"` and `aria-modal="true"`, named by its heading. Focus moves in on open and back to the opener on close, and Tab and Shift+Tab stay inside. Escape, the quiet button and a click on the backdrop all decline, and Enter presses the focused button. While it is open, keys do not reach the lesson or the editor behind it.
+      - Size and motion: buttons at least 44 px, text at least 18 px, a 390 px phone fits with no sideways scroll, and the fade-in is off under `prefers-reduced-motion`.
+      - Focus starts on the quiet button, so a stray Enter declines.
+    - [x] TASK-42a2: **the Teacher tab's guard.** The heading is "Are you the teacher?", with the body "Editing this lesson is for the teacher." The buttons are **Open the Editor** (primary) and **Back to the Lesson** (quiet). It is a gentle guard so the class can't stumble into editing. It is not security, and there is no PIN.
+    - [x] TASK-42a3: **the other confirms use the same box.** No `confirm(` is left under `src/living`. The wording:
+      - Class Results: "Clear all three codes?" or "Clear the one code?", with the body "This can't be undone. You can paste the codes in again." The buttons are **Clear the Codes** and **Keep the Codes** (or **Clear the Code** and **Keep the Code**).
+      - Remove a card: "Remove card N?", with the card's words, "This can't be undone." The buttons are **Remove the Card** and **Keep the Card**.
+      - Save a Copy: "Before you share", with "Some cards need a look:" and the list. The buttons are **Save Anyway** and **Go to the Card**.
+    - [x] TASK-42a4: **the tests and the Chrome gates click the box's button**, the way a teacher would, instead of answering `window.confirm`. This covers `check-living-file`, `check-class-results`, `check-living-mobile`, `check-a11y`, `check-sample-csp` and `make-readme-media`. The a11y audit's page count (16) is unchanged: the open box is not added as an audited page.
+    - [x] TASK-42a5: **jsdom tests for the box.** Declining keeps Play and returns focus to the Teacher tab; accepting opens the editor; Escape declines; Tab is trapped; the heading names the dialog. No mutant is added.
+    - [x] TASK-42a6: **JUDGES.md step 8** says that pressing **Teacher** shows an "Are you the teacher?" box and that the judge presses **Open the Editor**.
+    - [x] TASK-42a7: **history notes.** `.kiro/specs/class-results/design.md` and `.kiro/specs/exporter/tasks.md` keep their text, plus one dated line saying the confirm is now the in-file box.
+  - **Acceptance criteria.** Each sub-id is named in a test title. A test fails if `confirm(` appears in `src/living`. `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0, and the living-file, class-results, living-mobile and a11y gates pass by clicking the box.
+
+**Status (16 Nov).** TASK-42a (a1–a7) is done. The living file asks its four yes / no questions in its own box, no `confirm(` is left under `src/living`, and the gates click the box. `tests/living-dialog.dom.test.ts` covers it, and the gates pass.

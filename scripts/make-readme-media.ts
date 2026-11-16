@@ -252,8 +252,10 @@ async function main(): Promise<void> {
     // 7. Teacher → a TRUE edit inside the file (TASK-30b): the tile already marked
     //    right keeps its place and gets a more exact label. We never tick another
     //    answer as right — the demo must not stamp a wrong fact.
-    await cdp.eval(`window.confirm = () => true`);
+    // TASK-42a4: Teacher → "Are you the teacher?" → Open the Editor, clicked.
     await cdp.eval(`document.querySelector(".sy-teacher-tab").click()`);
+    await cdp.until(`document.querySelector(".sy-dialog")`, 10000);
+    await cdp.eval(`document.querySelector('.sy-dialog [data-sy-dialog="confirm"]').click()`);
     await cdp.until(`document.querySelector(".sy-living-canvas .sy-tile")`, 10000);
     await sleep(500);
     const newRight = await cdp.eval<string>(`(() => {
@@ -292,6 +294,7 @@ async function main(): Promise<void> {
     await cdp.eval(`[...document.querySelectorAll("button")].find((b) => /Back to editing/i.test(b.textContent))?.click()`);
     await sleep(500);
     await cdp.eval(`[...document.querySelectorAll(".sy-living-bar button")].find((b) => /Save a Copy/i.test(b.textContent)).click()`);
+    await cdp.eval(`document.querySelector('.sy-dialog [data-sy-dialog="confirm"]')?.click()`); // TASK-42a4: "Before you share", if it asks
     const copy = await waitForFile(downloads, (f) => f.includes("(copy"));
     await cdp.goto(`file://${path.join(downloads, copy)}`);
     await cdp.until(`document.querySelector(".sy-card .sy-element")`, 10000);

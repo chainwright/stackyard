@@ -15,8 +15,8 @@
     "allReachable": 54,
     "endReachable": 54,
     "fkGradeMedian": 2.2,
-    "fileBytesMin": 209863,
-    "fileBytesMax": 213547,
+    "fileBytesMin": 213876,
+    "fileBytesMax": 217560,
     "firstCardMs": {
       "p50": 1413,
       "p90": 1988
@@ -61,7 +61,7 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 212769,
+      "fileBytes": 216782,
       "file": "files/y3-plants-1.html"
     },
     {
@@ -95,7 +95,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211419,
+      "fileBytes": 215432,
       "file": "files/y3-plants-2.html"
     },
     {
@@ -129,7 +129,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211845,
+      "fileBytes": 215858,
       "file": "files/y3-plants-3.html"
     },
     {
@@ -165,7 +165,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211539,
+      "fileBytes": 215552,
       "file": "files/y3-plants-4.html"
     },
     {
@@ -199,7 +199,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 210848,
+      "fileBytes": 214861,
       "file": "files/y3-animals-1.html"
     },
     {
@@ -233,7 +233,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211325,
+      "fileBytes": 215338,
       "file": "files/y3-animals-2.html"
     },
     {
@@ -267,7 +267,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211306,
+      "fileBytes": 215319,
       "file": "files/y3-rocks-1.html"
     },
     {
@@ -301,7 +301,7 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 212950,
+      "fileBytes": 216963,
       "file": "files/y3-rocks-2.html"
     },
     {
@@ -337,7 +337,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 210922,
+      "fileBytes": 214935,
       "file": "files/y3-rocks-3.html"
     },
     {
@@ -371,7 +371,7 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 212869,
+      "fileBytes": 216882,
       "file": "files/y3-light-1.html"
     },
     {
@@ -405,7 +405,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211063,
+      "fileBytes": 215076,
       "file": "files/y3-light-2.html"
     },
     {
@@ -441,7 +441,7 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 212474,
+      "fileBytes": 216487,
       "file": "files/y3-light-3.html"
     },
     {
@@ -475,7 +475,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211017,
+      "fileBytes": 215030,
       "file": "files/y3-light-4.html"
     },
     {
@@ -509,7 +509,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 212154,
+      "fileBytes": 216167,
       "file": "files/y3-light-5.html"
     },
     {
@@ -543,7 +543,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 210837,
+      "fileBytes": 214850,
       "file": "files/y3-forces-magnets-1.html"
     },
     {
@@ -577,7 +577,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211454,
+      "fileBytes": 215467,
       "file": "files/y3-forces-magnets-2.html"
     },
     {
@@ -611,7 +611,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211829,
+      "fileBytes": 215842,
       "file": "files/y3-forces-magnets-3.html"
     },
     {
@@ -645,7 +645,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 212822,
+      "fileBytes": 216835,
       "file": "files/y3-forces-magnets-4.html"
     },
     {
@@ -679,7 +679,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211085,
+      "fileBytes": 215098,
       "file": "files/y3-forces-magnets-5.html"
     },
     {
@@ -713,7 +713,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211977,
+      "fileBytes": 215990,
       "file": "files/y3-forces-magnets-6.html"
     },
     {
@@ -747,7 +747,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 212060,
+      "fileBytes": 216073,
       "file": "files/y4-living-things-1.html"
     },
     {
@@ -781,7 +781,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211412,
+      "fileBytes": 215425,
       "file": "files/y4-living-things-2.html"
     },
     {
@@ -815,7 +815,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211856,
+      "fileBytes": 215869,
       "file": "files/y4-living-things-3.html"
     },
     {
@@ -851,7 +851,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211357,
+      "fileBytes": 215370,
       "file": "files/y4-animals-1.html"
     },
     {
@@ -885,7 +885,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211596,
+      "fileBytes": 215609,
       "file": "files/y4-animals-2.html"
     },
     {
@@ -919,7 +919,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211250,
+      "fileBytes": 215263,
       "file": "files/y4-animals-3.html"
     },
     {
@@ -953,7 +953,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211278,
+      "fileBytes": 215291,
       "file": "files/y4-states-of-matter-1.html"
     },
     {
@@ -987,7 +987,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 210863,
+      "fileBytes": 214876,
       "file": "files/y4-states-of-matter-2.html"
     },
     {
@@ -1025,7 +1025,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 1,
-      "fileBytes": 211436,
+      "fileBytes": 215449,
       "file": "files/y4-states-of-matter-3.html"
     },
     {
@@ -1059,7 +1059,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211881,
+      "fileBytes": 215894,
       "file": "files/y4-sound-1.html"
     },
     {
@@ -1093,7 +1093,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211139,
+      "fileBytes": 215152,
       "file": "files/y4-sound-2.html"
     },
     {
@@ -1127,7 +1127,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211485,
+      "fileBytes": 215498,
       "file": "files/y4-sound-3.html"
     },
     {
@@ -1161,7 +1161,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211791,
+      "fileBytes": 215804,
       "file": "files/y4-sound-4.html"
     },
     {
@@ -1195,7 +1195,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211471,
+      "fileBytes": 215484,
       "file": "files/y4-sound-5.html"
     },
     {
@@ -1231,7 +1231,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211319,
+      "fileBytes": 215332,
       "file": "files/y4-electricity-1.html"
     },
     {
@@ -1296,7 +1296,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211595,
+      "fileBytes": 215608,
       "file": "files/y4-electricity-3.html"
     },
     {
@@ -1332,7 +1332,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211489,
+      "fileBytes": 215502,
       "file": "files/y4-electricity-4.html"
     },
     {
@@ -1366,7 +1366,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 211775,
+      "fileBytes": 215788,
       "file": "files/y4-electricity-5.html"
     },
     {
@@ -1400,7 +1400,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211397,
+      "fileBytes": 215410,
       "file": "files/y5-living-things-1.html"
     },
     {
@@ -1434,7 +1434,7 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 213373,
+      "fileBytes": 217386,
       "file": "files/y5-living-things-2.html"
     },
     {
@@ -1470,7 +1470,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211125,
+      "fileBytes": 215138,
       "file": "files/y5-animals-1.html"
     },
     {
@@ -1504,7 +1504,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 210724,
+      "fileBytes": 214737,
       "file": "files/y5-materials-1.html"
     },
     {
@@ -1538,7 +1538,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211621,
+      "fileBytes": 215634,
       "file": "files/y5-materials-2.html"
     },
     {
@@ -1572,7 +1572,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211386,
+      "fileBytes": 215399,
       "file": "files/y5-materials-3.html"
     },
     {
@@ -1606,7 +1606,7 @@
       ],
       "pictures": 4,
       "removedRepeats": 0,
-      "fileBytes": 213547,
+      "fileBytes": 217560,
       "file": "files/y5-materials-4.html"
     },
     {
@@ -1640,7 +1640,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211739,
+      "fileBytes": 215752,
       "file": "files/y5-materials-5.html"
     },
     {
@@ -1674,7 +1674,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211339,
+      "fileBytes": 215352,
       "file": "files/y5-materials-6.html"
     },
     {
@@ -1707,7 +1707,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 209863,
+      "fileBytes": 213876,
       "file": "files/y5-earth-space-1.html"
     },
     {
@@ -1741,7 +1741,7 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 211591,
+      "fileBytes": 215604,
       "file": "files/y5-earth-space-2.html"
     },
     {
@@ -1777,7 +1777,7 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 212805,
+      "fileBytes": 216818,
       "file": "files/y5-earth-space-3.html"
     },
     {
@@ -1811,7 +1811,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 212120,
+      "fileBytes": 216133,
       "file": "files/y5-earth-space-4.html"
     },
     {
@@ -1845,7 +1845,7 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 212139,
+      "fileBytes": 216152,
       "file": "files/y5-forces-1.html"
     },
     {
@@ -1879,7 +1879,7 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 212017,
+      "fileBytes": 216030,
       "file": "files/y5-forces-2.html"
     },
     {
@@ -1914,7 +1914,7 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 211583,
+      "fileBytes": 215596,
       "file": "files/y5-forces-3.html"
     }
   ]

@@ -10,6 +10,7 @@ import { encodeCode, lessonKey, quizCards, type Result } from "../src/shared/res
 import { resultsText, tally } from "../src/shared/classResults.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
 import type { Stack } from "../src/shared/types.js";
+import { answerDialog, answerIfAsked, enterTeacher, openDialog } from "./helpers/living-dialog.js";
 
 class FakeResizeObserver {
   observe(): void {}
@@ -68,10 +69,9 @@ function barButton(text: string): HTMLButtonElement {
 
 /** Open the file, Teacher → Class Results. */
 function openPanel(html = exportedFile(lesson)): void {
-  vi.spyOn(window, "confirm").mockReturnValue(true);
   openFile(html);
   teardown = bootLivingFile();
-  $<HTMLButtonElement>(".sy-teacher-tab")!.click();
+  enterTeacher(); // TASK-42a4: Teacher → "Are you the teacher?" → Open the Editor
   tid("class-results-toggle").click();
 }
 function paste(text: string): void {
@@ -129,7 +129,7 @@ describe("TASK-34b5: the Class results panel in the Teacher tab", () => {
     expect(tid("results-summary").textContent).toContain("1 pupil ·");
   });
 
-  it("TASK-34b5: Copy as Text copies the plain-text table; Clear Codes asks first, then empties it", async () => {
+  it("TASK-34b5: TASK-42a3: Copy as Text copies the plain-text table; Clear Codes asks first in the file's own box, then empties it", async () => {
     const writes: string[] = [];
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: (t: string) => (writes.push(t), Promise.resolve()) } });
     openPanel();
@@ -139,12 +139,15 @@ describe("TASK-34b5: the Class results panel in the Teacher tab", () => {
     expect(writes).toEqual([resultsText(tally(lesson, PUPILS), lesson.title)]);
     await new Promise((r) => setTimeout(r, 0));
     expect($(".sy-living-toast")!.textContent).toBe("Copied the results as text.");
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false);
+    // TASK-42a3: Clear asks in the file's own box; Keep the Codes keeps them.
+    const native = vi.spyOn(window, "confirm");
     tid("results-clear").click();
-    expect(confirm).toHaveBeenLastCalledWith("Clear all three codes?");
+    expect(Array.from(openDialog()!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Keep the Codes", "Clear the Codes"]);
+    expect(answerDialog(false)).toBe("Clear all three codes?");
     expect(tid("results-summary")).not.toBeNull();
-    confirm.mockReturnValueOnce(true);
     tid("results-clear").click();
+    answerDialog(true);
+    expect(native).not.toHaveBeenCalled();
     expect(tid("results-status").textContent).toBe("All codes cleared.");
     expect($(".sy-results-body")!.textContent).toBe("No codes yet.");
     delete (navigator as unknown as Record<string, unknown>)["clipboard"];
@@ -200,7 +203,7 @@ describe("TASK-34b6: codes are kept only in a copy the teacher saves", () => {
     expect(cells(2)).toEqual([1, 2, 0]);
   });
 
-  it("TASK-34b6: no codes, no block — copies stay byte-identical; Clear Codes removes an old block", async () => {
+  it("TASK-34b6: TASK-42a4: no codes, no block — copies stay byte-identical; Clear Codes removes an old block", async () => {
     const blobs = captureDownloads();
     openPanel();
     barButton("Save a Copy").click();
@@ -209,9 +212,10 @@ describe("TASK-34b6: codes are kept only in a copy the teacher saves", () => {
     expect($(".sy-living-toast")!.textContent).toMatch(/^Saved a copy: /);
     teardown?.();
     openPanel(withClassResults(a, PUPILS));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     tid("results-clear").click();
+    answerDialog(true);
     barButton("Save a Copy").click();
+    answerIfAsked(true);
     const b = await blobText(blobs[1]!);
     expect(b).not.toContain("class-results");
     expect(withCopyCount(b, 0)).toBe(withCopyCount(a, 0));

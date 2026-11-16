@@ -24,9 +24,11 @@
 //   npm run build:maker && npm run build:player && npm run build:living && node --import tsx/esm scripts/check-a11y.ts
 //   A11Y_ONLY=axe|keyboard|scan   run one part
 //
-// Native confirm() dialogs are browser UI that is keyboard-operable on its own;
-// the harness answers them (window.confirm = () => true) so the run never
-// blocks. Skips (exit 0) when no Chrome is found, like the other browser gates.
+// TASK-42a4: the living file no longer uses native confirm() dialogs: it asks in
+// its own in-file box, which the harness answers by clicking (and, on the
+// keyboard path, by Tab and Enter). The open box is not one of the audited
+// pages, so the page count is unchanged. Skips (exit 0) when no Chrome is found,
+// like the other browser gates.
 
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -81,6 +83,12 @@ async function audit(cdp: Cdp, page: string, url: string): Promise<PageReport> {
 }
 
 const settle = `(() => { if (document.getAnimations) document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} }); return true; })()`;
+
+/**
+ * TASK-42a4: Teacher → "Are you the teacher?" → Open the Editor, clicked the way
+ * a teacher clicks it (the living file has no native confirm() to answer any more).
+ */
+const ENTER_TEACHER = `document.querySelector(".sy-teacher-tab").click(); document.querySelector('.sy-dialog [data-sy-dialog="confirm"]').click()`;
 
 async function open(cdp: Cdp, url: string, ready: string): Promise<boolean> {
   await cdp.send("Page.navigate", { url });
@@ -140,7 +148,7 @@ async function runAxe(cdp: Cdp, base: string, tmp: string, problems: string[]): 
     const url = `${base}samples/${name}`;
     await add(`Sample ${name}: Play`, url, `document.querySelector("#player-root .sy-card")`);
     await add(`Sample ${name}: Teacher tab`, url, `document.querySelector(".sy-teacher-tab")`, async () => {
-      await cdp.eval(`window.confirm = () => true; document.querySelector(".sy-teacher-tab").click(); true`);
+      await cdp.eval(`${ENTER_TEACHER}; true`);
       if (!(await cdp.until(`document.querySelector(".sy-living-overlay .sy-living-inspector")`))) problems.push(`${name}: the Teacher tab did not open`);
       await sleep(300);
       await cdp.eval(settle);
@@ -177,7 +185,7 @@ async function runAxe(cdp: Cdp, base: string, tmp: string, problems: string[]): 
     "NOT-A-CODE",
   ].join("\\n");
   await add("Sample vikings-in-ireland.html: Class results panel", vikingsUrl, `document.querySelector(".sy-teacher-tab")`, async () => {
-    await cdp.eval(`window.confirm = () => true; document.querySelector(".sy-teacher-tab").click(); true`);
+    await cdp.eval(`${ENTER_TEACHER}; true`);
     if (!(await cdp.until(`document.querySelector("[data-testid='class-results-toggle']")`))) problems.push("TASK-34b7: no Class Results button in the Teacher tab");
     await cdp.eval(`(() => {
       document.querySelector("[data-testid='class-results-toggle']").click();
@@ -304,8 +312,8 @@ async function runKeyboard(cdp: Cdp, base: string, problems: string[]): Promise<
   } else problems.push(`keyboard: did not reach the end card in ${steps} steps`);
   console.log(`check-a11y: ${score ? "OK " : "…  "} — keyboard: Vikings played to "${score}" in ${steps} cards with Tab / Enter / Space only`);
 
-  // The Teacher tab, by keyboard: Tab to it, Enter, edit a question, Save a Copy.
-  await cdp.eval(`window.confirm = () => true;
+  // The Teacher tab, by keyboard: Tab to it, Enter, answer "Are you the teacher?", edit a question, Save a Copy.
+  await cdp.eval(`window.confirm = () => { window.__syNativeConfirm = true; return false; };
     window.__syCopy = null;
     URL.createObjectURL = function (b) { b.text().then((t) => { window.__syCopy = t; }); return "blob:a11y"; };
     URL.revokeObjectURL = function () {};
@@ -321,8 +329,22 @@ async function runKeyboard(cdp: Cdp, base: string, problems: string[]): Promise<
     return { steps, score, ring, saved: false };
   }
   await cdp.press("Enter");
+  // TASK-42a4: "Are you the teacher?" opens in the file's own box with focus inside;
+  // Tab to Open the Editor and press Enter, as a keyboard user would.
+  if (!(await cdp.until(`document.querySelector(".sy-dialog") && document.querySelector(".sy-dialog").contains(document.activeElement)`, 3000))) {
+    problems.push("keyboard: Enter on the Teacher tab did not open the \"Are you the teacher?\" box with focus inside it");
+    return { steps, score, ring, saved: false };
+  }
+  await cdp.press("Tab");
+  const gateBtn = await focused(cdp);
+  if (gateBtn === null || gateBtn.text !== "Open the Editor") {
+    problems.push(`keyboard: Tab in the "Are you the teacher?" box did not reach Open the Editor (got "${gateBtn?.text ?? "nothing"}")`);
+    return { steps, score, ring, saved: false };
+  }
+  if (!ringOk(gateBtn)) problems.push(`keyboard: Open the Editor has no 3px ink focus ring (${gateBtn.outline})`);
+  await cdp.press("Enter");
   if (!(await cdp.until(`document.querySelector(".sy-living-overlay")`, 5000))) {
-    problems.push("keyboard: Enter on the Teacher tab did not open the editor");
+    problems.push("keyboard: Enter on Open the Editor did not open the editor");
     return { steps, score, ring, saved: false };
   }
   // Tab to the question in the preview and press Enter: the inspector's text box takes focus.
@@ -354,6 +376,13 @@ async function runKeyboard(cdp: Cdp, base: string, problems: string[]): Promise<
     return { steps, score, ring, saved: false };
   }
   await cdp.press("Enter");
+  // TASK-42a4: if "Before you share" asks, Tab to Save Anyway and press Enter.
+  if (await cdp.until(`!!document.querySelector(".sy-dialog")`, 800)) {
+    await cdp.press("Tab");
+    const f = await focused(cdp);
+    if (f && f.text === "Save Anyway") await cdp.press("Enter");
+    else problems.push(`keyboard: Tab in "Before you share" did not reach Save Anyway (got "${f?.text ?? "nothing"}")`);
+  }
   const got = await cdp.until(`typeof window.__syCopy === "string"`, 5000);
   const copy = got ? await cdp.eval<string>(`window.__syCopy`) : "";
   const saved = copy.includes(NEW.trim()) && copy.includes('id="stack-data"');

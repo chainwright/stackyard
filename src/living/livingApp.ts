@@ -1,6 +1,6 @@
 // src/living/livingApp.ts
 // The living-file app controller (TASK-24): Play by default, a Teacher tab that
-// (behind a confirm) opens the offline editor overlay, and Save a Copy gated on
+// (behind an in-file "Are you the teacher?" box, TASK-42a2) opens the offline editor overlay, and Save a Copy gated on
 // the "before you share" reachability check. No network, no server.
 //
 // Play is always the default each time the file opens — the Teacher state is
@@ -17,6 +17,18 @@ import { renderClassResults } from "./classResults.js";
 import { readClassResults } from "../shared/escapeStackJson.js";
 import { decodeCode, lessonFingerprint, lessonKey } from "../shared/resultsCode.js";
 import { countWords } from "../shared/classResults.js";
+import { ask, closeDialog } from "./dialog.js";
+
+/**
+ * TASK-42a2: the words of the Teacher tab's guard. A gentle guard so the class
+ * can't stumble into editing; it is not security (no PIN).
+ */
+export const TEACHER_GATE = {
+  heading: "Are you the teacher?",
+  body: "Editing this lesson is for the teacher.",
+  confirm: "Open the Editor",
+  cancel: "Back to the Lesson",
+} as const;
 
 export interface LivingAppOptions {
   /**
@@ -77,9 +89,23 @@ export function mountLivingApp(
   }
 
   function openEditor(): void {
-    // A gentle guard so the class can't stumble in — not security.
-    const ok = window.confirm("Are you the teacher? Editing is for the teacher.");
-    if (!ok) return;
+    // A gentle guard so the class can't stumble in — not security (TASK-42a2:
+    // the in-file box, not the browser's confirm()).
+    ask(
+      {
+        heading: TEACHER_GATE.heading,
+        body: TEACHER_GATE.body,
+        confirmLabel: TEACHER_GATE.confirm,
+        cancelLabel: TEACHER_GATE.cancel,
+        opener: teacherTab,
+      },
+      (yes) => {
+        if (yes) showEditor();
+      },
+    );
+  }
+
+  function showEditor(): void {
     stopPlay();
     teacherTab.style.display = "none";
 
@@ -184,16 +210,31 @@ export function mountLivingApp(
     // teacher to the first card with a problem.
     const check = beforeYouShare(edited);
     if (!check.ok) {
-      const lines = check.lines;
-      const proceed = window.confirm(
-        `Before you share:\n• ${lines.join("\n• ")}\n\nPress OK to save the copy anyway, or Cancel to go to the card.`,
+      // TASK-42a3: the in-file box; "Save Anyway" saves, "Go to the Card" writes nothing.
+      ask(
+        {
+          heading: "Before you share",
+          body: "Some cards need a look:",
+          list: check.lines,
+          confirmLabel: "Save Anyway",
+          cancelLabel: "Go to the Card",
+        },
+        (proceed) => {
+          if (!editor) return;
+          if (!proceed) {
+            const first = check.first;
+            if (first) editor.selectCard(first.id);
+            return;
+          }
+          writeCopy(edited);
+        },
       );
-      if (!proceed) {
-        const first = check.first;
-        if (first) editor.selectCard(first.id);
-        return;
-      }
+      return;
     }
+    writeCopy(edited);
+  }
+
+  function writeCopy(edited: Stack): void {
     // TASK-34b6: the copy keeps the codes only while its quiz content is the
     // lesson the codes were read against; otherwise they would all read as
     // "from a different lesson" (design §5).
@@ -227,6 +268,7 @@ export function mountLivingApp(
   startPlay();
 
   return function teardown(): void {
+    closeDialog();
     stopPlay();
     closeOverlay();
     teacherTab.remove();
