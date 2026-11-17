@@ -49,13 +49,13 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C41 | "we have not found one that turns a teacher's sentence into a checked lesson file that plays and edits itself offline" | README.md:145 | PARTIAL | Missing: a search result, not proof that none exists. |
 | C42 | "round-tripped losslessly, checked by a 1,000-run property test" | README.md:148 | TRUE | `tests/roundtrip.property.test.ts` |
 | C43 | "We built it with Kiro over about ten days." | blog | TRUE | commits on 10 days between 30 Oct and 16 Nov (git log: 30, 31 Oct; 4, 5, 6, 8, 9, 10, 11, 16 Nov), first commit `c68ffc7` |
-| C44 | "The review of the class-results spec found two serious problems, and its design doc records both." | blog | TRUE | `.kiro/specs/class-results/design.md` (P0-1, P0-2); the review was a read-only AI sub-agent's (`docs/KIRO_LOG.md`, 10 Nov) |
+| C44 | "The review of the class-results spec, the sub-agent's, found two serious problems, and its design doc records both." | blog | TRUE | `.kiro/specs/class-results/design.md` (P0-1, P0-2); the review was a read-only AI sub-agent's (`docs/KIRO_LOG.md`, 10 Nov) |
 | C45 | "On 10 Nov all 176 did; on 12 Nov, after more tasks, all 207 do. On 16 Nov, all 241 do." | blog | TRUE | `npm run check:trace` (241 of 241 on 16 Nov, at commit 98fb45d; TASK-43 added task ids after it, so today's count is higher and the 241 is a dated snapshot); the live post was edited on 17 Nov, 01:21 UTC, by the coordinator outside Kiro |
 | C46 | "Before we had that script, the count was quietly drifting." | blog | PARTIAL | Missing: `docs/KIRO_LOG.md` records that the stricter script found the real count was 51 of 84; there is no record of the count over time. |
 | C47 | "Across 5–9 November the session store recorded 493 hook firings" | blog | PARTIAL | Missing: as C20, the raw store is not in the repo. |
 | C48 | "an ambiguous Vikings question that one of our own fixes had introduced" | blog | TRUE | as C22 |
 | C49 | "113 green tests still let a defect through" | blog | TRUE | as C30 |
-| C50 | "In the last logged run, all 118 were caught." | blog | PARTIAL | Missing: a run at the submitted commit; mutants for the changes after 10 Nov. The last logged run is 10 Nov, commit a215331 (as C19) |
+| C50 | "In the last logged run, on 10 Nov, all 118 were caught; we have not re-run it on the final commit." | blog | PARTIAL | Missing: a run at the submitted commit; mutants for the changes after 10 Nov. The last logged run is 10 Nov, commit a215331 (as C19); the sentence now dates it and says so |
 | C51 | "gate on day one, not day seven" | blog | TRUE | the export-opens hook came on 5 Nov, day 7 (`docs/KIRO_LOG.md`); review in a real browser began on 31 Oct, day 2 |
 | C52 | "ours grew to six" | blog | TRUE | `.kiro/steering/` has six files |
 | C53 | "another exports a stack as one play-only HTML file" | docs/DEVPOST_WRITEUP.md:31, README.md:145 | PARTIAL | Missing: from that entry's public repository (its spec: "File -> Export Standalone HTML", a browse-only player); it was not on Devpost on 11 Nov and we did not run it. |

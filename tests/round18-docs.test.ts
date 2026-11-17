@@ -89,7 +89,7 @@ describe("TASK-43c: five overstated lines", () => {
       expect(row(id).proof, id).toContain("Missing: a run at the submitted commit; mutants for the changes after 10 Nov");
     }
     expect(row("C19").quote).toBe(MUTANTS);
-    expect(row("C50").quote).toBe("In the last logged run, all 118 were caught.");
+    expect(row("C50").quote).toBe("In the last logged run, on 10 Nov, all 118 were caught; we have not re-run it on the final commit.");
   });
 
   it("TASK-43c2: check:claims fails a dated run whose date or commit is not the newest log's (not weakened: the count and hash checks stay)", () => {

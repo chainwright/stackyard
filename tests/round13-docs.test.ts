@@ -165,7 +165,7 @@ describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
     expect(row("C24").quote).toBe("Kiro CLI wrote the steering and specs and most of the code");
     expect(row("C24").status).toBe("PARTIAL");
     expect(row("C24").proof).toContain("the '(built in Kiro)' mark starts at TASK-30");
-    expect(row("C44").quote).toBe("The review of the class-results spec found two serious problems, and its design doc records both.");
+    expect(row("C44").quote).toBe("The review of the class-results spec, the sub-agent's, found two serious problems, and its design doc records both.");
     expect(row("C44").status).toBe("TRUE");
     // TASK-43c6 (17 Nov): the live post now adds "On 16 Nov, all 241 do.", so C45 quotes both dated counts and is TRUE again.
     expect(row("C45").quote).toMatch(/^On 10 Nov all 176 did; on 12 Nov, after more tasks, all \d+ do\.( On 16 Nov, all \d+ do\.)?$/);
@@ -222,14 +222,15 @@ describe("TASK-41j: blog and social drafts (outside the repo)", () => {
     const { declaredIds } = await import("../scripts/check-task-trace.js");
     // TASK-41k: the drafts' count is a dated, already-live snapshot ("on 12 Nov"): at least 206, never above today's.
     const blogN = Number(/on 12 Nov, after more tasks, all (\d+) do\./.exec(blog)?.[1]);
-    const socialN = /a gate script or a hook \((\d+) of (\d+) on 12 Nov\)/.exec(social);
+    // TASK-44g (17 Nov): the social draft moved to the 17 Nov snapshot with the v9b video; any dated, fully traced count passes.
+    const socialN = /a gate script or a hook \((\d+) of (\d+) on (\d+) Nov\)/.exec(social);
     expect(socialN, "the social post's 12 Nov count").not.toBeNull();
     expect(socialN![1]).toBe(socialN![2]);
     for (const n of [blogN, Number(socialN![1])]) {
       expect(n).toBeGreaterThanOrEqual(206);
       expect(n).toBeLessThanOrEqual(declaredIds().length);
     }
-    expect(blogN).toBe(Number(socialN![1]));
+    if (socialN![3] === "12") expect(blogN).toBe(Number(socialN![1]));
     // The Status line's stable start; the coordinator appends what was applied live.
     const status = "Status 12.11: TASK-41 (judge round r7) fact fixes are in this draft";
     for (const s of [
