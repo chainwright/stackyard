@@ -16,9 +16,11 @@ const W = (): string => read("docs/DEVPOST_WRITEUP.md");
 const R = (): string => FLAT(read("README.md"));
 
 describe("TASK-36a1: the write-up's video note is true", () => {
-  it("TASK-36a1: TASK-37c: the video note (now v8b) carries the measured file size, and the v7 caveats are gone", async () => {
+  it("TASK-36a1: TASK-37c: TASK-44f1: the video note (now v9b) carries the measured file size, and the v7 and v8b caveats are gone", async () => {
     const w = W();
-    expect(w).toContain("The video (v8b) was recorded on the live app at commit 4703964:");
+    expect(w).toContain("Every app screen in the video (v9b) was recorded on 16 Nov 2026 at commit cf99a89,");
+    expect(w).not.toContain("The video (v8b) was recorded on the live app at commit 4703964:");
+    expect(w).not.toContain("Two screens have changed since the take");
     expect(w).not.toContain("It shows 84 of 84 traced task ids");
     expect(w).not.toContain("were added after the video and are not shown in it");
     expect(w).not.toContain("about 185 KB");
@@ -72,7 +74,7 @@ describe("TASK-36a2: 'about N KB' is decimal KB at ±3 %", () => {
 });
 
 describe("TASK-36b1: the round-3 hound's exact replacements", () => {
-  it("TASK-36b1: TASK-38a: TASK-38e: TASK-39d: TASK-40b: the write-up carries E13, E31, E46, E53 and E62 word for word, E9 and E25 as revised in round 4, E62's Built-with line as shortened in TASK-39d, E25's AfterStack sentence as rewritten for the 2026 field, and the old wording is gone", () => {
+  it("TASK-36b1: TASK-38a: TASK-38e: TASK-39d: TASK-40b: TASK-44f4: the write-up carries E13, E31, E46, E53 and E62 word for word, E9 and E25 as revised in round 4, E62's Built-with line as shortened in TASK-39d, E25's AfterStack sentence as rewritten for the 2026 field, and the old wording is gone", () => {
     const w = FLAT(W());
     const want = [
       "(a paid Render instance, so it stays awake)",
@@ -81,7 +83,7 @@ describe("TASK-36b1: the round-3 hound's exact replacements", () => {
       "AI quiz makers start from a topic, a document or a link, and either keep the playable quiz on their own platform (Kahoot, Wayground; Wayground also exports printable PDF or DOC worksheets) or hand it to Google Forms or an LMS through an export or a third-party converter;",
       "The numbers in the README's \"By the numbers\" block are checked by a script, and the pre-submit gate fails if they drift beyond its tolerances (±0.5 KB for the bundle, ±3 % for the file size).",
       "Kiro (CLI, specs, steering, hooks, one custom agent and an MCP server; see the Kiro table)",
-      "the cursor, sounds, labels, the OFFLINE stamp and the network-request badge were added in editing; the badge shows the count from the real recording.",
+      "the cursor, sounds, labels and the network-request badge were added in editing; the badge shows the count from the real recording.", // TASK-44f4: v9b has no OFFLINE stamp
     ];
     for (const s of want) expect(w, s).toContain(s);
     for (const old of ["the first load can take a few seconds", "she can't easily edit", "Their stacks travel as JSON or as a link back", "Their stacks travel as JSON files or as links back to their tool", "(Kahoot, Wayground) or hand", "fails if they drift.", "hooks, agents, MCP)", "the cursor, sounds and the network-request badge"]) {

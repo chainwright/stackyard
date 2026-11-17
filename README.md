@@ -8,7 +8,7 @@ Why it matters: in England, the Department for Education's 2023 Technology in Sc
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
-**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com
+**Demo video (2:43):** https://youtu.be/w21ZDAifDdo · **Live app:** https://stackyard-sdqt.onrender.com
 
 **For judges:** [a 3-minute path](JUDGES.md) · [every number and how to reproduce it](EVIDENCE.md) · [every claim and its status](CLAIMS.md)
 
@@ -184,7 +184,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1633** in the suite (`npm test`). In a fresh git clone 1,629 pass and 4 skip: they check our draft posts, which sit beside the repo, not in it. In a shallow clone (`git clone --depth 1`, the kind CI makes) 1,628 pass and 5 skip: one more needs the full git history. In a ZIP download, with no `.git`, 1,627 pass and 6 skip: one more runs `git grep`.
+- Tests: **1639** in the suite (`npm test`). In a fresh git clone 1,635 pass and 4 skip: they check our draft posts, which sit beside the repo, not in it. In a shallow clone (`git clone --depth 1`, the kind CI makes) 1,634 pass and 5 skip: one more needs the full git history. In a ZIP download, with no `.git`, 1,633 pass and 6 skip: one more runs `git grep`.
 - Player bundle: **13.0 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

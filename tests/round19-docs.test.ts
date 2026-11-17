@@ -11,6 +11,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import os from "node:os";
 import path from "node:path";
 import { gitCheckoutAt, gitGrepHits } from "./helpers/git-checkout.js";
+import { V8B_ID, videoId } from "./helpers/video-link.js";
 import { countConditionalSkips, skipsByCopy, compareCopyCounts, readCopyCounts, readClaims } from "../scripts/claims-lib.js";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -100,10 +101,11 @@ describe("TASK-44b: the AI footage is about 23 s", () => {
   const secs = (t: string): number => Number(t.split(":")[0]) * 60 + Number(t.split(":")[1]);
   const windows = (s: string): number[] => s.split(", ").map((w) => { const [a, b] = w.split("–"); return secs(b!) - secs(a!); });
 
-  it("TASK-44b1: the write-up Credits and the README say about 23 s, eight shots in all; the Credits keep the OFFLINE stamp", () => {
+  it("TASK-44b1: TASK-44f4: the write-up Credits and the README say about 23 s, eight shots in all; since TASK-44f the Credits name no OFFLINE stamp (v9b has none)", () => {
     const credits = read("docs/DEVPOST_WRITEUP.md").split("\n").find((l) => l.startsWith("**Credits.**"))!;
     expect(credits).toContain(`AI-generated footage (${NEW})`);
-    expect(credits).toContain("the OFFLINE stamp");
+    expect(credits).toContain("the cursor, sounds, labels and the network-request badge were added in editing");
+    expect(credits).not.toContain("OFFLINE stamp");
     expect(flat(read("README.md"))).toContain(`are AI-generated (${NEW}), each tagged on screen`);
     for (const f of ["README.md", "docs/DEVPOST_WRITEUP.md"]) expect(read(f), f).not.toContain("about 21 s");
   });
@@ -180,7 +182,7 @@ describe("TASK-44c: Where it sits names the twin and the trade-off", () => {
     const src = read("tests/round19-docs.test.ts");
     const net = new RegExp(["\\bfet" + "ch\\(", "https?\\.g" + "et\\(", "new Web" + "Socket"].join("|"));
     expect(src).not.toMatch(net);
-    for (const l of src.split("\n").filter((x) => /^import /.test(x))) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:os|node:path|\.\/helpers\/git-checkout\.js|\.\.\/scripts\/claims-lib\.js)";$/);
+    for (const l of src.split("\n").filter((x) => /^import /.test(x))) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:os|node:path|\.\/helpers\/git-checkout\.js|\.\/helpers\/video-link\.js|\.\.\/scripts\/claims-lib\.js)";$/);
   });
 });
 
@@ -270,5 +272,76 @@ describe("TASK-44e: test counts by kind of copy", () => {
     const src = read("tests/round19-docs.test.ts");
     expect(src).not.toContain(": pend" + "ing, spec only");
     expect(src).not.toContain("=> pend" + "ing([");
+  });
+});
+
+// TASK-44f: the video lines switch from v8b to v9b. Prepared on 17 Nov as a
+// patch, applied after the upload; the v9b id is a placeholder until then, so
+// nothing here pins it: only that the three files share one youtu.be id that
+// is not v8b's, before and after the one sed that puts the real id in.
+describe("TASK-44f: the video lines describe v9b", () => {
+  const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
+  const LINKED = ["README.md", "JUDGES.md", "docs/DEVPOST_WRITEUP.md"] as const;
+  const ids = (texts: Record<string, string>): Array<string | null> => LINKED.map((f) => videoId(texts[f]!));
+
+  it("TASK-44f: TASK-44f2: the README, JUDGES.md and the write-up link one shared youtu.be id that is not v8b's; no public file links v8b's", () => {
+    const texts = Object.fromEntries(LINKED.map((f) => [f, read(f)]));
+    const [a, b, c] = ids(texts);
+    expect(a).not.toBeNull();
+    expect([b, c]).toEqual([a, a]);
+    expect(a).not.toBe(V8B_ID);
+    for (const f of [...LINKED, "EVIDENCE.md", "CLAIMS.md"]) expect(read(f), f).not.toContain(V8B_ID);
+    expect(read("README.md").split("\n")[10]).toMatch(/^\*\*Demo video \(2:43\):\*\* /);
+    expect(read("JUDGES.md")).toMatch(/^- Video \(2:43\): https:\/\/youtu\.be\//m);
+  });
+
+  it("TASK-44f2: TASK-44f5: one sed of the id keeps the three in step (the suite does not depend on the placeholder)", () => {
+    const texts = Object.fromEntries(LINKED.map((f) => [f, read(f)]));
+    const id = videoId(texts["README.md"]!)!;
+    // The real id is 11 characters of [A-Za-z0-9_-]; any such string must pass the same checks.
+    const fake = "Ab3_dE5-gH7";
+    const after = Object.fromEntries(Object.entries(texts).map(([f, t]) => [f, t.split(`youtu.be/${id}`).join(`youtu.be/${fake}`)]));
+    expect(ids(after)).toEqual([fake, fake, fake]);
+    // No test file spells out the placeholder (built in pieces so this line does not match itself).
+    const ph = "VIDEO_ID" + "_V9B";
+    for (const f of readdirSync(path.join(ROOT, "tests"), { recursive: true }) as string[]) {
+      if (!f.endsWith(".ts")) continue;
+      expect(readFileSync(path.join(ROOT, "tests", f), "utf8"), f).not.toContain(ph);
+    }
+  });
+
+  it("TASK-44f1: the write-up's line 9 and line 11 describe v9b, keep the checked numbers, and drop the v8b sentences", () => {
+    const lines = read("docs/DEVPOST_WRITEUP.md").split("\n");
+    expect(lines[8]).toMatch(/^Video \(v9b, 2:43, AI disclosure set on YouTube\): https:\/\/youtu\.be\/[A-Za-z0-9_-]+$/);
+    const p = lines[10]!;
+    expect(p.startsWith("Every app screen in the video (v9b) was recorded on 16 Nov 2026 at commit cf99a89, built with the repo's own scripts and run on our machine, in real time:")).toBe(true);
+    expect(p).toMatch(/ The commit we submit reports \d+ of \d+ and [\d,]+ tests and a \d+\.\d KB player \(gzipped, 1 KB = 1,024 bytes\); a generated lesson file is now about \d+ KB with its Teacher tab inside; the play-only class file of the same lesson is \d+ KB\.$/);
+    for (const old of ["v8b", "4703964", "8e24ecd", "13.7 s", "about 212 KB", "Two screens have changed", "played by script off camera"]) expect(p, old).not.toContain(old);
+  });
+
+  it("TASK-44f3: EVIDENCE.md gives v9b's generation time and session-store time; C2's proof gives v9b's 0:31–0:42; C34 keeps both cuts", () => {
+    const ev = read("EVIDENCE.md");
+    expect(ev).toContain("Build Cards to the editor took 11.8 s in the video's take (0:31–0:42, labelled on screen)");
+    expect(ev).toContain("Two session-store lines shown in the video at 2:16–2:19");
+    for (const old of ["13.7 s", "at 2:22"]) expect(ev, old).not.toContain(old);
+    const claims = read("CLAIMS.md").split("\n");
+    const c2 = claims.find((l) => l.startsWith("| C2 |"))!;
+    expect(c2).toContain("video 0:31–0:42 (real time, labelled)");
+    expect(c2).not.toContain("0:24–0:38");
+    const c34 = claims.find((l) => l.startsWith("| C34 |"))!;
+    expect(c34).toContain("v8b (linked): 0:00.0–0:02.4");
+    expect(c34).toContain("v9b: 0:00.0–0:02.4");
+  });
+
+  it("TASK-44f4: the Credits' added-in-editing list has no OFFLINE stamp", () => {
+    const credits = read("docs/DEVPOST_WRITEUP.md").split("\n").find((l) => l.startsWith("**Credits.**"))!;
+    expect(credits).toContain("the cursor, sounds, labels and the network-request badge were added in editing; the badge shows the count from the real recording.");
+    expect(credits).not.toContain("OFFLINE");
+  });
+
+  it("TASK-44f5: the spec says TASK-44f ships as a patch applied after the upload", () => {
+    const spec = read(".kiro/specs/maker/tasks.md");
+    expect(spec).toContain("### TASK-44f: switch the video lines from v8b to v9b, as a patch applied after the upload");
+    expect(spec).toContain("the coordinator saves it as a patch and applies it only after the owner uploads v9b");
   });
 });

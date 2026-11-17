@@ -14,6 +14,7 @@ import {
   readWriteupClaims,
   MUTATION_RERUN,
 } from "../scripts/claims-lib.js";
+import { V8B_ID, videoId } from "./helpers/video-link.js";
 
 const read = (f: string): string => readFileSync(f, "utf8");
 const FLAT = (s: string): string => s.replace(/\s+/g, " ");
@@ -93,22 +94,25 @@ describe("TASK-37b: the credits count the v8 footage", () => {
   });
 });
 
-describe("TASK-37c: the write-up's video note describes v8", () => {
-  it("TASK-37c: TASK-38d: TASK-40a: TASK-42d3: two or three sentences naming what v8 shows; check:claims still reads its numbers; the link line is untouched (now line 9, under the category line, the R1 lead and the relevance line)", () => {
+describe("TASK-37c: the write-up's video note describes the linked video (v9b since TASK-44f)", () => {
+  it("TASK-37c: TASK-38d: TASK-40a: TASK-42d3: TASK-44f1: two sentences naming what v9b shows; check:claims still reads its numbers; the link line is line 9, under the category line, the R1 lead and the relevance line", () => {
     const lines = read("docs/DEVPOST_WRITEUP.md").split("\n");
-    expect(lines[8]).toBe("Video (public, AI disclosure set on YouTube, v8b uploaded 10.11): https://youtu.be/x6W2BzhpAyU");
+    // TASK-44f5: the id is not pinned (a placeholder until the upload); it is not v8b's.
+    expect(lines[8]).toMatch(/^Video \(v9b, 2:43, AI disclosure set on YouTube\): https:\/\/youtu\.be\/[A-Za-z0-9_-]+$/);
+    expect(videoId(lines[8]!)).not.toBe(V8B_ID);
     const p = lines[10]!;
     for (const s of [
-      "recorded on the live app at commit 4703964",
-      "a real generation in real time (Build Cards to the editor in 13.7 s in that take; usually 10–20 s)",
+      "Every app screen in the video (v9b) was recorded on 16 Nov 2026 at commit cf99a89, built with the repo's own scripts and run on our machine, in real time:",
+      "a real generation (Build Cards to the editor in 11.8 s in that take; usually 10–20 s)",
       '"Swap this wrong answer" with Undo',
+      'the "Before you share" warning, Export and Export for class',
       "one-switch Scan",
-      "a pupil's results code on the end card and the teacher's Class Results table (two of the three pupil codes were played by script off camera, as the video says)",
-      "Save a Copy with the Wi-Fi off (files of about 212 KB in the take)",
-      "check:trace and check:claims at commit 8e24ecd",
+      "three pupils' end cards and the teacher's Class Results table (all three codes come from our own play-throughs, not a class, as the video says)",
+      "the file editing itself and its copies (221,803 and 222,496 bytes on disk)",
+      "check:trace and check:claims passing at cf99a89",
     ]) expect(p).toContain(s);
-    expect(p).not.toMatch(/v7|1,003|11\.7 KB|170 KB|20–45/);
-    expect(p.split(/(?<=[.])\s+(?=[A-Z])/).length).toBeLessThanOrEqual(3);
+    expect(p).not.toMatch(/v7|v8b|4703964|8e24ecd|13\.7 s|about 212 KB|Two screens have changed|1,003|11\.7 KB|170 KB|20–45/);
+    expect(p.split(/(?<=[.])\s+(?=[A-Z])/).length).toBeLessThanOrEqual(2);
     const names = new Set(readWriteupClaims(p).map((c) => c.name));
     for (const n of ["traced", "tests", "kb", "fileKb"] as const) expect(names.has(n), n).toBe(true);
   });

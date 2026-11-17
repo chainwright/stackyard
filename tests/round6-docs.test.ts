@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { V8B_ID, videoId } from "./helpers/video-link.js";
 
 const ROOT = process.cwd();
 const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
@@ -56,9 +57,10 @@ describe("TASK-30e: README truth (video hound R1–R4)", () => {
     expect(readme).toContain("usually live on a platform that needs accounts, or export to forms, LMS formats or PDF.");
     expect(readme).not.toContain("give one-shot output you can't edit card by card");
   });
-  it("the demo video link sits at the very top next to the live app, and the screens' deck is named", () => {
+  it("TASK-44f2: the demo video link sits at the very top next to the live app (not v8b's), and the screens' deck is named", () => {
     const top = readme.slice(0, readme.indexOf("## "));
-    expect(top).toContain("https://youtu.be/x6W2BzhpAyU");
+    expect(top).toMatch(/\*\*Demo video \(2:43\):\*\* https:\/\/youtu\.be\/[A-Za-z0-9_-]+ /);
+    expect(videoId(top)).not.toBe(V8B_ID);
     expect(top).not.toContain("G5aNDWg8UGY");
     expect(top).not.toContain("xQvUPdifiVE");
     expect(top).toContain("https://stackyard-sdqt.onrender.com");

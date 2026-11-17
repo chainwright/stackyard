@@ -6,8 +6,8 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,633 tests in the suite (a fresh git clone: 1,629 pass, 4 skip; a shallow clone like CI's: 1,628 pass, 5 skip; a ZIP download with no `.git`: 1,627 pass, 6 skip) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
-| 293 of 293 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
+| 1,639 tests in the suite (a fresh git clone: 1,635 pass, 4 skip; a shallow clone like CI's: 1,634 pass, 5 skip; a ZIP download with no `.git`: 1,633 pass, 6 skip) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 299 of 299 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
 | 80 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
 | 1,000-run round trip | stack → HTML file → stack, lossless | `npm run check:invariants` | `numRuns` in `tests/roundtrip.property.test.ts` |
@@ -32,8 +32,8 @@ Each sentence below is checked word for word against its data file by `npm run c
 - Reproduce: `npm run check:bench` (Chrome) replays the 55 recorded objectives from `bench/cache/` with no model call; the reviews are in `bench/LESSON_CHECKER.md`, `bench/key-review.json` and `bench/distractor-review*.json`; `npm run check:a11y` (Chrome) writes `docs/accessibility/axe-report.json`.
 
 ## Measured once (not re-runnable from the repo)
-- **Live generation time.** Build Cards to the editor took 13.7 s in the video's take (labelled on screen); usually 10–20 s on the live app. It depends on the model host. The bench's in-process times are in `bench/RESULTS.md`.
-- **A hook 1.6 s after Kiro's edit.** Two session-store lines shown in the video at 2:22 (a scratch-copy session, labelled).
+- **Live generation time.** Build Cards to the editor took 11.8 s in the video's take (0:31–0:42, labelled on screen); usually 10–20 s on the live app. It depends on the model host. The bench's in-process times are in `bench/RESULTS.md`.
+- **A hook 1.6 s after Kiro's edit.** Two session-store lines shown in the video at 2:16–2:19 (a scratch-copy session, labelled).
 - **Other browsers.** On 6 Nov, files exported before TASK-29/30 played offline in Playwright's Chromium, Firefox and WebKit builds (0 requests, 0 errors): `docs/cross-browser/`. Today's gates use headless Chrome only.
 - **One MCP call through Kiro.** 10 Nov, 06:07Z: `docs/kiro-sessions/mcp-call-2026-11-10.md`.
 

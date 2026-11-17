@@ -7,7 +7,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | # | Claim | Where | Status | Proof, or what is missing |
 |---|---|---|---|---|
 | C1 | "one HTML file that plays, scores and edits itself with the Wi-Fi off" | docs/DEVPOST_WRITEUP.md:20 | TRUE | `npm run check:living-file`; `npm run check:bench` (lesson files opened with the network blocked, 0 requests) |
-| C2 | "Stackyard deals the cards as the model writes them" | docs/DEVPOST_WRITEUP.md:23 | TRUE | `tests/stream-generate.test.ts`; video 0:24–0:38 (real time, labelled) |
+| C2 | "Stackyard deals the cards as the model writes them" | docs/DEVPOST_WRITEUP.md:23 | TRUE | `tests/stream-generate.test.ts`; video 0:31–0:42 (real time, labelled) |
 | C3 | "no model call, and one Undo puts it back" | docs/DEVPOST_WRITEUP.md:24 | TRUE | `src/editor/swapCandidates.ts`; the swap mutants in `scripts/mutation-check.ts` |
 | C4 | "lesson files like the water-cycle test deck fit on a 1.44 MB floppy" | docs/DEVPOST_WRITEUP.md:25, README.md:191 | TRUE | `npm run check:claims` (floppy count); EVIDENCE.md |
 | C5 | "with no account, no install and no internet" | docs/DEVPOST_WRITEUP.md:25 | TRUE | For the exported file (the Maker needs the internet, as the README's first paragraph says): `npm run check:export-opens`, `npm run check:bench` |

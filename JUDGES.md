@@ -4,7 +4,7 @@ Category: Resurrection (HyperCard, 1987). You need a laptop browser: nothing to 
 
 - Live app: https://stackyard-sdqt.onrender.com (a paid Render instance, so it stays awake)
 - A ready-made lesson file: https://stackyard-sdqt.onrender.com/samples/vikings-in-ireland.html
-- Video (2:55): https://youtu.be/x6W2BzhpAyU
+- Video (2:43): https://youtu.be/w21ZDAifDdo
 
 ## 0:00–0:45 · Make a lesson from one sentence
 1. Open the live app, type a sentence such as `A 6-question quiz on the water cycle for 4th class, two flash cards and a short choose-your-path story about a raindrop`, and press **Build Cards**.
@@ -32,8 +32,8 @@ Node 24 or later:
 ```sh
 git clone https://github.com/chainwright/stackyard && cd stackyard
 npm ci
-npm test               # 1,633 tests; a fresh git clone: 1,629 pass, 4 skip (draft posts kept beside the repo); a shallow clone: 1,628 pass, 5 skip; a ZIP download: 1,627 pass, 6 skip
-npm run check:trace    # 293 of 293 lettered task ids traced
+npm test               # 1,639 tests; a fresh git clone: 1,635 pass, 4 skip (draft posts kept beside the repo); a shallow clone: 1,634 pass, 5 skip; a ZIP download: 1,633 pass, 6 skip
+npm run check:trace    # 299 of 299 lettered task ids traced
 npm run check:claims   # every number in the README, the write-up and EVIDENCE.md, against the code
 ```
 `npm run pre-submit` runs every gate. The browser gates need a local Chrome or Chromium; without one they say so and skip.

@@ -1196,3 +1196,42 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
   - EVIDENCE "13.7 s" and "at 2:22";
   - C2's "video 0:24–0:38";
   - the Credits' "the OFFLINE stamp".
+- **f. The post-upload switch from v8b to v9b (TASK-44f).** Prepared on 17 Nov as a patch. It is not committed: the coordinator applies it only after the owner uploads v9b. The v9b YouTube id was not known, so a placeholder id stands in three places (README line 11, JUDGES.md line 7, write-up line 9), and one `sed` replaces it with the real id when the patch is applied. The placeholder is spelled out only in those three lines, not in the log, the spec or the tests, so the `sed` cannot change anything else.
+  - **Facts used**, all from the coordinator, outside Kiro: the edit timeline and the `ls -l` recording beside the repo, the v9b description draft, and judge round r9's frame check. I read none of them.
+    - The video is 2:43.
+    - Every app screen was recorded on 16 Nov at commit cf99a89, on our machine, in real time.
+    - Build Cards took 11.8 s, at 0:31–0:42.
+    - The three codes come from our own play-throughs.
+    - The files are 221,803 bytes, with copies of 222,496 bytes.
+    - The session-store lines are on screen at 2:16–2:19.
+    - There is no OFFLINE stamp.
+  - **What changed.**
+    - The write-up's line 9 is "Video (v9b, 2:43, AI disclosure set on YouTube): https://youtu.be/ followed by the placeholder id".
+    - Line 11 opens with the brief's v9b sentence. "The commit we submit reports …" is unchanged, with its checked numbers. "Two screens have changed since the take: …" is gone, because v9b shows the current end card and panel.
+    - README "**Demo video (2:43):**" and JUDGES.md "Video (2:43):" link the same placeholder id.
+    - EVIDENCE.md now says 11.8 s (0:31–0:42) and 2:16–2:19.
+    - CLAIMS C2's proof now says "video 0:31–0:42". C34 keeps both cuts.
+    - The Credits' added-in-editing list is "the cursor, sounds, labels and the network-request badge".
+    - No other tracked public file linked x6W2BzhpAyU. KIRO_LOG and the specs keep it as history.
+    - No CLAIMS row quoted a changed sentence, so no quote or line ref moved.
+  - **Tests.** The new `tests/helpers/video-link.ts` reads a youtu.be id and holds v8b's id. Nine tests that pinned v8b lines now pin the v9b lines, with TASK-44f in their titles: `mutation-log`, `round6-docs`, `round7-docs`, `round9-docs` (two), `round11-docs` (two), `round12-docs` (two). A new TASK-44f block in `round19-docs` has six tests:
+    - the three files share one id that is not v8b's, and no public file links v8b's;
+    - a simulated `sed` to an 11-character id keeps the three in step, and no test file spells out the placeholder;
+    - lines 9 and 11;
+    - EVIDENCE, C2 and C34;
+    - the Credits;
+    - the spec note.
+
+    The TASK-44b1 test no longer requires "the OFFLINE stamp" (TASK-44f4 in its title). No test pins the placeholder, so the suite passes both with it and after the real id is put in.
+  - **The drafts.** As the brief asked, `../WRITEUP_DRAFT.md` was not touched. So in this working copy, where the drafts sit beside the repo, the three "write-up draft follows the body" tests fail (TASK-42c6, TASK-42d5, TASK-43c7). They compare the old draft with the new write-up. They skip in any clone or ZIP copy, and pass once the coordinator rebuilds the draft after applying the patch.
+  - **Checked here.** I cloned HEAD into a temp folder outside the repo (so the drafts were not beside it), applied this change and ran the gates there:
+    - `npm test` exited 0: 1,635 passed, 4 skipped (the fresh-clone pair).
+    - `CI=true npm run pre-submit` exited 0.
+    - I then replaced the placeholder with a made-up 11-character id, using one `sed` over the three files. `npm test` (1,635 / 4) and `check:claims` both exited 0 again.
+    - The temp folder was deleted.
+  - **Counts.** Tests 1,633 → 1,639; the pairs are 1,635 / 4, 1,634 / 5 and 1,633 / 6 (`--fix`). Traced ids 293 → 299.
+  - **Shell edits.**
+    - One `sed -i` added TASK-44f4 to a `round9-docs` test title.
+    - A one-line `cat >>` placeholder in `round19-docs`, replaced at once with the file tools.
+    - `npm run check:claims:fix` ran.
+    - A temp copy of the tree outside the repo was used for the gate runs and the `sed` trial, then deleted.

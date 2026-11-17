@@ -2642,3 +2642,22 @@ Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this 
 - EVIDENCE "13.7 s" and "at 2:22";
 - C2's "video 0:24–0:38";
 - the Credits' "the OFFLINE stamp".
+
+### TASK-44f: switch the video lines from v8b to v9b, as a patch applied after the upload  *(TASK-44 f)*
+  - **How it ships.** It was prepared on 17 Nov and is not committed: the coordinator saves it as a patch and applies it only after the owner uploads v9b. v9b's YouTube id is not known yet, so a placeholder id stands where the id goes, in the three public lines only (the README, JUDGES.md and the write-up). The coordinator replaces it with the real id by one `sed` when the patch is applied. The placeholder is not spelled out in the spec, the log or the tests, so that `sed` touches only those three lines. The tests do not pin the placeholder; they pin that the README, JUDGES.md and the write-up carry one shared youtu.be link that is not v8b's.
+  - **Facts about v9b** (from the coordinator, outside Kiro: the edit timeline `video/v9b/timeline_v9b.json` and the `ls -l` recording `video/raw/v9_ls.cast` beside the repo, the v9b YouTube description draft, and judge round r9's frame check):
+    - It is 163.2 s long (2:43).
+    - Every app screen was recorded on 16 Nov 2026 at commit cf99a89, built with the repo's own scripts and run on our machine, in real time.
+    - Build Cards to the editor took 11.8 s, at 0:31–0:42.
+    - The three results codes come from our own play-throughs, not a class.
+    - `ls -l` in the take shows the lesson file at 221,803 bytes and its copies at 222,496 bytes each.
+    - The session-store lines are on screen at 2:16–2:19.
+    - The end card and Class Results are the current screens.
+    - There is no OFFLINE stamp.
+  - **Fix.**
+    - [x] TASK-44f1: the write-up's line 9 is "Video (v9b, 2:43, AI disclosure set on YouTube): https://youtu.be/ followed by the v9b id". Line 11 opens with the v9b sentence and keeps "The commit we submit reports …" with its checked numbers. The "Two screens have changed since the take" sentence is gone.
+    - [x] TASK-44f2: README "**Demo video (2:43):**" and JUDGES.md "Video (2:43):" link the same youtu.be id as the write-up, and no public file links x6W2BzhpAyU as the current video. The history in KIRO_LOG and the specs stays.
+    - [x] TASK-44f3: EVIDENCE.md says "took 11.8 s in the video's take (0:31–0:42, labelled on screen)" and "at 2:16–2:19". CLAIMS C2's proof says "video 0:31–0:42 (real time, labelled)". C34 keeps both cuts.
+    - [x] TASK-44f4: the Credits' added-in-editing list is "the cursor, sounds, labels and the network-request badge" (no OFFLINE stamp).
+    - [x] TASK-44f5: tests. Every test that pinned a v8b line moves to the v9b line, with TASK-44f in its title, and none pins the placeholder text.
+  - **Acceptance criteria.** The suite and `check:claims` pass with the placeholder in place, and also after the one `sed` that puts the real id in.

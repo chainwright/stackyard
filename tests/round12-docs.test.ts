@@ -24,7 +24,7 @@ const R_LEAD =
   "**Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.** Stackyard brings back HyperCard's stack as one lesson file made from one sentence: it plays offline and edits itself, with no accounts and no server. (The Maker, where you make the lesson, needs the internet; only the file works offline.)";
 
 describe("TASK-40a: the write-up leads with R1", () => {
-  it("TASK-40a: TASK-42c2: TASK-42d3: line 5 is the R1 lead, line 7 the relevance line; the video link is line 9 and the note line 11", () => {
+  it("TASK-40a: TASK-42c2: TASK-42d3: TASK-44f1: line 5 is the R1 lead, line 7 the relevance line; the video link is line 9 and the note line 11", () => {
     const lines = writeup.split("\n");
     expect(lines[2]).toBe("Category: Resurrection (HyperCard, 1987)");
     expect(lines[3]).toBe("");
@@ -32,9 +32,9 @@ describe("TASK-40a: the write-up leads with R1", () => {
     expect(lines[5]).toBe("");
     expect(lines[6]).toMatch(/^Why it matters: in England, /);
     expect(lines[7]).toBe("");
-    expect(lines[8]).toMatch(/^Video \(public, AI disclosure set on YouTube, v8b uploaded 10\.11\): https:\/\/youtu\.be\/x6W2BzhpAyU$/);
+    expect(lines[8]).toMatch(/^Video \(v9b, 2:43, AI disclosure set on YouTube\): https:\/\/youtu\.be\/[A-Za-z0-9_-]+$/);
     expect(lines[9]).toBe("");
-    expect(lines[10]).toMatch(/^The video \(v8b\) was recorded on the live app/);
+    expect(lines[10]).toMatch(/^Every app screen in the video \(v9b\) was recorded on 16 Nov 2026 at commit cf99a89/);
   });
 
   it("TASK-40a Inspiration and What it does are unchanged", () => {
@@ -90,13 +90,13 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
 });
 
 describe("TASK-40c: the README top leads with R1", () => {
-  it("TASK-40c: TASK-42c1: TASK-42d3: line 5 is the R1 lead, line 7 the relevance line; the next lines sit two lower (9, 11, 13)", () => {
+  it("TASK-40c: TASK-42c1: TASK-42d3: TASK-44f2: line 5 is the R1 lead, line 7 the relevance line; the next lines sit two lower (9, 11, 13)", () => {
     const lines = readme.split("\n");
     expect(lines[2]).toBe("Category: Resurrection (HyperCard, 1987)");
     expect(lines[4]).toBe(R_LEAD);
     expect(lines[6]).toMatch(/^Why it matters: in England, /);
     expect(lines[8]).toBe("Inspired by HyperCard. Built for Kiroween 2026 with Kiro.");
-    expect(lines[10]).toMatch(/^\*\*Demo video \(2:55\):\*\*/);
+    expect(lines[10]).toMatch(/^\*\*Demo video \(2:43\):\*\*/);
     expect(lines[12]).toMatch(/^\*\*For judges:\*\*/);
     expect(readme).not.toContain("one HTML file you can hand to a class");
   });

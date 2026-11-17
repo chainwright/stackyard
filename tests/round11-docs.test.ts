@@ -7,6 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { V8B_ID, videoId } from "./helpers/video-link.js";
 
 const ROOT = path.resolve(__dirname, "..");
 const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
@@ -31,10 +32,15 @@ function tableAfter(text: string, heading: string): { header: string; rows: stri
 const GH = "https://github.com/chainwright/stackyard/blob/main/";
 
 describe("TASK-39a: JUDGES.md, a 3-minute path", () => {
-  it("TASK-39a links the live app, the ready-made file and the video", () => {
+  it("TASK-39a: TASK-44f2: links the live app, the ready-made file and the video (the same youtu.be id as the README and the write-up, not v8b's)", () => {
     expect(judges).toContain("https://stackyard-sdqt.onrender.com (a paid Render instance, so it stays awake)");
     expect(judges).toContain("https://stackyard-sdqt.onrender.com/samples/vikings-in-ireland.html");
-    expect(judges).toContain("https://youtu.be/x6W2BzhpAyU");
+    expect(judges).toMatch(/^- Video \(2:43\): https:\/\/youtu\.be\/[A-Za-z0-9_-]+$/m);
+    const id = videoId(judges);
+    expect(id).not.toBeNull();
+    expect(id).not.toBe(V8B_ID);
+    expect(videoId(readme)).toBe(id);
+    expect(videoId(read("docs/DEVPOST_WRITEUP.md"))).toBe(id);
     expect(judges.split("\n")[2]).toMatch(/^Category: Resurrection \(HyperCard, 1987\)\./);
   });
 
@@ -151,14 +157,14 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
 });
 
 describe("TASK-39e: the README's Built with Kiro is the same kind of table", () => {
-  it("TASK-39e: TASK-42d3: README line 13 (two lines lower after the relevance line) links the three judge files", () => {
+  it("TASK-39e: TASK-42d3: TASK-44f2: README line 13 (two lines lower after the relevance line) links the three judge files", () => {
     const lines = readme.split("\n");
     expect(lines[12]).toBe(
       "**For judges:** [a 3-minute path](JUDGES.md) · [every number and how to reproduce it](EVIDENCE.md) · [every claim and its status](CLAIMS.md)",
     );
     expect(lines[11]).toBe("");
     expect(lines[13]).toBe("");
-    expect(lines[10]).toMatch(/^\*\*Demo video \(2:55\):\*\*/);
+    expect(lines[10]).toMatch(/^\*\*Demo video \(2:43\):\*\*/);
   });
 
   it("TASK-39e has the claim + proof table and keeps the pre-submit label", () => {

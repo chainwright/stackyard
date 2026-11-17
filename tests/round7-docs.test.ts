@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
+import { V8B_ID, videoId } from "./helpers/video-link.js";
 
 const ROOT = process.cwd();
 const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
@@ -34,8 +35,9 @@ describe("TASK-31a: README and docs say only what is true", () => {
   const readmeLines = read("README.md").split("\n");
   const readme = FLAT(read("README.md"));
 
-  it("TASK-31a: TASK-38d: TASK-42d3: README line 11 (after the category line, the lead and the relevance line) links the submitted video and the live app", () => {
-    expect(readmeLines[10]).toBe("**Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com");
+  it("TASK-31a: TASK-38d: TASK-42d3: TASK-44f2: README line 11 (after the category line, the lead and the relevance line) links the submitted video and the live app", () => {
+    expect(readmeLines[10]).toMatch(/^\*\*Demo video \(2:43\):\*\* https:\/\/youtu\.be\/[A-Za-z0-9_-]+ · \*\*Live app:\*\* https:\/\/stackyard-sdqt\.onrender\.com$/);
+    expect(videoId(readmeLines[10]!)).not.toBe(V8B_ID);
     expect(read("README.md")).not.toContain("G5aNDWg8UGY");
     expect(read("README.md")).not.toContain("xQvUPdifiVE");
   });
