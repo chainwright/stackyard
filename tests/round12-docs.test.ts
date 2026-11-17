@@ -16,14 +16,15 @@ const writeup = read("docs/DEVPOST_WRITEUP.md");
 const readme = read("README.md");
 const claims = read("CLAIMS.md");
 
+// TASK-42c1/c2: the R1 lead now opens with the results loop and names HyperCard's stack.
 const W_LEAD =
-  "**Stackyard turns one sentence into a lesson file the teacher hands to the class. It plays offline, it edits itself, and the pupils' results come back to her as short codes she types in: no internet, no accounts, no server.** HyperCard (1987) gave a teacher a stack of cards she could hand on. Stackyard brings that stack back, and this time the results come back too. (Making the lesson in the Maker needs the internet; the lesson file does not.)";
+  "**Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.** Stackyard brings back HyperCard's stack (1987) as one lesson file made from one sentence: it plays offline and edits itself, with no accounts and no server. (Making the lesson in the Maker needs the internet; the lesson file does not.)";
 
 const R_LEAD =
-  "**Stackyard turns one sentence into a lesson file the teacher hands to the class.** The lesson is the file: it plays offline, it edits itself, and the pupils' results come back to her as short codes she types in, with no internet, no accounts and no server. HyperCard gave a teacher a stack she could hand on; Stackyard brings that stack back, and this time the results come back too. (The Maker, where you make the lesson, needs the internet; only the file works offline.)";
+  "**Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.** Stackyard brings back HyperCard's stack as one lesson file made from one sentence: it plays offline and edits itself, with no accounts and no server. (The Maker, where you make the lesson, needs the internet; only the file works offline.)";
 
 describe("TASK-40a: the write-up leads with R1", () => {
-  it("TASK-40a line 5 is the R1 lead; the video link is line 7 and the note line 9", () => {
+  it("TASK-40a: TASK-42c2: line 5 is the R1 lead; the video link is line 7 and the note line 9", () => {
     const lines = writeup.split("\n");
     expect(lines[2]).toBe("Category: Resurrection (HyperCard, 1987)");
     expect(lines[3]).toBe("");
@@ -86,7 +87,7 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
 });
 
 describe("TASK-40c: the README top leads with R1", () => {
-  it("TASK-40c line 5 is the R1 lead; lines 3, 7, 9 and 11 stay", () => {
+  it("TASK-40c: TASK-42c1: line 5 is the R1 lead; lines 3, 7, 9 and 11 stay", () => {
     const lines = readme.split("\n");
     expect(lines[2]).toBe("Category: Resurrection (HyperCard, 1987)");
     expect(lines[4]).toBe(R_LEAD);
@@ -133,7 +134,7 @@ describe("TASK-40e / TASK-40f: CLAIMS.md follows the new text", () => {
     expect(row("C15").refs).toEqual([{ file: "README.md", line: expect.any(Number) }]);
   });
 
-  it("TASK-40f rows C53–C59 carry the new claims with their statuses and files", () => {
+  it("TASK-40f: TASK-42c5: rows C53–C59 carry the new claims with their statuses and files", () => {
     const want: Array<[string, string, "TRUE" | "PARTIAL", string[]]> = [
       ["C53", "another exports a stack as one play-only HTML file", "PARTIAL", ["docs/DEVPOST_WRITEUP.md", "README.md"]],
       ["C54", "Egatari's lesson file plays offline and carries its own source", "TRUE", ["docs/DEVPOST_WRITEUP.md"]],
@@ -141,7 +142,7 @@ describe("TASK-40e / TASK-40f: CLAIMS.md follows the new text", () => {
       ["C56", "Doppel turns product screenshots into a practice lesson with AI-suggested steps", "TRUE", ["docs/DEVPOST_WRITEUP.md"]],
       ["C57", "Syllabind, a Claude Code skill, turns a topic into a course", "TRUE", ["docs/DEVPOST_WRITEUP.md"]],
       ["C58", "The typed codes are the part we have not seen in the tools above.", "PARTIAL", ["docs/DEVPOST_WRITEUP.md"]],
-      ["C59", "plays offline, it edits itself, and the pupils' results come back to her as short codes she types in", "TRUE", ["docs/DEVPOST_WRITEUP.md", "README.md"]],
+      ["C59", "the teacher types the codes into her own copy of the lesson and sees the class table", "TRUE", ["docs/DEVPOST_WRITEUP.md", "README.md"]],
     ];
     for (const [id, quote, status, files] of want) {
       const x = row(id);

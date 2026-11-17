@@ -2,7 +2,7 @@
 
 Category: Resurrection (HyperCard, 1987)
 
-**Stackyard turns one sentence into a lesson file the teacher hands to the class.** The lesson is the file: it plays offline, it edits itself, and the pupils' results come back to her as short codes she types in, with no internet, no accounts and no server. HyperCard gave a teacher a stack she could hand on; Stackyard brings that stack back, and this time the results come back too. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
+**Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.** Stackyard brings back HyperCard's stack as one lesson file made from one sentence: it plays offline and edits itself, with no accounts and no server. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
 
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
@@ -179,7 +179,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1565** passing (`npm test`).
+- Tests: **1572** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

@@ -942,4 +942,28 @@ Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behin
   - **Tests.**
     - New: a TASK-42b11 unit test (a flagged answer on a three-answer card is left), the y4-states-of-matter-3 regression, which now asks "the pass never adds an 'only two answers' warning" and expects both answers to be left, and a fast-check property (the blocking share-check lines after the passes are a subset of those before, and no card gains a two-answers warning). The property takes the fast-check count from 78 to 79 (`--fix` in the write-up and EVIDENCE.md; CLAIMS.md C18 by hand). Tests: 1,565.
     - Changed: the removal test now uses a four-answer card and checks three answers on tiles A–C. The same-form and strand tests use cards where only their own condition decides.
-  - **Shell edits.** None to hand-written files. `npm run bench` and `npm run samples` regenerated their outputs. `rm bench/reviewed/y4-states-of-matter-3.json` was run by its full path; it was this task's own untracked file. `npm run check:claims:fix` updated the counts. A temporary `show-tmp.ts` printed the two decks and was deleted.
+  - **Shell edits.** None to hand-written files. `npm run bench` and `npm run samples` regenerated their outputs. `rm bench/reviewed/y4-states-of-matter-3.json` was run by its full path; it was this task's own untracked file. `npm run check:claims:fix` updated the counts.
+- **c. Lead with the results loop and name HyperCard (TASK-42c, judge round r7 P0-2 text part and P1-6).** Spec: Phase 27, TASK-42c1–c7.
+  - **What changed.**
+    - README line 5 and the write-up's line 5 now open with "Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.", then say Stackyard brings back HyperCard's stack (1987 in the write-up) as one lesson file made from one sentence. The Maker / internet note stays.
+    - The Devpost tagline is a checked constant in `tests/round15-docs.test.ts` and in the spec, not in the write-up body: "Pupils' results come back with no internet: the teacher types their short codes and sees the class table. HyperCard's stack, back as one lesson file from one sentence." It is 167 characters, under Devpost's 170.
+    - CLAIMS.md C59 quotes the new lead. C5's note ("as the README's first paragraph says") is still true, because the new line 5 keeps the Maker note.
+    - Inspiration, What it does and the README's "## What it is" are unchanged; none repeats the new line word for word.
+  - **Checked against the code (c4).**
+    - The code is drawn on the end card by `buildResultsCode` in `src/player/renderer.ts`, whenever the lesson has quiz cards. Both exports, the default living file and the play-only class file, play through that renderer, so both show it.
+    - The teacher types or pastes codes into Class Results in the Teacher tab, which exists only in a living file, so "her own copy" means a living file.
+    - The panel shows a per-question table and a row per pupil.
+    - `src/living` and `src/player` make no fetch, XHR, WebSocket, EventSource or beacon call, and a test checks that.
+    - Every word of the two new lines holds. One nuance: a lesson with no quiz cards shows no code.
+  - **The drafts (c6).** All three were backed up first, beside the originals, as `BLOG_DRAFT_20261116.bak`, `SOCIAL_DRAFT_20261116.bak` and `WRITEUP_DRAFT_20261116.bak`; none existed before.
+    - `SOCIAL_DRAFT.md`: the first paragraph is unchanged and still starts with #KiroweenHackathon26. The second paragraph opens with the new two sentences, and the Status line starts "Status 16.11: … in this draft only, NOT in the live LinkedIn post; Roma decides."
+    - `BLOG_DRAFT.md`: the title is unchanged, and the "short version" paragraph sits under the "Written as part of…" line. The Status line says the change is NOT applied to the live dev.to post. No CLAIMS.md row was added for it.
+    - `WRITEUP_DRAFT.md` is a copy of the new write-up body, under a heading naming TASK-42 and "the TASK-42 commit".
+    - No live page was touched.
+  - **Tests.**
+    - New: `tests/round15-docs.test.ts` (TASK-42c1–c7). It pins both line 5s, checks the tagline rules and the code facts, checks C59, and has a draft check that skips when the drafts are not beside the repo.
+    - Changed: `tests/round12-docs.test.ts` (the R1 lead constants and C59, with TASK-42c ids in their titles). TASK-41j's draft test still passes, because it checks only the stable start of each Status line.
+  - **Shell edits.**
+    - `cp` made the three `.bak` files. The two I first wrote with the file tools had one extra trailing newline, so I replaced those files I had just made with exact copies, checked with `cmp`.
+    - The write-up draft was rebuilt in the shell: its heading line, then `tail -n +2` of the write-up, written to `WRITEUP_DRAFT.md.new` and moved over the draft after the last `--fix`. `diff` confirmed the body is identical.
+    - `npm run check:claims:fix` moved the counts (tests and traced ids). A temporary `show-tmp.ts` printed the two decks and was deleted.

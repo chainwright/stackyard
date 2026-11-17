@@ -2428,3 +2428,32 @@ Source: judge round r7 (P2-8). Every seat named the browser's `window.confirm("A
 - **Bench replay:** of the flagged joke answers, one was swapped, none were removed and two were left (still noted), in two decks. One extra quiz card was dropped for repeating an earlier right answer.
 - **No-warnings count:** "no lesson warnings" went from 43 to 37, because the lesson check now also notes same-answer pairs.
 - **Tests:** `tests/deck-answer-quality.test.ts` and `tests/round14-docs.test.ts` cover it, and the gates pass.
+
+### TASK-42c: lead with the results loop and name HyperCard in the first line  *(TASK-42 c)*
+  - **Bug.** Judge round r7 (P0-2 text part, P1-6): every seat said the one thing no other entry has is the results loop. A pupil's short code, typed in by the teacher, becomes the class table, with no internet. Our first lines buried it behind "turns one sentence into a lesson file", and did not name HyperCard where other entries show it in two seconds.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-42c1: **README line 5** leads with the results loop and names HyperCard's stack.
+    - [x] TASK-42c2: **the write-up's line 5** does the same, with "HyperCard's stack (1987)".
+    - [x] TASK-42c3: **the Devpost tagline**, kept in the repo as a checked constant (not in the write-up body, which is pasted as "About"): "Pupils' results come back with no internet: the teacher types their short codes and sees the class table. HyperCard's stack, back as one lesson file from one sentence." A test checks that it is at most 170 characters, starts with "Pupils' results come back with no internet" and contains "HyperCard".
+    - [x] TASK-42c4: **the new lines are checked against the code.**
+      - The code is on the end card (`buildResultsCode` in `src/player/renderer.ts`, the player both exports share), whenever the lesson has quiz cards. So the play-only class file shows it too.
+      - The teacher types or pastes codes into Class Results in the Teacher tab of a living file.
+      - The panel shows a per-question table and a row per pupil.
+      - `src/living` and `src/player` make no fetch, XHR, WebSocket, EventSource or beacon call.
+    - [x] TASK-42c5: **what quoted the old first lines follows.** CLAIMS.md C59 gets its new quote and both line refs, and the tests that pinned the old sentences are updated.
+    - [x] TASK-42c6: **the drafts beside the repo.**
+      - `SOCIAL_DRAFT.md`, `BLOG_DRAFT.md` and `WRITEUP_DRAFT.md` carry the new lead, each backed up first as `*_20261116.bak`.
+      - Each Status line says the change is in the draft only, not on the live post.
+      - No CLAIMS.md row is added for a sentence that is not live.
+    - [x] TASK-42c7: **plain words.** No list of three for effect, no "not only … but", and no AI tool name.
+  - **Acceptance criteria.**
+    - A test pins both line 5s word for word, and the tagline rules.
+    - CLAIMS.md C59 passes `check:claims`.
+    - A TASK-42c draft test checks the drafts when they sit beside the repo, and skips otherwise.
+    - The gates pass.
+
+**Status (16 Nov).** TASK-42c (c1–c7) is done.
+- Both files open with the results loop and name HyperCard's stack, and the tagline is checked in `tests/round15-docs.test.ts` (167 characters).
+- C59 follows the new lead.
+- The three drafts carry the new lead, are backed up as `*_20261116.bak`, and say they are not on the live posts.
+- The gates pass.
