@@ -95,10 +95,10 @@ describe("TASK-39b: EVIDENCE.md", () => {
 });
 
 describe("TASK-39c: CLAIMS.md", () => {
-  it("TASK-39c: TASK-40f: TASK-41i: TASK-42b8: has the header, the dev.to link and rows C1–C70", () => {
+  it("TASK-39c: TASK-40f: TASK-41i: TASK-42b8: TASK-42d2: has the header, the dev.to link and rows C1–C71", () => {
     expect(claims).toContain("| # | Claim | Where | Status | Proof, or what is missing |");
     expect(claims).toContain("https://dev.to/automate_ai/we-brought-back-hypercards-stack-not-its-editor-3g3g");
-    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(70);
+    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(71);
   });
 });
 
@@ -151,14 +151,14 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
 });
 
 describe("TASK-39e: the README's Built with Kiro is the same kind of table", () => {
-  it("TASK-39e README line 11 links the three judge files", () => {
+  it("TASK-39e: TASK-42d3: README line 13 (two lines lower after the relevance line) links the three judge files", () => {
     const lines = readme.split("\n");
-    expect(lines[10]).toBe(
+    expect(lines[12]).toBe(
       "**For judges:** [a 3-minute path](JUDGES.md) · [every number and how to reproduce it](EVIDENCE.md) · [every claim and its status](CLAIMS.md)",
     );
-    expect(lines[9]).toBe("");
     expect(lines[11]).toBe("");
-    expect(lines[8]).toMatch(/^\*\*Demo video \(2:55\):\*\*/);
+    expect(lines[13]).toBe("");
+    expect(lines[10]).toMatch(/^\*\*Demo video \(2:55\):\*\*/);
   });
 
   it("TASK-39e has the claim + proof table and keeps the pre-submit label", () => {

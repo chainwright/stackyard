@@ -6,8 +6,8 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,572 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
-| 235 of 235 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
+| 1,578 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 241 of 241 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
 | 79 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
 | 1,000-run round trip | stack → HTML file → stack, lossless | `npm run check:invariants` | `numRuns` in `tests/roundtrip.property.test.ts` |
@@ -36,6 +36,11 @@ Each sentence below is checked word for word against its data file by `npm run c
 - **A hook 1.6 s after Kiro's edit.** Two session-store lines shown in the video at 2:22 (a scratch-copy session, labelled).
 - **Other browsers.** On 6 Nov, files exported before TASK-29/30 played offline in Playwright's Chromium, Firefox and WebKit builds (0 requests, 0 errors): `docs/cross-browser/`. Today's gates use headless Chrome only.
 - **One MCP call through Kiro.** 10 Nov, 06:07Z: `docs/kiro-sessions/mcp-call-2026-11-10.md`.
+
+## Sources we cite
+- **School Wi-Fi in England.** The UK Department for Education's press release "No child left behind in plans to narrow the digital divide in education" (21 March 2025, https://www.gov.uk/government/news/no-child-left-behind-in-plans-to-narrow-the-digital-divide-in-education) says: "But the 2023 Technology in Schools Survey found just 63% of schools reported having a fully functional Wi-Fi signal throughout the school."
+  - Limits: it is about schools in England, of all phases, not only primary, and it is the department's summary of its own survey.
+  - Checked at gov.uk on 16 Nov 2026 by our coordinator, outside Kiro, because the Kiro sandbox has no network.
 
 ## Kiro's limits in this build
 - **The pre-submit hook (`PostTaskExec`) is not yet recorded firing.** kiro-cli sessions have no task-status tool, so a task ticked there is a file edit, and that does not fire it. The documented trigger is a task-status change in the Kiro IDE's tasks view, which we did not drive. kiro.dev lists Manual hooks as not invocable in the CLI, so we did not use one. The same gate runs on demand as `/pre-submit` (run once from kiro-cli on 6 Nov, session `2028064e`) or `npm run pre-submit`.

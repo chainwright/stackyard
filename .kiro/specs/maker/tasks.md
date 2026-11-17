@@ -2457,3 +2457,21 @@ Source: judge round r7 (P2-8). Every seat named the browser's `window.confirm("A
 - C59 follows the new lead.
 - The three drafts carry the new lead, are backed up as `*_20261116.bak`, and say they are not on the live posts.
 - The gates pass.
+
+### TASK-42d: one relevance line with one cited statistic near the top  *(TASK-42 d)*
+  - **Bug.** Judge round r7 (P2-9): the relevance seats scored 5–7, because "school internet drops" was an assertion with no source.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-42d1: **the relevance paragraph.** Directly under line 5 of README.md and of the write-up, as its own paragraph: "Why it matters: in England, the Department for Education's 2023 Technology in Schools Survey found just 63% of schools reported a fully functional Wi-Fi signal throughout the school ([DfE, 21 March 2025](https://www.gov.uk/government/news/no-child-left-behind-in-plans-to-narrow-the-digital-divide-in-education)). Stackyard's lesson file needs no connection to play or to bring the results back."
+      - The brief's other second sentence, "A lesson that needs a live connection to collect results fails in the rest.", is not used. The source says only that the other 37% did not report Wi-Fi that is fully working throughout the school. Many of them have Wi-Fi in part of the school, so "fails in the rest" claims more than the source supports.
+    - [x] TASK-42d2: **the source is recorded.** A CLAIMS.md row quotes "found just 63% of schools reported a fully functional Wi-Fi signal throughout the school" in both files, with the press release URL, its date, its exact sentence and its limits. An EVIDENCE.md "Sources we cite" section carries the same.
+      - The limits: schools in England, all phases, the department's summary of its own survey.
+      - The source was checked at gov.uk on 16 Nov 2026 by the coordinator, outside Kiro, because the Kiro sandbox has no network.
+    - [x] TASK-42d3: **line numbers follow.** Every CLAIMS.md line ref moves with the new paragraph (`check:claims:fix`, then checked by hand), and the tests that read fixed lines read the right line.
+    - [x] TASK-42d4: **a docs test.** In both files the paragraph is within the first three paragraphs after the title, has exactly one percentage and the gov.uk URL, and the CLAIMS row carries the publisher's exact sentence. No network in tests.
+    - [x] TASK-42d5: **the write-up draft follows.** `WRITEUP_DRAFT.md` follows the new write-up body. The blog and social drafts are unchanged.
+  - **Acceptance criteria.** The TASK-42d test passes, `check:claims` passes with every line ref right, and the gates pass.
+
+**Status (16 Nov).** TASK-42d (d1–d5) is done.
+- Both files carry the DfE Wi-Fi line as line 7, and CLAIMS.md C71 and EVIDENCE.md "Sources we cite" record the source and its limits.
+- All 69 README / write-up line refs were moved and checked.
+- `tests/round16-docs.test.ts` covers it, and the gates pass.

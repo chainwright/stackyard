@@ -967,3 +967,22 @@ Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behin
     - `cp` made the three `.bak` files. The two I first wrote with the file tools had one extra trailing newline, so I replaced those files I had just made with exact copies, checked with `cmp`.
     - The write-up draft was rebuilt in the shell: its heading line, then `tail -n +2` of the write-up, written to `WRITEUP_DRAFT.md.new` and moved over the draft after the last `--fix`. `diff` confirmed the body is identical.
     - `npm run check:claims:fix` moved the counts (tests and traced ids). A temporary `show-tmp.ts` printed the two decks and was deleted.
+- **d. One relevance line with one cited statistic (TASK-42d, judge round r7 P2-9).** Spec: Phase 27, TASK-42d1–d5.
+  - **The source.** The UK Department for Education's press release "No child left behind in plans to narrow the digital divide in education" (21 March 2025, https://www.gov.uk/government/news/no-child-left-behind-in-plans-to-narrow-the-digital-divide-in-education) says: "But the 2023 Technology in Schools Survey found just 63% of schools reported having a fully functional Wi-Fi signal throughout the school."
+    - The coordinator checked it at gov.uk on 16 Nov 2026, outside Kiro, because the Kiro sandbox has no network. Nothing in this repo fetched it.
+    - Limits: schools in England, all phases (not only primary), and the department's summary of its own survey.
+  - **What changed.**
+    - README.md and the write-up have a new paragraph 7, under the lead: "Why it matters: in England, the Department for Education's 2023 Technology in Schools Survey found just 63% of schools reported a fully functional Wi-Fi signal throughout the school ([DfE, 21 March 2025](…)). Stackyard's lesson file needs no connection to play or to bring the results back."
+    - The brief's first second sentence, "A lesson that needs a live connection to collect results fails in the rest.", was not used. The source says only that the other 37% did not report Wi-Fi that works fully throughout the school, and many of them will have Wi-Fi in part of the school. "Fails in the rest" claims more than the source supports. The replacement says only what Stackyard does.
+    - CLAIMS.md C71 quotes "found just 63% of schools reported a fully functional Wi-Fi signal throughout the school" in both files (line 7). It is TRUE, with the URL, the date, the exact sentence, the check and the limits.
+    - EVIDENCE.md has a new "Sources we cite" section with the same.
+  - **Line numbers (d3).** The new paragraph moves everything below line 5 down two lines.
+    - `check:claims:fix` rewrote the CLAIMS.md refs. A one-off script then checked all 69 README / write-up refs by hand: 0 wrong. The write-up's size sentence (C26) is now line 11.
+    - Four tests that read fixed lines now read two lines lower, with TASK-42d3 in their titles: `mutation-log` (the video line and note), `round7-docs` (README video line 11), `round11-docs` (README "For judges" line 13) and `round12-docs` (the line maps of both files). Two row-count pins went from 70 to 71 (`round11-docs` TASK-39c, `claims-docs` TASK-39g), with TASK-42d2 in their titles.
+  - **Tests.** New: `tests/round16-docs.test.ts` (TASK-42d1–d5).
+    - The paragraph sits right under line 5 and within the first three paragraphs. It has exactly one percentage, the gov.uk link and no stretched words.
+    - The C71 row carries the publisher's exact sentence, and EVIDENCE.md carries the source.
+    - Every line ref is right, and the test file imports nothing that could reach the network.
+    - The write-up draft follows the body; the check skips when the draft is not beside the repo.
+  - **Drafts.** `WRITEUP_DRAFT.md`'s body was rebuilt from the write-up, keeping its heading line, and `diff` showed it identical. The blog and social drafts are unchanged by this task.
+  - **Shell edits.** None to repo hand-written files. `npm run check:claims:fix` moved the counts and the CLAIMS.md line refs. `WRITEUP_DRAFT.md` was rebuilt in the shell (`head -1` of itself plus `tail -n +2` of the write-up). A temporary `ref-tmp.ts` checked the refs and was deleted.

@@ -4,6 +4,8 @@ Category: Resurrection (HyperCard, 1987)
 
 **Pupils' results come back with no internet: each pupil's last card shows a short code, the teacher types the codes into her own copy of the lesson and sees the class table.** Stackyard brings back HyperCard's stack as one lesson file made from one sentence: it plays offline and edits itself, with no accounts and no server. (The Maker, where you make the lesson, needs the internet; only the file works offline.)
 
+Why it matters: in England, the Department for Education's 2023 Technology in Schools Survey found just 63% of schools reported a fully functional Wi-Fi signal throughout the school ([DfE, 21 March 2025](https://www.gov.uk/government/news/no-child-left-behind-in-plans-to-narrow-the-digital-divide-in-education)). Stackyard's lesson file needs no connection to play or to bring the results back.
+
 Inspired by HyperCard. Built for Kiroween 2026 with Kiro.
 
 **Demo video (2:55):** https://youtu.be/x6W2BzhpAyU · **Live app:** https://stackyard-sdqt.onrender.com
@@ -179,7 +181,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1572** passing (`npm test`).
+- Tests: **1578** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
