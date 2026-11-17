@@ -1080,3 +1080,32 @@ Judge round r8 (P1-9): Class Results looked like a default table, and at 390 px 
   - Each script was in `/tmp` and deleted after use.
   - `npm run samples`, `npm run bench` (offline replay) and `npm run check:claims:fix` (tests, traced ids, the bench lines and the CLAIMS.md line refs) rewrote generated text.
   - `WRITEUP_DRAFT.md` was rebuilt as before (`head -1` of itself, then `tail -n +2` of the write-up).
+
+## 16–17 Nov 2026: judge round r9 text and test fixes (TASK-44)
+
+Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside this repo. Spec: maker `tasks.md` Phase 29, with all five sub-tasks written now (TASK-44a–e). Only TASK-44a is built in this round; b–e are spec only and unticked.
+- **a. The TASK-43e3 test skips in a copy with no `.git` (TASK-44a).**
+  - **Bug.** The coordinator reported that a `git archive cf99a89` copy (no `.git`, the same as a GitHub ZIP download) failed `npm test`: 1 failed, 1,600 passed, 5 skipped. The failing test, `tests/round18-docs.test.ts` "TASK-43e3", runs `git grep`, which exits 128 with no repository. A fresh clone passed.
+  - **What changed.**
+    - The new `tests/helpers/git-checkout.ts` holds two helpers:
+      - `gitCheckoutAt(root)` is true only when `root` has a `.git` entry (a directory, or a file in a worktree) and `git rev-parse --show-toplevel` names `root` itself. The second check catches a ZIP unpacked inside some other repository, where `git grep` would read the wrong tree.
+      - `gitGrepHits(root, pattern)` runs the same `git grep -n -E` as before. It returns the matches, or "" for exit 1 (no match), and throws on any other exit.
+    - The TASK-43e3 test (now titled "TASK-43e3: TASK-44a2: …") calls `ctx.skip()` when `gitCheckoutAt(ROOT)` is false, as the other conditional tests in `tests/round13-docs.test.ts` do. In a checkout it runs as before: a match fails it, and a broken `git grep` throws, so neither can pass silently.
+  - **Tests.** The new `tests/round19-docs.test.ts` builds throwaway repositories in the system temp folder. It covers:
+    - a folder with no `.git`;
+    - a copy inside another repository;
+    - a subfolder of a repository;
+    - a repository root;
+    - a tracked match being found, and no match giving "";
+    - `git grep` with no repository throwing;
+    - the guard's text in the TASK-43e3 test.
+
+    The test data for the match is built in pieces, so its own source line never matches the pattern once it is tracked.
+  - **Pending ids.** `check:trace` must trace every declared id, so the spec-only ids TASK-44b–e needed a test title now. Each of the four "pending" tests in `tests/round19-docs.test.ts` passes only while its sub-ids are unticked (`- [ ]`) in Phase 29. An id is therefore traced only while the spec says plainly that it is not built. Ticking one makes its test fail until the real tests replace it.
+  - **Checked here.** `npm test` passes in this checkout. I also copied this working tree with no `.git` to a temp folder outside the repo (rsync, with `node_modules` linked) and ran the whole suite there: 1,610 passed, 6 skipped, 0 failed. The drafts were not beside that copy. My first version failed in that copy: its "this checkout is a checkout" test read the repo root, so it was rewritten to use a temp repository. The temp copy was deleted afterwards.
+  - **Checked by the coordinator.** The copies without `.git` that count for acceptance are a `git archive HEAD` copy and a fresh clone. The coordinator checks both outside Kiro.
+  - **Shell edits.**
+    - Phase 29 was first appended to `tasks.md` with a one-line shell `cat >>` placeholder, which was then replaced with the file tools.
+    - `git add -N` and `git reset` on the two new files let me check that `git grep` does not match them once tracked. This touched only the index, and both files are untracked again.
+    - `npm run check:claims:fix` moved the counts: tests 1,606 → 1,616, and traced ids 273 → 293. The clean-clone count (total minus the 5 skips) is not moved by `--fix`, so I changed it by hand to 1,611 in the README, JUDGES.md and EVIDENCE.md. Its wording stays until TASK-44e.
+    - `WRITEUP_DRAFT.md`, beside the repo, was rebuilt as before (`head -1` of itself, then `tail -n +2` of the write-up), because `--fix` changed the write-up's counts.

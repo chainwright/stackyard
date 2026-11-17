@@ -2576,3 +2576,50 @@ Source: judge round r8 (16 Nov 2026, P1-9). Class Results looked like "an unstyl
   - c7 says "most were reviewed", because the generator spec was not reviewed.
   - d1 says "classroom network", and "each pupil's last card shows" instead of "a pupil reads out".
 - No live page, video or thumbnail was touched.
+
+## Phase 29 - TASK-44: judge round r9 text and test fixes (16–17 Nov)
+
+Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this repo. The judges' web check and the frame measurements of the demo video were made outside Kiro; this sandbox has no network. The video linked everywhere is still v8b: no line in this phase describes v9b as the linked video, and the v8b-specific lines (write-up lines 9 and 11, README "Demo video (2:55)", JUDGES "Video (2:55)", EVIDENCE "13.7 s" and "at 2:22", C2's "video 0:24–0:38", the Credits' "the OFFLINE stamp") stay as they are until a later, post-upload task.
+
+### TASK-44a: the TASK-43e3 test skips in a copy with no `.git`  *(TASK-44 a)*
+  - **Bug.** A `git archive cf99a89` copy (no `.git`, the same as a GitHub ZIP download) fails `npm test`: 1 failed, 1,600 passed, 5 skipped. The failure is `tests/round18-docs.test.ts` "TASK-43e3: no tracked file quotes a draft Status line ending in a person's name". It runs `git grep`, which exits 128 when there is no repository. A fresh `git clone` of cf99a89 passes (1,602 passed, 4 skipped).
+  - **Fix.**
+    - [x] TASK-44a1: **skip when the copy is not its own git checkout.** The test calls `ctx.skip()`, in the style of the other conditional tests (`tests/round13-docs.test.ts`), when the repo root has no `.git` entry or `git rev-parse --show-toplevel` does not name the repo root. The second case covers a ZIP unpacked inside some other git repository, where `git grep` would search the wrong tree.
+    - [x] TASK-44a2: **unchanged in a git checkout.** In a checkout it runs `git grep` exactly as before. A match still fails the test, and so does any `git grep` exit other than 0 or 1 (1 means no match).
+    - [x] TASK-44a3: **tests.** A pure helper (`gitCheckoutAt`) decides between running and skipping. Unit tests cover a directory with no `.git`, a directory inside another repository, and this checkout. The guarded test keeps its TASK-43e3 title, with TASK-44a in it.
+  - **Acceptance criteria.** `npm test` and `CI=true npm run pre-submit` exit 0 in this checkout. The coordinator checks a fresh clone and a `git archive HEAD` copy outside Kiro; both must exit 0.
+
+### TASK-44b: the AI footage is about 23 s  *(TASK-44 b)*
+  - **Bug.** "about 21 s" (README, write-up Credits, CLAIMS C34) came from summing the whole-second windows of the YouTube description (TASK-43e1). The coordinator measured the edit timelines beside the repo (`../video/v8b/timeline_v8b.json`, `../video/v9b/timeline_v9b.json`) frame by frame, outside Kiro, and the judges measured the same: eight shots in seven on-screen windows, 23.1 s in both cuts.
+    - v8b windows: 0:00.0–0:02.4, 0:12.3–0:15.8, 0:40.1–0:41.5, 1:14.3–1:20.9 (two shots, 5.0 + 1.6 s), 1:24.2–1:28.2, 1:42.7–1:44.9 and 2:46.2–2:49.2.
+    - v9b windows: 0:00.0–0:02.4, 0:18.8–0:22.3, 0:43.4–0:44.8, 1:18.2–1:24.8 (5.0 + 1.6 s), 1:30.2–1:34.2, 1:44.2–1:46.4 and 2:31.2–2:34.2.
+    - The shots in each cut: 2.4 + 3.5 + 1.4 + 5.0 + 1.6 + 4.0 + 2.2 + 3.0 = 23.1 s.
+  - **Fix.**
+    - [ ] TASK-44b1: the write-up Credits and the README's matching sentence say "about 23 s in seven on-screen windows, eight shots in all". "the OFFLINE stamp" stays in the Credits (v8b has one at 0:02–0:04).
+    - [ ] TASK-44b2: CLAIMS C34 quotes the new wording and is TRUE. Its proof lists the frame windows of both cuts above: from the edit timelines beside the repo, measured by the coordinator outside Kiro.
+    - [ ] TASK-44b3: the old spec and log lines that say 21 s stay as history, with one dated note. The tests that pin "about 21 s" move, with TASK-44b in their titles.
+  - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
+
+### TASK-44c: "Where it sits" names the twin and the trade-off  *(TASK-44 c)*
+  - **Bug.** The paragraph that names Exam Maker, Quorum Classroom and rClassTra does not say what Stackyard gives up. The judges' web check (16–17 Nov, outside Kiro) found that ZipGrade and Plickers also bring class results back without internet, on paper that the teacher's phone scans.
+  - **Fix.**
+    - [ ] TASK-44c1: that write-up paragraph ends with "Exam Maker: Offline Tests reaches the same outcome with an app on every pupil's phone; ZipGrade and Plickers do it on paper scanned by the teacher's phone. Stackyard trades their automatic collection for no app, no device pairing and no network at all: the cost is that she types one short code per pupil." The README's Prior art is not touched unless a test needs it.
+    - [ ] TASK-44c2: CLAIMS C74 quotes the ZipGrade / Plickers part, PARTIAL: "Missing: from a judge's web check (16–17 Nov 2026, outside Kiro); we ran none of them." EVIDENCE.md's "Sources we cite" lists ZipGrade and Plickers with the date.
+    - [ ] TASK-44c3: tests for the sentence, its place, C74 and the source entry. The row-count pins move from 73 to 74, and the line refs stay right.
+  - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
+
+### TASK-44d: Caramel, the commit days and C73  *(TASK-44 d)*
+  - **Bug.** Caramel's page (outilstice) says "Choisissez discipline, niveau, type d'activité; Collez un extrait de cours": subject, level and activity type, with an optional course extract. It does not say "objective". The C43 proof does not say how "about ten days" is measured. C73 is PARTIAL, but the judges read the two pages it rests on.
+  - **Fix.**
+    - [ ] TASK-44d1: the write-up says Caramel "turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi". The tests that pin the old wording move.
+    - [ ] TASK-44d2: the C43 proof becomes "commits on 10 days between 30 Oct and 16 Nov (git log)", and C43 stays TRUE. The coordinator measured 10 distinct days: 30 and 31 Oct; 4, 5, 6, 8, 9, 10, 11 and 16 Nov. (The judge's 9 is wrong.)
+    - [ ] TASK-44d3: C73's proof is the two quotes, with their URLs, read 16–17 Nov outside Kiro, and its status is TRUE. The quotes are quorum-classroom.github.io's "The quiz runs on the instructor's laptop and classroom network." and rclasstra.github.io's "rClassTra turns one laptop into the classroom server". C72 stays as it is.
+  - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
+
+### TASK-44e: the test counts say what each kind of copy sees  *(TASK-44 e)*
+  - **Bug.** The README Tests line, the JUDGES.md `npm test` comment and EVIDENCE.md's first row give one clean-copy count. But a fresh clone, a shallow clone and a ZIP download skip different tests. "All pass in our working copy" is not backed by anything a reader can run.
+  - **Fix.**
+    - [ ] TASK-44e1: the three lines say "N tests in the suite; a fresh git clone: N−4 pass, 4 skip (they read draft posts kept beside the repo); a shallow clone (`git clone --depth 1`, the kind CI makes): N−5 pass, 5 skip (one more needs the full git history); a ZIP download (no `.git`): N−6 pass, 6 skip (one more runs `git grep`)". "All pass in our working copy" goes. The coordinator measures the exact numbers at the final commit.
+    - [ ] TASK-44e2: `check:claims` checks every one of these numbers against the measured total and the number of conditional skips of each kind, and fails on drift. `--fix` moves them.
+    - [ ] TASK-44e3: tests for the checker (drift fails, `--fix` moves each number) and for the three lines.
+  - **Acceptance criteria.** A test per sub-id; `check:claims` passes; the coordinator's three copies give the stated counts.

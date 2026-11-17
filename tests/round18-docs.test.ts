@@ -5,10 +5,10 @@
 // coordinator's side outside Kiro; these tests read local files only.
 
 import { describe, it, expect } from "vitest";
-import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
+import { gitCheckoutAt, gitGrepHits } from "./helpers/git-checkout.js";
 import {
   parseClaimRows,
   compareClaimsTable,
@@ -253,7 +253,7 @@ describe("TASK-43d: Where it sits names the offline-results tools", () => {
 
   it("TASK-43d4: this file reaches no network: it imports only local modules", () => {
     const imports = read("tests/round18-docs.test.ts").split("\n").filter((l) => /^import /.test(l));
-    for (const l of imports) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:crypto|node:path|\.\.\/scripts\/claims-lib\.js)";|^import \{$/);
+    for (const l of imports) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:crypto|node:path|\.\.\/scripts\/claims-lib\.js|\.\/helpers\/git-checkout\.js)";|^import \{$/);
     // Built from pieces so this line does not match itself.
     const net = new RegExp(["\\bfet" + "ch\\(", "https?\\.g" + "et\\(", "new Web" + "Socket"].join("|"));
     expect(read("tests/round18-docs.test.ts")).not.toMatch(net);
@@ -297,16 +297,12 @@ describe("TASK-43e: two unbacked figures, and a name", () => {
     }
   });
 
-  it("TASK-43e3: no tracked file quotes a draft Status line ending in a person's name", () => {
+  it("TASK-43e3: TASK-44a2: no tracked file quotes a draft Status line ending in a person's name (skips in a copy with no .git, such as a ZIP download)", (ctx) => {
+    // TASK-44a1: a ZIP download or `git archive` copy has no .git, and git grep exits 128 there.
+    if (!gitCheckoutAt(ROOT)) return ctx.skip();
     // The pattern, not the name: the drafts' Status lines end "post; <Name> decides.".
-    let hits = "";
-    try {
-      hits = execFileSync("git", ["grep", "-n", "-E", "post; [A-Z][a-z]+ decides"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    } catch (err) {
-      // git grep exits 1 when nothing matches.
-      expect((err as { status?: number }).status).toBe(1);
-    }
-    expect(hits).toBe("");
+    // TASK-44a2: the same git grep as before; a match fails, and an exit other than 0 or 1 throws.
+    expect(gitGrepHits(ROOT, "post; [A-Z][a-z]+ decides")).toBe("");
   });
 
   it("TASK-43e4: no hook-firings file is added; C20 and C47 stay PARTIAL", () => {
