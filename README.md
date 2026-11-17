@@ -127,12 +127,12 @@ saves is opened and played (screen 9).
 
 ## Built with Kiro
 
-Stackyard was planned and built in Kiro. One claim per row, and where to look. What Kiro did not do here is in [EVIDENCE.md](EVIDENCE.md#kiros-limits-in-this-build).
+Stackyard's steering, specs and most of its code were written in Kiro CLI; an AI coordinator working outside Kiro wrote the task briefs and set up CI and hosting ([what Kiro did not do](EVIDENCE.md#kiros-limits-in-this-build)). One claim per row, and where to look.
 
 | Kiro feature | Claim | Proof |
 |---|---|---|
 | Steering | Five always-on files describe the product, audience, tech, stack format and design system; a sixth, on demand, is the pre-submit gate. | [`.kiro/steering/`](.kiro/steering/) |
-| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request and then reviewed, plus a small `kiro-evidence` spec for the MCP call record. `npm run check:trace` fails if a lettered task id is not named in a test title, a gate script or a hook. | [`.kiro/specs/`](.kiro/specs/); `npm run check:trace` |
+| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request (we sent the exporter and Maker specs back with changes, and a read-only AI sub-agent reviewed the class-results spec, before their code), plus a small `kiro-evidence` spec for the MCP call record. `npm run check:trace` fails if a lettered task id is not named in a test title, a gate script or a hook. | [`.kiro/specs/`](.kiro/specs/); `npm run check:trace` |
 | Hooks | Six hooks: invariants on save, the living-file gate, an export check, a ready-made content check, `invariants-after-shell-edit` (a `PostToolUse` hook on the agent's shell commands that re-runs the invariants after a shell edit) and a `pre-submit` gate set to fire when a spec task is marked done (not yet recorded firing; run on demand as `/pre-submit`). Kiro's session store recorded 493 hook firings in our main session (5 to 9 Nov). | [`.kiro/hooks/`](.kiro/hooks/); [`docs/kiro-sessions/`](docs/kiro-sessions/) |
 | Custom agent | The lesson checker reads a set of cards for factual errors, ambiguous questions and reading level. Run on the ready-made decks, it caught an ambiguous Vikings question. | [`.kiro/agents/`](.kiro/agents/) |
 | MCP server | `mcp/openverse` finds public-domain pictures for the ready-made decks. Its code was run as a script outside Kiro to pick them (Kiro's sandbox had no network); its search was also called once through Kiro as an MCP tool (10 Nov). | [`mcp/openverse/`](mcp/openverse/); [`docs/kiro-sessions/`](docs/kiro-sessions/) |
@@ -156,6 +156,7 @@ scored lesson the class plays, every stack satisfies nine validity invariants, a
 - **OpenMAIC** (open source) turns a topic or a document into an AI-generated lesson with quizzes and can export it as an offline HTML player, but the file has no editor inside and no class results.
 - **Egatari** turns a lesson into one HTML file that plays offline and carries its own source, so it can be reopened in the Egatari Studio editor, edited and saved again; a chat AI can draft the lesson.
 - **LessonRemix**, **Doppel** and **Syllabind** also export offline single-file lessons: LessonRemix from a browser studio with multiple-choice checks, Doppel from product screenshots with AI-suggested steps, Syllabind from a topic through a Claude Code skill (offline HTML and a PDF).
+- **Class results without the internet** exist too: Exam Maker: Offline Tests (an Android app; its Google Play page now says Online Tests) shares a test by QR code or Nearby sharing, and Quorum Classroom and rClassTra run the quiz from the teacher's laptop over the classroom network. Stackyard needs no app, no local network and no server: the teacher types or pastes each pupil's short code.
 
 What we haven't found elsewhere: **a teacher's sentence → a validated, branching,
 always-playable stack → direct card editing → one self-contained offline file that
@@ -183,7 +184,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1587** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,583 pass and 4 skip: 3 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
+- Tests: **1606** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,601 pass and 5 skip: 4 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
 - Player bundle: **13.0 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
@@ -191,7 +192,7 @@ These figures are checked against the code by `scripts/check-claims`, which `npm
   (1,457,664 bytes). That is a living export of
   `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
   The ready-made samples in `samples/` carry photos, so they are larger.
-- Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
+- Curriculum bench: in a replay through today's generator of 55 recordings, one per England KS2 science objective (Years 3–5; 34 re-recorded with the v5 prompt, 21 from the earlier v2 prompt), 54 became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
 - An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
 - In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's. That review read the bench decks before 16 Nov, when generation began swapping or removing the joke answers our check flags; in today's bench files it swapped one such answer, removed none and left two, which still carry the joke-answer note, in two decks.
 - Accessibility: axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
@@ -379,7 +380,7 @@ full link.
 
 The demo video is not part of the app. Its music was generated by the team with
 ElevenLabs Music on a paid plan, on 27 Oct 2026 for an earlier project of ours,
-and reused here (details: [`docs/MUSIC_LICENCE.md`](docs/MUSIC_LICENCE.md)). The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 23 s in seven on-screen windows, eight shots), each tagged on screen; app screens in them are real recordings composited in.
+and reused here (details: [`docs/MUSIC_LICENCE.md`](docs/MUSIC_LICENCE.md)). The classroom shots are dramatised: the teacher, the pupils, the laptops and the room are AI-generated (about 21 s in seven on-screen windows, eight shots), each tagged on screen; app screens in them are real recordings composited in.
 
 ### Design reference image (AI-generated)
 

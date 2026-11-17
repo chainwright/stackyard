@@ -104,9 +104,10 @@ describe("TASK-41d: joke-answer marker: say it misses most", () => {
 });
 
 describe("TASK-41e: spec reviews: which specs went back", () => {
-  it("TASK-41e the Spec vs vibe row names the three that went back and the one that did not", () => {
+  it("TASK-41e: TASK-43c4: the Spec vs vibe row names the three that went back, who reviewed them, and the one that did not", () => {
+    // TASK-43c4 (16 Nov): the class-results review was a read-only AI sub-agent's, not ours (docs/KIRO_LOG.md, 10 Nov).
     expect(W).toContain(
-      "and we reviewed them: the exporter, Maker and class-results specs went back to Kiro with changes before their code; the first spec, the stack generator, went straight to code.",
+      "Kiro wrote each feature's requirements, design and tasks from a chat request. The exporter and Maker specs went back to Kiro with our changes before their code, and the class-results spec went back after a read-only AI sub-agent's review found two P0s; the first spec, the stack generator, went straight to code.",
     );
     expect(W).toContain("`docs/KIRO_LOG.md` (30 Oct, 4 Nov, 10 Nov entries); `.kiro/specs/class-results/design.md` (the review's two P0 findings)");
     gone("like pull requests and sent them back");
@@ -158,7 +159,7 @@ describe("TASK-41h: no negative claim about other tools", () => {
 });
 
 describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
-  it("TASK-41i C15, C24, C44, C45, C60 and C61 follow the facts", () => {
+  it("TASK-41i: TASK-43c6: C15, C24, C44, C45, C60 and C61 follow the facts", () => {
     expect(row("C15").status).toBe("TRUE");
     expect(row("C15").proof).toContain("OpenMAIC's README Export table (checked 12 Nov 2026)");
     expect(row("C24").quote).toBe("Kiro CLI wrote the steering and specs and most of the code");
@@ -166,7 +167,8 @@ describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
     expect(row("C24").proof).toContain("the '(built in Kiro)' mark starts at TASK-30");
     expect(row("C44").quote).toBe("The review of the class-results spec found two serious problems, and its design doc records both.");
     expect(row("C44").status).toBe("TRUE");
-    expect(row("C45").quote).toMatch(/^On 10 Nov all 176 did; on 12 Nov, after more tasks, all \d+ do\.$/);
+    // TASK-43c6 (17 Nov): the live post now adds "On 16 Nov, all 241 do.", so C45 quotes both dated counts and is TRUE again.
+    expect(row("C45").quote).toMatch(/^On 10 Nov all 176 did; on 12 Nov, after more tasks, all \d+ do\.( On 16 Nov, all \d+ do\.)?$/);
     // Judge round r8 (16 Nov): "all 207 do" reads as present tense after the count grew, so PARTIAL until the live post says 241.
     expect(["TRUE", "PARTIAL"]).toContain(row("C45").status);
     expect(row("C60").proof).toBe("Egatari, OpenMAIC and LessonRemix export offline lesson files (C54, C15, C55 and their sources)");
@@ -181,19 +183,22 @@ describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
     expect(n).toBeLessThanOrEqual(declaredIds().length);
   });
 
-  it("TASK-41i new rows C62–C68, all TRUE", () => {
+  it("TASK-41i: TASK-43c4: new rows C62–C68, all TRUE but C67 (PARTIAL since TASK-43c4: who reviewed)", () => {
     const want: Array<[string, string]> = [
       ["C62", "the play-only class file of the same lesson is 150 KB"],
       ["C63", "The first four (product, tech, stack format, audience) were written before any code"],
       ["C64", "how many got it right, got it wrong or never reached it"],
       ["C65", "Four run the real checks when Kiro saves the files they watch"],
       ["C66", "our check marks a few likely joke answers but misses most, so read every answer"],
-      ["C67", "the exporter, Maker and class-results specs went back to Kiro with changes before their code"],
+      [
+        "C67",
+        "The exporter and Maker specs went back to Kiro with our changes before their code, and the class-results spec went back after a read-only AI sub-agent's review found two P0s",
+      ],
       ["C68", "sees how many missed each question"],
     ];
     for (const [id, quote] of want) {
       expect(row(id).quote, id).toBe(quote);
-      expect(row(id).status, id).toBe("TRUE");
+      expect(row(id).status, id).toBe(id === "C67" ? "PARTIAL" : "TRUE");
     }
     expect(row("C68").refs).toEqual([{ file: "blog" }]);
   });
@@ -210,7 +215,7 @@ describe("TASK-41j: blog and social drafts (outside the repo)", () => {
     }
   };
 
-  it("TASK-41j: TASK-41k: when the drafts sit beside the repo, they carry the fixed sentences and the 12 Nov trace snapshot (skips in CI)", async (ctx) => {
+  it("TASK-41j: TASK-41k: TASK-43c7: when the drafts sit beside the repo, they carry the fixed sentences and the 12 Nov trace snapshot (skips in CI)", async (ctx) => {
     const blog = readOrNull(blogPath);
     const social = readOrNull(socialPath);
     if (blog === null || social === null) return ctx.skip();
@@ -230,7 +235,8 @@ describe("TASK-41j: blog and social drafts (outside the repo)", () => {
     for (const s of [
       "A chatbot will write you an HTML quiz, but it arrives without an editor inside, or a check that every card leads somewhere, unless you ask for them.",
       "sees how many missed each question",
-      "and we reviewed them; most went back to Kiro with changes. The review of the class-results spec found two serious problems, and its design doc records both.",
+      // TASK-43c7 (16 Nov): who reviewed, and one review round, not "minutes".
+      "and most were reviewed before their code, by us or by a read-only AI sub-agent, and went back to Kiro with changes. The review of the class-results spec, the sub-agent's, found two serious problems, and its design doc records both.",
       "Across 5–9 November the session store recorded 493 hook firings (our count; excerpts are in the repo's docs/kiro-sessions),",
       "On 10 Nov all 176 did; on 12 Nov, after more tasks, all ",
       status,

@@ -15,8 +15,8 @@
     "allReachable": 54,
     "endReachable": 54,
     "fkGradeMedian": 2.2,
-    "fileBytesMin": 217821,
-    "fileBytesMax": 221505,
+    "fileBytesMin": 217844,
+    "fileBytesMax": 221528,
     "firstCardMs": {
       "p50": 1413,
       "p90": 1988
@@ -75,7 +75,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220727,
+      "fileBytes": 220750,
       "file": "files/y3-plants-1.html"
     },
     {
@@ -116,7 +116,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219377,
+      "fileBytes": 219400,
       "file": "files/y3-plants-2.html"
     },
     {
@@ -157,7 +157,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219803,
+      "fileBytes": 219826,
       "file": "files/y3-plants-3.html"
     },
     {
@@ -201,7 +201,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219497,
+      "fileBytes": 219520,
       "file": "files/y3-plants-4.html"
     },
     {
@@ -242,7 +242,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218806,
+      "fileBytes": 218829,
       "file": "files/y3-animals-1.html"
     },
     {
@@ -283,7 +283,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219283,
+      "fileBytes": 219306,
       "file": "files/y3-animals-2.html"
     },
     {
@@ -324,7 +324,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219264,
+      "fileBytes": 219287,
       "file": "files/y3-rocks-1.html"
     },
     {
@@ -365,7 +365,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220908,
+      "fileBytes": 220931,
       "file": "files/y3-rocks-2.html"
     },
     {
@@ -408,7 +408,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218880,
+      "fileBytes": 218903,
       "file": "files/y3-rocks-3.html"
     },
     {
@@ -449,7 +449,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220827,
+      "fileBytes": 220850,
       "file": "files/y3-light-1.html"
     },
     {
@@ -490,7 +490,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219021,
+      "fileBytes": 219044,
       "file": "files/y3-light-2.html"
     },
     {
@@ -533,7 +533,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220432,
+      "fileBytes": 220455,
       "file": "files/y3-light-3.html"
     },
     {
@@ -574,7 +574,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218975,
+      "fileBytes": 218998,
       "file": "files/y3-light-4.html"
     },
     {
@@ -617,7 +617,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220112,
+      "fileBytes": 220135,
       "file": "files/y3-light-5.html"
     },
     {
@@ -658,7 +658,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218795,
+      "fileBytes": 218818,
       "file": "files/y3-forces-magnets-1.html"
     },
     {
@@ -701,7 +701,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219412,
+      "fileBytes": 219435,
       "file": "files/y3-forces-magnets-2.html"
     },
     {
@@ -744,7 +744,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219787,
+      "fileBytes": 219810,
       "file": "files/y3-forces-magnets-3.html"
     },
     {
@@ -785,7 +785,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220780,
+      "fileBytes": 220803,
       "file": "files/y3-forces-magnets-4.html"
     },
     {
@@ -826,7 +826,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219043,
+      "fileBytes": 219066,
       "file": "files/y3-forces-magnets-5.html"
     },
     {
@@ -869,7 +869,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219935,
+      "fileBytes": 219958,
       "file": "files/y3-forces-magnets-6.html"
     },
     {
@@ -910,7 +910,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220018,
+      "fileBytes": 220041,
       "file": "files/y4-living-things-1.html"
     },
     {
@@ -951,7 +951,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219370,
+      "fileBytes": 219393,
       "file": "files/y4-living-things-2.html"
     },
     {
@@ -992,7 +992,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219814,
+      "fileBytes": 219837,
       "file": "files/y4-living-things-3.html"
     },
     {
@@ -1035,7 +1035,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219315,
+      "fileBytes": 219338,
       "file": "files/y4-animals-1.html"
     },
     {
@@ -1076,7 +1076,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219554,
+      "fileBytes": 219577,
       "file": "files/y4-animals-2.html"
     },
     {
@@ -1119,7 +1119,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219208,
+      "fileBytes": 219231,
       "file": "files/y4-animals-3.html"
     },
     {
@@ -1162,7 +1162,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219236,
+      "fileBytes": 219259,
       "file": "files/y4-states-of-matter-1.html"
     },
     {
@@ -1203,7 +1203,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218821,
+      "fileBytes": 218844,
       "file": "files/y4-states-of-matter-2.html"
     },
     {
@@ -1248,7 +1248,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219394,
+      "fileBytes": 219417,
       "file": "files/y4-states-of-matter-3.html"
     },
     {
@@ -1289,7 +1289,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219839,
+      "fileBytes": 219862,
       "file": "files/y4-sound-1.html"
     },
     {
@@ -1330,7 +1330,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219097,
+      "fileBytes": 219120,
       "file": "files/y4-sound-2.html"
     },
     {
@@ -1371,7 +1371,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219443,
+      "fileBytes": 219466,
       "file": "files/y4-sound-3.html"
     },
     {
@@ -1412,7 +1412,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219749,
+      "fileBytes": 219772,
       "file": "files/y4-sound-4.html"
     },
     {
@@ -1453,7 +1453,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219429,
+      "fileBytes": 219452,
       "file": "files/y4-sound-5.html"
     },
     {
@@ -1496,7 +1496,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219277,
+      "fileBytes": 219300,
       "file": "files/y4-electricity-1.html"
     },
     {
@@ -1575,7 +1575,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219553,
+      "fileBytes": 219576,
       "file": "files/y4-electricity-3.html"
     },
     {
@@ -1618,7 +1618,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219447,
+      "fileBytes": 219470,
       "file": "files/y4-electricity-4.html"
     },
     {
@@ -1659,7 +1659,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219733,
+      "fileBytes": 219756,
       "file": "files/y4-electricity-5.html"
     },
     {
@@ -1700,7 +1700,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219355,
+      "fileBytes": 219378,
       "file": "files/y5-living-things-1.html"
     },
     {
@@ -1741,7 +1741,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 221331,
+      "fileBytes": 221354,
       "file": "files/y5-living-things-2.html"
     },
     {
@@ -1785,7 +1785,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219083,
+      "fileBytes": 219106,
       "file": "files/y5-animals-1.html"
     },
     {
@@ -1826,7 +1826,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 218682,
+      "fileBytes": 218705,
       "file": "files/y5-materials-1.html"
     },
     {
@@ -1867,7 +1867,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219579,
+      "fileBytes": 219602,
       "file": "files/y5-materials-2.html"
     },
     {
@@ -1908,7 +1908,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219344,
+      "fileBytes": 219367,
       "file": "files/y5-materials-3.html"
     },
     {
@@ -1949,7 +1949,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 221505,
+      "fileBytes": 221528,
       "file": "files/y5-materials-4.html"
     },
     {
@@ -1990,7 +1990,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219697,
+      "fileBytes": 219720,
       "file": "files/y5-materials-5.html"
     },
     {
@@ -2031,7 +2031,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219297,
+      "fileBytes": 219320,
       "file": "files/y5-materials-6.html"
     },
     {
@@ -2071,7 +2071,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 217821,
+      "fileBytes": 217844,
       "file": "files/y5-earth-space-1.html"
     },
     {
@@ -2112,7 +2112,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219549,
+      "fileBytes": 219572,
       "file": "files/y5-earth-space-2.html"
     },
     {
@@ -2155,7 +2155,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 1,
-      "fileBytes": 220236,
+      "fileBytes": 220259,
       "file": "files/y5-earth-space-3.html"
     },
     {
@@ -2196,7 +2196,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220078,
+      "fileBytes": 220101,
       "file": "files/y5-earth-space-4.html"
     },
     {
@@ -2237,7 +2237,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 220097,
+      "fileBytes": 220120,
       "file": "files/y5-forces-1.html"
     },
     {
@@ -2278,7 +2278,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219975,
+      "fileBytes": 219998,
       "file": "files/y5-forces-2.html"
     },
     {
@@ -2320,7 +2320,7 @@
       "removedDuplicates": 0,
       "leftDuplicates": 0,
       "droppedSameAnswer": 0,
-      "fileBytes": 219541,
+      "fileBytes": 219564,
       "file": "files/y5-forces-3.html"
     }
   ]

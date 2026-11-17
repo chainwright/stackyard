@@ -231,13 +231,23 @@ describe("TASK-43a: the Class Results panel", () => {
     expect(region.getAttribute("role")).toBe("region");
   });
 
-  it("TASK-43a3: the panel is a ruled index card in ink, with no stamp red, no blur and no new font", () => {
+  it("TASK-43a3: TASK-43a6: the panel is a plain paper index card in ink with one ruled line under the heading, no stamp red, no blur and no new font", () => {
     const at = LIVING_STYLES.indexOf("TASK-43a3");
     const css = LIVING_STYLES.slice(at, LIVING_STYLES.indexOf("TASK-43a2: on a narrow screen"));
-    expect(css).toContain("repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #C9D3E3 31px, #C9D3E3 32px)");
+    // TASK-43a6: no 32 px rule pattern behind the text (it crossed the glyphs); one rule under the h2.
+    expect(css).not.toContain("repeating-linear-gradient");
+    expect(css).toContain("background-image: none;");
+    expect(css).toContain(".sy-results h2 { padding-bottom: 8px; border-bottom: 1px solid #C9D3E3;");
     expect(css).not.toMatch(/#CE3926/i);
     expect(css).not.toMatch(/blur\(|backdrop-filter/);
     const fonts = new Set((css.match(/font-family: '([^']+)'/g) ?? []).map((f) => f.replace(/font-family: '|'/g, "")));
     for (const f of fonts) expect(["Bricolage Grotesque", "Stackyard Reading", "Stackyard Digits"]).toContain(f);
+  });
+
+  it("TASK-43a6: under 480 px the caption has the rows' inset and each label keeps its space (\"Right: 5\")", () => {
+    const media = LIVING_STYLES.slice(LIVING_STYLES.indexOf("@media (max-width: 480px) {"));
+    expect(media).toContain(".sy-results-questions caption { display: block; padding: 8px 10px 4px; }");
+    expect(media).toContain('.sy-results-questions td::before { content: attr(data-label) ":\\00a0";');
+    expect(LIVING_STYLES).not.toContain('content: attr(data-label) ": "');
   });
 });

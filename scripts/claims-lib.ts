@@ -351,14 +351,26 @@ export interface BenchNumbers {
   objectives: number;
   firstTry: number;
   lessonClean: number;
+  /** TASK-43c3: how many recordings were re-recorded with the v5 prompt (the objectives in bench/rerecord.txt); the rest are v2 recordings. */
+  rerecorded?: number;
 }
 
+/**
+ * TASK-43c3: the bench is a REPLAY of recordings, not one fresh run: v5
+ * re-recorded the 34 objectives in bench/rerecord.txt, every other objective
+ * keeps its v2 recording (bench/RESULTS.md, "Current run"). The prompt has
+ * changed since v5 (TASK-36c4), so the line says "the v5 prompt", not "the
+ * current prompt". check-claims passes the real count from bench/rerecord.txt.
+ */
+export const BENCH_V5_RERECORDED = 34;
+
 // TASK-33c14: "our AUTOMATIC lesson check" — the check is mechanical.
+// TASK-43c3: groups 1 recordings, 2 re-recorded, 3 v2, 4 first try, 5 clean.
 const BENCH_RE =
-  /(\d+) of (\d+) England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; (\d+) passed our automatic lesson check with no warnings/;
-/** The pre-TASK-33c14 wording, recognised only so `--fix` can replace it. */
+  /[Ii]n a replay through today's generator of (\d+) recordings, one per England KS2 science objective \(Years 3–5; (\d+) re-recorded with the v5 prompt, (\d+) from the earlier v2 prompt\), (\d+) became a valid lesson file on the first try; (\d+) passed our automatic lesson check with no warnings/;
+/** Earlier wordings (before TASK-33c14, and before TASK-43c3), recognised only so `--fix` can replace them. */
 const OLD_BENCH_RE =
-  /\d+ of \d+ England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; \d+ passed our lesson check with no warnings/;
+  /\d+ of \d+ England KS2 science objectives \(Years 3–5\) became a valid lesson file on the first try; \d+ passed our (?:automatic )?lesson check with no warnings/;
 
 /** Every text that reports a bench number says this. */
 export const BENCH_DISCLAIMER = "not a classroom study";
@@ -367,12 +379,14 @@ export const BENCH_DISCLAIMER = "not a classroom study";
 export const BENCH_MECHANICAL = "The checks are mechanical (structure, counts, answer overlap) and do not verify facts.";
 
 export function benchSentence(b: BenchNumbers): string {
-  return `${b.firstTry} of ${b.objectives} England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; ${b.lessonClean} passed our automatic lesson check with no warnings`;
+  const re = b.rerecorded ?? BENCH_V5_RERECORDED;
+  return `In a replay through today's generator of ${b.objectives} recordings, one per England KS2 science objective (Years 3–5; ${re} re-recorded with the v5 prompt, ${b.objectives - re} from the earlier v2 prompt), ${b.firstTry} became a valid lesson file on the first try; ${b.lessonClean} passed our automatic lesson check with no warnings`;
 }
 
 /** The README's bench line. */
 export function readmeBenchLine(b: BenchNumbers): string {
-  return `- Curriculum bench: ${benchSentence(b)} ([\`bench/RESULTS.md\`](bench/RESULTS.md)). ${BENCH_MECHANICAL} It measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
+  const s = benchSentence(b);
+  return `- Curriculum bench: ${s.charAt(0).toLowerCase()}${s.slice(1)} ([\`bench/RESULTS.md\`](bench/RESULTS.md)). ${BENCH_MECHANICAL} It measures the generator against curriculum objectives; it is ${BENCH_DISCLAIMER} and no teacher or pupil was involved.`;
 }
 
 /** The write-up's bench line ("Accomplishments"). */
@@ -383,7 +397,13 @@ export function writeupBenchLine(b: BenchNumbers): string {
 /** The numbers a text's bench line states, or null when it has none. */
 export function readBenchClaim(text: string): BenchNumbers | null {
   const m = BENCH_RE.exec(text);
-  return m ? { firstTry: Number(m[1]), objectives: Number(m[2]), lessonClean: Number(m[3]) } : null;
+  return m ? { firstTry: Number(m[4]), objectives: Number(m[1]), lessonClean: Number(m[5]) } : null;
+}
+
+/** TASK-43c3: the recordings split a bench line states, or null when it has none. */
+export function readBenchSplit(text: string): { recordings: number; rerecorded: number; v2: number } | null {
+  const m = BENCH_RE.exec(text);
+  return m ? { recordings: Number(m[1]), rerecorded: Number(m[2]), v2: Number(m[3]) } : null;
 }
 
 /** The bench check for one file. `bench` is null while bench/results.json does not exist. */
@@ -396,12 +416,21 @@ export function compareBench(text: string, where: string, bench: BenchNumbers | 
       : [{ name, claimed: benchSentence(claimed), actual: "(no bench/results.json)", ok: false, note: "nothing backs it yet: record and replay the bench first" }];
   }
   if (claimed === null) return [{ name, claimed: "(missing)", actual: benchSentence(bench), ok: false, note: "bench/results.json exists, so the line is required" }];
+  const split = readBenchSplit(text)!;
+  const want = bench.rerecorded ?? BENCH_V5_RERECORDED;
   const checks: Check[] = [
     {
       name,
-      claimed: benchSentence(claimed),
+      claimed: benchSentence({ ...claimed, rerecorded: split.rerecorded }),
       actual: benchSentence(bench),
       ok: claimed.objectives === bench.objectives && claimed.firstTry === bench.firstTry && claimed.lessonClean === bench.lessonClean,
+    },
+    {
+      // TASK-43c3: the split adds up, and the re-recorded count is bench/rerecord.txt's.
+      name: `${name} recordings split`,
+      claimed: `${split.rerecorded} + ${split.v2} = ${split.recordings}`,
+      actual: `${want} + ${bench.objectives - want} = ${bench.objectives}`,
+      ok: split.rerecorded + split.v2 === split.recordings && split.recordings === bench.objectives && split.rerecorded === want,
     },
   ];
   const line = text.split("\n").find((l) => BENCH_RE.test(l)) ?? "";
@@ -425,7 +454,9 @@ export function fixBench(text: string, b: BenchNumbers, anchor: string, line: (b
   const ix = lines.findIndex((l) => BENCH_RE.test(l) || OLD_BENCH_RE.test(l));
   if (ix >= 0) {
     const l = lines[ix]!;
-    lines[ix] = BENCH_RE.test(l) && l.includes(BENCH_DISCLAIMER) && l.includes(BENCH_MECHANICAL) ? l.replace(BENCH_RE, benchSentence(b)) : line(b);
+    lines[ix] = BENCH_RE.test(l) && l.includes(BENCH_DISCLAIMER) && l.includes(BENCH_MECHANICAL)
+      ? l.replace(BENCH_RE, (m) => { const s = benchSentence(b); return m.charAt(0) === "i" ? s.charAt(0).toLowerCase() + s.slice(1) : s; })
+      : line(b);
     return lines.join("\n");
   }
   const at = lines.findIndex((l) => l.includes(anchor));
@@ -810,6 +841,15 @@ export function compareMutationLog(text: string, where: string, log: MutationLog
   ];
   if (log.sha256 !== currentSha256) {
     checks.push({ name: `${where} mutation log matches scripts/mutation-check.ts`, claimed: log.sha256.slice(0, 12), actual: currentSha256.slice(0, 12), ok: false, note: `the mutant set changed since ${log.file}; ${MUTATION_RERUN}` });
+  }
+  // TASK-43c2: a dated run ("(10 Nov, commit a215331; …") must name the newest log's own date and commit.
+  const dated = /killed in the newest logged run \((\d{1,2}) ([A-Z][a-z]{2}), commit ([0-9a-f]{7,40})/.exec(text);
+  if (dated !== null) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const d = new Date(log.date);
+    const want = `${d.getUTCDate()} ${months[d.getUTCMonth()]}, commit ${log.head.slice(0, dated[3]!.length)}`;
+    const got = `${dated[1]} ${dated[2]}, commit ${dated[3]}`;
+    checks.push({ name: `${where} mutation run date and commit`, claimed: got, actual: want, ok: got === want, note: log.file });
   }
   return checks;
 }

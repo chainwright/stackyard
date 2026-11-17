@@ -84,7 +84,7 @@ describe("TASK-42c: the first lines lead with the results loop", () => {
 
 describe("TASK-42c6: the drafts beside the repo (skips when they are not there)", () => {
   const up = path.join(ROOT, "..");
-  it("TASK-42c6: the social and blog drafts carry the new lead, say it is draft only, and have their 16 Nov backups", (ctx) => {
+  it("TASK-42c6: TASK-43e3: the social and blog drafts carry the new lead, say it is draft only, and have their 16 Nov backups", (ctx) => {
     const social = readOrNull(path.join(up, "SOCIAL_DRAFT.md"));
     const blog = readOrNull(path.join(up, "BLOG_DRAFT.md"));
     const writeup = readOrNull(path.join(up, "WRITEUP_DRAFT.md"));
@@ -94,11 +94,12 @@ describe("TASK-42c6: the drafts beside the repo (skips when they are not there)"
     expect(social).toContain(
       "We built Stackyard: a class plays a lesson with no internet and the results still come back, as short codes the teacher types into her own copy. It's HyperCard's stack, brought back as one HTML file made from a teacher's sentence.",
     );
-    expect(social).toContain("Status 16.11: TASK-42c lead (results first, HyperCard named) is in this draft only, NOT in the live LinkedIn post; Roma decides.");
+    // TASK-43e3: the Status text is checked up to "post;": the name after it stays in the drafts, not in the repo.
+    expect(social).toContain("Status 16.11: TASK-42c lead (results first, HyperCard named) is in this draft only, NOT in the live LinkedIn post;");
     expect(blog).toContain(
       "The short version: a class plays a lesson with no internet, each pupil's last card shows a short code, and the teacher types the codes into her own copy to see the class table. The rest of this post is how we got there.",
     );
-    expect(blog).toContain("Status 16.11: TASK-42c lead paragraph (results first) is in this draft only, NOT applied to the live dev.to post; Roma decides.");
+    expect(blog).toContain("Status 16.11: TASK-42c lead paragraph (results first) is in this draft only, NOT applied to the live dev.to post;");
     // The blog's new paragraph is not live, so CLAIMS.md has no row for it.
     expect(read("CLAIMS.md")).not.toContain("The short version: a class plays a lesson");
     // The write-up draft is a copy of the write-up body under its own heading.

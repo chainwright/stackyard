@@ -29,25 +29,26 @@ describe("TASK-38a: the hosting text matches render.yaml", () => {
 });
 
 describe("TASK-38b: six specs, not five", () => {
-  it("TASK-38b: TASK-39d: TASK-39e: TASK-41e: .kiro/specs/ has exactly 6 folders, and both files say six specs (five product features plus kiro-evidence)", () => {
+  it("TASK-38b: TASK-39d: TASK-39e: TASK-41e: TASK-43c4: .kiro/specs/ has exactly 6 folders, and both files say six specs (five product features plus kiro-evidence)", () => {
     const dirs = readdirSync(".kiro/specs").filter((d) => statSync(path.join(".kiro/specs", d)).isDirectory());
     expect(dirs.sort()).toEqual(["class-results", "curriculum-bench", "exporter", "kiro-evidence", "maker", "stack-generator"]);
     const w = W();
     expect(w).toContain("| Specs | Six specs: five product features (generator, exporter + player, Maker, curriculum bench, class results) in EARS form and a small `kiro-evidence` spec for the MCP call record.");
     // TASK-39d: the Spec-vs-vibe row is now one claim: Kiro wrote each feature's spec, we reviewed it.
     // TASK-41e: it names which specs went back, and that the first did not.
-    expect(w).toContain("| Spec vs vibe | The spec format is the plan of record. Kiro wrote each feature's requirements, design and tasks from a chat request, and we reviewed them: the exporter, Maker and class-results specs went back to Kiro with changes before their code;");
+    // TASK-43c4: and who reviewed each (us; a read-only AI sub-agent for class results).
+    expect(w).toContain("| Spec vs vibe | The spec format is the plan of record. Kiro wrote each feature's requirements, design and tasks from a chat request. The exporter and Maker specs went back to Kiro with our changes before their code,");
     expect(R()).toContain(
-      "| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request and then reviewed, plus a small `kiro-evidence` spec for the MCP call record.",
+      "| Specs | Six specs: requirements, design and tasks for five product features (the Maker, the stack generator, the exporter, the curriculum bench and class results), each written by Kiro from a chat request (we sent the exporter and Maker specs back with changes, and a read-only AI sub-agent reviewed the class-results spec, before their code), plus a small `kiro-evidence` spec for the MCP call record.",
     );
     gone("Five specs", "5 specs", "for five features");
   });
 });
 
 describe("TASK-38c: seven on-screen AI windows, not six sequences", () => {
-  it("TASK-38c: about 23 s in seven on-screen windows, eight shots, in both files", () => {
-    expect(W()).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
-    expect(R()).toContain("(about 23 s in seven on-screen windows, eight shots)");
+  it("TASK-38c: TASK-43e1: about 21 s in seven on-screen windows, eight shots, in both files", () => {
+    expect(W()).toContain("(about 21 s in seven on-screen windows, eight shots in all)");
+    expect(R()).toContain("(about 21 s in seven on-screen windows, eight shots)");
     gone("six sequences");
   });
 });

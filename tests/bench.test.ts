@@ -350,9 +350,9 @@ describe("TASK-33c7: the bench line is checked by check:claims, in the README an
   const readme = `- Floppy test …\n  The ready-made samples in \`samples/\` carry photos, so they are larger.\n\n## Development\n`;
   const writeup = "## Accomplishments\n- A file.\n- The player bundle is 11.9 KB gzipped against a 50 KB budget.\n\n## What we learned\n";
 
-  it("TASK-33c7: the sentence is the one the brief gives", () => {
+  it("TASK-33c7: TASK-43c3: the sentence names the numbers and, since TASK-43c3, says it is a replay of v5 and v2 recordings", () => {
     expect(benchSentence(b)).toBe(
-      "47 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 41 passed our automatic lesson check with no warnings",
+      "In a replay through today's generator of 55 recordings, one per England KS2 science objective (Years 3–5; 34 re-recorded with the v5 prompt, 21 from the earlier v2 prompt), 47 became a valid lesson file on the first try; 41 passed our automatic lesson check with no warnings",
     );
     expect(readBenchClaim(readmeBenchLine(b))).toEqual(b);
   });

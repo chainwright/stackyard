@@ -84,12 +84,12 @@ describe("TASK-37a: the mutant count is backed by the newest logged run", () => 
 });
 
 describe("TASK-37b: the credits count the v8 footage", () => {
-  it("TASK-37b: TASK-38c: about 23 s (v8b) in seven on-screen windows, eight shots, in the write-up and the README; the old count is gone", () => {
+  it("TASK-37b: TASK-38c: TASK-43e1: about 21 s (v8b: the sum of the seven listed windows) in seven on-screen windows, eight shots, in the write-up and the README; the old counts are gone", () => {
     const w = FLAT(read("docs/DEVPOST_WRITEUP.md"));
     const r = FLAT(read("README.md"));
-    expect(w).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
-    expect(r).toContain("(about 23 s in seven on-screen windows, eight shots)");
-    for (const t of [w, r]) expect(t).not.toMatch(/about 28 s|about 24 s|ten shots|six sequences/);
+    expect(w).toContain("(about 21 s in seven on-screen windows, eight shots in all)");
+    expect(r).toContain("(about 21 s in seven on-screen windows, eight shots)");
+    for (const t of [w, r]) expect(t).not.toMatch(/about 28 s|about 24 s|about 23 s|ten shots|six sequences/);
   });
 });
 

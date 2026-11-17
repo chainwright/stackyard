@@ -88,17 +88,17 @@ describe("TASK-39b: EVIDENCE.md", () => {
     expect(evidence).toContain("**The AI review panel.**");
   });
 
-  it("TASK-39b names the clean-tree mutation log that exists", () => {
-    expect(evidence).toContain("`docs/mutation-runs/2026-11-10-a215331.log` (clean tree)");
+  it("TASK-39b: TASK-43c2: names the clean-tree mutation log that exists, with its date and commit", () => {
+    expect(evidence).toContain("`docs/mutation-runs/2026-11-10-a215331.log` (clean tree; 10 Nov, commit a215331;");
     expect(read("docs/mutation-runs/2026-11-10-a215331.log")).toMatch(/^Working tree clean: yes/m);
   });
 });
 
 describe("TASK-39c: CLAIMS.md", () => {
-  it("TASK-39c: TASK-40f: TASK-41i: TASK-42b8: TASK-42d2: has the header, the dev.to link and rows C1–C71", () => {
+  it("TASK-39c: TASK-40f: TASK-41i: TASK-42b8: TASK-42d2: TASK-43d3: has the header, the dev.to link and rows C1–C73", () => {
     expect(claims).toContain("| # | Claim | Where | Status | Proof, or what is missing |");
     expect(claims).toContain("https://dev.to/automate_ai/we-brought-back-hypercards-stack-not-its-editor-3g3g");
-    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(71);
+    expect(claims.match(/^\| C\d+ \|/gm)?.length).toBe(73);
   });
 });
 
@@ -119,7 +119,7 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
     expect(body).toContain("we used no Powers");
   });
 
-  it("TASK-39d keeps the architecture line and every other honesty label in the write-up", () => {
+  it("TASK-39d: TASK-43e1: keeps the architecture line and every other honesty label in the write-up", () => {
     expect(writeup).toContain("**The line that set the architecture**");
     for (const label of [
       "not a classroom study and no teacher or pupil was involved",
@@ -128,7 +128,7 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
       "No screen-reader user or disabled pupil has tested it.",
       "https://stackyard-sdqt.onrender.com/samples/vikings-in-ireland.html",
       "Development used our own AI review panel (AI agents)",
-      "AI-generated footage (about 23 s in seven on-screen windows, eight shots in all)",
+      "AI-generated footage (about 21 s in seven on-screen windows, eight shots in all)", // TASK-43e1: was 23 s
     ]) {
       expect(writeup, label).toContain(label);
     }

@@ -12,7 +12,7 @@ import { compareMutationLog, newestMutationLog } from "../scripts/claims-lib.js"
 const read = (f: string): string => readFileSync(f, "utf8");
 
 describe("TASK-37a: the real mutation log", () => {
-  it("TASK-37a: TASK-39d: the newest log in docs/mutation-runs/ matches the write-up and the current scripts/mutation-check.ts", () => {
+  it("TASK-37a: TASK-39d: TASK-43c2: the newest log in docs/mutation-runs/ matches the write-up and the current scripts/mutation-check.ts", () => {
     const d = "docs/mutation-runs";
     expect(existsSync(d), "run npm run check:mutants:log").toBe(true);
     const log = newestMutationLog(readdirSync(d).filter((f) => f.endsWith(".log")).map((f) => ({ file: f, text: read(path.join(d, f)) })));
@@ -24,7 +24,8 @@ describe("TASK-37a: the real mutation log", () => {
     expect(read("package.json")).toContain('"check:mutants:log": "node --import tsx/esm scripts/mutation-log.ts"');
     // TASK-39d: the claim + proof row says "newest logged run" and cites docs/mutation-runs/ as its proof.
     const row = read("docs/DEVPOST_WRITEUP.md").split("\n").find((l) => l.startsWith("| Property-based testing |")) ?? "";
-    expect(row).toContain("killed in the newest logged run)");
+    // TASK-43c2: the row dates the run and says it was not re-run; check:claims ties the date and commit to the log.
+    expect(row).toContain("killed in the newest logged run (10 Nov, commit a215331; not re-run since, and the changes after it have no mutants))");
     expect(row).toContain("`docs/mutation-runs/`");
   });
 });

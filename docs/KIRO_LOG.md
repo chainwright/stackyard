@@ -956,7 +956,7 @@ Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behin
     - `src/living` and `src/player` make no fetch, XHR, WebSocket, EventSource or beacon call, and a test checks that.
     - Every word of the two new lines holds. One nuance: a lesson with no quiz cards shows no code.
   - **The drafts (c6).** All three were backed up first, beside the originals, as `BLOG_DRAFT_20261116.bak`, `SOCIAL_DRAFT_20261116.bak` and `WRITEUP_DRAFT_20261116.bak`; none existed before.
-    - `SOCIAL_DRAFT.md`: the first paragraph is unchanged and still starts with #KiroweenHackathon26. The second paragraph opens with the new two sentences, and the Status line starts "Status 16.11: … in this draft only, NOT in the live LinkedIn post; Roma decides."
+    - `SOCIAL_DRAFT.md`: the first paragraph is unchanged and still starts with #KiroweenHackathon26. The second paragraph opens with the new two sentences, and the Status line starts "Status 16.11: … in this draft only, NOT in the live LinkedIn post;" and ends by saying the owner decides.
     - `BLOG_DRAFT.md`: the title is unchanged, and the "short version" paragraph sits under the "Written as part of…" line. The Status line says the change is NOT applied to the live dev.to post. No CLAIMS.md row was added for it.
     - `WRITEUP_DRAFT.md` is a copy of the new write-up body, under a heading naming TASK-42 and "the TASK-42 commit".
     - No live page was touched.
@@ -1020,3 +1020,63 @@ Judge round r8 (P1-9): Class Results looked like a default table, and at 390 px 
   - Two `sed -i` edits to `scripts/check-living-mobile.ts` changed its log line while I was measuring the row; the file was then finished with the file tools.
   - `npm run samples` (the three `samples/*.html`), `npm run bench` (offline replay: `bench/files`, `bench/results.json`, `bench/RESULTS.md`; headline numbers unchanged) and `npm run check:claims:fix` (tests, traced ids, fast-check count, player KB and CLAIMS.md line refs) rewrote generated text.
   - `WRITEUP_DRAFT.md`, beside the repo, was rebuilt in the shell as before (`head -1` of itself plus `tail -n +2` of the write-up), after a `.bak` copy. A temporary size script outside the repo measured the two files and was deleted.
+- **a6. Three visible flaws in the committed panel (TASK-43a6).** The coordinator's side looked at real-Chrome screenshots of the committed panel at 1440 and 390 px, outside Kiro, and named three flaws.
+  - **What changed** (`src/living/styles.ts`).
+    - The 32 px rule pattern ran through the headings and text, because the text is not on a 32 px grid. It is gone. The panel is now a plain paper card with one ruled line, under the "Class results" heading. I chose this over putting every line on a 32 px grid: it is simpler, and certain, because no background pattern is left behind any text.
+    - Under 480 px the "Each question" caption has the rows' inset (`padding: 8px 10px 4px`).
+    - The stacked label is `attr(data-label) ":\00a0"`. Real Chrome dropped the plain trailing space in `": "`, so the numbers read "Right:5"; the no-break space keeps "Right: 5".
+  - **Gate.** `scripts/check-living-mobile.ts` checks the panel at 390 × 844 and at 1440 × 900, with codes entered.
+    - No element in the panel may paint a background image, so no ruled pattern can cross a glyph. The ruled lines that are left are borders between boxes.
+    - The rule under the heading must sit below the heading's text.
+    - At 390 px the caption's text must be at least 8 px inside the table's border (it is 12 px). The rendered gap between "Right:" and the number must be at least 2 px; it is 5.8 px, measured against "Right:" set alone in the same font.
+    - Red run: with the old three CSS rules put back for one run, the gate failed on all four (pattern at 390 and 1440 px, caption 2 px, gap 0.0 px). The new CSS was then restored.
+  - **Tests.** `tests/round17-marks-panel.dom.test.ts`: the TASK-43a3 test now pins the plain card with one rule (TASK-43a6 in its title), and a new TASK-43a6 test pins the caption inset and the no-break space.
+  - The TASK-43a3 gates (`check:a11y` with `check-contrast`, `check:text-fit`, `check:living-file`, `check:living-mobile` and `check:class-results`) pass unchanged.
+- **c. Five overstated lines (TASK-43c, judge round r8 P1-5).** Each replacement was checked against the file named as evidence first.
+  - **c1.** README "Built with Kiro" now says who wrote what, as EVIDENCE.md does: "Stackyard's steering, specs and most of its code were written in Kiro CLI; an AI coordinator working outside Kiro wrote the task briefs and set up CI and hosting ([what Kiro did not do](EVIDENCE.md#kiros-limits-in-this-build))." The old second link sentence is gone. The anchor matches EVIDENCE.md's "## Kiro's limits in this build".
+  - **c2.** The newest mutation log is `docs/mutation-runs/2026-11-10-a215331.log` (2026-11-10T09:03Z, HEAD a215331). `scripts/mutation-check.ts` names no task after TASK-37, and it is not edited.
+    - The write-up's Kiro table and EVIDENCE.md now say "10 Nov, commit a215331; not re-run since, and the changes after it have no mutants". C19 and C50 are PARTIAL.
+    - `check:claims` is stricter, not weaker: a dated run must name the newest log's own UTC date and commit, or it fails. The count and sha256 checks are unchanged.
+  - **c3.** The brief's "34 recorded with the current prompt" is not what the repo shows, so I did not write it.
+    - The 34 objectives in `bench/rerecord.txt` were recorded at 02:05–02:07 UTC on 10 Nov (`recordedAt` in `bench/cache/`). That was with the v5 prompt.
+    - `server/promptBuilder.ts` changed after that, in TASK-36c4 and c4b: the card plan, and one spare quiz card.
+    - The line now reads "In a replay through today's generator of 55 recordings, one per England KS2 science objective (Years 3–5; 34 re-recorded with the v5 prompt, 21 from the earlier v2 prompt), 54 became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings". It keeps the curriculum scope, which the brief's opening would have dropped. It appears in the README, the write-up and EVIDENCE.md, and C27's quote still matches.
+    - `scripts/claims-lib.ts` reads the new wording. It still fails when 55, 54 or 37 drift from `bench/results.json`, and it now also fails when the split does not add up or when the re-recorded count is not the count of objectives in `bench/rerecord.txt`. `--fix` replaces the old wording. The dates were left out of the line to avoid a UTC/local mismatch: 10 Nov UTC is 9 Nov in the commit times.
+  - **c4.** `docs/KIRO_LOG.md` says "we" reviewed and sent back the exporter spec (30 Oct) and the Maker spec (4 Nov). The class-results spec "was reviewed by a read-only sub-agent before any code", and its two P0s were fixed in the spec before coding (10 Nov). The stack generator went straight to code.
+    - The write-up's "Spec vs vibe" row uses the brief's wording ("our changes" matches the log).
+    - The README's Specs row now names who reviewed.
+    - C67 has the new quote and is PARTIAL. C44 (blog) stays TRUE, and its proof now says that the review was the sub-agent's.
+  - **c5.** I did not use the brief's "share a stack by URL or as JSON". No file in the repo says how the other entries share their stacks: that is in a teardown note beside the repo, not in it. The Inspiration line now reads "The other HyperCard revivals we read in this contest bring back the editor, and one also exports a play-only file; Stackyard hands on a file that edits itself and brings the class's results back." "Where it sits" supports each part ("revive HyperCard's editor too", "another exports a stack as one play-only HTML file"), as do C9, C10 and C53.
+  - **c6.** C45 quotes the live sentence and is TRUE again. The coordinator edited the live dev.to post on 17 Nov 2026 at 01:21 UTC, outside Kiro, and the coordinator's side read it back through the post's public API at 01:22 UTC; I did not read it. The 241 was `check:trace` at commit 98fb45d. TASK-43 added ids after that, so the proof column calls it a dated snapshot. The CLAIMS.md header names the 17 Nov re-check.
+  - **c7. Drafts beside the repo.** The coordinator made the `*_20261116c.bak` backups; I did not overwrite them.
+    - `BLOG_DRAFT.md` now reads "and most were reviewed before their code, by us or by a read-only AI sub-agent, and went back to Kiro with changes. The review of the class-results spec, the sub-agent's, found two serious problems, and its design doc records both. Fixing those in the spec took one review round, before any code existed."
+      - The brief's "each was reviewed before its code" was not used, because the stack generator spec went straight to code.
+      - The mutant sentence is dated, and the r8 Status line is prepended.
+    - `SOCIAL_DRAFT.md` now says "That took one review round.", and its r8 Status line is prepended.
+    - The older Status text is unchanged in both drafts. `WRITEUP_DRAFT.md` follows the write-up body.
+    - No live page was touched.
+- **d. "Where it sits" names the offline-results tools (TASK-43d, judge round r8 P1-6).** The four public pages were read by the coordinator's side on 16 Nov 2026, outside Kiro: this sandbox has no network, and I fetched nothing. The Product Hunt page was read through a fetch tool's summary. I used only the facts in the brief, and we ran none of the tools.
+  - The write-up has a new paragraph before "Stackyard puts three things together". I changed two parts of the brief's wording:
+    - Quorum Classroom and rClassTra run "over the classroom network", not "the classroom Wi-Fi": their pages say "classroom network" and "the same network".
+    - The last clause is "each pupil's last card shows a short code that ends in a check character, and the teacher types or pastes it". Nothing in the repo has the pupil read the code out. A code ends in one check character (`src/shared/resultsCode.ts`), and the panel's hint is "Type or paste the codes from your pupils' last card".
+    - "The typed codes are the part we have not seen in the tools above." stays true: none of the three uses typed codes.
+  - The README's "Prior art" has one shorter bullet. CLAIMS.md C72 ("shares a test by QR code or Nearby sharing") and C73 ("Quorum Classroom and rClassTra run the quiz from the teacher's laptop over the classroom network") are PARTIAL, with the four URLs. EVIDENCE.md's "Sources we cite" lists the four pages with the read date. The row-count pins went from 71 to 73.
+  - Line refs: `check:claims:fix` rewrote them, and a new test checks each ref's line by hand: it must carry the quote's first 50 characters.
+- **e. Two unbacked figures, and a name (TASK-43e, judge round r8 P2-12).**
+  - **e1.** The seven windows listed in the spec (Phase 22, from the YouTube description) add up to 21 s. The README and the write-up's Credits now say "about 21 s". C34 is PARTIAL, because the description itself still says "about 23 s" and the cut was not re-measured. The older lines that say 23 s are history; one dated note was added at the TASK-37c follow-up in `tasks.md`. Five tests moved to 21 s, with TASK-43e1 in their titles.
+  - **e2.** The README, the write-up, EVIDENCE.md and JUDGES.md had no "minutes instead of days" or similar comparison. It was only in the drafts (c7), and a test keeps it out.
+  - **e3.** The TASK-42c bullet above and `tests/round15-docs.test.ts` quoted a draft Status line that ended in a person's first name. The log now ends the quotation at "post;" and says the owner decides, and the two test expectations stop at "post;". `git grep -w -i` for the name returns nothing in tracked files. The drafts' own Status text was not edited.
+  - **e4.** `docs/kiro-sessions/hook-firings.jsonl` is not added: no such file exists locally (the coordinator's side searched). C20 and C47 stay PARTIAL.
+- **Tests.**
+  - New: `tests/round18-docs.test.ts` (c1–c7, d1–d5, e1–e4; no network). It includes negative checks on the bench split and on the mutation date and commit.
+  - Moved to the new text, with TASK-43 ids in their titles: `round8-docs`, `round12-docs` (five paragraphs in "Where it sits"), `round10-docs`, `round13-docs` (C45, C67, the Spec rows, the blog draft wording), `round11-docs` (73 rows, the dated log, 21 s), `round6-docs`, `mutation-log`, `mutation-log-real`, `claims-docs` (73 rows), `round15-docs` (no name), `bench` and `bench-v3` (the bench sentence).
+- **From the coordinator's side, outside Kiro:** the three tools' pages, the live dev.to edit and its API check, the search for the hook-firings file, the `*_20261116c.bak` draft backups, and the panel screenshots behind a6.
+- **Shell edits.**
+  - Python one-off scripts:
+    - the CLAIMS.md row edits (C19, C34, C44, C45, C50, C67, the new C72 and C73, and the header);
+    - the two drafts' sentences and Status lines;
+    - the paragraph-count and bench-wording pins in `round8-docs`, `round12-docs` and `bench-v3`;
+    - one temporary revert of three CSS rules in `src/living/styles.ts` for the a6 red run. The file was copied aside first and copied back, and `/tmp/sy43a6-styles.ts.keep` was deleted.
+  - Each script was in `/tmp` and deleted after use.
+  - `npm run samples`, `npm run bench` (offline replay) and `npm run check:claims:fix` (tests, traced ids, the bench lines and the CLAIMS.md line refs) rewrote generated text.
+  - `WRITEUP_DRAFT.md` was rebuilt as before (`head -1` of itself, then `tail -n +2` of the write-up).

@@ -47,9 +47,9 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
   const section = writeup.slice(writeup.indexOf("## Where it sits"), writeup.indexOf("## How we built it"));
   const paras = section.split("\n").filter((l) => l.trim().length > 0 && !l.startsWith("##"));
 
-  it("TASK-40b has four paragraphs, separated by blank lines", () => {
-    expect(paras).toHaveLength(4);
-    expect(section.replace(/^## Where it sits\n/, "").trim().split("\n\n")).toHaveLength(4);
+  it("TASK-40b: TASK-43d1: has five paragraphs (TASK-43d1 added the offline-results one), separated by blank lines", () => {
+    expect(paras).toHaveLength(5);
+    expect(section.replace(/^## Where it sits\n/, "").trim().split("\n\n")).toHaveLength(5);
   });
 
   it("TASK-40b paragraph 1 names the play-only HTML export entry", () => {
@@ -78,8 +78,9 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
     );
   });
 
-  it("TASK-40b paragraph 4 says what Stackyard puts together, and the old false sentences are gone", () => {
-    expect(paras[3]).toBe(
+  it("TASK-40b: TASK-43d1: the last paragraph says what Stackyard puts together, and the old false sentences are gone", () => {
+    expect(paras[3]!.startsWith("Class results without the internet are not new on their own either.")).toBe(true);
+    expect(paras[4]).toBe(
       "Stackyard puts three things together: a lesson built and checked from one teacher's sentence; an editor inside the lesson file itself, whose Save a Copy writes a new file that edits itself too; and the pupils' results coming back to the teacher as short typed codes, with no server. The typed codes are the part we have not seen in the tools above.",
     );
     for (const old of ["Their stacks travel as JSON files or as links back to their tool", "Some AI lesson tools, such as the open-source OpenMAIC", "the closest, AfterStack", "Stackyard brings back the stack you could hand on:"]) {

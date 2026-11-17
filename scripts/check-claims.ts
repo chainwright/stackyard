@@ -171,7 +171,9 @@ function keyNumbers(): KeyNumbers | null {
 function benchNumbers(): BenchNumbers | null {
   if (!existsSync(BENCH_RESULTS)) return null;
   const s = (JSON.parse(readFileSync(BENCH_RESULTS, "utf8")) as { summary: BenchNumbers }).summary;
-  return { objectives: s.objectives, firstTry: s.firstTry, lessonClean: s.lessonClean };
+  // TASK-43c3: the v5 re-recorded objectives are the non-comment lines of bench/rerecord.txt.
+  const rerecorded = readFileSync(path.join(ROOT, "bench", "rerecord.txt"), "utf8").split("\n").filter((l) => l.trim() !== "" && !l.trim().startsWith("#")).length;
+  return { objectives: s.objectives, firstTry: s.firstTry, lessonClean: s.lessonClean, rerecorded };
 }
 const PLAYER = path.join(ROOT, "dist", "player", "player.iife.js");
 const VALIDATOR = path.join(ROOT, "src", "shared", "validator.ts");

@@ -142,6 +142,29 @@ async function openTeacher(cdp: Cdp, url: string, width: number, height: number)
 }
 
 // ---------------------------------------------------------------------------
+// TASK-43a6: no rule line may cross a glyph in the Class Results panel. Rules
+// drawn as a background pattern ignore where the text is, so no element in the
+// panel may paint a background image; each ruled line is a border, which sits
+// between boxes, never across their text. The one rule under the heading must
+// sit below the heading's text.
+const PANEL_LOOK = `(() => {
+  const p = [];
+  const panel = document.querySelector(".sy-results");
+  if (!panel) return JSON.stringify(["no .sy-results panel"]);
+  for (const n of [panel, ...panel.querySelectorAll("*")]) {
+    const bg = getComputedStyle(n).backgroundImage;
+    if (bg && bg !== "none") { p.push("<" + n.tagName.toLowerCase() + " class='" + (n.className || "") + "'> paints a background image (" + bg.slice(0, 60) + "), which can draw lines through text"); break; }
+  }
+  const h2 = panel.querySelector("h2");
+  if (h2) {
+    const r = document.createRange(); r.selectNodeContents(h2);
+    const text = r.getBoundingClientRect(), box = h2.getBoundingClientRect();
+    if (box.bottom - 1 < text.bottom) p.push("the rule under the heading touches its text");
+  }
+  return JSON.stringify(p);
+})()`;
+
+// ---------------------------------------------------------------------------
 // TASK-36c5: the PLAY view on a phone is a portrait card.
 
 const SETTLE = `(() => { if (document.getAnimations) document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} }); return 1; })()`;
@@ -340,6 +363,42 @@ async function main(): Promise<void> {
       else if (panel.revisitTop >= panel.tableTop) problems.push("TASK-43a5 panel 390x844: \"Questions to revisit\" is not above the question table");
       if (panel.rowDisplay !== "block") problems.push(`TASK-43a2 panel 390x844: the question rows do not stack (display ${panel.rowDisplay})`);
       if (!/Right/.test(panel.label)) problems.push(`TASK-43a2 panel 390x844: a stacked number has no visible label (${panel.label})`);
+      for (const p of JSON.parse(await cdp.eval<string>(PANEL_LOOK)) as string[]) problems.push("TASK-43a6 panel 390x844: " + p);
+      const narrow = JSON.parse(await cdp.eval<string>(`(() => {
+        const table = document.querySelector("[data-testid='results-questions']");
+        const cap = table.querySelector("caption"), td = table.querySelector("tbody td");
+        const tr = table.getBoundingClientRect(), cr = cap.getBoundingClientRect();
+        // The gap between the end of the "Right:" label and the number: render "Right:" alone in the same font and compare.
+        const probe = document.createElement("span");
+        const cs = getComputedStyle(td, "::before");
+        probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;font:" + cs.font;
+        probe.textContent = td.getAttribute("data-label") + ":";
+        document.body.appendChild(probe);
+        const labelW = probe.getBoundingClientRect().width; probe.remove();
+        const range = document.createRange(); range.selectNodeContents(td);
+        const textLeft = Array.from(range.getClientRects()).pop().left;
+        const contentLeft = td.getBoundingClientRect().left + parseFloat(getComputedStyle(td).paddingLeft);
+        const capRange = document.createRange(); capRange.selectNodeContents(cap);
+        // The caption's TEXT, not its box: its padding is what keeps the text off the border.
+        return JSON.stringify({ capInset: capRange.getBoundingClientRect().left - tr.left, space: textLeft - contentLeft - labelW, crLeft: cr.left });
+      })()`)) as { capInset: number; space: number };
+      if (narrow.capInset < 8) problems.push(`TASK-43a6 panel 390x844: the "Each question" caption sits ${narrow.capInset.toFixed(1)} px from the table's border (want the rows' inset)`);
+      if (narrow.space < 2) problems.push(`TASK-43a6 panel 390x844: no space after the colon in "Right: N" (${narrow.space.toFixed(1)} px)`);
+      console.log(`check-living-mobile: TASK-43a6 panel 390x844 — caption inset ${narrow.capInset.toFixed(0)} px, space after "Right:" ${narrow.space.toFixed(1)} px.`);
+    }
+
+    // ---- TASK-43a6: the same panel at 1440 x 900: no rule line behind any text ----
+    await openTeacher(cdp, url, 1440, 900);
+    await cdp.eval(`(() => {
+      document.querySelector("[data-testid='class-results-toggle']").click();
+      document.querySelector("[data-testid='results-codes-input']").value = ${JSON.stringify(codes)};
+      document.querySelector("[data-testid='results-add']").click();
+      return 1;
+    })()`);
+    if (!(await cdp.until(`document.querySelector("[data-testid='results-questions']")`))) problems.push("TASK-43a6 panel 1440x900: the Class Results panel never showed its table");
+    else {
+      await sleep(300);
+      for (const p of JSON.parse(await cdp.eval<string>(PANEL_LOOK)) as string[]) problems.push("TASK-43a6 panel 1440x900: " + p);
     }
 
     const deskPlay = await openPlay(cdp, url, 1366, 768);
@@ -361,7 +420,7 @@ async function main(): Promise<void> {
     for (const p of problems) console.error("check-living-mobile: FAIL — TASK-31b: " + p);
     process.exit(1);
   }
-  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged. TASK-36c5: the play view is a portrait card (docs/media/play-390.png). TASK-43a5/43b3: at 390x844 the Class Results panel puts revisit first and stacks without sideways scroll, and the end-card marks fit.");
+  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged. TASK-36c5: the play view is a portrait card (docs/media/play-390.png). TASK-43a5/43b3: at 390x844 the Class Results panel puts revisit first and stacks without sideways scroll, and the end-card marks fit. TASK-43a6: no rule line behind the panel's text at 390 and 1440 px, the caption is inset and each label reads \"Right: N\".");
 }
 
 main().catch((err) => {

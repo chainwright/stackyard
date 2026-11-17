@@ -2093,6 +2093,7 @@ Source: `../judge_v2_2026-11-10_app_r3/` (SUMMARY.md; J05_hound.md §4–§6; J0
     - Line 3 (the video link) is not touched.
   - **Acceptance criteria.** A test finds the new sentences, finds no v7 caveat, and checks that check:claims still reads the paragraph's numbers.
   - **Follow-up (v8b, the final cut).** The credits say "about 23 s" (the final cut's real AI-shot total). The note names the video "v8b": its app takes were recorded on the live app at commit 4703964, and the check:trace and check:claims shown in it ran at commit 8e24ecd. Nothing else in the line changes.
+  - *(16 Nov 2026, TASK-43e1: the seven windows listed in the YouTube description add up to 21 s, not 23 s, so the README and the write-up now say "about 21 s"; see Phase 28.)*
 
 ## Phase 23 - TASK-38: judge round 4 text fixes
 
@@ -2524,3 +2525,54 @@ Source: judge round r8 (16 Nov 2026, P1-9). Class Results looked like "an unstyl
 - TASK-43a3 was kept: `check:a11y` (with `check-contrast`), `check:text-fit`, `check:living-file`, `check:living-mobile` and `check:class-results` all pass with the index-card styling, and none of them was changed to let it through.
 - TASK-43b3: six marks fit one row at 390 × 844 in real Chrome. At first they did not: with an 8 px gap the row needs 328 px, and the end card's content box there is 325 px, so the sixth mark wrapped. The phone gap is now 6 px (318 px). Each mark stays 48 px, above the 44 px target.
 - Not done: the demo video still shows the old end card and the old panel order. The write-up says so.
+
+### TASK-43a6: three visible flaws in the committed panel  *(TASK-43 a, follow-up)*
+  - **Bug.** The coordinator's side looked at real-Chrome screenshots of the committed panel at 1440 and 390 px (outside Kiro). The 32 px rule lines of the index-card background ran through the text, because the text is not on a 32 px grid, so it read as struck through. Under 480 px the "Each question" caption touched the table's rounded border, and the stacked numbers read "Right:5" (the space after the colon was lost).
+  - **Fix.**
+    - [x] TASK-43a6: **no rule through text, an inset caption, "Right: 5".**
+      - The panel is a plain paper card with one ruled line, under its heading (the simpler option, and certain: there is no background pattern behind any text). The design system allows a plain paper card.
+      - Under 480 px the caption gets the rows' inset (`padding: 8px 10px 4px`).
+      - The label is drawn as `attr(data-label) ":\00a0"`: a no-break space, which is not dropped.
+      - jsdom pins the CSS. `scripts/check-living-mobile.ts` checks in real Chrome, at 390 × 844 and at 1440 × 900, that no element in the panel paints a background image and that the rule under the heading sits below its text. At 390 px it also checks that the caption's text is at least 8 px inside the table's border, and that the rendered gap between "Right:" and the number is at least 2 px. With the old CSS put back, each of these checks fails.
+  - **Acceptance criteria.** The TASK-43a3 gates still pass unchanged, and the samples and bench files are regenerated.
+
+### TASK-43c: five overstated lines, and the drafts  *(TASK-43 c)*
+  - **Bug.** Judge round r8 (P1-5) found lines that claim more than the repo shows.
+  - **Fix.** Each replacement was checked against the file named as evidence.
+    - [x] TASK-43c1: **README "Built with Kiro".** "Stackyard was planned and built in Kiro." contradicts EVIDENCE.md's "Our coordinator worked outside Kiro". It becomes "Stackyard's steering, specs and most of its code were written in Kiro CLI; an AI coordinator working outside Kiro wrote the task briefs and set up CI and hosting ([what Kiro did not do](EVIDENCE.md#kiros-limits-in-this-build))." The old "What Kiro did not do here is in …" sentence repeated the link, so it is dropped. The anchor resolves to EVIDENCE.md's "## Kiro's limits in this build".
+    - [x] TASK-43c2: **the mutant run is dated.** The newest log is `docs/mutation-runs/2026-11-10-a215331.log` (10 Nov, HEAD a215331), and `scripts/mutation-check.ts` names no task after TASK-37. The write-up's Kiro table says "(10 Nov, commit a215331; not re-run since, and the changes after it have no mutants)". EVIDENCE.md's row gives the same date and commit. C19 and C50 are PARTIAL. `check:claims` now also fails if a dated run names a date or commit other than the newest log's. `scripts/mutation-check.ts` is not touched.
+    - [x] TASK-43c3: **the bench is a replay.** `bench/RESULTS.md` ("Current run") says it replays recordings: v5 re-recorded the 34 objectives in `bench/rerecord.txt`, and the other 21 keep their v2 recording. The brief's "34 recorded with the current prompt" is not what the repo shows. The 34 were recorded at 02:05–02:07 UTC on 10 Nov (`recordedAt` in `bench/cache/`), and the prompt changed after that (TASK-36c4 and c4b: the card plan and one spare quiz card). So the line says "the v5 prompt". It reads "In a replay through today's generator of 55 recordings, one per England KS2 science objective (Years 3–5; 34 re-recorded with the v5 prompt, 21 from the earlier v2 prompt), 54 became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings", in the README, the write-up and EVIDENCE.md. `check:claims` still fails if 55, 54 or 37 drift from `bench/results.json`. It also fails if the split does not add up, or if 34 is not the count of objectives in `bench/rerecord.txt`. `--fix` replaces the old wording.
+    - [x] TASK-43c4: **who reviewed the specs.** `docs/KIRO_LOG.md` says "We reviewed it like a pull request and sent five fixes back to Kiro" (exporter, 30 Oct) and "Our answers went back as a review round" (Maker, 4 Nov). The class-results spec "was reviewed by a read-only sub-agent before any code", and its two P0s were "fixed in the spec before coding" (10 Nov). The write-up's "Spec vs vibe" row and the README's Specs row say so, and C67 is PARTIAL.
+    - [x] TASK-43c5: **HyperCard revivals.** "Most HyperCard revivals bring back the editor; Stackyard brings back the stack you could hand to someone." becomes "The other HyperCard revivals we read in this contest bring back the editor, and one also exports a play-only file; Stackyard hands on a file that edits itself and brings the class's results back." The brief's "share a stack by URL or as JSON" was not used: no file in this repo says how the other entries share their stacks (that is in a teardown note beside the repo, not in it). "Where it sits" does say that they revive the editor and that one exports a play-only HTML file. The new sentence agrees with "Where it sits" and C9, C10 and C53.
+    - [x] TASK-43c6: **C45 is TRUE again.** The coordinator edited the live dev.to post on 17 Nov 2026 at 01:21 UTC, outside Kiro, and read it back through the public API at 01:22 UTC. C45 quotes the live sentence. The 241 is dated: it was `check:trace`'s count at commit 98fb45d (16 Nov), and TASK-43 adds ids after it.
+    - [x] TASK-43c7: **the drafts beside the repo.** The blog and social drafts get the c4 wording ("one review round"; who reviewed) and the dated mutant run, and new Status lines say these are in the drafts only. Their older Status text is unchanged. The write-up draft follows the write-up body. The coordinator made the `*_20261116c.bak` backups.
+  - **Acceptance criteria.** A test per sub-id (`tests/round18-docs.test.ts`), and `check:claims` passes without a weakened check.
+
+### TASK-43d: "Where it sits" names the offline-results tools  *(TASK-43 d)*
+  - **Source.** The coordinator's side read four public pages on 16 Nov 2026, outside Kiro: the Kiro sandbox has no network. We ran none of the tools. The pages:
+    - Exam Maker: Offline Tests on Product Hunt (read through a fetch tool's summary);
+    - the same app on Google Play (read raw; it now titles the app "Exam Maker: Online Tests");
+    - Quorum Classroom;
+    - rClassTra.
+  - **Fix.**
+    - [x] TASK-43d1: **a paragraph in the write-up's "Where it sits"**, before "Stackyard puts three things together". It names the three tools. It says Quorum Classroom and rClassTra run over "the classroom network", not the brief's "Wi-Fi": their pages say "classroom network" and "the same network". It ends with "Stackyard needs no app, no local network and no server: each pupil's last card shows a short code that ends in a check character, and the teacher types or pastes it." The brief's "a pupil reads out a short code" was changed: nothing in the repo has the pupil read the code out, and the panel's hint says "Type or paste the codes from your pupils' last card". A code ends in one check character (`src/shared/resultsCode.ts`), and the panel takes typed or pasted codes (`src/living/classResults.ts`).
+    - [x] TASK-43d2: **README "Prior art"** gets one shorter bullet with the same facts.
+    - [x] TASK-43d3: **CLAIMS.md C72 and C73** quote the new sentences, PARTIAL, with the four URLs. EVIDENCE.md's "Sources we cite" lists the four pages with the read date. The row-count pins move from 71 to 73.
+    - [x] TASK-43d4: **a docs test**, with no network.
+    - [x] TASK-43d5: **line numbers.** After the insertions every CLAIMS.md line ref is right (`--fix`, then a check by hand), and the tests that read fixed lines still read the right line.
+
+### TASK-43e: two unbacked figures, and a name  *(TASK-43 e)*
+  - **Fix.**
+    - [x] TASK-43e1: **"about 21 s".** The seven windows that the YouTube description lists (Phase 22 of this file names them) add up to 2 + 3 + 1 + 6 + 4 + 2 + 3 = 21 s. The README and the write-up's Credits say "about 21 s". C34 is PARTIAL, because the description itself still says "about 23 s" and the cut was not re-measured. Older spec and log lines stay as history, with one dated note at the TASK-37c follow-up.
+    - [x] TASK-43e2: **no "minutes instead of days".** It was only in the drafts (fixed in c7). The README, the write-up, EVIDENCE.md and JUDGES.md have no such time comparison, and a test keeps it that way.
+    - [x] TASK-43e3: **no person's name in the repo.** The KIRO_LOG TASK-42c bullet and `tests/round15-docs.test.ts` quoted a draft Status line ending in a first name. The log now ends the quotation before the name, and the tests check the Status text up to "post;". The drafts' own Status text is not edited.
+    - [x] TASK-43e4: **no hook-firings file.** `docs/kiro-sessions/hook-firings.jsonl` is not added, because none exists locally (the coordinator's side searched). C20 and C47 stay PARTIAL.
+  - **Acceptance criteria.** A test per sub-id, and the gates pass.
+
+**Status (16 Nov).** TASK-43a6, TASK-43c (c1–c7), TASK-43d (d1–d5) and TASK-43e (e1–e4) are done.
+- Changed from the brief, because the repo does not support it:
+  - c3 says "the v5 prompt", not "the current prompt", and keeps the curriculum scope.
+  - c5 drops "by URL or as JSON".
+  - c7 says "most were reviewed", because the generator spec was not reviewed.
+  - d1 says "classroom network", and "each pupil's last card shows" instead of "a pupil reads out".
+- No live page, video or thumbnail was touched.

@@ -55,20 +55,20 @@ describe("TASK-33c14: 'our automatic lesson check', and it does not verify facts
     }
   });
 
-  it("TASK-33c14: --fix turns an old-wording line into the new one, in place, without a second line", () => {
+  it("TASK-33c14: TASK-43c3: --fix turns an old-wording line into the new one, in place, without a second line", () => {
     const fixed = fixBench(text, b, README_BENCH_ANCHOR, readmeBenchLine);
     expect(fixed).toContain(readmeBenchLine(b));
     expect(fixed).not.toContain("passed our lesson check");
-    expect(fixed.split("England KS2 science objectives").length).toBe(2);
+    expect(fixed.split("England KS2 science objective").length).toBe(2); // TASK-43c3: "one per … objective"
     // A current line only has its numbers rewritten.
     const again = fixBench(fixed, { ...b, lessonClean: 49 }, README_BENCH_ANCHOR, readmeBenchLine);
     expect(readBenchClaim(again)).toEqual({ ...b, lessonClean: 49 });
     expect(again).toContain(BENCH_MECHANICAL);
   });
 
-  it("TASK-33c14: the README, write-up, RESULTS.md and bench/README.md use the new words", () => {
+  it("TASK-33c14: TASK-43c3: the README, write-up, RESULTS.md and bench/README.md use the new words", () => {
     for (const f of ["README.md", "docs/DEVPOST_WRITEUP.md"]) {
-      const line = read(f).split("\n").find((l) => l.includes("England KS2 science objectives"))!;
+      const line = read(f).split("\n").find((l) => l.includes("England KS2 science objective"))!;
       expect(line, f).toContain("passed our automatic lesson check with no warnings");
       expect(line, f).toContain(BENCH_MECHANICAL);
       expect(line, f).toContain("not a classroom study");
