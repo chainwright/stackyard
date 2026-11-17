@@ -6,7 +6,7 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,618 tests pass in our working copy (a clean clone or CI: 1,613 pass, 5 skip: 4 read draft posts kept outside the repo, 1 needs full git history) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 1,620 tests pass in our working copy (a clean clone or CI: 1,615 pass, 5 skip: 4 read draft posts kept outside the repo, 1 needs full git history) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
 | 293 of 293 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
 | 80 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
@@ -46,6 +46,9 @@ Each sentence below is checked word for word against its data file by `npm run c
   - The same app on Google Play, https://play.google.com/store/apps/details?id=com.abhi.examzy ("Updated on Oct 24, 2026", read raw): it now titles the app "Exam Maker: Online Tests". The teacher shows a QR code, pupils join in the app, and "the teacher receives submitted results"; offline is described only for practice on one device.
   - Quorum Classroom, https://quorum-classroom.github.io/ (no date on the page): "The quiz runs on the instructor's laptop and classroom network. Internet access isn't required during the assessment."
   - rClassTra, https://rclasstra.github.io/ (Windows app v1.0.3): "rClassTra turns one laptop into the classroom server. Students join from any phone, tablet, or laptop over the same network"; "No internet required."
+  - ZipGrade, https://www.zipgrade.com/ (read 16 Nov 2026): "Use the iPhone, iPad, or Android device you already own." and "Internet connection not required when scanning/grading papers."
+  - Plickers on the App Store, https://apps.apple.com/sg/app/plickers/id701184049 (read 16 Nov 2026): "use your iPhone/iPad to scan them to do instant checks-for-understanding".
+  - Plickers offline, from Western University's eLearning Toolkit page on Plickers, https://elearningtoolkit.uwo.ca/tools/Plickers.html (read 16 Nov 2026; a university's guide, not Plickers' own page): "When offline, an instructor is still able to scan students' Plickers cards." and "While prevented from displaying a live view of responses, students' scores are recorded".
 
 ## Kiro's limits in this build
 - **The pre-submit hook (`PostTaskExec`) is not yet recorded firing.** kiro-cli sessions have no task-status tool, so a task ticked there is a file edit, and that does not fire it. The documented trigger is a task-status change in the Kiro IDE's tasks view, which we did not drive. kiro.dev lists Manual hooks as not invocable in the CLI, so we did not use one. The same gate runs on demand as `/pre-submit` (run once from kiro-cli on 6 Nov, session `2028064e`) or `npm run pre-submit`.

@@ -302,11 +302,11 @@ describe("TASK-39g: CLAIMS.md", () => {
     expect(names).toContain("CLAIMS C2 where");
   });
 
-  it("TASK-39g: TASK-40f: TASK-41i: TASK-42b8: TASK-42d2: TASK-43d3: the real CLAIMS.md passes against the real README and write-up", () => {
+  it("TASK-39g: TASK-40f: TASK-41i: TASK-42b8: TASK-42d2: TASK-43d3: TASK-44c3: the real CLAIMS.md passes against the real README and write-up", () => {
     const files = { "README.md": read("README.md"), "docs/DEVPOST_WRITEUP.md": read("docs/DEVPOST_WRITEUP.md") };
     const claims = read("CLAIMS.md");
     expect(failed(compareClaimsTable(claims, files))).toEqual([]);
     const rows = parseClaimRows(claims);
-    expect(rows.map((r) => r.id)).toEqual(Array.from({ length: 73 }, (_, i) => `C${i + 1}`));
+    expect(rows.map((r) => r.id)).toEqual(Array.from({ length: 74 }, (_, i) => `C${i + 1}`));
   });
 });

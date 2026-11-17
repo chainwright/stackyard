@@ -1130,3 +1130,22 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
     - One `sed -i` changed a comment in `tests/round19-docs.test.ts` ("TASK-44b–e" → "TASK-44c–e").
     - `npm run check:claims:fix` moved the counts and the CLAIMS.md line refs.
     - `WRITEUP_DRAFT.md` was rebuilt as before, after the coordinator's `WRITEUP_DRAFT_20261117.bak`.
+- **c. "Where it sits" names the twin and the trade-off (TASK-44c).**
+  - **What changed.**
+    - In the write-up's "Where it sits", the paragraph that starts "Class results without the internet are not new on their own either." now ends with the brief's two sentences. They name Exam Maker: Offline Tests (an app on every pupil's phone) and ZipGrade and Plickers (paper scanned by the teacher's phone). They also say what Stackyard gives up: "the cost is that she types one short code per pupil". The README's Prior art is not touched; no test needed it.
+    - The sources were read on 16 Nov 2026 by the coordinator outside Kiro. This sandbox has no network, I fetched nothing, and we ran none of these tools.
+      - ZipGrade's site: "Internet connection not required when scanning/grading papers."
+      - The Plickers App Store page.
+      - Western University's eLearning Toolkit page on Plickers, for the offline line. That is a university's guide, not Plickers' own page, and both C74 and EVIDENCE.md say so.
+    - The Exam Maker part rests on the existing C72 sources.
+    - CLAIMS C74 quotes "ZipGrade and Plickers do it on paper scanned by the teacher's phone" (write-up line 37) and is PARTIAL, with the three quotes and URLs. EVIDENCE.md's "Sources we cite" lists the three pages, with the read date, under "Class results without the internet (other tools)".
+    - The spec's c2 line had said the source was a judge's web check. A dated note under it records what was built: the coordinator's reading.
+  - **Line refs.** The sentences were appended to one line, so no line moved. `check:claims:fix` changed no existing CLAIMS ref, and the diff shows only the new row. A test checks that line 37 carries C74's quote.
+  - **Tests.**
+    - The 44c pending placeholder in `tests/round19-docs.test.ts` is replaced by three real tests:
+      - c1: the sentences end that paragraph, and the paragraph comes before "three things together".
+      - c2: C74 is PARTIAL with the three sources, and EVIDENCE.md has them with the date.
+      - c3: there are 74 rows, C74's line ref is right, and the file's imports reach no network.
+    - Moved, with TASK-44c in their titles: the row-count pins 73 → 74 (`claims-docs`, `round11-docs`, `round18-docs`), and `round18-docs` TASK-43d1. The paragraph now starts with the TASK-43d1 text rather than equalling it.
+  - **Counts.** Tests 1,618 → 1,620 (`--fix`). Traced ids stay at 293. The clean-clone count was changed by hand to 1,615 pass, 5 skip in the README, JUDGES.md and EVIDENCE.md.
+  - **Shell edits.** `npm run check:claims:fix`, and the `WRITEUP_DRAFT.md` rebuild as before.

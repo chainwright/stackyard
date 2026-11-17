@@ -209,10 +209,11 @@ describe("TASK-43c: five overstated lines", () => {
 });
 
 describe("TASK-43d: Where it sits names the offline-results tools", () => {
-  it("TASK-43d1: the paragraph sits in Where it sits, right before 'three things together', names the three tools, and the last sentence still holds", () => {
+  it("TASK-43d1: TASK-44c1: the paragraph sits in Where it sits, right before 'three things together', names the three tools, and the last sentence still holds", () => {
     const sits = section(W(), "## Where it sits");
     const ps = sits.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p.length > 0);
-    const at = ps.indexOf(D1);
+    // TASK-44c1 appends the twin sentences to this paragraph, so it now starts with D1.
+    const at = ps.findIndex((p) => p.startsWith(D1));
     expect(at).toBeGreaterThanOrEqual(0);
     expect(ps[at + 1]!.startsWith("Stackyard puts three things together:")).toBe(true);
     expect(ps[at + 1]).toContain("The typed codes are the part we have not seen in the tools above.");
@@ -231,7 +232,7 @@ describe("TASK-43d: Where it sits names the offline-results tools", () => {
     expect(b.length).toBeLessThan(D1.length);
   });
 
-  it("TASK-43d3: C72 and C73 quote the new sentences, PARTIAL, with the four URLs; EVIDENCE.md cites the four pages with the read date; 73 rows", () => {
+  it("TASK-43d3: TASK-44c3: C72 and C73 quote the new sentences, PARTIAL, with the four URLs; EVIDENCE.md cites the four pages with the read date; 73 rows", () => {
     for (const id of ["C72", "C73"]) {
       const r = row(id);
       expect(r.status, id).toBe("PARTIAL");
@@ -243,7 +244,7 @@ describe("TASK-43d: Where it sits names the offline-results tools", () => {
     }
     expect(row("C72").quote).toBe("shares a test by QR code or Nearby sharing");
     expect(row("C73").quote).toBe("Quorum Classroom and rClassTra run the quiz from the teacher's laptop over the classroom network");
-    expect(rows()).toHaveLength(73);
+    expect(rows()).toHaveLength(74); // TASK-44c2: C74 added after C72 and C73
     const src = section(E(), "## Sources we cite");
     expect(src).toContain("Read on 16 Nov 2026 by our coordinator, outside Kiro");
     for (const u of URLS) expect(src, u).toContain(u);

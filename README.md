@@ -184,7 +184,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1618** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,613 pass and 5 skip: 4 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
+- Tests: **1620** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,615 pass and 5 skip: 4 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
 - Player bundle: **13.0 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).

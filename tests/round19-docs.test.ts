@@ -137,11 +137,57 @@ describe("TASK-44b: the AI footage is about 23 s", () => {
   });
 });
 
-// TASK-44c–e are written in the spec (Phase 29) and not built yet. Each test
+// TASK-44c: "Where it sits" names the twin and the trade-off. The sources were
+// read by the coordinator outside Kiro; this file reads local files only.
+describe("TASK-44c: Where it sits names the twin and the trade-off", () => {
+  const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
+  const TWIN =
+    "Exam Maker: Offline Tests reaches the same outcome with an app on every pupil's phone; ZipGrade and Plickers do it on paper scanned by the teacher's phone. Stackyard trades their automatic collection for no app, no device pairing and no network at all: the cost is that she types one short code per pupil.";
+  const URLS = ["https://www.zipgrade.com/", "https://apps.apple.com/sg/app/plickers/id701184049", "https://elearningtoolkit.uwo.ca/tools/Plickers.html"];
+  const c74 = (): string => read("CLAIMS.md").split("\n").find((l) => l.startsWith("| C74 |")) ?? "";
+
+  it("TASK-44c1: the twin sentences end the offline-results paragraph in Where it sits, before 'three things together'", () => {
+    const w = read("docs/DEVPOST_WRITEUP.md");
+    const sits = w.slice(w.indexOf("## Where it sits"), w.indexOf("## How we built it"));
+    const ps = sits.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p.length > 0 && !p.startsWith("##"));
+    const at = ps.findIndex((p) => p.startsWith("Class results without the internet are not new on their own either."));
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(ps[at]!.endsWith(` and the teacher types or pastes it. ${TWIN}`)).toBe(true);
+    expect(ps[at + 1]!.startsWith("Stackyard puts three things together:")).toBe(true);
+    expect(w.split(TWIN)).toHaveLength(2);
+  });
+
+  it("TASK-44c2: C74 quotes the ZipGrade / Plickers part, PARTIAL, with the three sources; EVIDENCE.md lists them with the date", () => {
+    const row = c74();
+    expect(row).toContain('| C74 | "ZipGrade and Plickers do it on paper scanned by the teacher\'s phone" | docs/DEVPOST_WRITEUP.md:');
+    expect(row).toContain("| PARTIAL | Missing: read on 16 Nov 2026 by the coordinator outside Kiro; we ran neither tool; the Plickers offline line is from a university guide.");
+    for (const u of URLS) expect(row, u).toContain(u);
+    for (const q of ["Internet connection not required when scanning/grading papers.", "When offline, an instructor is still able to scan students' Plickers cards."]) expect(row, q).toContain(q);
+    const ev = read("EVIDENCE.md");
+    const src = ev.slice(ev.indexOf("## Sources we cite"), ev.indexOf("## Kiro's limits in this build"));
+    for (const u of URLS) expect(src, u).toContain(u);
+    expect(src).toContain("ZipGrade, https://www.zipgrade.com/ (read 16 Nov 2026)");
+    expect(src).toContain("a university's guide, not Plickers' own page");
+  });
+
+  it("TASK-44c3: 74 rows, every line ref still right, and this file reaches no network", () => {
+    const claims = read("CLAIMS.md");
+    expect(claims.match(/^\| C\d+ \|/gm)).toHaveLength(74);
+    // C74's ref names the line that really carries its quote.
+    const ref = /docs\/DEVPOST_WRITEUP\.md:(\d+)/.exec(c74())!;
+    expect(read("docs/DEVPOST_WRITEUP.md").split("\n")[Number(ref[1]) - 1]).toContain("ZipGrade and Plickers do it on paper scanned by the teacher's phone");
+    const src = read("tests/round19-docs.test.ts");
+    const net = new RegExp(["\\bfet" + "ch\\(", "https?\\.g" + "et\\(", "new Web" + "Socket"].join("|"));
+    expect(src).not.toMatch(net);
+    for (const l of src.split("\n").filter((x) => /^import /.test(x))) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:os|node:path|\.\/helpers\/git-checkout\.js)";$/);
+  });
+});
+
+// TASK-44d–e are written in the spec (Phase 29) and not built yet. Each test
 // below passes only while its sub-ids are still unticked in the spec, so an id
 // is traced here only while the spec plainly says it is pending; ticking one
 // makes its test fail until real tests replace it.
-describe("TASK-44c–e: pending, spec only", () => {
+describe("TASK-44d–e: pending, spec only", () => {
   const spec = readFileSync(path.join(ROOT, ".kiro/specs/maker/tasks.md"), "utf8");
   const phase = spec.slice(spec.indexOf("## Phase 29 - TASK-44:"));
   const pending = (ids: string[]): void => {
@@ -150,7 +196,6 @@ describe("TASK-44c–e: pending, spec only", () => {
       expect(phase, id).not.toContain(`- [x] TASK-${id}:`);
     }
   };
-  it("TASK-44c: TASK-44c1/c2/c3: pending (the twin in Where it sits); the spec lists them unticked", () => pending(["44c1", "44c2", "44c3"]));
   it("TASK-44d: TASK-44d1/d2/d3: pending (Caramel, commit days, C73); the spec lists them unticked", () => pending(["44d1", "44d2", "44d3"]));
   it("TASK-44e: TASK-44e1/e2/e3: pending (the test counts per kind of copy); the spec lists them unticked", () => pending(["44e1", "44e2", "44e3"]));
 });

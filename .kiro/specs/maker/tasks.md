@@ -2604,9 +2604,10 @@ Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this 
 ### TASK-44c: "Where it sits" names the twin and the trade-off  *(TASK-44 c)*
   - **Bug.** The paragraph that names Exam Maker, Quorum Classroom and rClassTra does not say what Stackyard gives up. The judges' web check (16–17 Nov, outside Kiro) found that ZipGrade and Plickers also bring class results back without internet, on paper that the teacher's phone scans.
   - **Fix.**
-    - [ ] TASK-44c1: that write-up paragraph ends with "Exam Maker: Offline Tests reaches the same outcome with an app on every pupil's phone; ZipGrade and Plickers do it on paper scanned by the teacher's phone. Stackyard trades their automatic collection for no app, no device pairing and no network at all: the cost is that she types one short code per pupil." The README's Prior art is not touched unless a test needs it.
-    - [ ] TASK-44c2: CLAIMS C74 quotes the ZipGrade / Plickers part, PARTIAL: "Missing: from a judge's web check (16–17 Nov 2026, outside Kiro); we ran none of them." EVIDENCE.md's "Sources we cite" lists ZipGrade and Plickers with the date.
-    - [ ] TASK-44c3: tests for the sentence, its place, C74 and the source entry. The row-count pins move from 73 to 74, and the line refs stay right.
+    - [x] TASK-44c1: that write-up paragraph ends with "Exam Maker: Offline Tests reaches the same outcome with an app on every pupil's phone; ZipGrade and Plickers do it on paper scanned by the teacher's phone. Stackyard trades their automatic collection for no app, no device pairing and no network at all: the cost is that she types one short code per pupil." The README's Prior art is not touched unless a test needs it.
+    - [x] TASK-44c2: CLAIMS C74 quotes the ZipGrade / Plickers part, PARTIAL: "Missing: from a judge's web check (16–17 Nov 2026, outside Kiro); we ran none of them." EVIDENCE.md's "Sources we cite" lists ZipGrade and Plickers with the date.
+      - *(17 Nov 2026, as built: the sources are the coordinator's reading on 16 Nov 2026, outside Kiro, of the ZipGrade site, the Plickers App Store page and a university's guide to Plickers (Western University's eLearning Toolkit) for the offline line. So the Missing text is "read on 16 Nov 2026 by the coordinator outside Kiro; we ran neither tool; the Plickers offline line is from a university guide", with the three quotes and URLs.)*
+    - [x] TASK-44c3: tests for the sentence, its place, C74 and the source entry. The row-count pins move from 73 to 74, and the line refs stay right.
   - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
 
 ### TASK-44d: Caramel, the commit days and C73  *(TASK-44 d)*
