@@ -46,9 +46,9 @@ describe("TASK-38b: six specs, not five", () => {
 });
 
 describe("TASK-38c: seven on-screen AI windows, not six sequences", () => {
-  it("TASK-38c: TASK-43e1: about 21 s in seven on-screen windows, eight shots, in both files", () => {
-    expect(W()).toContain("(about 21 s in seven on-screen windows, eight shots in all)");
-    expect(R()).toContain("(about 21 s in seven on-screen windows, eight shots)");
+  it("TASK-38c: TASK-43e1: TASK-44b3: about 23 s in seven on-screen windows, eight shots, in both files", () => {
+    expect(W()).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
+    expect(R()).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
     gone("six sequences");
   });
 });

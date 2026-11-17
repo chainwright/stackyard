@@ -2564,6 +2564,7 @@ Source: judge round r8 (16 Nov 2026, P1-9). Class Results looked like "an unstyl
 ### TASK-43e: two unbacked figures, and a name  *(TASK-43 e)*
   - **Fix.**
     - [x] TASK-43e1: **"about 21 s".** The seven windows that the YouTube description lists (Phase 22 of this file names them) add up to 2 + 3 + 1 + 6 + 4 + 2 + 3 = 21 s. The README and the write-up's Credits say "about 21 s". C34 is PARTIAL, because the description itself still says "about 23 s" and the cut was not re-measured. Older spec and log lines stay as history, with one dated note at the TASK-37c follow-up.
+      - *(17 Nov 2026, TASK-44b: this was wrong. The description's windows are whole seconds, each rounded down, so their sum (21 s) undercounts. Measured from the edit timelines and frame by frame, the eight shots are 23.1 s; the README, the write-up and C34 say "about 23 s" again. See Phase 29.)*
     - [x] TASK-43e2: **no "minutes instead of days".** It was only in the drafts (fixed in c7). The README, the write-up, EVIDENCE.md and JUDGES.md have no such time comparison, and a test keeps it that way.
     - [x] TASK-43e3: **no person's name in the repo.** The KIRO_LOG TASK-42c bullet and `tests/round15-docs.test.ts` quoted a draft Status line ending in a first name. The log now ends the quotation before the name, and the tests check the Status text up to "post;". The drafts' own Status text is not edited.
     - [x] TASK-43e4: **no hook-firings file.** `docs/kiro-sessions/hook-firings.jsonl` is not added, because none exists locally (the coordinator's side searched). C20 and C47 stay PARTIAL.
@@ -2595,9 +2596,9 @@ Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this 
     - v9b windows: 0:00.0–0:02.4, 0:18.8–0:22.3, 0:43.4–0:44.8, 1:18.2–1:24.8 (5.0 + 1.6 s), 1:30.2–1:34.2, 1:44.2–1:46.4 and 2:31.2–2:34.2.
     - The shots in each cut: 2.4 + 3.5 + 1.4 + 5.0 + 1.6 + 4.0 + 2.2 + 3.0 = 23.1 s.
   - **Fix.**
-    - [ ] TASK-44b1: the write-up Credits and the README's matching sentence say "about 23 s in seven on-screen windows, eight shots in all". "the OFFLINE stamp" stays in the Credits (v8b has one at 0:02–0:04).
-    - [ ] TASK-44b2: CLAIMS C34 quotes the new wording and is TRUE. Its proof lists the frame windows of both cuts above: from the edit timelines beside the repo, measured by the coordinator outside Kiro.
-    - [ ] TASK-44b3: the old spec and log lines that say 21 s stay as history, with one dated note. The tests that pin "about 21 s" move, with TASK-44b in their titles.
+    - [x] TASK-44b1: the write-up Credits and the README's matching sentence say "about 23 s in seven on-screen windows, eight shots in all". "the OFFLINE stamp" stays in the Credits (v8b has one at 0:02–0:04).
+    - [x] TASK-44b2: CLAIMS C34 quotes the new wording and is TRUE. Its proof lists the frame windows of both cuts above: from the edit timelines beside the repo, measured by the coordinator outside Kiro.
+    - [x] TASK-44b3: the old spec and log lines that say 21 s stay as history, with one dated note. The tests that pin "about 21 s" move, with TASK-44b in their titles.
   - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
 
 ### TASK-44c: "Where it sits" names the twin and the trade-off  *(TASK-44 c)*

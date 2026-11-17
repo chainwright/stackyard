@@ -119,7 +119,7 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
     expect(body).toContain("we used no Powers");
   });
 
-  it("TASK-39d: TASK-43e1: keeps the architecture line and every other honesty label in the write-up", () => {
+  it("TASK-39d: TASK-43e1: TASK-44b3: keeps the architecture line and every other honesty label in the write-up", () => {
     expect(writeup).toContain("**The line that set the architecture**");
     for (const label of [
       "not a classroom study and no teacher or pupil was involved",
@@ -128,7 +128,7 @@ describe("TASK-39d: the write-up's Kiro table is claim + proof", () => {
       "No screen-reader user or disabled pupil has tested it.",
       "https://stackyard-sdqt.onrender.com/samples/vikings-in-ireland.html",
       "Development used our own AI review panel (AI agents)",
-      "AI-generated footage (about 21 s in seven on-screen windows, eight shots in all)", // TASK-43e1: was 23 s
+      "AI-generated footage (about 23 s in seven on-screen windows, eight shots in all)", // TASK-44b3: 23.1 s by frame (TASK-43e1's 21 s was rounded down)
     ]) {
       expect(writeup, label).toContain(label);
     }

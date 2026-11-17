@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { gitCheckoutAt, gitGrepHits } from "./helpers/git-checkout.js";
@@ -90,11 +90,58 @@ describe("TASK-44a: the git grep test skips in a copy with no .git", () => {
   });
 });
 
-// TASK-44b–e are written in the spec (Phase 29) and not built yet. Each test
+// TASK-44b: the AI footage is about 23 s (23.1 s measured by frame in both cuts).
+describe("TASK-44b: the AI footage is about 23 s", () => {
+  const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
+  const flat = (t: string): string => t.replace(/\s+/g, " ");
+  const NEW = "about 23 s in seven on-screen windows, eight shots in all";
+  const c34 = (): string => read("CLAIMS.md").split("\n").find((l) => l.startsWith("| C34 |"))!;
+  const secs = (t: string): number => Number(t.split(":")[0]) * 60 + Number(t.split(":")[1]);
+  const windows = (s: string): number[] => s.split(", ").map((w) => { const [a, b] = w.split("–"); return secs(b!) - secs(a!); });
+
+  it("TASK-44b1: the write-up Credits and the README say about 23 s, eight shots in all; the Credits keep the OFFLINE stamp", () => {
+    const credits = read("docs/DEVPOST_WRITEUP.md").split("\n").find((l) => l.startsWith("**Credits.**"))!;
+    expect(credits).toContain(`AI-generated footage (${NEW})`);
+    expect(credits).toContain("the OFFLINE stamp");
+    expect(flat(read("README.md"))).toContain(`are AI-generated (${NEW}), each tagged on screen`);
+    for (const f of ["README.md", "docs/DEVPOST_WRITEUP.md"]) expect(read(f), f).not.toContain("about 21 s");
+  });
+
+  it("TASK-44b2: C34 quotes the new wording, TRUE, with both cuts' frame windows; each cut's seven windows add to 23.1 s", () => {
+    const row = c34();
+    expect(row).toContain(`| C34 | "${NEW}" |`);
+    expect(row).toContain("| TRUE |");
+    expect(row).toContain("from the edit timelines beside the repo (`video/v8b/timeline_v8b.json`, `video/v9b/timeline_v9b.json`)");
+    expect(row).toContain("2.4 + 3.5 + 1.4 + 5.0 + 1.6 + 4.0 + 2.2 + 3.0 = 23.1 s");
+    const v8b = /v8b \(linked\): (.*?)\. v9b: /.exec(row)![1]!;
+    const v9b = /v9b: (.*?)\. Each shot/.exec(row)![1]!;
+    for (const [name, s] of [["v8b", v8b], ["v9b", v9b]] as const) {
+      const w = windows(s);
+      expect(w, name).toHaveLength(7);
+      expect(Math.round(w.reduce((a, b) => a + b, 0) * 10) / 10, name).toBe(23.1);
+    }
+    // The eight shot lengths add to the same total.
+    expect(Math.round([2.4, 3.5, 1.4, 5.0, 1.6, 4.0, 2.2, 3.0].reduce((a, b) => a + b, 0) * 10) / 10).toBe(23.1);
+  });
+
+  it("TASK-44b3: the 21 s lines stay as history with a dated note; no test pins about 21 s as current", () => {
+    const spec = read(".kiro/specs/maker/tasks.md");
+    expect(spec).toContain('[x] TASK-43e1: **"about 21 s".**');
+    expect(spec).toContain("*(17 Nov 2026, TASK-44b: this was wrong. The description's windows are whole seconds, each rounded down");
+    expect(read("docs/KIRO_LOG.md")).toContain("add up to 21 s");
+    // Built in pieces so this file does not match itself.
+    const old = "(about 2" + "1 s in seven";
+    for (const f of readdirSync(path.join(ROOT, "tests")).filter((x) => x.endsWith(".ts"))) {
+      expect(readFileSync(path.join(ROOT, "tests", f), "utf8"), f).not.toContain(old);
+    }
+  });
+});
+
+// TASK-44c–e are written in the spec (Phase 29) and not built yet. Each test
 // below passes only while its sub-ids are still unticked in the spec, so an id
 // is traced here only while the spec plainly says it is pending; ticking one
 // makes its test fail until real tests replace it.
-describe("TASK-44b–e: pending, spec only", () => {
+describe("TASK-44c–e: pending, spec only", () => {
   const spec = readFileSync(path.join(ROOT, ".kiro/specs/maker/tasks.md"), "utf8");
   const phase = spec.slice(spec.indexOf("## Phase 29 - TASK-44:"));
   const pending = (ids: string[]): void => {
@@ -103,7 +150,6 @@ describe("TASK-44b–e: pending, spec only", () => {
       expect(phase, id).not.toContain(`- [x] TASK-${id}:`);
     }
   };
-  it("TASK-44b: TASK-44b1/b2/b3: pending (the footage figure); the spec lists them unticked", () => pending(["44b1", "44b2", "44b3"]));
   it("TASK-44c: TASK-44c1/c2/c3: pending (the twin in Where it sits); the spec lists them unticked", () => pending(["44c1", "44c2", "44c3"]));
   it("TASK-44d: TASK-44d1/d2/d3: pending (Caramel, commit days, C73); the spec lists them unticked", () => pending(["44d1", "44d2", "44d3"]));
   it("TASK-44e: TASK-44e1/e2/e3: pending (the test counts per kind of copy); the spec lists them unticked", () => pending(["44e1", "44e2", "44e3"]));

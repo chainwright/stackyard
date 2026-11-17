@@ -274,21 +274,22 @@ describe("TASK-43d: Where it sits names the offline-results tools", () => {
 });
 
 describe("TASK-43e: two unbacked figures, and a name", () => {
-  it("TASK-43e1: about 21 s, the sum of the seven windows the spec lists; C34 is PARTIAL", () => {
+  it("TASK-43e1: TASK-44b3: the whole-second windows sum to 21 s (the TASK-43e1 rounding error, kept as history); the files say about 23 s again", () => {
     const spec = read(".kiro/specs/maker/tasks.md");
     const listed = /lists seven AI-tagged on-screen windows \(([^)]*)\)/.exec(spec)![1]!;
     const secs = (t: string): number => Number(t.split(":")[0]) * 60 + Number(t.split(":")[1]);
     const sum = listed.split(", ").map((w) => w.split("–")).reduce((a, [s, e]) => a + secs(e!) - secs(s!), 0);
     expect(listed.split(", ")).toHaveLength(7);
+    // Each whole-second window was rounded down, so the sum undercounts the 23.1 s measured by frame (TASK-44b).
     expect(sum).toBe(21);
-    expect(W()).toContain("(about 21 s in seven on-screen windows, eight shots in all)");
-    expect(R().replace(/\s+/g, " ")).toContain("(about 21 s in seven on-screen windows, eight shots)");
-    for (const t of [W(), R()]) expect(t).not.toContain("about 23 s");
-    const c34 = row("C34");
-    expect(c34.quote).toBe("about 21 s in seven on-screen windows, eight shots in all");
-    expect(c34.status).toBe("PARTIAL");
-    expect(c34.proof).toContain("Missing: 21 s is the sum of the seven whole-second windows listed in the YouTube description, which itself still says 'about 23 s'; the cut was not re-measured.");
+    expect(W()).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
+    expect(R().replace(/\s+/g, " ")).toContain("(about 23 s in seven on-screen windows, eight shots in all)");
+    for (const t of [W(), R()]) expect(t).not.toContain("about 21 s");
+    expect(row("C34").quote).toBe("about 23 s in seven on-screen windows, eight shots in all");
+    expect(row("C34").status).toBe("TRUE");
+    // The history stays, with the dated note that corrects it.
     expect(spec).toContain("*(16 Nov 2026, TASK-43e1: the seven windows listed in the YouTube description add up to 21 s, not 23 s");
+    expect(spec).toContain("*(17 Nov 2026, TASK-44b: this was wrong. The description's windows are whole seconds, each rounded down");
   });
 
   it("TASK-43e2: no unbacked time comparison (minutes vs days) in the README, the write-up, EVIDENCE.md or JUDGES.md", () => {

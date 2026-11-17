@@ -1104,8 +1104,29 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
   - **Pending ids.** `check:trace` must trace every declared id, so the spec-only ids TASK-44b–e needed a test title now. Each of the four "pending" tests in `tests/round19-docs.test.ts` passes only while its sub-ids are unticked (`- [ ]`) in Phase 29. An id is therefore traced only while the spec says plainly that it is not built. Ticking one makes its test fail until the real tests replace it.
   - **Checked here.** `npm test` passes in this checkout. I also copied this working tree with no `.git` to a temp folder outside the repo (rsync, with `node_modules` linked) and ran the whole suite there: 1,610 passed, 6 skipped, 0 failed. The drafts were not beside that copy. My first version failed in that copy: its "this checkout is a checkout" test read the repo root, so it was rewritten to use a temp repository. The temp copy was deleted afterwards.
   - **Checked by the coordinator.** The copies without `.git` that count for acceptance are a `git archive HEAD` copy and a fresh clone. The coordinator checks both outside Kiro.
+    - Coordinator's check, outside Kiro (TASK-44a committed as 36e970a): a `git archive 36e970a` copy (no `.git`) runs `CI=true npm run pre-submit` with exit 0: 1,610 passed and 6 skipped (1,616).
   - **Shell edits.**
     - Phase 29 was first appended to `tasks.md` with a one-line shell `cat >>` placeholder, which was then replaced with the file tools.
     - `git add -N` and `git reset` on the two new files let me check that `git grep` does not match them once tracked. This touched only the index, and both files are untracked again.
     - `npm run check:claims:fix` moved the counts: tests 1,606 → 1,616, and traced ids 273 → 293. The clean-clone count (total minus the 5 skips) is not moved by `--fix`, so I changed it by hand to 1,611 in the README, JUDGES.md and EVIDENCE.md. Its wording stays until TASK-44e.
     - `WRITEUP_DRAFT.md`, beside the repo, was rebuilt as before (`head -1` of itself, then `tail -n +2` of the write-up), because `--fix` changed the write-up's counts.
+- **b. The AI footage is about 23 s again (TASK-44b).**
+  - **Bug.** TASK-43e1 summed the seven whole-second windows of the YouTube description (2 + 3 + 1 + 6 + 4 + 2 + 3 = 21 s) and changed "about 23 s" to "about 21 s". That rounding was the error: each window was rounded down. The coordinator measured the edit timelines beside the repo (`video/v8b/timeline_v8b.json`, `video/v9b/timeline_v9b.json`) outside Kiro, and judge round r9 measured frame by frame. Both found eight shots in seven windows, 23.1 s in both cuts. I did not read the timelines; they are not in the repo.
+  - **What changed.**
+    - The write-up's Credits say "about 23 s in seven on-screen windows, eight shots in all". The rest of the sentence is unchanged, including "the OFFLINE stamp" (the linked v8b has one, at 0:02–0:04).
+    - The README's matching sentence now says "about 23 s in seven on-screen windows, eight shots in all" (it used to end "eight shots"). So C34 now cites both files.
+    - CLAIMS C34 quotes the new wording and is TRUE. Its proof is the coordinator's measurement, with both cuts' frame windows.
+    - The spec's TASK-43e1 line and the older log lines stay as history. One dated note (17 Nov) under TASK-43e1 in `tasks.md` says why they were wrong. TASK-44b1–b3 are ticked.
+    - No line about the video's link, length, take timings or commit was changed.
+  - **Tests.**
+    - The pending placeholder for 44b in `tests/round19-docs.test.ts` is replaced by three real tests:
+      - b1: the Credits and the README say about 23 s, and the OFFLINE stamp stays.
+      - b2: C34 is TRUE, and each cut's seven windows in its proof add up to 23.1 s.
+      - b3: the history and the dated note are there, and no test file pins "about 21 s" as current.
+    - Five tests that pinned 21 s now pin 23 s, with TASK-44b in their titles: `round18-docs` (TASK-43e1: it still checks that the whole-second windows add up to 21 s, as the history of the error), `mutation-log`, `round10-docs`, `round11-docs` and `round6-docs`.
+  - **Counts.** Tests 1,616 → 1,618 (`--fix`). Traced ids stay at 293. The clean-clone count was changed by hand to 1,613 pass, 5 skip in the README, JUDGES.md and EVIDENCE.md.
+  - **Shell edits.**
+    - One `sed -i` ticked TASK-44b1–b3 in `tasks.md`.
+    - One `sed -i` changed a comment in `tests/round19-docs.test.ts` ("TASK-44b–e" → "TASK-44c–e").
+    - `npm run check:claims:fix` moved the counts and the CLAIMS.md line refs.
+    - `WRITEUP_DRAFT.md` was rebuilt as before, after the coordinator's `WRITEUP_DRAFT_20261117.bak`.
