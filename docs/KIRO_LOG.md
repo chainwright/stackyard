@@ -1149,3 +1149,16 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
     - Moved, with TASK-44c in their titles: the row-count pins 73 → 74 (`claims-docs`, `round11-docs`, `round18-docs`), and `round18-docs` TASK-43d1. The paragraph now starts with the TASK-43d1 text rather than equalling it.
   - **Counts.** Tests 1,618 → 1,620 (`--fix`). Traced ids stay at 293. The clean-clone count was changed by hand to 1,615 pass, 5 skip in the README, JUDGES.md and EVIDENCE.md.
   - **Shell edits.** `npm run check:claims:fix`, and the `WRITEUP_DRAFT.md` rebuild as before.
+- **d. Caramel, the commit days and C73 (TASK-44d).**
+  - **What changed.**
+    - In the write-up's "Where it sits", Caramel "turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi". It used to say "subject, level and objective". The source is judge round r9's web reading of outilstice's Caramel article, outside Kiro: "Choisissez discipline, niveau, type d'activité; Collez un extrait de cours". C11's quote ("Caramel, made by two teachers") is unchanged, and no CLAIMS row quoted "objective". Two tests pinned the old sentence (`round8-docs`, `round12-docs`); they now pin the new one, with TASK-44d1 in their titles.
+    - CLAIMS C43 ("about ten days", blog) has a new proof: "commits on 10 days between 30 Oct and 16 Nov (git log: 30, 31 Oct; 4, 5, 6, 8, 9, 10, 11, 16 Nov), first commit `c68ffc7`". It stays TRUE. I checked it here with `git log --format=%ad --date=format:%Y-%m-%d`: up to 16 Nov there are exactly those 10 days, and the root commit is `c68ffc7`.
+    - CLAIMS C73 now rests only on its own two sources: Quorum Classroom's "The quiz runs on the instructor's laptop and classroom network." and rClassTra's "rClassTra turns one laptop into the classroom server". Both were read on 16 Nov by the coordinator outside Kiro and re-read by judge round r9. It is TRUE now. C72 is unchanged (PARTIAL), and the TASK-43d3 test still pins it. That test now checks C72 alone as PARTIAL and C73 as TRUE (TASK-44d3 in its title).
+  - **Tests.**
+    - The 44d pending placeholder in `tests/round19-docs.test.ts` is replaced by three real tests:
+      - d1: the new Caramel sentence, no "objective", and C11's line.
+      - d2: the exact C43 row and its ten distinct days.
+      - d3: C73 has only its two quotes and URLs, is TRUE, and has no Missing text; C72 is still PARTIAL.
+    - Honest note on d2: I did not make the test read `git log`. That check would have to skip in shallow clones and ZIP copies, which adds one conditional skip to each and changes the per-copy counts that TASK-44e will state. The days were checked by hand when this was built (above).
+  - **Counts.** Tests 1,620 → 1,622 (`--fix`). Traced ids stay at 293. The clean-clone count was changed by hand to 1,617 pass, 5 skip. Line refs: only C43 and C73 changed in CLAIMS.md, and no line moved (`check:claims` OK).
+  - **Shell edits.** One `sed -i` ticked TASK-44d1–d3 in `tasks.md`. `npm run check:claims:fix` ran, and `WRITEUP_DRAFT.md` was rebuilt as before.

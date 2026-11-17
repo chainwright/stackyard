@@ -2613,9 +2613,9 @@ Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this 
 ### TASK-44d: Caramel, the commit days and C73  *(TASK-44 d)*
   - **Bug.** Caramel's page (outilstice) says "Choisissez discipline, niveau, type d'activité; Collez un extrait de cours": subject, level and activity type, with an optional course extract. It does not say "objective". The C43 proof does not say how "about ten days" is measured. C73 is PARTIAL, but the judges read the two pages it rests on.
   - **Fix.**
-    - [ ] TASK-44d1: the write-up says Caramel "turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi". The tests that pin the old wording move.
-    - [ ] TASK-44d2: the C43 proof becomes "commits on 10 days between 30 Oct and 16 Nov (git log)", and C43 stays TRUE. The coordinator measured 10 distinct days: 30 and 31 Oct; 4, 5, 6, 8, 9, 10, 11 and 16 Nov. (The judge's 9 is wrong.)
-    - [ ] TASK-44d3: C73's proof is the two quotes, with their URLs, read 16–17 Nov outside Kiro, and its status is TRUE. The quotes are quorum-classroom.github.io's "The quiz runs on the instructor's laptop and classroom network." and rclasstra.github.io's "rClassTra turns one laptop into the classroom server". C72 stays as it is.
+    - [x] TASK-44d1: the write-up says Caramel "turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi". The tests that pin the old wording move.
+    - [x] TASK-44d2: the C43 proof becomes "commits on 10 days between 30 Oct and 16 Nov (git log)", and C43 stays TRUE. The coordinator measured 10 distinct days: 30 and 31 Oct; 4, 5, 6, 8, 9, 10, 11 and 16 Nov. (The judge's 9 is wrong.)
+    - [x] TASK-44d3: C73's proof is the two quotes, with their URLs, read 16–17 Nov outside Kiro, and its status is TRUE. The quotes are quorum-classroom.github.io's "The quiz runs on the instructor's laptop and classroom network." and rclasstra.github.io's "rClassTra turns one laptop into the classroom server". C72 stays as it is.
   - **Acceptance criteria.** A test per sub-id; `check:claims` passes.
 
 ### TASK-44e: the test counts say what each kind of copy sees  *(TASK-44 e)*

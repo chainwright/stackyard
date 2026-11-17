@@ -232,16 +232,16 @@ describe("TASK-43d: Where it sits names the offline-results tools", () => {
     expect(b.length).toBeLessThan(D1.length);
   });
 
-  it("TASK-43d3: TASK-44c3: C72 and C73 quote the new sentences, PARTIAL, with the four URLs; EVIDENCE.md cites the four pages with the read date; 73 rows", () => {
-    for (const id of ["C72", "C73"]) {
-      const r = row(id);
-      expect(r.status, id).toBe("PARTIAL");
-      expect(r.proof, id).toContain(
-        "Missing: from the tools' public pages, read on 16 Nov 2026 by the coordinator outside Kiro; the Product Hunt page was read through a fetch summary; its Google Play page now describes online tests; we ran none of them.",
-      );
-      for (const u of URLS) expect(r.proof, `${id} ${u}`).toContain(u);
-      expect(r.refs.map((x) => x.file).sort(), id).toEqual(["README.md", "docs/DEVPOST_WRITEUP.md"]);
-    }
+  it("TASK-43d3: TASK-44c3: TASK-44d3: C72 is PARTIAL with the four URLs, C73 (TRUE since TASK-44d3) keeps its quote; EVIDENCE.md cites the four pages with the read date", () => {
+    // C72 stays as TASK-43d3 made it.
+    const c72 = row("C72");
+    expect(c72.status).toBe("PARTIAL");
+    expect(c72.proof).toContain(
+      "Missing: from the tools' public pages, read on 16 Nov 2026 by the coordinator outside Kiro; the Product Hunt page was read through a fetch summary; its Google Play page now describes online tests; we ran none of them.",
+    );
+    for (const u of URLS) expect(c72.proof, `C72 ${u}`).toContain(u);
+    for (const id of ["C72", "C73"]) expect(row(id).refs.map((x) => x.file).sort(), id).toEqual(["README.md", "docs/DEVPOST_WRITEUP.md"]);
+    expect(row("C73").status).toBe("TRUE");
     expect(row("C72").quote).toBe("shares a test by QR code or Nearby sharing");
     expect(row("C73").quote).toBe("Quorum Classroom and rClassTra run the quiz from the teacher's laptop over the classroom network");
     expect(rows()).toHaveLength(74); // TASK-44c2: C74 added after C72 and C73

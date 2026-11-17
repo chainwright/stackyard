@@ -183,11 +183,48 @@ describe("TASK-44c: Where it sits names the twin and the trade-off", () => {
   });
 });
 
-// TASK-44d–e are written in the spec (Phase 29) and not built yet. Each test
+// TASK-44d: Caramel's inputs, the commit days behind "about ten days", and C73.
+describe("TASK-44d: Caramel, the commit days and C73", () => {
+  const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
+  const claimRow = (id: string): string => read("CLAIMS.md").split("\n").find((l) => l.startsWith(`| ${id} |`)) ?? "";
+
+  it("TASK-44d1: the write-up gives Caramel's inputs as its page does (activity type, optional course extract), not 'objective'; C11 still matches", () => {
+    const w = read("docs/DEVPOST_WRITEUP.md");
+    expect(w).toContain("Caramel, made by two teachers, turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi.");
+    expect(w).not.toContain("level and objective");
+    expect(claimRow("C11")).toContain('| C11 | "Caramel, made by two teachers" |');
+    const line = Number(/docs\/DEVPOST_WRITEUP\.md:(\d+)/.exec(claimRow("C11"))![1]);
+    expect(w.split("\n")[line - 1]).toContain("Caramel, made by two teachers");
+  });
+
+  it("TASK-44d2: C43 names the 10 commit days between 30 Oct and 16 Nov and the first commit, and stays TRUE", () => {
+    const row = claimRow("C43");
+    expect(row).toBe(
+      '| C43 | "We built it with Kiro over about ten days." | blog | TRUE | commits on 10 days between 30 Oct and 16 Nov (git log: 30, 31 Oct; 4, 5, 6, 8, 9, 10, 11, 16 Nov), first commit `c68ffc7` |',
+    );
+    // The listed days are ten, inside the window the proof names. (The days themselves were checked against
+    // git log when this was built; a git-reading test here would add one more conditional skip in shallow
+    // clones and ZIP copies, which TASK-44e counts.)
+    const listed = ["30 Oct", "31 Oct", "4 Nov", "5 Nov", "6 Nov", "8 Nov", "9 Nov", "10 Nov", "11 Nov", "16 Nov"];
+    expect(new Set(listed).size).toBe(10);
+  });
+
+  it("TASK-44d3: C73 rests only on its own two quotes and URLs, TRUE; C72 is unchanged (PARTIAL)", () => {
+    const row = claimRow("C73");
+    expect(row).toContain("| TRUE |");
+    expect(row).toContain('https://quorum-classroom.github.io/: "The quiz runs on the instructor\'s laptop and classroom network."');
+    expect(row).toContain('https://rclasstra.github.io/: "rClassTra turns one laptop into the classroom server"');
+    expect(row).toContain("Read on 16 Nov 2026 by the coordinator outside Kiro and re-read by judge round r9; we ran neither.");
+    for (const other of ["producthunt.com", "play.google.com", "Missing:"]) expect(row, other).not.toContain(other);
+    expect(claimRow("C72")).toContain("| PARTIAL | Missing: from the tools' public pages, read on 16 Nov 2026 by the coordinator outside Kiro;");
+  });
+});
+
+// TASK-44e is written in the spec (Phase 29) and not built yet. Each test
 // below passes only while its sub-ids are still unticked in the spec, so an id
 // is traced here only while the spec plainly says it is pending; ticking one
 // makes its test fail until real tests replace it.
-describe("TASK-44d–e: pending, spec only", () => {
+describe("TASK-44e: pending, spec only", () => {
   const spec = readFileSync(path.join(ROOT, ".kiro/specs/maker/tasks.md"), "utf8");
   const phase = spec.slice(spec.indexOf("## Phase 29 - TASK-44:"));
   const pending = (ids: string[]): void => {
@@ -196,6 +233,5 @@ describe("TASK-44d–e: pending, spec only", () => {
       expect(phase, id).not.toContain(`- [x] TASK-${id}:`);
     }
   };
-  it("TASK-44d: TASK-44d1/d2/d3: pending (Caramel, commit days, C73); the spec lists them unticked", () => pending(["44d1", "44d2", "44d3"]));
   it("TASK-44e: TASK-44e1/e2/e3: pending (the test counts per kind of copy); the spec lists them unticked", () => pending(["44e1", "44e2", "44e3"]));
 });

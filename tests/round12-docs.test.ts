@@ -52,9 +52,9 @@ describe("TASK-40b: the write-up's Where it sits names the 2026 field", () => {
     expect(section.replace(/^## Where it sits\n/, "").trim().split("\n\n")).toHaveLength(5);
   });
 
-  it("TASK-40b paragraph 1 names the play-only HTML export entry", () => {
+  it("TASK-40b: TASK-44d1: paragraph 1 names the play-only HTML export entry, and Caramel's inputs as its page gives them", () => {
     expect(paras[0]).toBe(
-      "Other Kiroween 2026 entries revive HyperCard's editor too. At least one builds a stack from a description, and another exports a stack as one play-only HTML file. AfterStack is itself one offline page with a form editor; we found no AI generation or self-saving copy in it. Caramel, made by two teachers, turns a subject, level and objective into H5P activities that need a host or Lumi.",
+      "Other Kiroween 2026 entries revive HyperCard's editor too. At least one builds a stack from a description, and another exports a stack as one play-only HTML file. AfterStack is itself one offline page with a form editor; we found no AI generation or self-saving copy in it. Caramel, made by two teachers, turns a subject, level and activity type (and an optional course extract) into H5P activities that need a host or Lumi.",
     );
   });
 
