@@ -32,7 +32,8 @@ export type LessonWarningCode =
   | "answer-inside-answer"
   | "restates-flash"
   | "repeated-card"
-  | "joke-answer";
+  | "joke-answer"
+  | "same-right-answer";
 
 export interface LessonWarning {
   code: LessonWarningCode;
@@ -60,6 +61,37 @@ export function foldedWords(s: string): string[] {
     .split(" ")
     .filter((w) => w.length > 0)
     .map((w) => (w.length > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.slice(0, -1) : w));
+}
+
+/**
+ * TASK-42b3: what an answer SAYS, for "two answers say the same thing": the
+ * folded words (case, punctuation and a plural "s" folded) without a leading
+ * article. "The Clouds!" and "cloud" give the same key.
+ */
+export function answerKey(label: string): string {
+  const w = foldedWords(label);
+  if (w.length > 1 && (w[0] === "the" || w[0] === "a" || w[0] === "an")) w.shift();
+  return w.join(" ");
+}
+
+const YES_NO = new Set(["yes", "no", "true", "false"]);
+/** Number words: "Two" is right for "How many poles does a bar magnet have?" and for the magnet cut in half. */
+const NUMBER_WORDS = new Set([
+  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+  "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "million",
+]);
+
+/**
+ * TASK-42b4: an answer made of WORDS, so two quiz cards with this same right
+ * answer may be asking the same thing twice. Not a number answer ("12" is right
+ * for 3 × 4 and for 2 × 6; any word that is digits or a number word, as in
+ * "Two") and not yes / no / true / false (they repeat in true-or-false decks).
+ */
+export function isWordAnswer(label: string): boolean {
+  const key = answerKey(label);
+  if (key.length === 0 || YES_NO.has(key)) return false;
+  return !key.split(" ").some((w) => /^\d+$/.test(w) || NUMBER_WORDS.has(w));
 }
 
 /** Words that carry meaning (4+ letters), for the "restates a flash card" overlap. */
@@ -156,7 +188,9 @@ export const JOKE_MARKERS: ReadonlyArray<{ re: RegExp; why: string }> = [
   { re: /\bglow(?:s|ing)?\b/, why: "glowing" },
   { re: /\bmagic(?:al)?\b|\bspell\b|\bwizard\b/, why: "magic" },
   { re: /\b(?:sings?|singing|dances?|dancing)\b/, why: "singing or dancing" },
-  { re: /\bfl(?:y|ies) to the moon\b/, why: "flying to the moon" },
+  // TASK-42b5: widened from "fl(y|ies) to the moon" to any "(in)to the moon";
+  // still exempt when the question mentions the moon (the check below).
+  { re: /\b(?:in)?to the moon\b/, why: "going to the moon" },
   { re: /\beats? it\b/, why: "eating it" },
   { re: /\bturns? bright (?:green|pink|purple|blue)\b/, why: "a joke colour" },
   { re: /\b(?:changes? colou?r|change in colou?r|turns? (?:a )?different colou?r)\b/, why: "a colour change offered as the result" },
@@ -189,6 +223,7 @@ export function jokeAnswerReason(option: ButtonElement, card: Card): string | nu
 export function lessonWarnings(stack: Stack): LessonWarning[] {
   const out: LessonWarning[] = [];
   const firstByFront = new Map<string, string>();
+  const firstByRight = new Map<string, string>();
   stack.cards.forEach((card, i) => {
     if (card.kind === "end") return;
     const key = frontKey(card);
@@ -238,6 +273,13 @@ export function lessonWarnings(stack: Stack): LessonWarning[] {
       const why = jokeAnswerReason(wrong, card);
       if (why !== null) out.push({ code: "joke-answer", cardId: card.id, labels: [wrong.label, why] });
     }
+    // TASK-42b4: the same right answer (in words) as an earlier quiz card.
+    if (right !== undefined && isWordAnswer(right.label)) {
+      const key = answerKey(right.label);
+      const earlier = firstByRight.get(key);
+      if (earlier === undefined) firstByRight.set(key, card.id);
+      else out.push({ code: "same-right-answer", cardId: card.id, otherCardId: earlier, labels: [right.label, right.label] });
+    }
   });
   return out;
 }
@@ -273,6 +315,11 @@ export function describeLessonWarnings(
         return `${card} repeats ${num(w.otherCardId)}: change it or remove it.`;
       case "joke-answer":
         return `In ${card}, “${w.labels![0]}” may be a joke answer: use a mistake a pupil might really make.`;
+      case "same-right-answer": {
+        const a = stack.cards.findIndex((c) => c.id === w.otherCardId) + 1;
+        const b = stack.cards.findIndex((c) => c.id === w.cardId) + 1;
+        return `Cards ${a} and ${b} have the same right answer, “${w.labels![0]}”: check they don't ask the same thing twice.`;
+      }
     }
   });
 }

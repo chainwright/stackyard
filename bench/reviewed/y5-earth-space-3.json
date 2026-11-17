@@ -1,0 +1,679 @@
+{
+  "id": "feaa6080-95df-4883-a6b0-48d0fb8d784e",
+  "title": "The sun, Earth and moon are round",
+  "theme": {
+    "background": "#0b1d3a",
+    "foreground": "#ffffff",
+    "font": "Arial, sans-serif"
+  },
+  "cards": [
+    {
+      "id": "d5c58e1d-2f7e-4ae8-8fab-800092b3a50f",
+      "kind": "flash",
+      "elements": [
+        {
+          "type": "text",
+          "id": "62682b5d-971b-47b3-b604-b13225dab1b8",
+          "x": 48,
+          "y": 264,
+          "w": 704,
+          "h": 72,
+          "content": "Sphere"
+        },
+        {
+          "type": "text",
+          "id": "b39a6ce6-06fb-48ec-bce4-5ed75186bfe1",
+          "x": 48,
+          "y": 360,
+          "w": 704,
+          "h": 120,
+          "content": "A ball shape. Every part of its surface is the same distance from the centre."
+        },
+        {
+          "type": "button",
+          "id": "0a5ddee3-7387-4cc3-9a2d-6658b31986bb",
+          "x": 408,
+          "y": 496,
+          "w": 344,
+          "h": 72,
+          "label": "Next Card",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "ab093910-9883-4eaa-8137-78fa690917e1"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "ab093910-9883-4eaa-8137-78fa690917e1",
+      "kind": "quiz",
+      "elements": [
+        {
+          "type": "text",
+          "id": "b1c01358-0530-4cff-be28-e90fffa6d862",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 144,
+          "content": "What shape is Earth?"
+        },
+        {
+          "type": "button",
+          "id": "925894ae-4998-4518-9841-55978f428777",
+          "x": 48,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Round like a ball",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 1
+            },
+            {
+              "type": "sound",
+              "sound": "cheer"
+            },
+            {
+              "type": "goto",
+              "cardId": "55d209a0-236f-4754-ab71-34cd393662d3"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "d548817e-b420-4da9-a3dd-9a52d62ea1bb",
+          "x": 408,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Square like a box",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "55d209a0-236f-4754-ab71-34cd393662d3"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "47c3e220-2412-4fc7-b10e-df1532d89696",
+          "x": 48,
+          "y": 432,
+          "w": 344,
+          "h": 88,
+          "label": "Flat like a plate",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "55d209a0-236f-4754-ab71-34cd393662d3"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "id": "02802996-a2b3-4c2b-a2cf-8076abfe03c5",
+          "x": 356,
+          "y": 8,
+          "w": 88,
+          "h": 88,
+          "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20stroke%3D%22%231E2A47%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%2F%3E%3Cpath%20d%3D%22M8%2032h48M32%208c-12%2012-12%2036%200%2048M32%208c12%2012%2012%2036%200%2048%22%2F%3E%3C%2Fsvg%3E",
+          "alt": "Picture: globe"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "55d209a0-236f-4754-ab71-34cd393662d3",
+      "kind": "quiz",
+      "elements": [
+        {
+          "type": "text",
+          "id": "bc07ca97-9857-47fe-9e01-8693858de19e",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 144,
+          "content": "Which word means a ball shape?"
+        },
+        {
+          "type": "button",
+          "id": "81779b87-4500-4c53-95e0-ba9ff762c3ee",
+          "x": 48,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Cylinder",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "803231d9-475d-441c-9dd4-2ffcad999a47"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "9c7a7c33-ef21-47a7-8bf8-28f8709359c3",
+          "x": 408,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Sphere",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 1
+            },
+            {
+              "type": "sound",
+              "sound": "cheer"
+            },
+            {
+              "type": "goto",
+              "cardId": "803231d9-475d-441c-9dd4-2ffcad999a47"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "899c7845-bcc8-4dfe-9afa-8a9e98daf45c",
+          "x": 48,
+          "y": 432,
+          "w": 344,
+          "h": 88,
+          "label": "Cube",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "803231d9-475d-441c-9dd4-2ffcad999a47"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "803231d9-475d-441c-9dd4-2ffcad999a47",
+      "kind": "story",
+      "elements": [
+        {
+          "type": "text",
+          "id": "d371b142-6d07-41f5-8b1e-e40713d8c296",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 264,
+          "content": "Your class rocket is ready. Do you fly to the moon or to the sun?"
+        },
+        {
+          "type": "button",
+          "id": "262ab210-bde3-4f26-8d90-42e0efe24d28",
+          "x": 48,
+          "y": 384,
+          "w": 704,
+          "h": 72,
+          "label": "Fly to the moon",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "64af8c29-09e2-4486-b211-5c4bcd2c21c2"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "39b03815-1a8e-450d-ac66-7ad4ba8c42e8",
+          "x": 48,
+          "y": 488,
+          "w": 704,
+          "h": 72,
+          "label": "Fly to the sun",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "cd672d09-348d-4e8f-9d01-897fc23a7324"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "id": "7f635e0d-b038-4bf3-9413-1314b58a0492",
+          "x": 356,
+          "y": 8,
+          "w": 88,
+          "h": 88,
+          "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20stroke%3D%22%231E2A47%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%2040h52c-4%2010-12%2014-20%2014H26c-8%200-16-4-20-14z%22%2F%3E%3Cpath%20d%3D%22M32%2040V8%22%2F%3E%3Cpath%20d%3D%22M32%2010l16%2014H32z%22%2F%3E%3Cpath%20d%3D%22M6%2040c-2-6%200-10%202-12M58%2040c2-6%200-10-2-12%22%2F%3E%3C%2Fsvg%3E",
+          "alt": "Picture: ship"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "64af8c29-09e2-4486-b211-5c4bcd2c21c2",
+      "kind": "story",
+      "elements": [
+        {
+          "type": "text",
+          "id": "b9a6b249-b11f-4f94-a9fc-08ac2088eda3",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 175,
+          "content": "On the moon you see a round grey ball hanging in the sky. The moon is a sphere, like a giant marble."
+        },
+        {
+          "type": "button",
+          "id": "3ef36cec-b768-4847-8a5b-e9e6d9c965b7",
+          "x": 408,
+          "y": 311,
+          "w": 344,
+          "h": 80,
+          "label": "Continue",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "126cadd6-9579-4798-944b-c3121464f0e1"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "cd672d09-348d-4e8f-9d01-897fc23a7324",
+      "kind": "story",
+      "elements": [
+        {
+          "type": "text",
+          "id": "767e6a0a-07f6-4861-9bce-2fe003749dbc",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 175,
+          "content": "The sun is a huge glowing ball of gas. It looks round from Earth because gravity pulls it into a sphere."
+        },
+        {
+          "type": "button",
+          "id": "6acdbdcc-bb21-4dc0-887e-69b8528277d4",
+          "x": 408,
+          "y": 311,
+          "w": 344,
+          "h": 80,
+          "label": "Continue",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "126cadd6-9579-4798-944b-c3121464f0e1"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "126cadd6-9579-4798-944b-c3121464f0e1",
+      "kind": "flash",
+      "elements": [
+        {
+          "type": "text",
+          "id": "8cfb260b-3f46-493e-86df-4cc236b1a939",
+          "x": 48,
+          "y": 264,
+          "w": 704,
+          "h": 72,
+          "content": "Approximately spherical"
+        },
+        {
+          "type": "text",
+          "id": "e07bc752-a270-4c99-81e9-88ee376435ad",
+          "x": 48,
+          "y": 360,
+          "w": 704,
+          "h": 120,
+          "content": "Almost a ball shape. Earth bulges a little at the middle, so it is not perfectly round."
+        },
+        {
+          "type": "button",
+          "id": "f87562ba-12da-4125-95d6-13d66ed3558b",
+          "x": 408,
+          "y": 496,
+          "w": 344,
+          "h": 72,
+          "label": "Next Card",
+          "actions": [
+            {
+              "type": "goto",
+              "cardId": "f478b9b0-d0a4-448c-ab1a-4ce1344ee7a6"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "f478b9b0-d0a4-448c-ab1a-4ce1344ee7a6",
+      "kind": "quiz",
+      "elements": [
+        {
+          "type": "text",
+          "id": "b4bd031f-a066-4b1a-bc01-3987b4a138ff",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 144,
+          "content": "What shape is the moon?"
+        },
+        {
+          "type": "button",
+          "id": "89766f68-f924-4a31-89e0-00f1383a20c7",
+          "x": 48,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Pointed like a cone",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "fb2dc127-097b-4acf-b149-06fc4cb37341"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "f5a1b69b-1bd6-41e8-86f3-9d24f33af0cc",
+          "x": 408,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Round like a ball",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 1
+            },
+            {
+              "type": "sound",
+              "sound": "cheer"
+            },
+            {
+              "type": "goto",
+              "cardId": "fb2dc127-097b-4acf-b149-06fc4cb37341"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "49296520-62a0-4720-91f6-71de59156342",
+          "x": 48,
+          "y": 432,
+          "w": 344,
+          "h": 88,
+          "label": "Flat like a coin",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "fb2dc127-097b-4acf-b149-06fc4cb37341"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "id": "ce289e5b-8233-4379-a914-53e2609785e0",
+          "x": 356,
+          "y": 8,
+          "w": 88,
+          "h": 88,
+          "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20stroke%3D%22%231E2A47%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M44%208a26%2026%200%201%200%2012%2036A22%2022%200%200%201%2044%208z%22%20fill%3D%22%231E2A47%22%2F%3E%3C%2Fsvg%3E",
+          "alt": "Picture: moon"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "fb2dc127-097b-4acf-b149-06fc4cb37341",
+      "kind": "quiz",
+      "elements": [
+        {
+          "type": "text",
+          "id": "cd74b5f9-3098-4d0c-bab7-b5fc8427e502",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 144,
+          "content": "Which body is shaped roughly like a ball?"
+        },
+        {
+          "type": "button",
+          "id": "3fbd3f9f-0364-464e-bf55-f00dff78db89",
+          "x": 48,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "A book",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "5491d738-16b5-4430-9ded-67edc62d1b5b"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "b4f152e1-8e2c-4c28-82af-e01d7e1ab039",
+          "x": 408,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "The sun",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 1
+            },
+            {
+              "type": "sound",
+              "sound": "cheer"
+            },
+            {
+              "type": "goto",
+              "cardId": "5491d738-16b5-4430-9ded-67edc62d1b5b"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "75f47aa4-577a-47ad-9e5b-aefec218ed8e",
+          "x": 48,
+          "y": 432,
+          "w": 344,
+          "h": 88,
+          "label": "A brick",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "5491d738-16b5-4430-9ded-67edc62d1b5b"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "5491d738-16b5-4430-9ded-67edc62d1b5b",
+      "kind": "quiz",
+      "elements": [
+        {
+          "type": "text",
+          "id": "f284cb1b-f34d-4724-b909-32b00b848324",
+          "x": 48,
+          "y": 104,
+          "w": 704,
+          "h": 144,
+          "content": "Is a sphere flat or round?"
+        },
+        {
+          "type": "button",
+          "id": "14b057fd-89a2-4257-bac3-02a62570f399",
+          "x": 48,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Round",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 1
+            },
+            {
+              "type": "sound",
+              "sound": "cheer"
+            },
+            {
+              "type": "goto",
+              "cardId": "d5304e3c-03cb-4a42-ae2e-744ba8e9ffe0"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "68b45857-e190-4913-99f2-911d4f90cc8d",
+          "x": 408,
+          "y": 296,
+          "w": 344,
+          "h": 88,
+          "label": "Flat",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "d5304e3c-03cb-4a42-ae2e-744ba8e9ffe0"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "9c83e193-aeef-4664-b733-427837c8be36",
+          "x": 48,
+          "y": 432,
+          "w": 344,
+          "h": 88,
+          "label": "Pointed",
+          "actions": [
+            {
+              "type": "score",
+              "delta": 0
+            },
+            {
+              "type": "sound",
+              "sound": "buzz"
+            },
+            {
+              "type": "goto",
+              "cardId": "d5304e3c-03cb-4a42-ae2e-744ba8e9ffe0"
+            }
+          ]
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "d5304e3c-03cb-4a42-ae2e-744ba8e9ffe0",
+      "kind": "end",
+      "elements": [
+        {
+          "type": "text",
+          "id": "bd93617b-e730-42b6-90c7-7dfada711137",
+          "x": 48,
+          "y": 120,
+          "w": 704,
+          "h": 72,
+          "content": "Well done! You finished the sphere lesson."
+        },
+        {
+          "type": "text",
+          "id": "5d0607c2-a191-4df6-ad7b-2f6a484e136b",
+          "x": 48,
+          "y": 204,
+          "w": 704,
+          "h": 200,
+          "content": "Sun, Earth and moon are all round, like balls. Great work, keep exploring!"
+        }
+      ],
+      "actions": []
+    }
+  ]
+}

@@ -115,7 +115,8 @@ export function loadV2Context(out: string, caches: Map<string, BenchCache>): V2C
   };
   const v3 = kept("results-v3.json");
   const v4 = kept("results-v4.json");
-  return { summary, rerecord: ids, rerecorded, ...(v3 ? { v3 } : {}), ...(v4 ? { v4 } : {}) };
+  const v5 = kept("results-v5.json");
+  return { summary, rerecord: ids, rerecorded, ...(v3 ? { v3 } : {}), ...(v4 ? { v4 } : {}), ...(v5 ? { v5 } : {}) };
 }
 
 /** The v1 summary kept in `<out>/results-v1.json`, or null when there is none (TASK-33c12). */

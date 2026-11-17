@@ -2361,3 +2361,70 @@ Source: judge round r7 (P2-8). Every seat named the browser's `window.confirm("A
   - **Acceptance criteria.** Each sub-id is named in a test title. A test fails if `confirm(` appears in `src/living`. `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0, and the living-file, class-results, living-mobile and a11y gates pass by clicking the box.
 
 **Status (16 Nov).** TASK-42a (a1–a7) is done. The living file asks its four yes / no questions in its own box, no `confirm(` is left under `src/living`, and the gates click the box. `tests/living-dialog.dom.test.ts` covers it, and the gates pass.
+
+### TASK-42b: the content of generated decks: flagged joke answers swapped, the same answer asked twice  *(TASK-42 b)*
+  - **Bug.** Judge round r7 (P1-5) saw three things:
+    - A live generation kept a wrong answer that the joke-answer check flags, and the teacher only got a note.
+    - A live water-cycle deck asked the same thing twice: card 3 ("What is the name for water vapour cooling…") and card 11 ("Which change turns water vapour into liquid water?") both had the right answer "Condensation". `removeRepeatedCards` catches only cards with the same front text.
+    - The video's hero deck offered "Into the moon" and "The moon", and a live capture offered "It turns into salt".
+
+    The marker list has precision about 1.00 but recall 0.05 / 0.01 / 0.03 out of sample (`bench/DIAGNOSIS.md`). So swapping FLAGGED answers fixes only a few joke answers, and nothing here claims more. The rules based on words missing from the lesson were measured at precision 0.25 and dropped; they stay dropped.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-42b1: **swap flagged joke answers at generation.**
+      - `swapFlaggedJokeAnswers` in `server/deckQuality.ts` runs inside `finaliseGeneratedStackDetailed`, which both the streamed and the non-streamed paths use, after the repeat and count passes.
+      - It replaces each quiz card's WRONG answer that `jokeAnswerReason` flags with the first candidate from the teacher's own Swap rule (`swapCandidates`): never a quiz card's right answer, never an answer already on the card, never a label that would itself be flagged, ranked by answer form. On top of that rule, the candidate must also differ by `answerKey` (plural and article folded) from every right answer and from the card's other answers, so "the cloud" never arrives beside a right answer "Clouds". It must also not sit inside another answer on the card, or contain one, so "Flat" never arrives beside "Flat like a plate" (bench y5-earth-space-3). It applies the change through the teacher's `swapWrongAnswer`, so only the label changes, never the actions.
+      - It makes no model call, uses no randomness, and returns the same deck for the same input. The stack stays valid, each quiz card keeps exactly one right answer, and no right answer changes.
+      - With no candidate, the answer stays, and the existing "may be a joke answer" note still names it.
+      - *(Review round, 16 Nov: amended by TASK-42b10.)* The first version took the first candidate of the Swap rule as it stood. In the bench replay, it put "It freezes into solid rock" (itself a joke the markers miss, already on a third card) on two more cards of y4-states-of-matter-3. The automatic pass now uses only a SAFE candidate, and otherwise removes the flagged answer (TASK-42b10). The teacher's Swap list in the Maker is unchanged.
+      - The server imports the Swap rule from `src/editor/swapCandidates.ts`, which depends only on `src/shared` and `src/editor/operations.ts` (pure, no DOM). It is not moved to `src/shared`, because two mutants in `scripts/mutation-check.ts` (118 of 118 in the logged run) target its lines, and moving it would void the logged run.
+    - [x] TASK-42b2: **tell the teacher.** `FinaliseResult` carries `swappedJokes`, `removedJokes`, `swappedRepeats` and `removedDuplicates`, through both generation paths to the Maker, like `removedRepeats`. `qualityNotes` adds, on the first editor screen (numbers one to ten in words, 11 and above in digits):
+      - "We swapped one answer that looked like a joke. Read it to check it fits." (or "We swapped two answers that looked like jokes. Read them to check they fit.");
+      - "We removed one answer that looked like a joke." (or "We removed two answers that looked like jokes.");
+      - "We swapped one answer that said the same as another on its card." (or "… two answers that said the same as others on their cards.");
+      - "We removed one answer that said the same as another on its card." (or "… two answers that said the same as others on their cards.").
+
+      Only the swapped-joke note carries the "read it to check it fits" hint.
+
+      The ready-made decks and hand-typed questions do not go through the finalise step, so they are not touched.
+    - [x] TASK-42b3: **two answers on one card that say the same thing.** The validator does not forbid it. `answerKey` in `src/shared/lessonCheck.ts` folds case, punctuation, a plural "s" and a leading "the", "a" or "an". `swapRepeatedAnswers` swaps the later WRONG answer of a pair with the same key the same way. If the later one is the right answer, it swaps the earlier wrong one. A right answer is never changed.
+    - [x] TASK-42b4: **two quiz cards with the same right answer.**
+      - Two cards count as asking the same thing twice only when the answer is words. It does not count when any word of the answer is a number, in digits or in words ("12" is right for 3 × 4 and for 2 × 6, and "Two" for both magnet-pole questions in bench y3-forces-magnets-5), or when the answer is yes, no, true or false.
+      - When a deck has more quiz cards than the sentence asked for, `trimToRequestedCounts` first drops a later quiz card whose right answer repeats an earlier one, and only then drops from the end. This covers the TASK-36c4b spare quiz card or any other extra. It never goes below the requested count, never runs when no count was asked, and every removal goes through `removeCardRelinked` (a valid stack, nothing stranded, no trap).
+      - A pair that remains gets a lesson NOTE (code `same-right-answer`, never a blocker): "Cards 3 and 11 have the same right answer, “Condensation”: check they don't ask the same thing twice." The `restates-flash` and `joke-answer` notes keep their own line, and the new code sits in `MORE_NOTE_CODES` beside it.
+    - [x] TASK-42b5: **the moon marker.** "fl(y|ies) to the moon" becomes "(in)to the moon", still exempt when the question mentions the moon.
+      - With the old marker, `jokeAnswerReason` flagged none of the three answers: "Into the moon" on "Where does water vapour go when it rises?", "The moon" on "What heats water so it evaporates?" and "It turns into salt" on "What happens to water when it evaporates?". With the new marker, it flags "Into the moon" only.
+      - No marker is added for "The moon" alone or for salt.
+      - `scripts/distractor-eval.ts` gives the same precision and recall before and after on all four labelled sets (v2 1.00 / 0.21, v3 1.00 / 0.05, v4 1.00 / 0.01, v5 0.67 / 0.03), so the marker change stays.
+    - [x] TASK-42b6: **tests.**
+      - Unit tests for b1–b4 on small hand-made stacks. They cover a flagged answer with a candidate, one with none, a numbers deck and a true / false deck that must not be touched, and a same-answer pair removed only as the spare.
+      - The "Condensation" pair as a named fixture.
+      - fast-check properties: after the new passes every stack is valid, has exactly one right answer per quiz card, keeps every right-answer label, and has no newly unreachable card.
+    - [x] TASK-42b7: **the bench.** `npm run bench` replays the 55 recorded objectives from `bench/cache/` with no model call. Any changed number is updated in `bench/`, the README, the write-up and EVIDENCE.md.
+      - The AI review numbers (v5, the wrong keys) describe the decks before this change. One sentence where those numbers stand says how many answers the swap changed.
+      - `bench/results-v5.json` keeps the v5 run as it was recorded and checked, and `bench/RESULTS.md` shows it as "v5 (before the TASK-42b answer passes)".
+      - `bench/results.json` records the swaps and same-answer drops per deck and in total.
+      - `bench/reviewed/` keeps, as stack JSON, the decks the v5 review read, for the decks the replay changed. `scripts/build-distractor-review.ts` reviews a deck from its snapshot when there is one, so the v5 review still rebuilds exactly.
+    - [x] TASK-42b8: **public text.** The joke-answer sentences stay true: flagged answers are now swapped at generation, most joke answers are still not flagged, and the teacher still reads every answer. Each new public sentence gets a CLAIMS.md row.
+    - [x] TASK-42b9: **the mutation log.** `scripts/mutation-check.ts` is not edited, and every mutant's target text is still in its file, so the logged 118 of 118 stays tied to the same sha256.
+    - [x] TASK-42b10: **the automatic pass uses a safe candidate, else removes, else leaves** (review round, 16 Nov). This applies to a flagged joke answer (b1) and to a wrong answer that says the same as another on its card (b3), in this order:
+      1. **A safe swap.** The candidate comes from the Swap rule with the two b1 guards, AND it is short (at most three words after folding), AND it is on at most one card of the deck right now (as a quiz answer or a flash term), AND this pass has not already used it in this deck, AND it has the same answer form as the card's right answer (`answerForm`: a number, a verb phrase or a noun phrase). The first such candidate in the existing ranking is used.
+
+         The form condition was added after the first replay of the four-condition rule. That replay put "A cold, damp day" on "What happens to water during evaporation?" and "A cold, foggy night" on "What does the sun do to lakes and seas…": both short and both on one card, but not answers to those questions.
+      2. **Otherwise remove the answer,** when the card still keeps its right answer and at least one wrong answer, and the removal strands no card the class could reach and traps nobody (the answer's "go to" may have been the only way to a card). The answers that stay are laid out again in tile order (`QUIZ_TILES`), exactly as a card generated with that many answers, with no gap. Shapes and colours follow the tile order, and every invariant holds.
+      3. **Otherwise leave it,** with the existing note.
+
+      What it guarantees, as a property and as a regression from the y4-states-of-matter-3 recording: a label the pass adds was on at most one card before, so it is on at most two cards after; the pass adds a label once per deck; and no label is on more cards because of the pass than the larger of its count before and two. (A literal "no label on more cards than before" would forbid every swap from another card, such as "Cube" in y5-earth-space-3, which rule 1 allows.)
+
+      A removal can leave a card with two answers, which the share check names as "has only two answers: add one."
+      *(Second review round, 16 Nov: superseded by TASK-42b11.)*
+    - [x] TASK-42b11: **the pass never blocks an export** (second review round, 16 Nov). An automatic pass must never turn a deck that could be exported into one that "Before you share" blocks.
+      - Rule 2 of b10 now removes a flagged or duplicate wrong answer only when the card keeps its right answer and at least TWO wrong answers (three answers in all), so the pass never causes "has only two answers: add one.".
+      - Otherwise the answer is left, with the existing "may be a joke answer" note.
+      - **Acceptance criteria.** "The pass never adds an 'only two answers' warning": a unit test from the y4-states-of-matter-3 recording, and a fast-check property that the blocking share-check problems after the pass are a subset of those before it.
+  - **Acceptance criteria.** Each sub-id is named in a test title. The new passes keep every generated fixture and every property-test stack valid. `check:claims` passes, with any changed bench numbers stated, and `npm test`, `npx tsc --noEmit` and `CI=true npm run pre-submit` exit 0.
+
+**Status (16 Nov).** TASK-42b (b1–b11) is done.
+- **The automatic pass:** after the review rounds it uses only a safe swap (b10), else removes the answer when the card keeps three answers (b11), else leaves it.
+- **Bench replay:** of the flagged joke answers, one was swapped, none were removed and two were left (still noted), in two decks. One extra quiz card was dropped for repeating an earlier right answer.
+- **No-warnings count:** "no lesson warnings" went from 43 to 37, because the lesson check now also notes same-answer pairs.
+- **Tests:** `tests/deck-answer-quality.test.ts` and `tests/round14-docs.test.ts` cover it, and the gates pass.

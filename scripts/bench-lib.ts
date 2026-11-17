@@ -277,6 +277,14 @@ export interface DeckResult {
   answersPerQuiz: number[];
   pictures: number | null;
   removedRepeats: number | null;
+  /** TASK-42b7/b10: what the answer passes did (swapped for a safe candidate / removed / left), and extra quiz cards dropped for repeating a right answer (null when there is no deck). */
+  swappedJokes?: number | null;
+  removedJokes?: number | null;
+  leftJokes?: number | null;
+  swappedRepeats?: number | null;
+  removedDuplicates?: number | null;
+  leftDuplicates?: number | null;
+  droppedSameAnswer?: number | null;
   /** Living file size in bytes, and its path relative to bench/. */
   fileBytes: number | null;
   file: string | null;
@@ -337,6 +345,7 @@ export async function replayOne(obj: Objective, cache: BenchCache): Promise<{ re
         result: {
           ...base, firstTry: false, failure, lessonClean: null, warnings: [], quiz: null, flash: null, countsOk: null,
           allReachable: null, endReachable: null, fkGrade: null, answersPerQuiz: [], pictures: null, removedRepeats: null,
+          swappedJokes: null, removedJokes: null, leftJokes: null, swappedRepeats: null, removedDuplicates: null, leftDuplicates: null, droppedSameAnswer: null,
           fileBytes: null, file: null,
         },
         html: null,
@@ -344,7 +353,23 @@ export async function replayOne(obj: Objective, cache: BenchCache): Promise<{ re
     }
     const stack = done.stack;
     const html = await exportLivingStack(stack);
-    return { result: { ...base, ...deckMetrics(stack), removedRepeats: done.removedRepeats ?? 0, fileBytes: Buffer.byteLength(html), file: `files/${obj.id}.html` }, html };
+    return {
+      result: {
+        ...base,
+        ...deckMetrics(stack),
+        removedRepeats: done.removedRepeats ?? 0,
+        swappedJokes: done.swappedJokes ?? 0,
+        removedJokes: done.removedJokes ?? 0,
+        leftJokes: done.leftJokes ?? 0,
+        swappedRepeats: done.swappedRepeats ?? 0,
+        removedDuplicates: done.removedDuplicates ?? 0,
+        leftDuplicates: done.leftDuplicates ?? 0,
+        droppedSameAnswer: done.droppedSameAnswer ?? 0,
+        fileBytes: Buffer.byteLength(html),
+        file: `files/${obj.id}.html`,
+      },
+      html,
+    };
   });
 }
 
@@ -461,6 +486,14 @@ export interface BenchSummary {
   firstCardMs: { p50: number | null; p90: number | null };
   totalMs: { p50: number | null; p90: number | null };
   models: string[];
+  /** TASK-42b7/b10: totals over the decks (absent in runs before TASK-42b). */
+  swappedJokes?: number;
+  removedJokes?: number;
+  leftJokes?: number;
+  swappedRepeats?: number;
+  removedDuplicates?: number;
+  leftDuplicates?: number;
+  droppedSameAnswer?: number;
 }
 
 export interface BenchResults {
@@ -495,6 +528,13 @@ export function summarise(objectives: number, decks: DeckResult[]): BenchSummary
     firstCardMs: { p50: percentile(fc, 50), p90: percentile(fc, 90) },
     totalMs: { p50: percentile(tot, 50), p90: percentile(tot, 90) },
     models: [...new Set(decks.map((d) => `${d.model} (thinking ${d.thinking})`))].sort(),
+    swappedJokes: decks.reduce((t, d) => t + (d.swappedJokes ?? 0), 0),
+    removedJokes: decks.reduce((t, d) => t + (d.removedJokes ?? 0), 0),
+    leftJokes: decks.reduce((t, d) => t + (d.leftJokes ?? 0), 0),
+    swappedRepeats: decks.reduce((t, d) => t + (d.swappedRepeats ?? 0), 0),
+    removedDuplicates: decks.reduce((t, d) => t + (d.removedDuplicates ?? 0), 0),
+    leftDuplicates: decks.reduce((t, d) => t + (d.leftDuplicates ?? 0), 0),
+    droppedSameAnswer: decks.reduce((t, d) => t + (d.droppedSameAnswer ?? 0), 0),
   };
 }
 
@@ -527,6 +567,13 @@ function summaryRows(s: BenchSummary): string[] {
     `| File size | ${kb(s.fileBytesMin)} to ${kb(s.fileBytesMax)} |`,
     `| Time to the first card, p50 / p90 | ${secs(s.firstCardMs.p50)} / ${secs(s.firstCardMs.p90)} |`,
     `| Time to done, p50 / p90 | ${secs(s.totalMs.p50)} / ${secs(s.totalMs.p90)} |`,
+    ...(s.swappedJokes === undefined
+      ? []
+      : [
+          `| Answers flagged as a joke at generation: swapped / removed / left | ${s.swappedJokes} / ${s.removedJokes ?? 0} / ${s.leftJokes ?? 0} |`,
+          `| Answers that said the same as another on their card: swapped / removed / left | ${s.swappedRepeats ?? 0} / ${s.removedDuplicates ?? 0} / ${s.leftDuplicates ?? 0} |`,
+          `| Extra quiz cards dropped for repeating a right answer | ${s.droppedSameAnswer ?? 0} |`,
+        ]),
   ];
 }
 
@@ -541,6 +588,8 @@ export interface V2Context {
   v3?: BenchSummary;
   /** The kept v4 run (bench/results-v4.json, TASK-34a12), when there is one. */
   v4?: BenchSummary;
+  /** The kept v5 run (bench/results-v5.json, TASK-42b7): the same recordings before the TASK-42b answer passes. */
+  v5?: BenchSummary;
 }
 
 /**
@@ -580,6 +629,16 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null,
                 ...summaryRows(v2.v4),
                 "",
               ]),
+          ...(v2.v5 === undefined
+            ? []
+            : [
+                "## v5 (before the TASK-42b answer passes)",
+                "",
+                `Kept in \`bench/results-v5.json\`, as v5 was recorded and checked: the same ${v2.rerecord.length} objectives re-recorded with the TASK-34a10/a11 prompt, the rest still v2; model: ${v2.v5.models.join(", ") || "—"}. Its distractors and keys were reviewed in [\`distractor-review-v5.json\`](distractor-review-v5.json); the decks the review read are in these files, or in [\`reviewed/\`](reviewed/) for the decks the current run changed.`,
+                "",
+                ...summaryRows(v2.v5),
+                "",
+              ]),
         ];
   const v1Lines =
     v1 === null
@@ -601,7 +660,9 @@ export function resultsMarkdown(r: BenchResults, v1: BenchSummary | null = null,
           ...(v2 === null
             ? []
             : [
-                v2.v4 !== undefined
+                v2.v5 !== undefined
+                  ? `The current run replays the same recordings as v5 (no new model call): v5 re-recorded only the same ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt), and every other objective keeps its v2 recording. It goes through today's generator: since TASK-42b it swaps the few wrong answers the joke-answer check flags for a Swap candidate, swaps an answer that says the same as another on its card, drops an extra quiz card that repeats an earlier right answer before it trims from the end, and the lesson check also notes two quiz cards with the same right answer. The distractors and keys were not reviewed again: [\`distractor-review-v5.json\`](distractor-review-v5.json) describes the v5 decks.`
+                  : v2.v4 !== undefined
                   ? `The current run (v5) re-recorded only the same ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt), once more, with the TASK-34a10/a11 prompt ("why" on quiz answers only; every wrong answer a member of the question's category); every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v5.json\`](distractor-review-v5.json). This was the last model-call round for distractors; the conclusion is in [\`DIAGNOSIS.md\`](DIAGNOSIS.md). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`
                   : v2.v3 !== undefined
                   ? `The current run (v4) re-recorded only the same ${v2.rerecord.length} objectives listed in [\`rerecord.txt\`](rerecord.txt), once more, with the TASK-34a7 why-field prompt; every other objective keeps its v2 recording. Re-recorded so far: ${v2.rerecorded.length} of ${v2.rerecord.length}. Their distractors and keys were reviewed again in [\`distractor-review-v4.json\`](distractor-review-v4.json). The current run uses today's checks, including the joke-answer warning (TASK-34a2).`

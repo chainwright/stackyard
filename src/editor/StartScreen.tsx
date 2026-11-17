@@ -190,7 +190,7 @@ export function StartScreen({
             notes.push(hasPictograms(outcome.stack) ? PICTURES_ADDED_NOTE : PICTURES_NOTE);
           }
           if (outcome.movedClosingMessage === true) notes.push(CLOSING_MESSAGE_NOTE);
-          if (!outcome.isFallback) notes.push(...qualityNotes(sentence, outcome.stack, outcome.removedRepeats ?? 0));
+          if (!outcome.isFallback) notes.push(...qualityNotes(sentence, outcome.stack, outcome.removedRepeats ?? 0, outcome));
           return notes.length > 0 ? { note: notes.join(" ") } : {};
         })(),
       });

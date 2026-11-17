@@ -179,7 +179,7 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1530** passing (`npm test`).
+- Tests: **1565** passing (`npm test`).
 - Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
@@ -187,9 +187,9 @@ These figures are checked against the code by `scripts/check-claims`, which `npm
   (1,457,664 bytes). That is a living export of
   `tests/fixtures/generation/water-cycle-g2.json`, sized by `tests/export-size.test.ts`.
   The ready-made samples in `samples/` carry photos, so they are larger.
-- Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 43 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
+- Curriculum bench: 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings ([`bench/RESULTS.md`](bench/RESULTS.md)). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. It measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
 - An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
-- In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
+- In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's. That review read the bench decks before 16 Nov, when generation began swapping or removing the joke answers our check flags; in today's bench files it swapped one such answer, removed none and left two, which still carry the joke-answer note, in two decks.
 - Accessibility: axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes ([`docs/accessibility/`](docs/accessibility/README.md)). No screen-reader user or disabled pupil has tested it.
 
 The **curriculum bench** ([`bench/`](bench/README.md)) runs all 55 statutory Years 3–5

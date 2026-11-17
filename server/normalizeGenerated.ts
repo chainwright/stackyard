@@ -32,7 +32,7 @@ import { validate } from "../src/shared/validator.js";
 import { fitBody, STORY_BODY_MAX } from "../src/shared/fitText.js";
 import { linkQuizAnswersForward } from "../src/shared/linkForward.js";
 import { parseRequestedCounts, type RequestedCounts } from "../src/shared/requestedCounts.js";
-import { removeRepeatedCards, trimToRequestedCounts, pictureGivesAnswerAway, countKinds } from "./deckQuality.js";
+import { removeRepeatedCards, trimToRequestedCounts, trimToRequestedCountsDetailed, pictureGivesAnswerAway, countKinds, swapFlaggedJokeAnswers, swapRepeatedAnswers } from "./deckQuality.js";
 import { shuffleQuizAnswers } from "../src/shared/shuffleAnswers.js";
 import { ensureForwardLinks, gotoOf, nextCardAfter } from "../src/shared/flow.js";
 import { isStockEndLine, soundsLikeEnding, isLongProse, isShortPair, isShortTerm, asksForClosingMessage } from "../src/shared/endLine.js";
@@ -803,6 +803,20 @@ export interface FinaliseResult {
   movedClosingMessage: boolean;
   /** Repeated cards removed (TASK-32b.2; the Maker says how many). */
   removedRepeats: number;
+  /** TASK-42b1/b10: wrong answers the joke-answer check flagged, swapped for a safe Swap candidate / removed / left. */
+  swappedJokes: number;
+  removedJokes: number;
+  leftJokes: number;
+  /** TASK-42b3/b10: wrong answers that said the same as another answer on their card, swapped / removed / left. */
+  swappedRepeats: number;
+  removedDuplicates: number;
+  leftDuplicates: number;
+  /**
+   * TASK-42b4: extra quiz cards dropped because their right answer repeated an
+   * earlier card's (the deck still has the number asked for, so the Maker shows
+   * no note; the bench records it).
+   */
+  droppedSameAnswer: number;
   /** Quiz / flash cards the model wrote, before any extra was trimmed (TASK-32b.3). */
   written: { quiz: number; flash: number };
   /** The counts the teacher's sentence asked for ({} when none). */
@@ -827,13 +841,40 @@ export function finaliseGeneratedStackDetailed(input: Stack, ctx: FoldContext = 
   const deduped = laidValid ? removeRepeatedCards(laid) : { stack: laid, removed: 0 };
   const written = countKinds(deduped.stack);
   const trimmed = laidValid ? trimToRequestedCounts(deduped.stack, requested) : deduped.stack;
-  const normalised = shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(trimmed)));
-  const meta = { removedRepeats: deduped.removed, written, requested };
+  // TASK-42b4: how many of the trimmed cards went for repeating a right answer (the bench records it).
+  const droppedSameAnswer = laidValid ? trimToRequestedCountsDetailed(deduped.stack, requested).sameAnswerDropped : 0;
+  // TASK-42b1/b3/b10: flagged joke answers, then two answers that say the same
+  // thing: a safe Swap candidate, else removed, else left (no model call). One
+  // `used` set, so the passes never give a deck the same label twice.
+  const none = { swapped: 0, removed: 0, left: 0 };
+  const used = new Set<string>();
+  const jokes = laidValid ? swapFlaggedJokeAnswers(trimmed, used) : { stack: trimmed, ...none };
+  const repeats = laidValid ? swapRepeatedAnswers(jokes.stack, used) : { stack: jokes.stack, ...none };
+  const normalised = shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(repeats.stack)));
+  const meta = {
+    removedRepeats: deduped.removed,
+    swappedJokes: jokes.swapped,
+    removedJokes: jokes.removed,
+    leftJokes: jokes.left,
+    swappedRepeats: repeats.swapped,
+    removedDuplicates: repeats.removed,
+    leftDuplicates: repeats.left,
+    droppedSameAnswer,
+    written,
+    requested,
+  };
   if (validate(normalised).valid) return { stack: normalised, movedClosingMessage: didFold, ...meta };
   return {
     stack: shuffleQuizAnswers(ensureForwardLinks(linkQuizAnswersForward(stack))),
     movedClosingMessage: didFold,
     removedRepeats: 0,
+    swappedJokes: 0,
+    removedJokes: 0,
+    leftJokes: 0,
+    swappedRepeats: 0,
+    removedDuplicates: 0,
+    leftDuplicates: 0,
+    droppedSameAnswer: 0,
     written: countKinds(stack),
     requested,
   };

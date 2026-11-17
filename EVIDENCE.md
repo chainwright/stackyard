@@ -6,14 +6,14 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,530 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
-| 215 of 215 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
+| 1,565 tests pass | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 227 of 227 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
-| 75 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
+| 79 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
 | 1,000-run round trip | stack → HTML file → stack, lossless | `npm run check:invariants` | `numRuns` in `tests/roundtrip.property.test.ts` |
 | 118 of 118 mutants killed | a script reverts 118 review fixes one at a time; each must turn a test red | `npm run check:mutants` (slow), or read the log | `docs/mutation-runs/2026-11-10-a215331.log` (clean tree); `check:claims` ties the count to the newest log and to the script's sha256 |
 | 12.8 KB gzipped | the player runtime inlined in every lesson file (1 KB = 1,024 bytes) | `npm test` (size guard, budget 50 KB) | `dist/player/player.iife.js` |
-| about 211 KB | a living export of the water-cycle test deck (decimal KB, bytes / 1000) | `npm run check:claims` | `tests/fixtures/generation/water-cycle-g2.json`; `tests/export-size.test.ts` |
+| about 216 KB | a living export of the water-cycle test deck (decimal KB, bytes / 1000) | `npm run check:claims` | `tests/fixtures/generation/water-cycle-g2.json`; `tests/export-size.test.ts` |
 | 149 KB | the play-only class export of the same water-cycle test deck (decimal KB, bytes / 1000) | `npx vitest run tests/round13-docs.test.ts` | `tests/fixtures/generation/water-cycle-g2.json` |
 | 6 lesson files like the water-cycle test deck fit on a 1.44 MB floppy | floor(1,457,664 / that file's bytes), stated as at most 6 | `npm run check:claims` | `scripts/claims-lib.ts` (`FLOPPY_CLAIM`) |
 | 54 bench lesson files, 0 network requests | every bench lesson file opened from disk in headless Chrome with the network blocked: a card renders, the first card plays, no request, no page error | `npm run check:bench` (Chrome) | `scripts/check-bench-offline.ts`; `bench/files/` |
@@ -25,9 +25,9 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 Each sentence below is checked word for word against its data file by `npm run check:claims`.
 
-- 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 43 passed our automatic lesson check with no warnings (`bench/RESULTS.md` in the repo, one lesson file per objective). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. This measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
+- 54 of 55 England KS2 science objectives (Years 3–5) became a valid lesson file on the first try; 37 passed our automatic lesson check with no warnings (`bench/RESULTS.md` in the repo, one lesson file per objective). The checks are mechanical (structure, counts, answer overlap) and do not verify facts. This measures the generator against curriculum objectives; it is not a classroom study and no teacher or pupil was involved.
 - An AI review of 60 quiz cards from 12 decks of an earlier bench run (v2) found 0 wrong keys and 2 ambiguous ones; the current run's re-recorded decks have 1 known wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
-- In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's.
+- In the 32 re-recorded decks that became lesson files in every run, an AI review found joke answers fell from 88 of 319 (v2) to 71 of 320 (v5) wrong answers; 1 wrong key (bench/LESSON_CHECKER.md). It is an AI review, not a teacher's. That review read the bench decks before 16 Nov, when generation began swapping or removing the joke answers our check flags; in today's bench files it swapped one such answer, removed none and left two, which still carry the joke-answer note, in two decks.
 - Accessibility: axe-core 4.14.0 audited 16 pages (the Maker, the 3 samples in Play and in the Teacher tab, a class export, an end card with a results code, the Class results panel and 5 bench files) and found 0 serious or critical violations; the keyboard-only play-through passes and the one-switch scan play-through passes (`docs/accessibility/README.md` in the repo). No screen-reader user or disabled pupil has tested it.
 - Reproduce: `npm run check:bench` (Chrome) replays the 55 recorded objectives from `bench/cache/` with no model call; the reviews are in `bench/LESSON_CHECKER.md`, `bench/key-review.json` and `bench/distractor-review*.json`; `npm run check:a11y` (Chrome) writes `docs/accessibility/axe-report.json`.
 
@@ -49,7 +49,7 @@ Each sentence below is checked word for word against its data file by `npm run c
 
 ## Not proven
 - **No real classroom.** No teacher or pupil has used Stackyard. The curriculum bench measures the generator against curriculum objectives; it is not a classroom study. The teacher and class in the video are AI-generated and tagged on screen.
-- **Answer keys are AI-reviewed, not teacher-checked.** The automatic lesson check is mechanical and does not verify facts, so a wrong key passes it. The current run has 1 known wrong key. Joke answers are down but not gone; the joke-answer marker catches only a small share of them (`bench/DIAGNOSIS.md`), so Swap lets the teacher replace any wrong answer.
+- **Answer keys are AI-reviewed, not teacher-checked.** The automatic lesson check is mechanical and does not verify facts, so a wrong key passes it. The current run has 1 known wrong key. Joke answers are down but not gone; the joke-answer marker catches only a small share of them (`bench/DIAGNOSIS.md`), so Swap lets the teacher replace any wrong answer. Since 16 Nov, generation swaps each of the few joke answers the marker flags for a short, matching answer from the same deck, or removes it when the card still keeps three answers, before the teacher sees the deck; otherwise it leaves the answer with its note. Most joke answers are still not flagged, so the teacher still reads every answer.
 - **Kiro CLI only** (see above).
 - **Accessibility** is an automated audit plus scripted keyboard and one-switch play-throughs. No screen-reader user or disabled pupil has tested it.
 - **Browsers and hardware.** Real Safari, Windows and old school laptops were not tried.

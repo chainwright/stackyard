@@ -846,3 +846,100 @@ Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behin
     - `npm run check:claims:fix` moved the counts: tests 1514 → 1530 in the README, the write-up, JUDGES.md and EVIDENCE.md, and traced ids 207 → 215 in the write-up, JUDGES.md and EVIDENCE.md.
     - `npm run samples` regenerated the three `samples/*.html`. They carry the living bundle, so `check-samples` reported them stale.
     - `npm run bench` replayed `bench/cache` offline, with no model call, and rewrote the 54 `bench/files/*.html`, `bench/results.json` and `bench/RESULTS.md`, which `bench --check` reported stale. The headline numbers are unchanged (54 of 55 on the first try, 43 with no warnings, 54 files). Only the per-file sizes moved: "205 KB to 209 KB" became "209 KB to 212 KB" in `bench/RESULTS.md`, and no doc quotes that range.
+- **b. Generated decks: flagged joke answers swapped, the same answer asked twice (TASK-42b, judge round r7 P1-5).** Spec: Phase 27, TASK-42b1–b9.
+  - **What changed.**
+    - Every generated deck goes through `finaliseGeneratedStackDetailed`, on both the streamed and the non-streamed path. It now runs two answer passes after the repeat and count passes (`server/deckQuality.ts`):
+      - `swapFlaggedJokeAnswers` (b1) replaces each wrong answer that `jokeAnswerReason` flags.
+      - `swapRepeatedAnswers` (b3) replaces a wrong answer that says the same as another on its card (`answerKey`: case, punctuation, plural and a leading article folded).
+    - Both passes use the teacher's own Swap rule (`swapCandidates`) and `swapWrongAnswer`, so only a label ever changes. They add two guards: no candidate that matches any right answer by `answerKey`, and none that sits inside another answer on the card. There is no model call and no randomness.
+    - `trimToRequestedCounts` (b4) first drops an extra quiz card whose right answer, in words, repeats an earlier quiz card's, and only then trims from the end. Numbers in digits or words, and yes / no / true / false, never count.
+    - A same-answer pair that remains is a lesson NOTE, `same-right-answer`: "Cards 3 and 11 have the same right answer, “Condensation”: check they don't ask the same thing twice." It sits in `MORE_NOTE_CODES`, because a logged mutant pins the `NOTE_CODES` line.
+    - The Maker's first screen says "We swapped one answer that looked like a joke. Read it to check it fits." (and the plural), and "We swapped one answer that said the same as another on its card." The counts travel like `removedRepeats`.
+    - The moon marker (b5) is now "(in)to the moon".
+  - **b5, measured.** These are `jokeAnswerReason`'s answers:
+
+    | Answer | Question | Old marker | New marker |
+    |---|---|---|---|
+    | "Into the moon" | "Where does water vapour go when it rises?" | null | "going to the moon" |
+    | "The moon" | "What heats water so it evaporates?" | null | null |
+    | "It turns into salt" | "What happens to water when it evaporates?" | null | null |
+
+    No marker was added for "The moon" alone or for salt. `scripts/distractor-eval.ts` gives the same numbers before and after: v2 precision 1.00 / recall 0.21, v3 1.00 / 0.05, v4 1.00 / 0.01 and v5 0.67 / 0.03 (2 TP, 1 FP: an existing "turning to ice" false alarm). No labelled set has a "to the moon" answer, so the widened marker is unmeasured on real decks.
+  - **The bench (b7).** `npm run bench` replays the 55 cached recordings with no model call.
+    - Unchanged: 54 of 55 on the first try, 51 with the asked-for counts, and every card reachable in all 54.
+    - "No lesson warnings" went from 43 to 37. The decks did not get worse: the lesson check now also notes `same-right-answer` on seven decks, six of which were clean before. One deck lost two joke-answer notes but still has a restates-flash note.
+    - The first version of the pass changed three answers in two decks. In y4-states-of-matter-3, "It turns into solid ice" and "It makes the water heavier" both became "It freezes into solid rock". In y5-earth-space-3, "Square like a box" became "Cube". The review round replaced that rule (b10, below).
+    - One extra card was dropped for repeating an answer: y5-earth-space-3's "What shape is the moon?", which has the same right answer, "Round like a ball", as "What shape is Earth?".
+    - `bench/results-v5.json` keeps the v5 run as recorded, and `bench/RESULTS.md` shows it as "v5 (before the TASK-42b answer passes)". `bench/reviewed/` keeps the two changed decks as the v5 review read them, so `distractor-review-v5.json` still rebuilds exactly.
+    - The README, the write-up and EVIDENCE.md now say that the review read the decks before the change, and what the pass did (C69, C70; final numbers under b10).
+  - **Tests.**
+    - New: `tests/deck-answer-quality.test.ts` (22 tests, b1–b6, including the "Condensation" fixture, the numbers, true / false and "Two" decks, and two fast-check properties) and `tests/round14-docs.test.ts` (b7–b9).
+    - Moved to the new behaviour, with TASK-42b ids in their titles: `joke-answers-v3` (the v5 build reads `bench/reviewed/`; the 48 → 43 breakdown reads `results-v5.json`; RESULTS.md shows v5), `joke-answers` (RESULTS.md), and `round11-docs` and `claims-docs` (70 claims rows).
+    - The fast-check count is now 77; `--fix` updated it in the write-up and EVIDENCE.md, and CLAIMS.md C18 was changed by hand.
+  - **Mutants.** `scripts/mutation-check.ts` is not edited. A test checks that all 118 mutants' target text is still in its file and that the newest log has the same sha256, so no new mutation log is needed.
+    - One target line, `const trimmed = laidValid ? trimToRequestedCounts(…)`, had to stay exactly as it was. The drop count is therefore computed by a second, deterministic call.
+    - The Swap rule stays in `src/editor/swapCandidates.ts`, because two mutants target its lines. The server imports it from there. It depends only on `src/shared` and `src/editor/operations.ts`, both pure with no DOM. Moving it to `src/shared` would have voided the logged run.
+  - **Honest notes.**
+    - The markers find few joke answers (recall 0.01–0.05 out of sample), so the swap fixes only a few. The "read every answer" wording stays, and EVIDENCE.md says most joke answers are still not flagged.
+    - The same-answer note is mechanical. Some pairs are on purpose (the ovary asked from two sides, in y3-plants-4); some are real repeats (two magnet-pole questions, in y3-forces-magnets-6). It is a note, not a blocker.
+    - Not fixed: the video's hero deck ("Into the moon", "The moon") and the live capture ("It turns into salt") were live generations recorded on 10 Nov and are not in the repo. With the new marker, "Into the moon" would now be flagged, then swapped for a safe candidate or removed; "The moon" and "It turns into salt" would not be flagged.
+  - **Shell edits.** Hand-written files went through the file tools. Generated files were written by scripts:
+    - `npm run bench`: `bench/files`, `bench/results.json` and `bench/RESULTS.md`.
+    - `npm run samples`: the three `samples/*.html` (the living bundle carries the lesson check), after `check-samples` reported them stale.
+    - `npm run check:claims:fix`: tests 1530 → 1558 in the README, the write-up, JUDGES.md and EVIDENCE.md; traced ids 215 → 225; fast-check properties 75 → 77; the bench line's 43 → 37; and the CLAIMS.md line numbers.
+    - A temporary tsx script read the two decks out of `git show HEAD:bench/files/…` into `bench/reviewed/*.json`.
+    - `cp` copied `HEAD:bench/results.json` to `bench/results-v5.json`; `cmp` checked that it is identical.
+    - Temporary measuring scripts in the repo root were deleted after use.
+- **b10. Review round: the automatic swap spread a joke answer, so the rule was tightened (TASK-42b10).**
+  - **What went wrong.**
+    - The first version took the first candidate of the teacher's Swap rule as it stood. In the replayed y4-states-of-matter-3, it put "It freezes into solid rock" in place of both flagged answers. That answer is itself a joke the markers miss, and it was already on a third card.
+    - So the deck showed the same silly answer on three cards. On "What does the sun do to lakes and seas to make evaporation happen faster?" it did not even fit the question, while the first-screen note said "We swapped two answers that looked like jokes".
+    - The teacher's Swap is safe because she picks from a list. An automatic pick needs a stricter rule, because the pool is only as good as the deck.
+  - **The rule now.** For a flagged joke answer, and for a wrong answer that says the same as another on its card:
+    1. **A safe swap.** The candidate is from the Swap rule with the two b1 guards, at most three folded words, on at most one card of the deck right now, not already used by the pass in this deck, and the same answer form as the right answer.
+    2. **Otherwise remove the answer,** when the card keeps its right answer and at least one wrong answer and nothing becomes unreachable. The answers that stay are laid out again on tiles A, B… as a generated card with that many answers.
+    3. **Otherwise leave it,** with the note.
+
+    The teacher's Swap list in the Maker is unchanged.
+  - **One condition beyond the coordinator's four: the same answer form as the right answer.** The replay with only the four conditions put "A cold, damp day" on "What happens to water during evaporation?" and "A cold, foggy night" on the sun question: short, on one card, unused, and not answers to those questions. The coordinator's good case ("Square like a box" → "Cube") is the same kind of answer, so the form condition (`answerForm`: number / verb / noun) was added.
+  - **The bench now** (`npm run bench`, offline, no model call), over the 54 bench files:
+
+    | Answers | Swapped | Removed | Left |
+    |---|---|---|---|
+    | Flagged as a joke | 1 | 2 | 0 |
+    | Same as another on the card | 0 | 0 | 0 |
+
+    - One extra quiz card was dropped for repeating a right answer, and "no lesson warnings" is still 37.
+    - y4-states-of-matter-3: "It turns into solid ice" and "It makes the water heavier" were removed, and no label is on more cards than before. The two cards now have two answers each, so the lesson check adds a "two-answers" warning ("has only two answers: add one."). That is a blocking line in "Before you share", which asks the teacher to add an answer.
+    - y5-earth-space-3: "Square like a box" became "Cylinder", from "Which word means a ball shape?". "Cylinder" now stands on two cards.
+  - **The property.** A literal "no wrong-answer label is on more cards than before the pass" would forbid every swap from another card, which rule 1 allows: "Cylinder" or "Cube" goes from one card to two. So the fast-check property checks something narrower. A label on more cards after the pass was on at most one before, and it gains exactly one card. No label goes above the larger of its count before and two. The named regression, built from the y4-states-of-matter-3 deck as the v5 review read it (`bench/reviewed/`), checks the literal rule: no label is on more cards than before.
+  - **Notes.** "We removed one answer that looked like a joke." (or "We removed two answers that looked like jokes."), and "We removed one answer that said the same as another on its card." The "Read it to check it fits." hint stays only on the swapped-joke note.
+  - **Public text.** The README, the write-up and EVIDENCE.md now say "…when generation began swapping or removing the joke answers our check flags; in today's bench files it swapped one such answer and removed two, in two decks." (CLAIMS.md C69 and C70). EVIDENCE.md "Not proven" says that flagged answers are swapped for a short, matching answer from the same deck, or removed.
+  - **File size.** The living water-cycle export measures 216,011 B, so the write-up, EVIDENCE.md, CLAIMS.md C26 and `tests/round13-docs.test.ts` now say "about 216 KB" (was 211). The floppy count stays 6 (1,457,664 / 216,011 = 6.7). The video note's "files of about 212 KB in the take" is left alone, because it is what the take showed. `scripts/claims-lib.ts` holds no size constant; the `claims-docs` test's "211" values are made-up checker inputs, not the current size, and are unchanged.
+  - **Tests.** In `tests/deck-answer-quality.test.ts`:
+    - new TASK-42b10 tests: the y4 regression, each safe-candidate condition, a removal that would strand a card, and the spread property;
+    - changed tests: a flagged answer is now removed when there is no safe candidate, or left when it can't be removed; the notes and counts; and the b6 property, which now allows a removed wrong answer and matches by element id.
+
+    In `tests/round14-docs.test.ts`: the swapped / removed / left rows and the new sentence.
+
+    The spread property takes the fast-check count from 77 to 78. `--fix` updated it in the write-up and EVIDENCE.md, and CLAIMS.md C18 was changed by hand.
+  - **Shell edits.** None to hand-written files. `npm run bench` regenerated `bench/files`, `results.json` and `RESULTS.md`. `bench/reviewed/` is unchanged, because the changed decks are the same two.
+- **b11. Second review round: the pass must never block an export (TASK-42b11).**
+  - **What went wrong.** Under b10, removing an answer was allowed down to one wrong answer. In y4-states-of-matter-3 that left two cards with two answers each. Each then got "has only two answers: add one.", which is a blocking line in "Before you share". So an automatic pass turned a deck that could be exported into one that could not. That is not acceptable.
+  - **The rule now.** A flagged or duplicate wrong answer is removed only when the card keeps its right answer and at least TWO wrong answers (three answers in all). Otherwise it is left, with the existing "may be a joke answer" note. The safe-swap rule (b10, with the same-form condition) is unchanged.
+  - **The bench now** (`npm run bench`, offline, no model call), over the 54 bench files:
+
+    | Answers | Swapped | Removed | Left |
+    |---|---|---|---|
+    | Flagged as a joke | 1 | 0 | 2 |
+    | Same as another on the card | 0 | 0 | 0 |
+
+    - One extra quiz card was dropped for repeating a right answer, and "no lesson warnings" is still 37.
+    - y4-states-of-matter-3 is now exactly the deck the v5 review read. Its two flagged answers, "It turns into solid ice" and "It makes the water heavier", are on three-answer cards with no safe candidate, so they are left and still carry the note.
+    - y5-earth-space-3 is unchanged from b10 ("Square like a box" became "Cylinder").
+  - **`bench/reviewed/`.** y4-states-of-matter-3.json was deleted, because that deck is no longer changed by the replay. It was a file this task created, never committed. Only y5-earth-space-3.json is left.
+  - **Public text.** The README, the write-up and EVIDENCE.md now say "…in today's bench files it swapped one such answer, removed none and left two, which still carry the joke-answer note, in two decks." (CLAIMS.md C70). The EVIDENCE "Not proven" bullet says an answer is removed only when the card still keeps three answers, and is otherwise left with its note.
+  - **Tests.**
+    - New: a TASK-42b11 unit test (a flagged answer on a three-answer card is left), the y4-states-of-matter-3 regression, which now asks "the pass never adds an 'only two answers' warning" and expects both answers to be left, and a fast-check property (the blocking share-check lines after the passes are a subset of those before, and no card gains a two-answers warning). The property takes the fast-check count from 78 to 79 (`--fix` in the write-up and EVIDENCE.md; CLAIMS.md C18 by hand). Tests: 1,565.
+    - Changed: the removal test now uses a four-answer card and checks three answers on tiles A–C. The same-form and strand tests use cards where only their own condition decides.
+  - **Shell edits.** None to hand-written files. `npm run bench` and `npm run samples` regenerated their outputs. `rm bench/reviewed/y4-states-of-matter-3.json` was run by its full path; it was this task's own untracked file. `npm run check:claims:fix` updated the counts. A temporary `show-tmp.ts` printed the two decks and was deleted.

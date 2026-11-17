@@ -22,6 +22,13 @@ import { primaryText } from "../src/shared/cardTitle.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FILES = path.join(ROOT, "bench", "files");
+/**
+ * TASK-42b7: the decks as the v5 review read them, for the few whose bench
+ * file has changed since (the TASK-42b answer passes swapped an answer or chose
+ * another card to trim). A deck with a snapshot here is reviewed from it; every
+ * other deck from its bench file. The AI review was not re-run.
+ */
+export const REVIEWED = path.join(ROOT, "bench", "reviewed");
 
 export type DistractorLabel = "plausible" | "absurd";
 export type KeyVerdict = "correct" | "wrong" | "ambiguous";
@@ -75,7 +82,10 @@ export function buildReview(labelsPath: string, only?: string[]): DistractorRevi
       noFile.push(id);
       continue;
     }
-    const s = stackOfFile(readFileSync(path.join(FILES, f), "utf8"));
+    const snapshot = path.join(REVIEWED, `${id}.json`);
+    const s = existsSync(snapshot)
+      ? (JSON.parse(readFileSync(snapshot, "utf8")) as Stack)
+      : stackOfFile(readFileSync(path.join(FILES, f), "utf8"));
     const cards: ReviewedCard[] = [];
     s.cards.forEach((c, i) => {
       if (c.kind !== "quiz") return;

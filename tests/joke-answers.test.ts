@@ -180,7 +180,7 @@ describe("TASK-34a4: re-record only the affected objectives; keep v2", () => {
     expect(read("scripts/bench.ts")).toContain('arg("--only-file")');
   });
 
-  it("TASK-34a4: results-v2.json keeps the v2 summary; RESULTS.md shows v1, v2 and the current run, and what v3 re-records", () => {
+  it("TASK-34a4: TASK-42b7: results-v2.json keeps the v2 summary; RESULTS.md shows v1, v2 and the current run, and what v3 re-records", () => {
     const v2 = (JSON.parse(read("bench/results-v2.json")) as { summary: BenchSummary }).summary;
     expect(v2).toMatchObject({ objectives: 55, recorded: 55, firstTry: 54, lessonClean: 48, countsOk: 47 });
     const md = read("bench/RESULTS.md");

@@ -10,13 +10,13 @@
     "objectives": 55,
     "recorded": 55,
     "firstTry": 54,
-    "lessonClean": 43,
+    "lessonClean": 37,
     "countsOk": 51,
     "allReachable": 54,
     "endReachable": 54,
     "fkGradeMedian": 2.2,
-    "fileBytesMin": 213876,
-    "fileBytesMax": 217560,
+    "fileBytesMin": 214891,
+    "fileBytesMax": 218575,
     "firstCardMs": {
       "p50": 1413,
       "p90": 1988
@@ -27,7 +27,14 @@
     },
     "models": [
       "claude-haiku-5-5 (thinking off)"
-    ]
+    ],
+    "swappedJokes": 1,
+    "removedJokes": 0,
+    "leftJokes": 2,
+    "swappedRepeats": 0,
+    "removedDuplicates": 0,
+    "leftDuplicates": 0,
+    "droppedSameAnswer": 1
   },
   "decks": [
     {
@@ -61,7 +68,14 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 216782,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217797,
       "file": "files/y3-plants-1.html"
     },
     {
@@ -95,7 +109,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215432,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216447,
       "file": "files/y3-plants-2.html"
     },
     {
@@ -129,7 +150,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215858,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216873,
       "file": "files/y3-plants-3.html"
     },
     {
@@ -148,7 +176,8 @@
       "firstTry": true,
       "lessonClean": false,
       "warnings": [
-        "restates-flash"
+        "restates-flash",
+        "same-right-answer"
       ],
       "quiz": 5,
       "flash": 2,
@@ -165,7 +194,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215552,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216567,
       "file": "files/y3-plants-4.html"
     },
     {
@@ -199,7 +235,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 214861,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 215876,
       "file": "files/y3-animals-1.html"
     },
     {
@@ -233,7 +276,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215338,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216353,
       "file": "files/y3-animals-2.html"
     },
     {
@@ -267,7 +317,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215319,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216334,
       "file": "files/y3-rocks-1.html"
     },
     {
@@ -301,7 +358,14 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 216963,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217978,
       "file": "files/y3-rocks-2.html"
     },
     {
@@ -337,7 +401,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 214935,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 215950,
       "file": "files/y3-rocks-3.html"
     },
     {
@@ -371,7 +442,14 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 216882,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217897,
       "file": "files/y3-light-1.html"
     },
     {
@@ -405,7 +483,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215076,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216091,
       "file": "files/y3-light-2.html"
     },
     {
@@ -441,7 +526,14 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 216487,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217502,
       "file": "files/y3-light-3.html"
     },
     {
@@ -475,7 +567,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215030,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216045,
       "file": "files/y3-light-4.html"
     },
     {
@@ -492,8 +591,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -509,7 +610,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 216167,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217182,
       "file": "files/y3-light-5.html"
     },
     {
@@ -543,7 +651,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 214850,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 215865,
       "file": "files/y3-forces-magnets-1.html"
     },
     {
@@ -560,8 +675,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -577,7 +694,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215467,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216482,
       "file": "files/y3-forces-magnets-2.html"
     },
     {
@@ -594,8 +718,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -611,7 +737,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215842,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216857,
       "file": "files/y3-forces-magnets-3.html"
     },
     {
@@ -645,7 +778,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 216835,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217850,
       "file": "files/y3-forces-magnets-4.html"
     },
     {
@@ -679,7 +819,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215098,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216113,
       "file": "files/y3-forces-magnets-5.html"
     },
     {
@@ -696,8 +843,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -713,7 +862,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215990,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217005,
       "file": "files/y3-forces-magnets-6.html"
     },
     {
@@ -747,7 +903,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 216073,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217088,
       "file": "files/y4-living-things-1.html"
     },
     {
@@ -781,7 +944,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215425,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216440,
       "file": "files/y4-living-things-2.html"
     },
     {
@@ -815,7 +985,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215869,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216884,
       "file": "files/y4-living-things-3.html"
     },
     {
@@ -851,7 +1028,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215370,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216385,
       "file": "files/y4-animals-1.html"
     },
     {
@@ -885,7 +1069,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215609,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216624,
       "file": "files/y4-animals-2.html"
     },
     {
@@ -902,8 +1093,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -919,7 +1112,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215263,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216278,
       "file": "files/y4-animals-3.html"
     },
     {
@@ -936,8 +1136,10 @@
       "model": "claude-haiku-5-5",
       "thinking": "off",
       "firstTry": true,
-      "lessonClean": true,
-      "warnings": [],
+      "lessonClean": false,
+      "warnings": [
+        "same-right-answer"
+      ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
@@ -953,7 +1155,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215291,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216306,
       "file": "files/y4-states-of-matter-1.html"
     },
     {
@@ -987,7 +1196,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 214876,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 215891,
       "file": "files/y4-states-of-matter-2.html"
     },
     {
@@ -1025,7 +1241,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 1,
-      "fileBytes": 215449,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 2,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216464,
       "file": "files/y4-states-of-matter-3.html"
     },
     {
@@ -1059,7 +1282,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215894,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216909,
       "file": "files/y4-sound-1.html"
     },
     {
@@ -1093,7 +1323,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215152,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216167,
       "file": "files/y4-sound-2.html"
     },
     {
@@ -1127,7 +1364,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215498,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216513,
       "file": "files/y4-sound-3.html"
     },
     {
@@ -1161,7 +1405,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215804,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216819,
       "file": "files/y4-sound-4.html"
     },
     {
@@ -1195,7 +1446,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215484,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216499,
       "file": "files/y4-sound-5.html"
     },
     {
@@ -1231,7 +1489,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215332,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216347,
       "file": "files/y4-electricity-1.html"
     },
     {
@@ -1260,6 +1525,13 @@
       "answersPerQuiz": [],
       "pictures": null,
       "removedRepeats": null,
+      "swappedJokes": null,
+      "removedJokes": null,
+      "leftJokes": null,
+      "swappedRepeats": null,
+      "removedDuplicates": null,
+      "leftDuplicates": null,
+      "droppedSameAnswer": null,
       "fileBytes": null,
       "file": null
     },
@@ -1296,7 +1568,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215608,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216623,
       "file": "files/y4-electricity-3.html"
     },
     {
@@ -1332,7 +1611,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215502,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216517,
       "file": "files/y4-electricity-4.html"
     },
     {
@@ -1366,7 +1652,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 215788,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216803,
       "file": "files/y4-electricity-5.html"
     },
     {
@@ -1400,7 +1693,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215410,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216425,
       "file": "files/y5-living-things-1.html"
     },
     {
@@ -1434,7 +1734,14 @@
       ],
       "pictures": 3,
       "removedRepeats": 0,
-      "fileBytes": 217386,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 218401,
       "file": "files/y5-living-things-2.html"
     },
     {
@@ -1453,7 +1760,8 @@
       "firstTry": true,
       "lessonClean": false,
       "warnings": [
-        "restates-flash"
+        "restates-flash",
+        "same-right-answer"
       ],
       "quiz": 5,
       "flash": 2,
@@ -1470,7 +1778,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215138,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216153,
       "file": "files/y5-animals-1.html"
     },
     {
@@ -1504,7 +1819,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 214737,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 215752,
       "file": "files/y5-materials-1.html"
     },
     {
@@ -1538,7 +1860,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215634,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216649,
       "file": "files/y5-materials-2.html"
     },
     {
@@ -1572,7 +1901,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215399,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216414,
       "file": "files/y5-materials-3.html"
     },
     {
@@ -1606,7 +1942,14 @@
       ],
       "pictures": 4,
       "removedRepeats": 0,
-      "fileBytes": 217560,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 218575,
       "file": "files/y5-materials-4.html"
     },
     {
@@ -1640,7 +1983,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215752,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216767,
       "file": "files/y5-materials-5.html"
     },
     {
@@ -1674,7 +2024,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215352,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216367,
       "file": "files/y5-materials-6.html"
     },
     {
@@ -1707,7 +2064,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 213876,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 214891,
       "file": "files/y5-earth-space-1.html"
     },
     {
@@ -1741,7 +2105,14 @@
       ],
       "pictures": 0,
       "removedRepeats": 0,
-      "fileBytes": 215604,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216619,
       "file": "files/y5-earth-space-2.html"
     },
     {
@@ -1760,14 +2131,14 @@
       "firstTry": true,
       "lessonClean": false,
       "warnings": [
-        "joke-answer"
+        "restates-flash"
       ],
       "quiz": 5,
       "flash": 2,
       "countsOk": true,
       "allReachable": true,
       "endReachable": true,
-      "fkGrade": 0.5,
+      "fkGrade": 1.2,
       "answersPerQuiz": [
         3,
         3,
@@ -1775,9 +2146,16 @@
         3,
         3
       ],
-      "pictures": 3,
+      "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 216818,
+      "swappedJokes": 1,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 1,
+      "fileBytes": 217306,
       "file": "files/y5-earth-space-3.html"
     },
     {
@@ -1811,7 +2189,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 216133,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217148,
       "file": "files/y5-earth-space-4.html"
     },
     {
@@ -1845,7 +2230,14 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 216152,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217167,
       "file": "files/y5-forces-1.html"
     },
     {
@@ -1879,7 +2271,14 @@
       ],
       "pictures": 1,
       "removedRepeats": 0,
-      "fileBytes": 216030,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 217045,
       "file": "files/y5-forces-2.html"
     },
     {
@@ -1914,7 +2313,14 @@
       ],
       "pictures": 2,
       "removedRepeats": 0,
-      "fileBytes": 215596,
+      "swappedJokes": 0,
+      "removedJokes": 0,
+      "leftJokes": 0,
+      "swappedRepeats": 0,
+      "removedDuplicates": 0,
+      "leftDuplicates": 0,
+      "droppedSameAnswer": 0,
+      "fileBytes": 216611,
       "file": "files/y5-forces-3.html"
     }
   ]

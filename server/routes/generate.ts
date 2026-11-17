@@ -10,6 +10,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { generate } from "../stackGenerator.js";
 import { readBody } from "../readBody.js";
 import { streamGenerate } from "../stream-generate.js";
+import { swapCounts } from "../../src/shared/qualityNotes.js";
 import type { LineSink } from "../stream-generate.js";
 import type {
   GenerateRequest,
@@ -185,6 +186,8 @@ export async function handleGenerate(
     };
     if (result.movedClosingMessage === true) payload["movedClosingMessage"] = true;
     if (typeof result.removedRepeats === "number" && result.removedRepeats > 0) payload["removedRepeats"] = result.removedRepeats;
+    // TASK-42b2: the swap counts, only when > 0.
+    Object.assign(payload, swapCounts(result));
     if (result.isFallback) {
       if (result.isReadyMadeExample) payload["isReadyMadeExample"] = true;
       if (result.fallbackReason) payload["fallbackReason"] = result.fallbackReason;

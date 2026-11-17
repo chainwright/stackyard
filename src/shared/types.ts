@@ -111,6 +111,17 @@ export type GenerateSuccess = {
   movedClosingMessage?: boolean;
   /** Repeated cards the generator removed (TASK-32b.2); present only when > 0. */
   removedRepeats?: number;
+  /** TASK-42b2: flagged joke answers the generator swapped; present only when > 0. */
+  swappedJokes?: number;
+  /** TASK-42b2: answers that said the same as another on their card, swapped; present only when > 0. */
+  swappedRepeats?: number;
+  /** TASK-42b10: flagged joke answers / same-on-a-card answers removed, and those left; present only when > 0. */
+  removedJokes?: number;
+  leftJokes?: number;
+  removedDuplicates?: number;
+  leftDuplicates?: number;
+  /** TASK-42b4: extra quiz cards dropped for repeating a right answer (the bench records it); present only when > 0. */
+  droppedSameAnswer?: number;
 };
 
 export type GenerateError = {
@@ -165,6 +176,17 @@ export type GenerateStreamDone = {
   movedClosingMessage?: boolean;
   /** Repeated cards the generator removed (TASK-32b.2); present only when > 0. */
   removedRepeats?: number;
+  /** TASK-42b2: flagged joke answers the generator swapped; present only when > 0. */
+  swappedJokes?: number;
+  /** TASK-42b2: answers that said the same as another on their card, swapped; present only when > 0. */
+  swappedRepeats?: number;
+  /** TASK-42b10: flagged joke answers / same-on-a-card answers removed, and those left; present only when > 0. */
+  removedJokes?: number;
+  leftJokes?: number;
+  removedDuplicates?: number;
+  leftDuplicates?: number;
+  /** TASK-42b4: extra quiz cards dropped for repeating a right answer (the bench records it); present only when > 0. */
+  droppedSameAnswer?: number;
 };
 
 export type GenerateStreamError = {

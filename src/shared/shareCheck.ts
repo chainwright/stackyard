@@ -19,6 +19,13 @@ import { quotedCardName } from "./cardTitle.js";
 
 /** TASK-36c3: the lesson warnings that never block an export or a copy. */
 export const NOTE_CODES: ReadonlyArray<LessonWarning["code"]> = ["restates-flash", "joke-answer"];
+/**
+ * TASK-42b4: "two quiz cards have the same right answer" is a note too: the
+ * cards may test the same idea from two sides on purpose. Kept on its own line
+ * beside NOTE_CODES (a logged mutant pins that line's text).
+ */
+export const MORE_NOTE_CODES: ReadonlyArray<LessonWarning["code"]> = ["same-right-answer"];
+const isNote = (code: LessonWarning["code"]): boolean => NOTE_CODES.includes(code) || MORE_NOTE_CODES.includes(code);
 
 export interface ShareCheckResult {
   /** True when nothing would block sharing (notes may still be there). */
@@ -38,8 +45,8 @@ export interface ShareCheckResult {
 export function beforeYouShare(stack: Stack, label: (card: Card) => string = (c) => quotedCardName(stack, c)): ShareCheckResult {
   const report = checkReachability(stack);
   const warnings = lessonWarnings(stack);
-  const blocking = warnings.filter((w) => !NOTE_CODES.includes(w.code));
-  const noted = warnings.filter((w) => NOTE_CODES.includes(w.code));
+  const blocking = warnings.filter((w) => !isNote(w.code));
+  const noted = warnings.filter((w) => isNote(w.code));
   const lines = [
     ...(report.ok ? [] : describeProblems(report, label)),
     ...describeLessonWarnings(stack, blocking, label),

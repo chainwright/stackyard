@@ -165,9 +165,9 @@ describe("TASK-34a9: the v4 (why-field prompt) review of the same 34 objectives"
     for (const id of v4.noFile ?? []) expect(s).toContain(id);
   });
 
-  it("TASK-34a12: RESULTS.md shows v1, v2, v3, v4 and the current run (v5), and says the current run re-recorded only the listed objectives", () => {
+  it("TASK-34a12: TASK-42b7: RESULTS.md shows v1 to v5 and the current run (a replay of the v5 recordings after the TASK-42b answer passes)", () => {
     const md = read("bench/RESULTS.md");
-    const at = ["## v1 (", "## v2 (", "## v3 (before the TASK-34a7 why-field prompt)", "## v4 (before the TASK-34a10/a11 prompt)", "## Current run"].map((h) => md.indexOf(h));
+    const at = ["## v1 (", "## v2 (", "## v3 (before the TASK-34a7 why-field prompt)", "## v4 (before the TASK-34a10/a11 prompt)", "## v5 (before the TASK-42b answer passes)", "## Current run"].map((h) => md.indexOf(h));
     expect(at.every((x, i) => x > 0 && (i === 0 || x > at[i - 1]!))).toBe(true);
     const v3s = (JSON.parse(read("bench/results-v3.json")) as { summary: { firstTry: number; lessonClean: number } }).summary;
     expect(v3s).toMatchObject({ firstTry: 54, lessonClean: 44 });
@@ -176,15 +176,20 @@ describe("TASK-34a9: the v4 (why-field prompt) review of the same 34 objectives"
     expect(v4s).toMatchObject({ firstTry: 52, lessonClean: 48 });
     expect(md.slice(at[3]!, at[4]!)).toContain("| Valid lesson file on the first try (no retry, no fallback) | 52 of 55 |");
     expect(md.slice(at[3]!, at[4]!)).toContain("| Passed our automatic lesson check with no warnings | 48 of 55 |");
-    expect(md.slice(at[4]!)).toContain("| Passed our automatic lesson check with no warnings | 43 of 55 |");
-    expect(md).toContain(`The current run (v5) re-recorded only the same ${ids.length} objectives listed in [\`rerecord.txt\`](rerecord.txt)`);
+    // TASK-42b7: v5 is kept as it was recorded and checked (43); the current run is the same recordings replayed.
+    const v5s = (JSON.parse(read("bench/results-v5.json")) as { summary: { firstTry: number; lessonClean: number } }).summary;
+    expect(v5s).toMatchObject({ firstTry: 54, lessonClean: 43 });
+    expect(md.slice(at[4]!, at[5]!)).toContain("| Passed our automatic lesson check with no warnings | 43 of 55 |");
+    expect(md.slice(at[4]!, at[5]!)).toContain(`the same ${ids.length} objectives re-recorded with the TASK-34a10/a11 prompt`);
+    const now = (JSON.parse(read("bench/results.json")) as { summary: { lessonClean: number } }).summary;
+    expect(md.slice(at[5]!)).toContain(`| Passed our automatic lesson check with no warnings | ${now.lessonClean} of 55 |`);
+    expect(md.slice(at[5]!)).toContain("The current run replays the same recordings as v5 (no new model call)");
     expect(md).toContain("[`distractor-review-v5.json`](distractor-review-v5.json)");
-    expect(md).toContain(`Re-recorded so far: ${ids.length} of ${ids.length}.`);
   });
 });
 
 describe("TASK-34a12: the v5 (category rule) review of the same 34 objectives", () => {
-  it("TASK-34a12: a fresh build from the labels and the files equals bench/distractor-review-v5.json; every re-recorded deck has a file", () => {
+  it("TASK-34a12: TASK-42b7: a fresh build from the labels and the decks the review read equals bench/distractor-review-v5.json; every re-recorded deck has a file", () => {
     const fresh = buildReview(path.join(ROOT, "bench", "distractor-labels-v5.json"), ids);
     expect(JSON.stringify(fresh, null, 2) + "\n").toBe(read("bench/distractor-review-v5.json"));
     expect(v5.decks.map((d) => d.id)).toEqual(ids);
@@ -258,11 +263,11 @@ describe("TASK-34a12: the v5 (category rule) review of the same 34 objectives", 
     expect(s).toContain("y4-states-of-matter-3 card 3");
   });
 
-  it("TASK-34a12: the 48 → 43 'no warnings' breakdown names every deck whose clean state changed, and adds up", () => {
+  it("TASK-34a12: TASK-42b7: the 48 → 43 'no warnings' breakdown (v4 → v5, kept in results-v5.json) names every deck whose clean state changed, and adds up", () => {
     type Row = { id: string; lessonClean: boolean };
     const rows = (f: string): Map<string, boolean> => new Map((JSON.parse(read(f)) as { decks: Row[] }).decks.map((d) => [d.id, d.lessonClean]));
     const was = rows("bench/results-v4.json");
-    const now = rows("bench/results.json");
+    const now = rows("bench/results-v5.json");
     expect([...was.values()].filter(Boolean).length).toBe(48);
     expect([...now.values()].filter(Boolean).length).toBe(43);
     const lost = [...was].filter(([id, c]) => c && !now.get(id)).map(([id]) => id).sort();

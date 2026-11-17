@@ -142,7 +142,7 @@ describe("TASK-41g: file size: the living file and the play-only class file, bot
   });
 
   it("TASK-41g the write-up names the living file's size as the one with the Teacher tab, and check:claims still reads it", () => {
-    expect(W).toContain("a generated lesson file is now about 211 KB with its Teacher tab inside; the play-only class file of the same lesson is 149 KB.");
+    expect(W).toContain("a generated lesson file is now about 216 KB with its Teacher tab inside; the play-only class file of the same lesson is 149 KB.");
     expect(W).toMatch(/lesson file is now about \d+ KB/);
     expect(E).not.toContain("about 149 KB");
   });

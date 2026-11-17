@@ -10,12 +10,13 @@ import type {
   GenerateStreamMessage,
 } from "../shared/types.js";
 import { safeFileName, classFileName } from "../shared/messages.js";
+import { swapCounts, type AnswerCounts } from "../shared/qualityNotes.js";
 
 // ---------------------------------------------------------------------------
 // Generate
 
 export type GenerateOutcome =
-  | {
+  | ({
       ok: true;
       stack: Stack;
       isFallback: boolean;
@@ -26,7 +27,7 @@ export type GenerateOutcome =
       movedClosingMessage?: boolean;
       /** Repeated cards the server removed (TASK-32b.2). */
       removedRepeats?: number;
-    }
+    } & AnswerCounts)
   | {
       ok: false;
       message: string;
@@ -72,7 +73,7 @@ export async function generateStack(
     movedClosingMessage?: boolean;
     removedRepeats?: number;
     message?: string;
-  };
+  } & AnswerCounts;
 
   if (res.ok && body.ok === true && body.stack) {
     return {
@@ -82,6 +83,7 @@ export async function generateStack(
       isReadyMadeExample: body.isReadyMadeExample === true,
       ...(body.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
       ...(typeof body.removedRepeats === "number" && body.removedRepeats > 0 ? { removedRepeats: body.removedRepeats } : {}),
+      ...swapCounts(body),
     };
   }
   return {
@@ -206,6 +208,7 @@ export async function generateStackStream(
           ...(reason ? { fallbackReason: reason } : {}),
           ...(msg.movedClosingMessage === true ? { movedClosingMessage: true } : {}),
           ...(typeof msg.removedRepeats === "number" && msg.removedRepeats > 0 ? { removedRepeats: msg.removedRepeats } : {}),
+          ...swapCounts(msg),
         };
       }
       case "error":

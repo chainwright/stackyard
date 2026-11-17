@@ -38,6 +38,7 @@ import {
 } from "./normalizeGenerated.js";
 import { callStream as defaultCallStream, LlmUnavailableError } from "./llmGateway.js";
 import { llmThinking } from "./llmThinking.js";
+import { swapCounts, type AnswerCounts } from "../src/shared/qualityNotes.js";
 import { buildStream as defaultBuildStream } from "./promptBuilder.js";
 
 /** A sink for NDJSON lines. The HTTP route passes a writer backed by the
@@ -215,7 +216,7 @@ function parseCardLine(line: string): unknown | null {
 // so the caller knows whether a `reset` is needed before falling back.
 
 type StreamAttemptResult =
-  | { ok: true; stack: Stack; movedClosingMessage: boolean; removedRepeats: number }
+  | ({ ok: true; stack: Stack; movedClosingMessage: boolean; removedRepeats: number } & AnswerCounts)
   | { ok: false; dealtCards: number };
 
 async function attemptStreamedLlm(
@@ -343,7 +344,7 @@ async function attemptStreamedLlm(
   // shuffle which tile is right. The final `done` stack the editor loads carries
   // all of it; the per-card previews already dealt are animation only.
   const fin = finaliseGeneratedStackDetailed(whole.stack, { prompt: request.prompt });
-  return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage, removedRepeats: fin.removedRepeats };
+  return { ok: true, stack: fin.stack, movedClosingMessage: fin.movedClosingMessage, removedRepeats: fin.removedRepeats, ...swapCounts(fin) };
 }
 
 /** One operator log line for a failed streamed attempt (never a key or URL). */
@@ -506,7 +507,7 @@ export async function streamGenerate(
   );
 
   if (attempt.ok) {
-    sink.write({ type: "done", stack: attempt.stack, isFallback: false, ...(attempt.movedClosingMessage ? { movedClosingMessage: true } : {}), ...(attempt.removedRepeats > 0 ? { removedRepeats: attempt.removedRepeats } : {}) });
+    sink.write({ type: "done", stack: attempt.stack, isFallback: false, ...(attempt.movedClosingMessage ? { movedClosingMessage: true } : {}), ...(attempt.removedRepeats > 0 ? { removedRepeats: attempt.removedRepeats } : {}), ...swapCounts(attempt) });
     sink.end();
     return;
   }

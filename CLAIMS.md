@@ -23,7 +23,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C15 | "but the file has no editor inside and no class results" | README.md:152 | TRUE | OpenMAIC's README Export table (checked 12 Nov 2026): 'Offline HTML: One file that plays the classroom without a network connection'; the Classroom ZIP is a separate export for backup or sharing. Nothing in it describes an editor or class results inside the HTML file. |
 | C16 | "Six specs: five product features" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `.kiro/specs/` has six folders (test TASK-38b) |
 | C17 | "Every lettered task id is named in a test title, a gate or a hook" | docs/DEVPOST_WRITEUP.md:43 | TRUE | `npm run check:trace`; EVIDENCE.md |
-| C18 | "75 fast-check properties" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `npm run check:claims` counts them; EVIDENCE.md |
+| C18 | "79 fast-check properties" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `npm run check:claims` counts them; EVIDENCE.md |
 | C19 | "118 of 118 killed in the newest logged run" | docs/DEVPOST_WRITEUP.md:45 | TRUE | `docs/mutation-runs/2026-11-10-a215331.log`; `check:claims` ties the count to the newest log and the script's hash |
 | C20 | "Kiro's session store recorded 493 hook firings" | docs/DEVPOST_WRITEUP.md:46, README.md:132 | PARTIAL | Missing: the raw session store is not in the repo; the excerpts and the per-hook counts are in `docs/kiro-sessions/README.md`. |
 | C21 | "is not yet recorded firing" | docs/DEVPOST_WRITEUP.md:46 | TRUE | A stated limit: `docs/kiro-sessions/README.md` (sections 5 and 6); EVIDENCE.md |
@@ -31,7 +31,7 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C23 | "its search was also called once through Kiro as an MCP tool (10 Nov)" | docs/DEVPOST_WRITEUP.md:48, README.md:134 | TRUE | `docs/kiro-sessions/README.md` section 6; `docs/kiro-sessions/mcp-call-2026-11-10.md` |
 | C24 | "Kiro CLI wrote the steering and specs and most of the code" | docs/DEVPOST_WRITEUP.md:49 | PARTIAL | Missing: the session excerpts start on 5 Nov; 30 Oct to 8 Nov rests on `docs/KIRO_LOG.md` and the git history (the '(built in Kiro)' mark starts at TASK-30). |
 | C25 | "12.8 KB gzipped against a 50 KB budget" | docs/DEVPOST_WRITEUP.md:63 | TRUE | `npm run check:claims`; the size guard in `npm test` |
-| C26 | "a generated lesson file is now about 211 KB" | docs/DEVPOST_WRITEUP.md:9 | TRUE | `npm run check:claims` (decimal KB, ±3 %) |
+| C26 | "a generated lesson file is now about 216 KB" | docs/DEVPOST_WRITEUP.md:9 | TRUE | `npm run check:claims` (decimal KB, ±3 %) |
 | C27 | "became a valid lesson file on the first try" | docs/DEVPOST_WRITEUP.md:64, README.md:190 | TRUE | `bench/RESULTS.md`; `npm run check:bench`. The checks are mechanical and do not verify facts. |
 | C28 | "found 0 serious or critical violations" | docs/DEVPOST_WRITEUP.md:67, README.md:193 | TRUE | `npm run check:a11y`; `docs/accessibility/axe-report.json`. An automated audit, not a user test. |
 | C29 | "an AI review found joke answers fell from" | docs/DEVPOST_WRITEUP.md:66, README.md:192 | TRUE | `bench/LESSON_CHECKER.md`; `bench/distractor-review*.json`. An AI review, not a teacher's. |
@@ -74,3 +74,5 @@ Every public claim we make about Stackyard, in the README, the Devpost write-up 
 | C66 | "our check marks a few likely joke answers but misses most, so read every answer" | docs/DEVPOST_WRITEUP.md:22 | TRUE | `bench/DIAGNOSIS.md` (recall 0.05, 0.01 and 0.03 out of sample) |
 | C67 | "the exporter, Maker and class-results specs went back to Kiro with changes before their code" | docs/DEVPOST_WRITEUP.md:44 | TRUE | `docs/KIRO_LOG.md` (the 30 Oct, 4 Nov and 10 Nov entries) |
 | C68 | "sees how many missed each question" | blog | TRUE | `src/living/classResults.ts` (counts per question) |
+| C69 | "That review read the bench decks before 16 Nov, when generation began swapping or removing the joke answers our check flags" | docs/DEVPOST_WRITEUP.md:66, README.md:192 | TRUE | `bench/distractor-review-v5.json` (the v5 review, before TASK-42b); `server/deckQuality.ts` (`swapFlaggedJokeAnswers`, TASK-42b1, 16 Nov) |
+| C70 | "in today's bench files it swapped one such answer, removed none and left two, which still carry the joke-answer note, in two decks" | docs/DEVPOST_WRITEUP.md:66, README.md:192 | TRUE | `bench/results.json` (`summary.swappedJokes`, `summary.removedJokes`, `summary.leftJokes`, per-deck counts); `tests/round14-docs.test.ts` ties the sentence to it |
