@@ -1188,6 +1188,7 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
     - One `sed -i` ticked TASK-44e1–e3.
     - `npm run check:claims:fix` wrote the new pairs and counts.
     - `WRITEUP_DRAFT.md` was rebuilt as before.
+- **Coordinator's check at 36e0790, outside Kiro (this bullet written outside Kiro, by the coordinator).** Three copies of the TASK-44e commit in a temp folder, each with `npm ci`, then `CI=true npm run pre-submit` (17 Nov 2026, 00:00–00:11 CST): a fresh `git clone`: exit 0, 1,629 passed, 4 skipped (1,633); a shallow clone (`git clone --depth 1`): exit 0, 1,628 passed, 5 skipped; a `git archive` copy with no `.git`: exit 0, 1,627 passed, 6 skipped. All three match the pairs in the README, JUDGES.md and EVIDENCE.md. CI on GitHub has not run on these commits: nothing was pushed.
 - **Left for the post-upload task (v8b → v9b), not changed in TASK-44.** The video linked everywhere is still v8b. These lines change only after the upload, in a separate task the coordinator holds as a patch:
   - write-up lines 9 and 11;
   - README "Demo video (2:55)";
