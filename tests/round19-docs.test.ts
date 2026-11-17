@@ -11,6 +11,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import os from "node:os";
 import path from "node:path";
 import { gitCheckoutAt, gitGrepHits } from "./helpers/git-checkout.js";
+import { countConditionalSkips, skipsByCopy, compareCopyCounts, readCopyCounts, readClaims } from "../scripts/claims-lib.js";
 
 const ROOT = path.resolve(__dirname, "..");
 const PATTERN = "post; [A-Z][a-z]+ decides";
@@ -179,7 +180,7 @@ describe("TASK-44c: Where it sits names the twin and the trade-off", () => {
     const src = read("tests/round19-docs.test.ts");
     const net = new RegExp(["\\bfet" + "ch\\(", "https?\\.g" + "et\\(", "new Web" + "Socket"].join("|"));
     expect(src).not.toMatch(net);
-    for (const l of src.split("\n").filter((x) => /^import /.test(x))) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:os|node:path|\.\/helpers\/git-checkout\.js)";$/);
+    for (const l of src.split("\n").filter((x) => /^import /.test(x))) expect(l).toMatch(/from "(vitest|node:child_process|node:fs|node:os|node:path|\.\/helpers\/git-checkout\.js|\.\.\/scripts\/claims-lib\.js)";$/);
   });
 });
 
@@ -220,18 +221,54 @@ describe("TASK-44d: Caramel, the commit days and C73", () => {
   });
 });
 
-// TASK-44e is written in the spec (Phase 29) and not built yet. Each test
-// below passes only while its sub-ids are still unticked in the spec, so an id
-// is traced here only while the spec plainly says it is pending; ticking one
-// makes its test fail until real tests replace it.
-describe("TASK-44e: pending, spec only", () => {
-  const spec = readFileSync(path.join(ROOT, ".kiro/specs/maker/tasks.md"), "utf8");
-  const phase = spec.slice(spec.indexOf("## Phase 29 - TASK-44:"));
-  const pending = (ids: string[]): void => {
-    for (const id of ids) {
-      expect(phase, id).toContain(`- [ ] TASK-${id}:`);
-      expect(phase, id).not.toContain(`- [x] TASK-${id}:`);
-    }
+// TASK-44e: the test counts say what each kind of copy sees.
+describe("TASK-44e: test counts by kind of copy", () => {
+  const read = (f: string): string => readFileSync(path.join(ROOT, f), "utf8");
+  const testSources = (): Array<{ file: string; text: string }> => {
+    const out: Array<{ file: string; text: string }> = [];
+    const walk = (dir: string): void => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith(".test.ts")) out.push({ file: path.relative(ROOT, p), text: readFileSync(p, "utf8") });
+      }
+    };
+    walk(path.join(ROOT, "tests"));
+    return out;
   };
-  it("TASK-44e: TASK-44e1/e2/e3: pending (the test counts per kind of copy); the spec lists them unticked", () => pending(["44e1", "44e2", "44e3"]));
+
+  it("TASK-44e2: the suite's conditional skips, counted from the sources: 4 draft-post, 1 history, 1 git checkout, none unknown (and 1 Chrome suite, apart)", () => {
+    const k = countConditionalSkips(testSources());
+    expect(k.unknown).toEqual([]);
+    expect({ draft: k.draft, history: k.history, git: k.git, chrome: k.chrome }).toEqual({ draft: 4, history: 1, git: 1, chrome: 1 });
+    expect(skipsByCopy(k)).toEqual({ fresh: 4, shallow: 5, zip: 6 });
+  });
+
+  it("TASK-44e1: the README, JUDGES.md and EVIDENCE.md state T and T−4/4, T−5/5, T−6/6, and no working-copy claim", () => {
+    const k = countConditionalSkips(testSources());
+    const t = readClaims(read("README.md"))!.tests;
+    for (const [f, where] of [["README.md", "README"], ["JUDGES.md", "JUDGES"], ["EVIDENCE.md", "EVIDENCE"]] as const) {
+      const text = read(f);
+      expect(compareCopyCounts(text, where, t, k).filter((c) => !c.ok), f).toEqual([]);
+      expect(readCopyCounts(text).map((c) => c.kind).sort(), f).toEqual(["fresh", "shallow", "zip"]);
+      expect(text, f).not.toMatch(/in our working copy/);
+    }
+    const n = t.toLocaleString("en-US");
+    expect(read("README.md")).toContain(`- Tests: **${t}** in the suite (\`npm test\`). In a fresh git clone ${(t - 4).toLocaleString("en-US")} pass and 4 skip: they check our draft posts, which sit beside the repo, not in it.`);
+    expect(read("JUDGES.md")).toContain(`# ${n} tests; a fresh git clone: ${(t - 4).toLocaleString("en-US")} pass, 4 skip (draft posts kept beside the repo);`);
+    expect(read("EVIDENCE.md")).toContain(`| ${n} tests in the suite (a fresh git clone: ${(t - 4).toLocaleString("en-US")} pass, 4 skip;`);
+    // The write-up states only the total.
+    expect(read("docs/DEVPOST_WRITEUP.md")).not.toMatch(/ pass, \d+ skip| pass and \d+ skip/);
+  });
+
+  it("TASK-44e3: every Phase 29 sub-id is ticked, and no pending placeholder test is left in this file", () => {
+    const spec = read(".kiro/specs/maker/tasks.md");
+    const phase = spec.slice(spec.indexOf("## Phase 29 - TASK-44:"));
+    expect(phase).not.toMatch(/- \[ \] TASK-44/);
+    for (const id of ["a1", "a2", "a3", "b1", "b2", "b3", "c1", "c2", "c3", "d1", "d2", "d3", "e1", "e2", "e3"]) expect(phase, id).toContain(`- [x] TASK-44${id}:`);
+    // Built in pieces so this line does not match itself.
+    const src = read("tests/round19-docs.test.ts");
+    expect(src).not.toContain(": pend" + "ing, spec only");
+    expect(src).not.toContain("=> pend" + "ing([");
+  });
 });

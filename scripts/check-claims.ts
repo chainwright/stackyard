@@ -101,6 +101,10 @@ import {
   type JudgeNumbers,
   compareClaimsTable,
   fixClaimsTable,
+  countConditionalSkips,
+  compareCopyCounts,
+  fixCopyCounts,
+  type SkipKinds,
 } from "./claims-lib.js";
 import { fixtureLivingExportBytes } from "./lesson-size.js";
 import { createHash } from "node:crypto";
@@ -376,6 +380,25 @@ async function run(): Promise<void> {
   }
 
   // TASK-39g: CLAIMS.md quotes are on the lines they cite; statuses are TRUE or PARTIAL.
+  // TASK-44e: the pass / skip pair for each kind of copy (fresh, shallow, ZIP) in
+  // the README, JUDGES.md and EVIDENCE.md, from the measured total and the
+  // skips counted in the test sources.
+  const skips = conditionalSkipsNow();
+  const COPY_FILES: Array<[string, string]> = [[README, "README"], [JUDGES, "JUDGES"], [EVIDENCE, "EVIDENCE"]];
+  for (const [p, where] of COPY_FILES) {
+    if (!existsSync(p)) continue;
+    if (fix) {
+      const before = readFileSync(p, "utf8");
+      const after = fixCopyCounts(before, actual.tests, skips);
+      if (after !== before) {
+        writeFileSync(p, after, "utf8");
+        console.log(`check-claims --fix: ${path.relative(ROOT, p)} pass / skip counts rewritten.`);
+      }
+    }
+    checks.push(...compareCopyCounts(readFileSync(p, "utf8"), where, actual.tests, skips));
+  }
+
+  // TASK-39g: CLAIMS.md quotes are on the lines they cite; statuses are TRUE or PARTIAL.
   if (existsSync(CLAIMS)) {
     const files = { "README.md": readFileSync(README, "utf8"), "docs/DEVPOST_WRITEUP.md": readFileSync(WRITEUP, "utf8") };
     if (fix) {
@@ -406,6 +429,20 @@ async function run(): Promise<void> {
     process.exit(1);
   }
   console.log("check-claims: OK — every number in the README, the write-up and the judge files matches the code, and every CLAIMS.md quote is on its line.");
+}
+
+/** TASK-44e: the conditional skips in tests/ (every *.test.ts, recursively), by kind. */
+function conditionalSkipsNow(): SkipKinds {
+  const sources: Array<{ file: string; text: string }> = [];
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".test.ts")) sources.push({ file: path.relative(ROOT, p), text: readFileSync(p, "utf8") });
+    }
+  };
+  walk(path.join(ROOT, "tests"));
+  return countConditionalSkips(sources);
 }
 
 /** TASK-39f: the lesson files in bench/files/. */

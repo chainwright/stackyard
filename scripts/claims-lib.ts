@@ -905,7 +905,8 @@ interface JudgePattern {
 const num = (s: string): number => Number(s.replace(/,/g, ""));
 
 const JUDGE_PATTERNS: JudgePattern[] = [
-  { key: "tests", label: "N tests pass", re: /\b(\d[\d,]*)( tests pass)\b/g, format: withCommas },
+  // TASK-44e: also "N tests;" (JUDGES.md) and "N tests in the suite" (EVIDENCE.md).
+  { key: "tests", label: "N tests pass", re: /\b(\d[\d,]*)( tests(?: pass\b| in the suite|;))/g, format: withCommas },
   { key: "traced", label: "N of M lettered task ids", re: /\b(\d+)( of )(\d+)( lettered task ids)/g, pair: true, format: int },
   { key: "invariants", label: "N stack invariants", re: /\b(\d+)( stack invariants)\b/g, format: int },
   { key: "properties", label: "N fast-check properties", re: /\b(\d+)( fast-check properties)/g, format: int },
@@ -1130,4 +1131,144 @@ export function fixClaimsTable(claims: string, files: Record<string, string>): s
     }
   }
   return lines.join("\n");
+}
+// ---------------------------------------------------------------------------
+// TASK-44e: the test counts by kind of copy. A fresh git clone has no draft
+// posts beside it, a shallow clone also lacks the full history, and a ZIP
+// download (or `git archive` copy) also has no `.git`. Each kind skips the
+// tests before it plus its own, so the docs state T−k pass and k skip for
+// each. k is counted from the test sources, statically:
+//   - every conditional skip in the suite must be a guard line
+//     `if (<condition>) return ctx.skip();` inside an `it(…)` / `test(…)`;
+//   - a test is "git" when one of its guards calls gitCheckoutAt(…), else
+//     "history" when one tests the shallow-repository answer, else "draft"
+//     when one tests a draft post (blog, social, writeup or draft) === null;
+//   - a suite marked `describe.skipIf(CHROME === undefined)` skips on a
+//     machine with no Chrome, whatever the copy; it is counted apart and the
+//     pairs assume Chrome is present (EVIDENCE.md says Chrome gates skip
+//     without one);
+//   - any other skip (it.skip, skipIf, runIf, todo, a bare ctx.skip, a guard
+//     outside a test, a test whose guards are none of the three) is reported
+//     as unknown, and the check fails until it is classified.
+
+export interface SkipKinds {
+  draft: number;
+  history: number;
+  git: number;
+  /** Suites that skip when the machine has no Chrome (`describe.skipIf(CHROME === undefined)`); not a kind of copy, so not in the pass / skip pairs. */
+  chrome: number;
+  /** "file:line" of each skip the scanner could not classify. */
+  unknown: string[];
+}
+
+const SKIP_GUARD = /^if \((.*)\) return ctx\.skip\(\);$/;
+const OTHER_SKIP = /^(?:(?:it|test|describe)\.(?:skip|skipIf|runIf|todo)\s*\(|(?:return\s+)?ctx\.skip\()/;
+const TEST_START = /^(?:it|test)\(/;
+const SUITE_START = /^describe\(/;
+const CHROME_SUITE = /^describe\.skipIf\(CHROME === undefined\)\(/;
+
+/** Count each test's conditional skip by kind (see above). */
+export function countConditionalSkips(sources: Array<{ file: string; text: string }>): SkipKinds {
+  const out: SkipKinds = { draft: 0, history: 0, git: 0, chrome: 0, unknown: [] };
+  for (const { file, text } of sources) {
+    let block: { line: number; guards: string[] } | null = null;
+    const close = (): void => {
+      if (block === null || block.guards.length === 0) return;
+      const g = block.guards;
+      if (g.some((c) => /\bgitCheckoutAt\(/.test(c))) out.git++;
+      else if (g.some((c) => /\bshallow\b/.test(c))) out.history++;
+      else if (g.some((c) => /\b(?:blog|social|writeup|draft) === null\b/.test(c))) out.draft++;
+      else out.unknown.push(`${file}:${block.line}`);
+    };
+    text.split("\n").forEach((raw, i) => {
+      const line = raw.trim();
+      if (TEST_START.test(line)) {
+        close();
+        block = { line: i + 1, guards: [] };
+        return;
+      }
+      if (SUITE_START.test(line)) {
+        close();
+        block = null;
+        return;
+      }
+      // A suite that needs a local Chrome: the machine, not the kind of copy, decides it.
+      if (CHROME_SUITE.test(line)) {
+        close();
+        block = null;
+        out.chrome++;
+        return;
+      }
+      const guard = SKIP_GUARD.exec(line);
+      if (guard) {
+        if (block === null) out.unknown.push(`${file}:${i + 1}`);
+        else block.guards.push(guard[1]!);
+        return;
+      }
+      if (OTHER_SKIP.test(line)) out.unknown.push(`${file}:${i + 1}`);
+    });
+    close();
+  }
+  return out;
+}
+
+export type CopyKind = "fresh" | "shallow" | "zip";
+
+/** How many tests each kind of copy skips: the kinds are cumulative. */
+export function skipsByCopy(k: Pick<SkipKinds, "draft" | "history" | "git">): Record<CopyKind, number> {
+  return { fresh: k.draft, shallow: k.draft + k.history, zip: k.draft + k.history + k.git };
+}
+
+/** Groups: 1 prefix, 2 pass count, 3 middle, 4 skip count, 5 " skip". */
+const COPY_RES: Record<CopyKind, RegExp> = {
+  fresh: /(fresh git clone:? )(\d[\d,]*)( pass,? (?:and )?)(\d+)( skip)/g,
+  shallow: /(shallow clone(?: \(`git clone --depth 1`, the kind CI makes\)| like CI's)?:? )(\d[\d,]*)( pass,? (?:and )?)(\d+)( skip)/g,
+  zip: /(ZIP download(?:, with no `\.git`,| with no `\.git`)?:? )(\d[\d,]*)( pass,? (?:and )?)(\d+)( skip)/g,
+};
+const COPY_KINDS: readonly CopyKind[] = ["fresh", "shallow", "zip"];
+/** TASK-44e: our own machine is not a copy a reader can make, so no doc may claim it. */
+const WORKING_COPY_RE = /all pass in our working copy|tests pass in our working copy/;
+
+/** Every pass / skip pair a text states, by kind of copy. */
+export function readCopyCounts(text: string): Array<{ kind: CopyKind; pass: number; skip: number }> {
+  const out: Array<{ kind: CopyKind; pass: number; skip: number }> = [];
+  for (const kind of COPY_KINDS) for (const m of text.matchAll(COPY_RES[kind])) out.push({ kind, pass: num(m[2]!), skip: Number(m[4]) });
+  return out;
+}
+
+/**
+ * The checks for one file: each kind of copy is stated at least once, and every
+ * pair is T−k pass / k skip for its kind; the skip scan found no unknown skip;
+ * no "working copy" claim.
+ */
+export function compareCopyCounts(text: string, where: string, total: number, kinds: SkipKinds): Check[] {
+  const want = skipsByCopy(kinds);
+  const stated = readCopyCounts(text);
+  const checks: Check[] = [];
+  for (const kind of COPY_KINDS) {
+    const name = `${where} ${kind === "zip" ? "ZIP download" : `${kind} clone`} pass / skip`;
+    const actual = `${withCommas(total - want[kind])} pass, ${want[kind]} skip`;
+    const mine = stated.filter((s) => s.kind === kind);
+    if (mine.length === 0) checks.push({ name, claimed: "(missing)", actual, ok: false, note: `${where} must state it` });
+    for (const s of mine) {
+      checks.push({ name, claimed: `${withCommas(s.pass)} pass, ${s.skip} skip`, actual, ok: total > 0 && s.skip === want[kind] && s.pass === total - want[kind], note: "skips counted from the tests' ctx.skip() guards" });
+    }
+  }
+  if (kinds.unknown.length > 0) {
+    checks.push({ name: `${where} conditional skips classified`, claimed: kinds.unknown.join(", "), actual: "(none unknown)", ok: false, note: "a skip that is not a draft, history or git-checkout guard" });
+  }
+  const wc = WORKING_COPY_RE.exec(text);
+  if (wc) checks.push({ name: `${where} no working-copy claim`, claimed: wc[0], actual: "(not stated)", ok: false, note: "our machine is not a copy a reader can make" });
+  return checks;
+}
+
+/** Rewrite every pass / skip pair from the measured total and the counted skips. Never invents: needs total > 0 and no unknown skip. */
+export function fixCopyCounts(text: string, total: number, kinds: SkipKinds): string {
+  if (total <= 0 || kinds.unknown.length > 0) return text;
+  const want = skipsByCopy(kinds);
+  let out = text;
+  for (const kind of COPY_KINDS) {
+    out = out.replace(COPY_RES[kind], (_m, a: string, _p: string, b: string, _s: string, c: string) => `${a}${withCommas(total - want[kind])}${b}${want[kind]}${c}`);
+  }
+  return out;
 }

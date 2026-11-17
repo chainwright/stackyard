@@ -1162,3 +1162,36 @@ Judge round r9 (16–17 Nov 2026). The coordinator read its summary, outside thi
     - Honest note on d2: I did not make the test read `git log`. That check would have to skip in shallow clones and ZIP copies, which adds one conditional skip to each and changes the per-copy counts that TASK-44e will state. The days were checked by hand when this was built (above).
   - **Counts.** Tests 1,620 → 1,622 (`--fix`). Traced ids stay at 293. The clean-clone count was changed by hand to 1,617 pass, 5 skip. Line refs: only C43 and C73 changed in CLAIMS.md, and no line moved (`check:claims` OK).
   - **Shell edits.** One `sed -i` ticked TASK-44d1–d3 in `tasks.md`. `npm run check:claims:fix` ran, and `WRITEUP_DRAFT.md` was rebuilt as before.
+- **e. The test counts say what each kind of copy sees (TASK-44e).**
+  - **What changed.**
+    - The README Tests line, the JUDGES.md `npm test` comment and EVIDENCE.md's first row now give T and three pairs:
+      - a fresh git clone, T−4 pass and 4 skip (the draft-post tests);
+      - a shallow clone, T−5 / 5 (plus the full-history test);
+      - a ZIP download with no `.git`, T−6 / 6 (plus the `git grep` test).
+
+      The write-up states only T. "All pass in our working copy" is gone from all three files: it describes our machine only, and nothing a reader can run backs it.
+    - The coordinator measured these facts outside Kiro: a fresh clone, a shallow clone, and the `git archive` copy at 36e970a (1,610 / 6 of 1,616). The coordinator re-measures all three at the next commit.
+  - **How the skips are counted.** The counts come from the test sources, with no constants: `countConditionalSkips` in `scripts/claims-lib.ts` scans every `tests/**/*.test.ts`.
+    - Each conditional skip must be a guard line `if (<condition>) return ctx.skip();` inside a test.
+    - A test is "git" if a guard calls `gitCheckoutAt(…)`, else "history" if one tests the shallow-repository answer, else "draft" if one tests a draft post `=== null`.
+    - Anything else is reported as unknown, and `check:claims` fails: `it.skip`, `skipIf`, `todo`, a bare `ctx.skip()`, a guard outside a test, or an unclassified guard.
+    - The kinds are cumulative: fresh = draft, shallow = draft + history, ZIP = all three. Today that is 4 / 5 / 6.
+    - The scan found one more kind I had not known about: `tests/bench.test.ts` has a `describe.skipIf(CHROME === undefined)` suite, which skips on a machine without Chrome, whatever the copy. It is counted apart, as "chrome", and is not in the pairs, so the stated pairs assume a machine with Chrome. EVIDENCE.md's intro already says that Chrome checks skip without one.
+  - **The checker.** `check:claims` now checks every pair in the README, JUDGES.md and EVIDENCE.md against T−k / k for its kind. It fails a missing kind, an unknown skip and any "working copy" claim. `--fix` rewrites the pairs from the measured total and the counted skips, so the by-hand clean-clone edits of TASK-44a–d are no longer needed. The judge-doc "N tests" pattern now also reads "N tests;" and "N tests in the suite".
+  - **Tests.**
+    - New: `tests/copy-counts.test.ts`, with nine tests of the scanner, the parser and the fixer. It has a negative case for each kind of copy, plus the total moving, a missing kind, a working-copy claim, unknown skips and the Chrome suite. The sample sources are quoted strings, so the real scan never reads them as guards.
+    - The 44e pending placeholder in `tests/round19-docs.test.ts` is replaced by three real tests: the real suite gives 4 / 1 / 1 (and 1 Chrome suite) with nothing unknown; the three docs pass the check; and every Phase 29 sub-id is ticked, with no pending placeholder left in the file.
+  - **Checked here.** I made a copy of this working tree with no `.git`, outside the repo (rsync, `node_modules` linked), and ran the whole suite there: 1,627 passed, 6 skipped of 1,633. That is the ZIP pair. The temp copy was deleted.
+  - **Counts.** T = 1,633: a fresh clone 1,629 / 4, a shallow clone 1,628 / 5, a ZIP 1,627 / 6. Traced ids stay at 293. No CLAIMS.md line ref moved.
+  - **Shell edits.**
+    - A one-line `cat >>` placeholder in `scripts/claims-lib.ts`, replaced at once with the file tools.
+    - One `sed -i` ticked TASK-44e1–e3.
+    - `npm run check:claims:fix` wrote the new pairs and counts.
+    - `WRITEUP_DRAFT.md` was rebuilt as before.
+- **Left for the post-upload task (v8b → v9b), not changed in TASK-44.** The video linked everywhere is still v8b. These lines change only after the upload, in a separate task the coordinator holds as a patch:
+  - write-up lines 9 and 11;
+  - README "Demo video (2:55)";
+  - JUDGES "Video (2:55)";
+  - EVIDENCE "13.7 s" and "at 2:22";
+  - C2's "video 0:24–0:38";
+  - the Credits' "the OFFLINE stamp".

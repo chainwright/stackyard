@@ -2621,7 +2621,24 @@ Source: judge round r9 (16–17 Nov 2026), read by the coordinator outside this 
 ### TASK-44e: the test counts say what each kind of copy sees  *(TASK-44 e)*
   - **Bug.** The README Tests line, the JUDGES.md `npm test` comment and EVIDENCE.md's first row give one clean-copy count. But a fresh clone, a shallow clone and a ZIP download skip different tests. "All pass in our working copy" is not backed by anything a reader can run.
   - **Fix.**
-    - [ ] TASK-44e1: the three lines say "N tests in the suite; a fresh git clone: N−4 pass, 4 skip (they read draft posts kept beside the repo); a shallow clone (`git clone --depth 1`, the kind CI makes): N−5 pass, 5 skip (one more needs the full git history); a ZIP download (no `.git`): N−6 pass, 6 skip (one more runs `git grep`)". "All pass in our working copy" goes. The coordinator measures the exact numbers at the final commit.
-    - [ ] TASK-44e2: `check:claims` checks every one of these numbers against the measured total and the number of conditional skips of each kind, and fails on drift. `--fix` moves them.
-    - [ ] TASK-44e3: tests for the checker (drift fails, `--fix` moves each number) and for the three lines.
+    - [x] TASK-44e1: the three lines say "N tests in the suite; a fresh git clone: N−4 pass, 4 skip (they read draft posts kept beside the repo); a shallow clone (`git clone --depth 1`, the kind CI makes): N−5 pass, 5 skip (one more needs the full git history); a ZIP download (no `.git`): N−6 pass, 6 skip (one more runs `git grep`)". "All pass in our working copy" goes. The coordinator measures the exact numbers at the final commit.
+    - [x] TASK-44e2: `check:claims` checks every one of these numbers against the measured total and the number of conditional skips of each kind, and fails on drift. `--fix` moves them.
+    - [x] TASK-44e3: tests for the checker (drift fails, `--fix` moves each number) and for the three lines.
   - **Acceptance criteria.** A test per sub-id; `check:claims` passes; the coordinator's three copies give the stated counts.
+  - **As built (17 Nov).**
+    - The wording follows the brief, file by file. The README line: "Tests: **T** in the suite (`npm test`). In a fresh git clone T−4 pass and 4 skip: they check our draft posts, which sit beside the repo, not in it. In a shallow clone (`git clone --depth 1`, the kind CI makes) T−5 pass and 5 skip: one more needs the full git history. In a ZIP download, with no `.git`, T−6 pass and 6 skip: one more runs `git grep`." JUDGES.md and EVIDENCE.md use the brief's shorter forms.
+    - How the skips are counted (`countConditionalSkips` in `scripts/claims-lib.ts`): a static scan of every `tests/**/*.test.ts`. Each conditional skip must be a guard line `if (<condition>) return ctx.skip();` inside an `it(…)` or `test(…)`. A test counts as:
+      - "git" when one of its guards calls `gitCheckoutAt(…)`;
+      - otherwise "history" when one tests the shallow-repository answer;
+      - otherwise "draft" when one tests a draft post (`blog`, `social`, `writeup` or `draft`) `=== null`.
+      - Anything else is reported as unknown, and `check:claims` fails: `it.skip`, `skipIf`, `runIf`, `todo`, a bare `ctx.skip()`, a guard outside a test, or a test whose guards are none of the three.
+      - One exception was found by the scan itself: `tests/bench.test.ts` has a suite marked `describe.skipIf(CHROME === undefined)`, which skips on a machine with no Chrome, whatever the copy. That form is counted apart, as "chrome", and is not in the pairs. The stated counts assume a machine with Chrome, as EVIDENCE.md's note on Chrome gates already says. Any other `skipIf` is unknown.
+    - The kinds are cumulative: a fresh clone skips the draft tests, a shallow clone those plus the history test, and a ZIP copy those plus the git-checkout test. Today that is 4 / 5 / 6. The history test also skips with no `.git`, because its `git` call returns null.
+    - `check:claims` checks every pair in the README, JUDGES.md and EVIDENCE.md against T−k / k. It fails a missing kind and any "working copy" claim. `--fix` rewrites the pairs, so the clean-clone hand edits of TASK-44a–d are no longer needed.
+
+**Status (17 Nov).** TASK-44a–e are done. The coordinator re-measures the three copies (fresh clone, shallow clone, `git archive`) at the next commit. Left for the post-upload task, and not changed here, are the v8b-specific lines:
+- write-up lines 9 and 11;
+- README "Demo video (2:55)" and JUDGES "Video (2:55)";
+- EVIDENCE "13.7 s" and "at 2:22";
+- C2's "video 0:24–0:38";
+- the Credits' "the OFFLINE stamp".
