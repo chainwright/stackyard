@@ -32,7 +32,7 @@ Node 24 or later:
 ```sh
 git clone https://github.com/chainwright/stackyard && cd stackyard
 npm ci
-npm test               # 1,578 tests pass
+npm test               # 1,578 tests pass in our working copy; a clean clone: 1,574 pass, 4 skip (3 read draft posts kept outside the repo, 1 needs full git history)
 npm run check:trace    # 241 of 241 lettered task ids traced
 npm run check:claims   # every number in the README, the write-up and EVIDENCE.md, against the code
 ```
