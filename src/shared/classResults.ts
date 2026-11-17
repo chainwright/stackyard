@@ -263,13 +263,14 @@ export function resultsText(t: Tally, title: string): string {
   const lines = [`Class results — ${title}`];
   if (P === 0) return [...lines, "No codes yet."].join("\n");
   lines.push(`${P} pupil${P === 1 ? "" : "s"} · middle score (median) ${formatScore(t.median!)} of ${t.n}`, "");
-  for (const r of t.questions) lines.push(`Q${r.q} ${r.question}: ${r.right} right, ${r.wrong} wrong, ${r.none} did not reach it`);
-  lines.push("");
+  // TASK-43a4: the text follows the screen: what to revisit first, then each question.
   lines.push(
     t.revisit.length === 0
       ? "Revisit: none"
       : `Revisit: ${t.revisit.map((q) => `Q${q} (missed by ${t.questions[q - 1]!.wrong} of ${P})`).join(", ")}`,
   );
+  lines.push("");
+  for (const r of t.questions) lines.push(`Q${r.q} ${r.question}: ${r.right} right, ${r.wrong} wrong, ${r.none} did not reach it`);
   lines.push("", "Pupils:");
   for (const p of t.pupils) {
     lines.push(`${p.name}: ${p.score} of ${t.n} — ${p.results.map((r, i) => `Q${i + 1} ${MARK[r]}`).join(", ")}`);

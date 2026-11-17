@@ -20,7 +20,7 @@ import { fitQuestion, fitBody, fitTileLabel, fitText, MIN_FONT, STORY_BODY_MAX }
 import { gotoOf } from "../shared/flow.js";
 import { isStockEndLine } from "../shared/endLine.js";
 import { isPictogramCredit } from "../shared/pictogramCredit.js";
-import { encodeCode, foldInitials, formatCode, lessonFingerprint, quizAnswerButtons, resultsOf, spellCode } from "../shared/resultsCode.js";
+import { encodeCode, foldInitials, formatCode, lessonFingerprint, quizAnswerButtons, resultsOf, spellCode, type Result } from "../shared/resultsCode.js";
 
 // ---------------------------------------------------------------------------
 // Derived card chrome
@@ -629,8 +629,9 @@ const PLAYER_STYLES = `
   box-sizing: border-box;
 }
 .sy-end-slot-empty {
-  border: 2px dashed var(--color-ink);
-  opacity: 0.3;
+  /* TASK-43b2: the faint dashed outline, drawn in a faint ink rather than by
+     fading the slot, so its screen-reader text is not faded with it. */
+  border: 2px dashed rgba(30, 42, 71, 0.3);
 }
 .sy-end-slot-earned {
   color: var(--color-stamp);
@@ -640,6 +641,17 @@ const PLAYER_STYLES = `
   font-size: 34px;
   line-height: 1;
   opacity: 0.92;
+}
+/* TASK-43b2: a wrong answer: ✗ inside a solid ink box. Ink, not a colour code:
+   it differs from right (✓, stamp red, rotated) and from not reached (empty,
+   dashed) by its glyph and its outline. */
+.sy-end-slot-wrong {
+  color: var(--color-ink);
+  border: 3px solid var(--color-ink);
+  font-family: 'Bricolage Grotesque', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
 }
 /* "Play Again" paper tab under the stamp grid. A normal navy button — never
    stamp red (earned-stamp colour only). */
@@ -666,9 +678,9 @@ const PLAYER_STYLES = `
 .sy-end-has-code .sy-end-score { font-size: 44px; }
 .sy-end-has-code .sy-end-heading { font-size: 36px; }
 .sy-end-has-code .sy-end-slot { width: 48px; height: 48px; }
-.sy-end-has-code .sy-end-slot-earned { font-size: 26px; }
+.sy-end-has-code .sy-end-slot-earned, .sy-end-has-code .sy-end-slot-wrong { font-size: 26px; }
 .sy-end-many .sy-end-slot { width: 32px; height: 32px; border-width: 2px; }
-.sy-end-many .sy-end-slot-earned { font-size: 20px; }
+.sy-end-many .sy-end-slot-earned, .sy-end-many .sy-end-slot-wrong { font-size: 20px; }
 .sy-end-many .sy-end-stamps { gap: 6px; }
 .sy-end-code-block {
   display: flex;
@@ -859,6 +871,9 @@ const PLAYER_STYLES = `
   .sy-portrait .sy-end-heading { font-size: 28px !important; }
   .sy-portrait .sy-end-score { font-size: 36px !important; }
   .sy-portrait .sy-end-code { font-size: 26px; }
+  /* TASK-43b3: six 48 px marks in one row at 390 px. The end card's content box is
+     325 px there (measured in check-living-mobile), so 6 × 48 + 5 × 6 = 318 px fits. */
+  .sy-portrait .sy-end-stamps { gap: 6px; }
   .sy-portrait .sy-end-initials, .sy-portrait .sy-end-code-row { flex-wrap: wrap; justify-content: center; }
 }
 `;
@@ -967,30 +982,41 @@ function renderEndCard(
     container.appendChild(scoreLine);
   }
 
-  // Stamp collection — one 64px slot per question. Earned slots (score) carry a
-  // red ✓ stamp at a slight rotation; the rest are empty dashed ink outlines.
+  // TASK-43b1/b2: the marks, one slot per quiz question in deck order (Q1…Qn,
+  // as Class Results numbers them), read from the same first-answer record the
+  // results code encodes. Right = the red ✓ stamp; wrong = ✗ in a solid ink
+  // box; not reached = the empty dashed outline. Each slot has its own text.
   if (total > 0) {
     const stampsRow = document.createElement("div");
     stampsRow.className = "sy-end-stamps";
-    stampsRow.setAttribute("role", "img"); // an aria-label needs a role (TASK-33d1)
-    stampsRow.setAttribute(
-      "aria-label",
-      `${score} of ${total} stamp${total !== 1 ? "s" : ""} earned`,
-    );
+    stampsRow.setAttribute("role", "list");
+    stampsRow.setAttribute("aria-label", "Your answers, question by question");
+    stampsRow.setAttribute("data-testid", "end-marks");
     const rotations = [-8, -5, -10, -6, -9, -4, -7];
-    for (let i = 0; i < total; i++) {
+    const STATE: Record<Result, string> = { right: "right", wrong: "wrong", none: "not reached" };
+    resultsOf(state.stack, state.answers).forEach((r, i) => {
       const slot = document.createElement("span");
-      if (i < score) {
+      slot.setAttribute("role", "listitem");
+      slot.setAttribute("data-result", r);
+      if (r === "right") {
         slot.className = "sy-end-slot sy-end-slot-earned";
-        slot.textContent = "✓";
         const rot = rotations[i % rotations.length] ?? -8;
         slot.style.transform = `rotate(${rot}deg)`;
+      } else if (r === "wrong") {
+        slot.className = "sy-end-slot sy-end-slot-wrong";
       } else {
         slot.className = "sy-end-slot sy-end-slot-empty";
       }
-      slot.setAttribute("aria-hidden", "true");
+      const glyph = document.createElement("span");
+      glyph.setAttribute("aria-hidden", "true");
+      glyph.textContent = r === "right" ? "✓" : r === "wrong" ? "✗" : "";
+      slot.appendChild(glyph);
+      const words = document.createElement("span");
+      words.className = "sy-sr-only";
+      words.textContent = `Question ${i + 1}: ${STATE[r]}`;
+      slot.appendChild(words);
       stampsRow.appendChild(slot);
-    }
+    });
     container.appendChild(stampsRow);
   }
 

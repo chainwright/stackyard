@@ -163,7 +163,7 @@ describe("TASK-34b4: the class tally", () => {
     expect(median([2, 3, 4, 5])).toBe(3.5);
   });
 
-  it("TASK-34b4: 'Q4 missed by 9 of 24' and the plain-text table", () => {
+  it("TASK-34b4: TASK-43a4: 'Q4 missed by 9 of 24' and the plain-text table (revisit first, as on screen)", () => {
     expect(missedLine({ q: 4, question: "x", right: 15, wrong: 9, none: 0 }, 24)).toBe("Q4 missed by 9 of 24");
     expect(missedLine({ q: 2, question: "x", right: 1, wrong: 1, none: 2 }, 4)).toBe("Q2 missed by 1 of 4 (2 did not reach it)");
     const pupils: Pupil[] = [
@@ -178,6 +178,9 @@ describe("TASK-34b4: the class tally", () => {
     expect(text).toContain(": 1 right, 1 wrong, 0 did not reach it");
     expect(text).toContain(": 1 right, 0 wrong, 1 did not reach it");
     expect(text).toContain("Revisit: Q1 (missed by 1 of 2), Q5 (missed by 1 of 2)");
+    const tl = text.split("\n");
+    expect(tl.findIndex((l) => l.startsWith("Revisit: "))).toBeLessThan(tl.findIndex((l) => l.startsWith("Q1 ")));
+    expect(tl.findIndex((l) => l.startsWith("Revisit: "))).toBeGreaterThan(tl.findIndex((l) => l.includes("middle score")));
     expect(text).toContain("AB: 6 of 6 —");
     expect(text).toContain("Pupil 2: 3 of 6 — Q1 ✗, Q2 ✓, Q3 –");
     expect(text).not.toContain(codeOf(pupils[0]!));

@@ -2475,3 +2475,52 @@ Source: judge round r7 (P2-8). Every seat named the browser's `window.confirm("A
 - Both files carry the DfE Wi-Fi line as line 7, and CLAIMS.md C71 and EVIDENCE.md "Sources we cite" record the source and its limits.
 - All 69 README / write-up line refs were moved and checked.
 - `tests/round16-docs.test.ts` covers it, and the gates pass.
+
+## Phase 28 - TASK-43: judge round r8 product and text fixes (16 Nov)
+
+Source: judge round r8 (16 Nov 2026, P1-9). Class Results looked like "an unstyled default table with bullets": at 390 px the question column wrapped into a narrow strip, and "Questions to revisit", the thing a teacher needs first, sat under the table. On the end card, the row of marks was a tally (ticks first, then empty dashed boxes), not in question order. A pupil could not see which questions went wrong, and a wrong answer looked the same as a question never reached. TASK-43c, d and e follow in a later round.
+
+### TASK-43a: the Class Results panel puts what to revisit first, stacks on a phone and looks like the lesson  *(TASK-43 a)*
+  - **Bug.** The panel showed the summary, then the per-question table, then "Questions to revisit". The four-column question table squeezed its question column at 390 px, and the panel looked like a browser default table.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-43a1: **revisit first.**
+      - "Questions to revisit" (an `h3`, under the panel's `h2`, so no level is skipped) comes right under the summary line and above the "Each question" table.
+      - The heading text, every `data-testid` and the empty-state sentence are kept.
+      - The "missed by" list stays under the question table.
+    - [x] TASK-43a2: **the question table stacks under 480 px.**
+      - It stays a real `<table>` (caption, column headers, row headers). Under 480 px each row becomes a block: the question on its own full-width line, then Right, Wrong and Did not reach, each number with its visible label.
+      - The label comes from a `data-label` attribute drawn by CSS (`content: attr(data-label)`) and also from each cell's column header, which the table keeps for assistive tech. It is never colour or position only.
+      - No sideways page scroll at 390 px. The "Each pupil" table keeps its keyboard-scrollable region.
+    - [x] TASK-43a3: **stamp-pad style** (kept only if every gate passes unchanged).
+      - The panel is a ruled index card: paper, faint rule lines every 32 px, `--color-rule` borders, the ink colour and the existing fonts.
+      - Each question on the revisit list carries a boxed, rotated "Revisit" label, a stamp-like mark in ink, never stamp red. It is text, so it is read out, and it does not rely on colour.
+      - There is no new font, dependency or network use. If `check:a11y`, `check:text-fit`, `check:living-file`, `check:living-mobile` or `check:class-results` cannot pass unchanged, this sub-task is dropped and that is recorded here.
+    - [x] TASK-43a4: **copy and print.** "Copy as Text" follows the screen: the revisit line comes right after the summary, then the per-question lines. Print shows the panel as it is.
+    - [x] TASK-43a5: **tests.**
+      - jsdom: the revisit list comes before the question table in DOM order, the stacked rule exists for `max-width: 480px`, and every stacked cell carries its label.
+      - Real Chrome (`scripts/check-living-mobile.ts`, CDP device metrics 390 × 844): with codes entered, `scrollWidth <= innerWidth`, the revisit heading sits above the table, the question rows are blocks and each stacked number shows its label. (16 Nov: first written into `scripts/check-class-results.ts`, but that gate sizes Chrome by window, and headless Chrome would not go below an `innerWidth` of 500, so the check moved.)
+  - **Acceptance criteria.** Each sub-id is named in a test title or a gate. `check:living-mobile` passes the 390 px checks, and the gates pass.
+
+### TASK-43b: the end card's marks follow the questions, with three different states  *(TASK-43 b)*
+  - **Bug.** The end card drew `score` ✓ stamps and then empty boxes: a tally in no question order. Wrong and not reached looked the same.
+  - **Fix.** These sub-tasks:
+    - [x] TASK-43b1: **question order.** Slot k is quiz question k, the Q1…Qn numbering Class Results uses. It is read from `resultsOf(stack, answers)`, the same record the results code encodes, so only the pupil's first answer to a question counts. There is no second record.
+    - [x] TASK-43b2: **three states, not by colour only.**
+      - Right is the existing rotated ✓ stamp.
+      - Wrong is ✗ inside a solid ink outline (class `sy-end-slot-wrong`).
+      - Not reached is the existing empty dashed outline (class `sy-end-slot-empty`).
+      - The row is a list (`role="list"`) whose slots each have a text alternative: "Question 2: right", "Question 2: wrong" or "Question 2: not reached".
+      - The "Score N of M" line is unchanged. Contrast passes `scripts/check-contrast.ts`, and there is no red / green-only coding: wrong is ink, not a colour.
+    - [x] TASK-43b3: **it still fits.** This covers `.sy-end-many` (above 20 questions), the has-code variant, portrait and 390 px, and the text-fit gate. Under the phone layout the slot size is set so six slots fit one row at 390 px without shrinking a mark under the 44 px target size.
+    - [x] TASK-43b4: **Play Again starts clean,** because the marks are read from the answers, which Play Again resets. A story branch that skips a question shows "not reached" for it.
+    - [x] TASK-43b5: **tests.**
+      - An alternating play R W R W R W gives ✓ ✗ ✓ ✗ ✓ ✗ in that order.
+      - A skipped question shows not reached, unlike wrong in glyph, class and text.
+      - Play Again clears the marks.
+      - A fast-check property: the row of marks equals `resultsOf` for any set of first answers.
+  - **Acceptance criteria.** Each sub-id is named in a test title. The text-fit and contrast gates pass, `scripts/mutation-check.ts` is unchanged, and the gates pass.
+
+**Status (16 Nov).** TASK-43a (a1–a5) and TASK-43b (b1–b5) are done.
+- TASK-43a3 was kept: `check:a11y` (with `check-contrast`), `check:text-fit`, `check:living-file`, `check:living-mobile` and `check:class-results` all pass with the index-card styling, and none of them was changed to let it through.
+- TASK-43b3: six marks fit one row at 390 × 844 in real Chrome. At first they did not: with an 8 px gap the row needs 328 px, and the end card's content box there is 325 px, so the sixth mark wrapped. The phone gap is now 6 px (318 px). Each mark stays 48 px, above the 44 px target.
+- Not done: the demo video still shows the old end card and the old panel order. The write-up says so.

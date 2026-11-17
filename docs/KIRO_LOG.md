@@ -986,3 +986,37 @@ Judge round r7 (P2-8): every seat named the browser's grey `confirm()` box behin
     - The write-up draft follows the body; the check skips when the draft is not beside the repo.
   - **Drafts.** `WRITEUP_DRAFT.md`'s body was rebuilt from the write-up, keeping its heading line, and `diff` showed it identical. The blog and social drafts are unchanged by this task.
   - **Shell edits.** None to repo hand-written files. `npm run check:claims:fix` moved the counts and the CLAIMS.md line refs. `WRITEUP_DRAFT.md` was rebuilt in the shell (`head -1` of itself plus `tail -n +2` of the write-up). A temporary `ref-tmp.ts` checked the refs and was deleted.
+
+## 16 Nov 2026: judge round r8 product and text fixes (TASK-43)
+
+Judge round r8 (P1-9): Class Results looked like a default table, and at 390 px its question column wrapped into a narrow strip with "Questions to revisit" below it. The end card's marks were a tally (ticks, then empty boxes) in no question order, and a wrong answer looked the same as a question never reached. Spec: maker `tasks.md` Phase 28 (TASK-43a1–a5, TASK-43b1–b5). TASK-43c–e follow in a later round.
+- **a. Class Results: revisit first, stacks on a phone, index-card style.**
+  - **What changed.**
+    - `src/living/classResults.ts`: the "Questions to revisit" `h3` and its list now sit right under the summary line and above the "Each question" table (a1). The heading text, every `data-testid` and the empty-state sentence are unchanged. The "missed by" list stays under the table.
+    - Each question cell carries `data-label` ("Right", "Wrong", "Did not reach"). Under 480 px (`src/living/styles.ts`) the table stays a real table, but each row becomes a block with the question on its own line and each number shown with its label through `td::before { content: attr(data-label) ": " }` (a2). The header row is hidden from view only, so screen readers still get the column headers. The "Each pupil" table keeps its keyboard-scrollable region.
+    - a3 was **kept**: the panel is a ruled index card (paper, faint rules every 32 px in `--color-rule`, ink borders) and each revisit line carries a boxed, rotated "Revisit" label in ink. It is text, so it is read out, and it is never stamp red, because nothing in the panel is earned. No new font, dependency or network use.
+    - `src/shared/classResults.ts`: "Copy as Text" prints the revisit line right after the summary, in screen order (a4). Print shows the panel as it is.
+  - **Gate (a5).** `scripts/check-living-mobile.ts` now opens Class Results at 390 × 844 (CDP device metrics) with three codes pasted. It checks that the page does not scroll sideways, that the table stays inside the screen, that the revisit heading is above the table, that the rows are blocks and that each stacked number shows "Right". I first put this check in `scripts/check-class-results.ts`, but that gate sizes Chrome by window, and headless Chrome would not go below an `innerWidth` of 500. The check moved and the spec says so.
+  - **a3 and the gates.** `check:a11y` (including `check-contrast`), `check:text-fit`, `check:living-file`, `check:living-mobile` and `check:class-results` all pass with the styling. None of them was changed to let it through.
+- **b. End card: one mark per question, in question order, with three states.**
+  - **What changed** (`src/player/renderer.ts`).
+    - Slot k is quiz question k, read from `resultsOf(stack, answers)`, the same first-answer record the results code encodes (b1). There is no second record.
+    - Right is the red rotated ✓ stamp; wrong is ✗ in a solid ink box (`sy-end-slot-wrong`); not reached is the empty dashed box (`sy-end-slot-empty`, now drawn in faint ink instead of fading the whole slot, so its text is not faded). Right and wrong differ by glyph and outline, not by red and green (b2).
+    - The row is a list ("Your answers, question by question"). Each slot has its own text: "Question 2: right", "Question 2: wrong" or "Question 2: not reached". It replaces the old single image label "N of M stamps earned". "Score N of M" is unchanged.
+    - Play Again starts clean because the marks come from the answers it resets; a question a story branch skipped shows not reached (b4).
+  - **Six in one row at 390 px (b3): yes, after one fix.** With an 8 px gap the six 48 px marks need 328 px, and the end card's content box at 390 × 844 is 325 px, so the sixth wrapped. `check-living-mobile` caught it. The phone gap is now 6 px (318 px), and the gate plays the Vikings deck R W R W R W to the end card and checks the marks (right, wrong, … in order), one row and no sideways scroll. The mark stays 48 px, above the 44 px target.
+  - `scripts/check-class-results.ts`'s pupil driver now also checks that each pupil's end-card marks equal the results decoded from that pupil's code (b1).
+- **Tests.**
+  - New: `tests/round17-marks-panel.dom.test.ts` (a1, a2, a3, a5; b1, b2, b4, b5), with one fast-check property (the marks equal `resultsOf` for any first answers). The fast-check count is now 80: `--fix` moved it in the write-up and EVIDENCE.md, and CLAIMS.md C18 was changed by hand.
+  - Moved to the new behaviour, with TASK-43 ids in their titles: `class-results.test.ts` (revisit comes first), `timing-endcard.test.ts` (two b1 tests), `a11y-player.dom.test.ts` (the list), `round10-docs` (the player KB unit, now pinned by pattern, not by number), `round13-docs` (the What it does line and the file sizes).
+- **Docs.**
+  - README "Class results", JUDGES.md steps 6 and 8 and the write-up's What it does line now describe the panel order and the marks.
+  - The write-up's video paragraph says that the video shows the old end card and the old panel order. No doc claims the video shows the new screens.
+  - Sizes, measured: the living water-cycle file grew from 216,011 B to 218,941 B, so "about 216 KB" became "about 219 KB" (C26, EVIDENCE.md); the class file is 149,634 B, so "149 KB" became "150 KB" (C62, EVIDENCE.md). The floppy count stays 6. The player is 13.0 KB gzipped (was 12.8; C25 and EVIDENCE.md by hand, the README and write-up by `--fix`).
+  - The clean-clone count (total minus the 4 skips) is not moved by `--fix`, so it was changed by hand to 1,583 in the README, JUDGES.md and EVIDENCE.md.
+  - `npm run media` was not run: no README screenshot shows the end card or the Class Results panel. `docs/media/play-390.png` and `teacher-390.png`, written by `check-living-mobile`, show the first question and the Teacher tab, and came out unchanged.
+- **Not done.** The demo video still shows the old screens. No mutant was added, and `scripts/mutation-check.ts` is unchanged.
+- **Shell edits.**
+  - Two `sed -i` edits to `scripts/check-living-mobile.ts` changed its log line while I was measuring the row; the file was then finished with the file tools.
+  - `npm run samples` (the three `samples/*.html`), `npm run bench` (offline replay: `bench/files`, `bench/results.json`, `bench/RESULTS.md`; headline numbers unchanged) and `npm run check:claims:fix` (tests, traced ids, fast-check count, player KB and CLAIMS.md line refs) rewrote generated text.
+  - `WRITEUP_DRAFT.md`, beside the repo, was rebuilt in the shell as before (`head -1` of itself plus `tail -n +2` of the write-up), after a `.bak` copy. A temporary size script outside the repo measured the two files and was deleted.

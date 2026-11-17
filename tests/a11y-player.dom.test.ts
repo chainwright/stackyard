@@ -123,23 +123,33 @@ describe("TASK-33d2: screen-reader semantics in the player", () => {
     expect(surface.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("TASK-33d2: the end card reads its heading and the score; the stamp slots are hidden, the row is one image", () => {
+  it("TASK-33d2: TASK-43b2: the end card reads its heading and the score; the marks are a list, one item per question, each with its own text", () => {
     const s = stack();
     const end = firstOf(s, "end");
     const root = document.createElement("main");
     document.body.appendChild(root);
     const state = createRuntime(s);
     state.variables["score"] = 2;
+    const quizzes = s.cards.filter((c) => c.kind === "quiz");
+    if (quizzes[0]) state.answers[quizzes[0].id] = true;
+    if (quizzes[1]) state.answers[quizzes[1].id] = true;
     renderCard(end, root, state, () => {}, () => {});
-    const total = s.cards.filter((c) => c.kind === "quiz").length;
+    const total = quizzes.length;
     const card = root.querySelector(".sy-card")!;
     expect(card.getAttribute("aria-label")).toMatch(new RegExp(`\\. Score 2 of ${total}$`));
     expect(root.querySelector(".sy-end-score")!.textContent).toBe(`Score 2 of ${total}`);
     expect(live()).toContain(`Score 2 of ${total}.`);
     const row = root.querySelector(".sy-end-stamps")!;
-    expect(row.getAttribute("role")).toBe("img");
-    expect(row.getAttribute("aria-label")).toBe(`2 of ${total} stamps earned`);
-    for (const slot of Array.from(row.children)) expect(slot.getAttribute("aria-hidden")).toBe("true");
+    expect(row.getAttribute("role")).toBe("list");
+    expect(row.getAttribute("aria-label")).toBe("Your answers, question by question");
+    const items = Array.from(row.children);
+    expect(items).toHaveLength(total);
+    items.forEach((slot, i) => {
+      expect(slot.getAttribute("role")).toBe("listitem");
+      expect(slot.querySelector(".sy-sr-only")!.textContent).toBe(`Question ${i + 1}: ${i < 2 ? "right" : "not reached"}`);
+      // The glyph is hidden; its meaning is in the words.
+      expect(slot.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    });
   });
 
   it("TASK-33d2: after a card change, focus moves to the new card (so it is read); the first card does not take focus", () => {

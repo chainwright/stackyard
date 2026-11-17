@@ -9,7 +9,7 @@
     "wcag22aa",
     "best-practice"
   ],
-  "date": "2026-11-10",
+  "date": "2026-11-17",
   "pages": [
     {
       "page": "Maker: Start screen",
@@ -119,7 +119,7 @@
         "moderate": [],
         "minor": []
       },
-      "passes": 37
+      "passes": 38
     },
     {
       "page": "Sample vikings-in-ireland.html: Class results panel",

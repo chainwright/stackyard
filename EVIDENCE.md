@@ -6,15 +6,15 @@ Every headline number about Stackyard, the command or file that reproduces it, a
 
 | Number | What it means | Reproduce | Backed by |
 |---|---|---|---|
-| 1,578 tests pass in our working copy (a clean clone or CI: 1,574 pass, 4 skip: 3 read draft posts kept outside the repo, 1 needs full git history) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
-| 241 of 241 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
+| 1,587 tests pass in our working copy (a clean clone or CI: 1,583 pass, 4 skip: 3 read draft posts kept outside the repo, 1 needs full git history) | the whole Vitest suite: unit, integration, property and docs tests | `npm test` | CI on every push (`.github/workflows/ci.yml`) |
+| 253 of 253 lettered task ids | every lettered task id in `.kiro/specs/*/tasks.md` is named in a test title, a gate script or a hook | `npm run check:trace` | `scripts/check-task-trace.ts` |
 | 9 stack invariants | the rules every stack satisfies (unique UUID v4 ids, every go-to points at a real card, exactly one end card, one right answer per quiz card, everything inside the canvas, …) | `npm run check:invariants` | `src/shared/validator.ts`; `.kiro/steering/stack-format.md` |
-| 79 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
+| 80 fast-check properties | property-based tests over random stacks, edits, codes and files | `grep -rhoE "fc\.(property\|asyncProperty)\(" tests \| wc -l` | `tests/*.property.test.ts` and others |
 | 1,000-run round trip | stack → HTML file → stack, lossless | `npm run check:invariants` | `numRuns` in `tests/roundtrip.property.test.ts` |
 | 118 of 118 mutants killed | a script reverts 118 review fixes one at a time; each must turn a test red | `npm run check:mutants` (slow), or read the log | `docs/mutation-runs/2026-11-10-a215331.log` (clean tree); `check:claims` ties the count to the newest log and to the script's sha256 |
-| 12.8 KB gzipped | the player runtime inlined in every lesson file (1 KB = 1,024 bytes) | `npm test` (size guard, budget 50 KB) | `dist/player/player.iife.js` |
-| about 216 KB | a living export of the water-cycle test deck (decimal KB, bytes / 1000) | `npm run check:claims` | `tests/fixtures/generation/water-cycle-g2.json`; `tests/export-size.test.ts` |
-| 149 KB | the play-only class export of the same water-cycle test deck (decimal KB, bytes / 1000) | `npx vitest run tests/round13-docs.test.ts` | `tests/fixtures/generation/water-cycle-g2.json` |
+| 13.0 KB gzipped | the player runtime inlined in every lesson file (1 KB = 1,024 bytes) | `npm test` (size guard, budget 50 KB) | `dist/player/player.iife.js` |
+| about 219 KB | a living export of the water-cycle test deck (decimal KB, bytes / 1000) | `npm run check:claims` | `tests/fixtures/generation/water-cycle-g2.json`; `tests/export-size.test.ts` |
+| 150 KB | the play-only class export of the same water-cycle test deck (decimal KB, bytes / 1000) | `npx vitest run tests/round13-docs.test.ts` | `tests/fixtures/generation/water-cycle-g2.json` |
 | 6 lesson files like the water-cycle test deck fit on a 1.44 MB floppy | floor(1,457,664 / that file's bytes), stated as at most 6 | `npm run check:claims` | `scripts/claims-lib.ts` (`FLOPPY_CLAIM`) |
 | 54 bench lesson files, 0 network requests | every bench lesson file opened from disk in headless Chrome with the network blocked: a card renders, the first card plays, no request, no page error | `npm run check:bench` (Chrome) | `scripts/check-bench-offline.ts`; `bench/files/` |
 | a living file that edits itself offline | export, edit in the Teacher tab, Save a Copy, open the copy and a copy of the copy with the network blocked, play to the end card | `npm run check:living-file` (Chrome) | `scripts/check-living-file.ts`; also the `living-file-gate` hook |

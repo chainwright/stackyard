@@ -273,12 +273,13 @@ describe("end-card rendering (TASK-27l: no \"Score 0 of 0\", neutral heading, an
     expect(scoreLine!.textContent).toBe("Score 0 of 1");
   });
 
-  it("stamp collection: one slot per question, the earned ones stamped (score 1 of 1)", () => {
+  it("TASK-43b1: stamp collection: one slot per question, a right first answer stamped (score 1 of 1)", () => {
     const quiz = makeQuizCard(IDS.quiz, IDS.end);
     const end  = makeEndCard(IDS.end);
     const stack = makeStack([quiz, end]);
     const state = createRuntime(stack);
     state.variables["score"] = 1;
+    state.answers[IDS.quiz] = true;
 
     renderCard(end, root, state, vi.fn());
 
@@ -288,20 +289,22 @@ describe("end-card rendering (TASK-27l: no \"Score 0 of 0\", neutral heading, an
     expect(root.querySelectorAll(".sy-end-slot-empty").length).toBe(0);
   });
 
-  it("stamp collection: two questions, one earned and one empty (score 1 of 2)", () => {
+  it("TASK-43b1: stamp collection: two questions, the first right and the second not reached (score 1 of 2)", () => {
     const quiz1 = makeQuizCard(IDS.quiz, IDS.quiz2);
     const quiz2 = makeQuizCard(IDS.quiz2, IDS.end);
     const end   = makeEndCard(IDS.end);
     const stack = makeStack([quiz1, quiz2, end]);
     const state = createRuntime(stack);
     state.variables["score"] = 1;
+    state.answers[IDS.quiz] = true;
 
     renderCard(end, root, state, vi.fn());
 
-    // Two quizzes → two slots: one earned, one empty.
-    expect(root.querySelectorAll(".sy-end-slot").length).toBe(2);
-    expect(root.querySelectorAll(".sy-end-slot-earned").length).toBe(1);
-    expect(root.querySelectorAll(".sy-end-slot-empty").length).toBe(1);
+    // Two quizzes → two slots in question order: earned, then not reached.
+    const slots = Array.from(root.querySelectorAll(".sy-end-slot"));
+    expect(slots.length).toBe(2);
+    expect(slots[0]!.classList.contains("sy-end-slot-earned")).toBe(true);
+    expect(slots[1]!.classList.contains("sy-end-slot-empty")).toBe(true);
   });
 
   it("stamp collection: all slots empty when score is 0", () => {

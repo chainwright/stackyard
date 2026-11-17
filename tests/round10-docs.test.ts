@@ -82,15 +82,17 @@ describe("TASK-38e: prior art: OpenMAIC added; AfterStack and NecroCard softened
 });
 
 describe("TASK-38f: the player KB unit is stated", () => {
-  it("TASK-38f: both files say 1 KB = 1,024 bytes for the player, and check:claims still reads each number", () => {
+  it("TASK-38f: TASK-43b2: both files say 1 KB = 1,024 bytes for the player, and check:claims still reads each number", () => {
+    // TASK-43 (16 Nov): the end-card marks took the player from 12.8 to 13.0 KB; the unit, not the number, is pinned here.
     const w = read("docs/DEVPOST_WRITEUP.md");
-    expect(w).toContain("and a 12.8 KB player (gzipped, 1 KB = 1,024 bytes);");
-    expect(w).toContain("The player bundle is 12.8 KB gzipped against a 50 KB budget (1 KB = 1,024 bytes here; lesson-file sizes are decimal KB).");
+    expect(w).toMatch(/and a \d+\.\d KB player \(gzipped, 1 KB = 1,024 bytes\);/);
+    expect(w).toMatch(/The player bundle is \d+\.\d KB gzipped against a 50 KB budget \(1 KB = 1,024 bytes here; lesson-file sizes are decimal KB\)\./);
     const labels = readWriteupClaims(w).filter((c) => c.name === "kb").map((c) => c.label);
     expect(labels).toContain("player KB (gzip)");
     expect(labels).toContain("player KB (… tests and a N KB player)");
     const r = read("README.md");
-    expect(r).toContain("- Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).");
-    expect(readClaims(r)?.kb).toBe(12.8);
+    const m = /- Player bundle: \*\*(\d+\.\d) KB\*\* gzipped \(budget 50 KB; 1 KB = 1,024 bytes here\)\./.exec(r);
+    expect(m).not.toBeNull();
+    expect(readClaims(r)?.kb).toBe(Number(m![1]));
   });
 });

@@ -16,11 +16,11 @@ If the model is busy or the day's model calls are used up, the app hands you a r
 ## 0:45–1:30 · The file works with the Wi-Fi off
 4. Choose **Export for class** (the play-only file; the default, **Living file**, also carries a Teacher tab) and press **Export File**. One `.html` file downloads.
 5. Turn the Wi-Fi off. Open the file from your Downloads folder, open DevTools (F12) → **Network**, and reload.
-6. **Look for:** the lesson plays, and the Network tab lists no http or https request, only the file itself. Answer to the end: the last card shows the score and a short results code.
+6. **Look for:** the lesson plays, and the Network tab lists no http or https request, only the file itself. Answer to the end: the last card shows the score, a mark for each question in order (✓ right, ✗ wrong, an empty box for not reached) and a short results code.
 
 ## 1:30–2:30 · The file edits itself and collects class results
 7. Open the ready-made lesson file (link above). Play it to the last card and copy the results code.
-8. Press **Teacher** in the corner. An "Are you the teacher?" box opens in the file (a gentle guard for the class, not a password): press **Open the Editor**. Then press **Class Results**, paste the code and press **Add Codes**. **Look for:** a row per question (right, wrong, not reached), the middle score and the questions to revisit. The code is typed in, so nothing is uploaded.
+8. Press **Teacher** in the corner. An "Are you the teacher?" box opens in the file (a gentle guard for the class, not a password): press **Open the Editor**. Then press **Class Results**, paste the code and press **Add Codes**. **Look for:** the middle score, then the questions to revisit, then a row per question (right, wrong, not reached). The code is typed in, so nothing is uploaded.
 9. Still in the Teacher tab, change a word on a card and press **Save a Copy**. **Look for:** a new file, `<title> (copy).html`, that plays and can edit itself too.
 
 ## 2:30–3:00 · How Kiro built it
@@ -32,8 +32,8 @@ Node 24 or later:
 ```sh
 git clone https://github.com/chainwright/stackyard && cd stackyard
 npm ci
-npm test               # 1,578 tests pass in our working copy; a clean clone: 1,574 pass, 4 skip (3 read draft posts kept outside the repo, 1 needs full git history)
-npm run check:trace    # 241 of 241 lettered task ids traced
+npm test               # 1,587 tests pass in our working copy; a clean clone: 1,583 pass, 4 skip (3 read draft posts kept outside the repo, 1 needs full git history)
+npm run check:trace    # 253 of 253 lettered task ids traced
 npm run check:claims   # every number in the README, the write-up and EVIDENCE.md, against the code
 ```
 `npm run pre-submit` runs every gate. The browser gates need a local Chrome or Chromium; without one they say so and skip.

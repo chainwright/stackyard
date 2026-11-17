@@ -109,6 +109,9 @@ const PUPIL = `
           facts.labelled = !!label && label.textContent.length > 0;
           facts.fits = end.scrollHeight <= end.clientHeight + 1 && block.bottom <= card.bottom && again.bottom <= card.bottom;
           facts.codeFont = parseFloat(getComputedStyle(shown).fontSize) * (card.height / 600);
+          // TASK-43b1: the marks, in question order (the 390 px fit is checked in check-living-mobile).
+          var slots = Array.prototype.slice.call(root.querySelectorAll("[data-testid='end-marks'] > .sy-end-slot"));
+          facts.marks = slots.map(function (s) { return s.getAttribute("data-result"); }).join(",");
           report("PASS", "played to the end card");
           return;
         }
@@ -269,6 +272,8 @@ function main(): void {
       const want: Result[] = p.pattern.split("").map((c) => (c === "R" ? "right" : "wrong"));
       if (JSON.stringify(d.results) !== JSON.stringify(want)) fail(`pupil ${i + 1}'s code reads ${d.results.join(",")}, but they answered ${p.pattern}.`);
       if (d.initials !== p.initials.toUpperCase()) fail(`pupil ${i + 1}'s code carries initials "${d.initials}".`);
+      // TASK-43b: the marks follow the questions, the same results the code carries.
+      if (v.facts["marks"] !== d.results.join(",")) fail(`pupil ${i + 1}: TASK-43b1: the end card's marks read ${String(v.facts["marks"])}, but the code reads ${d.results.join(",")}.`);
       codes.push(code);
       console.log(`check-class-results: pupil ${i + 1} OK — played offline (${p.pattern}), the end card shows ${formatCode(code)}.`);
     });

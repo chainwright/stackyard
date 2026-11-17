@@ -150,6 +150,42 @@ export const LIVING_STYLES = `
   outline: 3px solid #1E2A47; outline-offset: 2px; box-shadow: 0 0 0 2px #FBF8F1;
 }
 .sy-results h2:focus, .sy-results-status:focus { outline: none; }
+/* TASK-43a3: the panel as a ruled index card, in the lesson's ink-on-paper look.
+   Rule lines every 32 px (--color-rule), ink text and borders, existing fonts;
+   no stamp red (nothing here is earned), no blur, no new font. */
+.sy-results {
+  background-color: #FBF8F1;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, #C9D3E3 31px, #C9D3E3 32px);
+  border: 1px solid #C9D3E3; border-radius: 10px; margin-top: 16px; margin-bottom: 24px;
+}
+.sy-results-table { border-collapse: separate; border-spacing: 0; border: 2px solid #1E2A47; border-radius: 10px; overflow: hidden; background: #FFFFFF; }
+.sy-results-table caption { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 20px; }
+.sy-results-table thead th { background: #1E2A47; color: #FFFFFF; border-color: #1E2A47; }
+.sy-results-table th, .sy-results-table td { border: 0; border-bottom: 1px solid #C9D3E3; }
+.sy-results-table tbody tr:last-child th, .sy-results-table tbody tr:last-child td { border-bottom: 0; }
+.sy-results-revisit { list-style: none; padding-left: 0; margin: 4px 0 12px; }
+.sy-results [data-testid="results-missed"] { list-style: none; padding-left: 0; margin: 8px 0; }
+.sy-results-revisit li { padding: 6px 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+/* A stamp-like "Revisit" label: boxed, rotated, ink. A word, not a colour. */
+.sy-revisit-stamp {
+  display: inline-block; flex: 0 0 auto; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800;
+  font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; color: #1E2A47;
+  border: 2px solid #1E2A47; border-radius: 4px; padding: 0 6px; transform: rotate(-3deg);
+}
+/* TASK-43a2: on a narrow screen the per-question table stacks: the question on
+   its own line, then Right / Wrong / Did not reach, each with its label. It is
+   still a table (caption, column headers), so assistive tech reads it as one. */
+@media (max-width: 480px) {
+  .sy-results { padding: 14px 12px 32px; }
+  .sy-results-questions, .sy-results-questions tbody, .sy-results-questions tr, .sy-results-questions th, .sy-results-questions td { display: block; width: auto; }
+  .sy-results-questions thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .sy-results-questions caption { display: block; }
+  .sy-results-questions tr { border-bottom: 1px solid #C9D3E3; padding: 6px 10px; }
+  .sy-results-questions tbody tr:last-child { border-bottom: 0; }
+  .sy-results-questions th[scope="row"] { border: 0; padding: 4px 0; overflow-wrap: anywhere; }
+  .sy-results-questions td { display: inline-block; border: 0; text-align: left; min-width: 0; padding: 2px 12px 2px 0; }
+  .sy-results-questions td::before { content: attr(data-label) ": "; font-weight: 700; }
+}
 @media print {
   .sy-printing body > :not(.sy-living-overlay), .sy-printing .sy-living-bar, .sy-printing .sy-noprint { display: none !important; }
   .sy-printing .sy-living-overlay, .sy-printing .sy-results-host { position: static; overflow: visible; background: #fff; }

@@ -85,9 +85,10 @@ describe("TASK-41b: hooks: four on save, one after shell writes, one never fired
 });
 
 describe("TASK-41c: class results: how many per question, a row per pupil", () => {
-  it("TASK-41c the What it does line says how many, and a row of marks per pupil", () => {
+  it("TASK-41c: TASK-43a1: the What it does line says how many, and a row of marks per pupil", () => {
+    // TASK-43a1 (16 Nov): the panel now shows the middle score and what to revisit first, so the line names them first.
     expect(W).toContain(
-      "to see, per question, how many got it right, got it wrong or never reached it, a row of marks for each pupil (by initials if the pupil typed them, otherwise Pupil 1, Pupil 2…), the middle score and what to revisit, with nothing leaving the laptop.",
+      "to see the middle score, what to revisit and, per question, how many got it right, got it wrong or never reached it, a row of marks for each pupil (by initials if the pupil typed them, otherwise Pupil 1, Pupil 2…), with nothing leaving the laptop.",
     );
     gone("who got it right");
   });
@@ -124,7 +125,7 @@ describe("TASK-41f: the CLI row and the coordinator's work outside Kiro", () => 
 });
 
 describe("TASK-41g: file size: the living file and the play-only class file, both measured", () => {
-  it("TASK-41g the play-only class export of the water-cycle fixture is the 149 KB the docs state (±3 %, decimal KB)", async () => {
+  it("TASK-41g the play-only class export of the water-cycle fixture is the size the docs state (±3 %, decimal KB)", async () => {
     const { exportStack } = await import("../server/exporter.js");
     const { sanitizeRawStack, finaliseGeneratedStack } = await import("../server/normalizeGenerated.js");
     const { validate } = await import("../src/shared/validator.js");
@@ -141,8 +142,9 @@ describe("TASK-41g: file size: the living file and the play-only class file, bot
     for (const n of [Number(stated![1]), Number(ev![1])]) expect(Math.abs(n - kb), `${n} vs ${kb}`).toBeLessThanOrEqual(kb * 0.03);
   });
 
-  it("TASK-41g the write-up names the living file's size as the one with the Teacher tab, and check:claims still reads it", () => {
-    expect(W).toContain("a generated lesson file is now about 216 KB with its Teacher tab inside; the play-only class file of the same lesson is 149 KB.");
+  it("TASK-41g: TASK-43b3: the write-up names the living file's size as the one with the Teacher tab, and check:claims still reads it", () => {
+    // TASK-43 (16 Nov): the marks and the panel order grew both files (216 → 219 KB, 149 → 150 KB).
+    expect(W).toContain("a generated lesson file is now about 219 KB with its Teacher tab inside; the play-only class file of the same lesson is 150 KB.");
     expect(W).toMatch(/lesson file is now about \d+ KB/);
     expect(E).not.toContain("about 149 KB");
   });
@@ -181,7 +183,7 @@ describe("TASK-41i: CLAIMS.md re-statuses and new rows", () => {
 
   it("TASK-41i new rows C62–C68, all TRUE", () => {
     const want: Array<[string, string]> = [
-      ["C62", "the play-only class file of the same lesson is 149 KB"],
+      ["C62", "the play-only class file of the same lesson is 150 KB"],
       ["C63", "The first four (product, tech, stack format, audience) were written before any code"],
       ["C64", "how many got it right, got it wrong or never reached it"],
       ["C65", "Four run the real checks when Kiro saves the files they watch"],

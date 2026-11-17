@@ -215,6 +215,8 @@ skipped card is still a slot, so it reads *not reached*.
 
 ### End card
 
+*(16 Nov 2026, TASK-43b: the stamps above the code are now one slot per quiz question in deck order: ✓ for right, ✗ in a solid box for wrong, an empty dashed box for not reached, each with its own text. They used to be a tally of ticks, then empty boxes.)*
+
 When the lesson has at least one quiz card, the end card adds a compact block
 under the stamps, before Play Again:
 
@@ -365,6 +367,8 @@ h3  Questions to revisit   → ol, or "No question was missed by a third or more
 table (caption "Each pupil") Pupil | Score | Q1 … Qn (✓ / ✗ / –, with sr-only words)
 [Copy as Text] [Print Results]
 ```
+
+*(16 Nov 2026, TASK-43a: "Questions to revisit" now comes right after the median line and before the "Each question" table. Under 480 px the question table stacks, one question per block with labelled numbers; see the maker spec, Phase 28.)*
 
 - **Add Codes.** It parses and decodes, and adds the good codes to the list.
   It leaves only the bad lines in the text box, so she can fix and add them

@@ -50,14 +50,16 @@ the play-only alternative.
 ### Class results (no server)
 
 A class of 24 pupils plays the same lesson file on class laptops, with no network
-and no accounts. Each pupil's last card shows a short **results code**, for
+and no accounts. Each pupil's last card shows a mark for each question in order (✓ right, ✗ wrong,
+an empty box for not reached), a short **results code**, for
 example `Y3A7-8GPK-2`, and an optional box for their initials (at most three
 letters). The teacher types or pastes the codes into the **Class Results** panel
-in the Teacher tab of *her* copy of the same file. The panel shows, for each
-question, how many got it right, how many got it wrong and how many never
-reached it ("Q4 missed by 9 of 24"), the class's middle score (median), and
-which questions to revisit (any that a third or more of the pupils who answered
-got wrong). She can copy the table as plain text or print it.
+in the Teacher tab of *her* copy of the same file. The panel shows the class's
+middle score (median), then which questions to revisit (any that a third or more
+of the pupils who answered got wrong), then, for each question, how many got it
+right, how many got it wrong and how many never reached it ("Q4 missed by 9 of
+24"). On a phone the question table stacks into labelled lines. She can copy the
+table as plain text (in the same order) or print it.
 
 - **The code.**
   - It uses 31 letters and digits, with no 0, O, 1, I or L, and is shown in
@@ -181,8 +183,8 @@ is never inlined into, the exported file. Fonts are listed under
 
 These figures are checked against the code by `scripts/check-claims`, which `npm run pre-submit` and CI run; it fails if a number drifts beyond its tolerance.
 
-- Tests: **1578** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,574 pass and 4 skip: 3 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
-- Player bundle: **12.8 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
+- Tests: **1587** in the suite (`npm test`); all pass in our working copy. In a clean copy 1,583 pass and 4 skip: 3 check our draft posts, which sit beside the repo and not in it, and 1 needs the full git history (CI's shallow clone skips it too).
+- Player bundle: **13.0 KB** gzipped (budget 50 KB; 1 KB = 1,024 bytes here).
 - Stack invariants: **9** (enforced by `src/shared/validator.ts`).
 - Round-trip property test: **1,000** runs (stack → HTML → stack, lossless).
 - Floppy test: **6** lesson files like the water-cycle test deck fit on a 1.44 MB floppy

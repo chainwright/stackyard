@@ -160,7 +160,8 @@ export function renderClassResults(host: HTMLElement, ctx: ClassResultsContext):
       .map(
         (r) =>
           `<tr data-q="${r.q}"><th scope="row">${esc(`Q${r.q} ${r.question}`)}</th>` +
-          `<td>${r.right}</td><td>${r.wrong}</td><td>${r.none}</td></tr>`,
+          // TASK-43a2: each number carries its label, drawn on a phone where the table stacks.
+          `<td data-label="Right">${r.right}</td><td data-label="Wrong">${r.wrong}</td><td data-label="Did not reach">${r.none}</td></tr>`,
       )
       .join("");
     const missed = t.questions.filter((r) => r.wrong > 0).map((r) => `<li>${esc(missedLine(r, P))}</li>`).join("");
@@ -168,7 +169,7 @@ export function renderClassResults(host: HTMLElement, ctx: ClassResultsContext):
       t.revisit.length === 0
         ? `<p>No question was missed by a third or more of the pupils who answered it.</p>`
         : `<ol class="sy-results-revisit" data-testid="results-revisit">${t.revisit
-            .map((n) => `<li data-q="${n}">${esc(`${missedLine(t.questions[n - 1]!, P)}: ${t.questions[n - 1]!.question}`)}</li>`)
+            .map((n) => `<li data-q="${n}"><span class="sy-revisit-stamp">Revisit</span> ${esc(`${missedLine(t.questions[n - 1]!, P)}: ${t.questions[n - 1]!.question}`)}</li>`)
             .join("")}</ol>`;
     const pupils = t.pupils
       .map(
@@ -180,9 +181,10 @@ export function renderClassResults(host: HTMLElement, ctx: ClassResultsContext):
       .join("");
     body.innerHTML =
       `<p class="sy-results-summary" data-testid="results-summary">${P} pupil${P === 1 ? "" : "s"} · Middle score (median): ${formatScore(t.median!)} of ${t.n}</p>` +
-      `<table class="sy-results-table" data-testid="results-questions"><caption>Each question</caption>${ths(["Question", "Right", "Wrong", "Did not reach"])}<tbody>${rows}</tbody></table>` +
-      (missed ? `<ul data-testid="results-missed">${missed}</ul>` : "") +
+      // TASK-43a1: what to revisit first, then the question table.
       `<h3>Questions to revisit</h3>${revisit}` +
+      `<table class="sy-results-table sy-results-questions" data-testid="results-questions"><caption>Each question</caption>${ths(["Question", "Right", "Wrong", "Did not reach"])}<tbody>${rows}</tbody></table>` +
+      (missed ? `<ul data-testid="results-missed">${missed}</ul>` : "") +
       // Each pupil, in a keyboard-scrollable region (axe scrollable-region-focusable).
       `<div class="sy-results-scroll" tabindex="0" role="region" aria-label="Each pupil"><table class="sy-results-table" data-testid="results-pupils"><caption>Each pupil</caption>` +
       `${ths(["Pupil", "Score", ...t.questions.map((r) => `Q${r.q}`)])}<tbody>${pupils}</tbody></table></div>`;

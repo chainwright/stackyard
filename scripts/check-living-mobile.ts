@@ -8,6 +8,9 @@
 //   - puts the inspector BELOW the card,
 // and, at a desktop width, that the layout is the old one (list beside the card,
 // no toggle). It saves docs/media/teacher-390.png.
+// TASK-43a5/43b3: at 390 x 844 it also plays the lesson to the end card (marks in
+// question order, one row, no sideways scroll) and opens Class Results with codes
+// pasted ("Questions to revisit" above the stacked question table, no sideways scroll).
 //
 //   npm run build:player && npm run build:living && node --import tsx/esm scripts/check-living-mobile.ts
 //
@@ -21,6 +24,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { exportLivingStack } from "../server/exporter.js";
 import { vikingsStack } from "../src/shared/readyMadeStacks.js";
+import { encodeCode, lessonKey } from "../src/shared/resultsCode.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 9343;
@@ -248,6 +252,96 @@ async function main(): Promise<void> {
       writeFileSync(out, Buffer.from(playShot.data, "base64"));
     } else problems.push("TASK-36c5 play 390x844: no screenshot came back");
     console.log(`check-living-mobile: play 390x844 — card ${play.width} px wide, ${Math.round(play.area * 100)} % of the screen, meta ${play.metaPx.toFixed(1)} px, tiles ${play.tiles.join("/")} px tall.`);
+    // ---- TASK-43b3: play the whole lesson at 390 x 844, R W R W ..., and measure the end-card marks ----
+    const pattern = "RWRWRWRWRWRW";
+    let answered = 0;
+    let atEnd = false;
+    for (let steps = 0; steps < 60 && !atEnd; steps++) {
+      await cdp.eval(SETTLE);
+      const did = await cdp.eval<string>(`(() => {
+        const root = document.getElementById("player-root");
+        if (root.querySelector(".sy-end-card")) return "end";
+        if (root.querySelector(".sy-tile")) {
+          const right = ${JSON.stringify(pattern)}.charAt(${answered}) === "R";
+          const pick = right ? root.querySelector(".sy-tile[data-correct='true']") : root.querySelector(".sy-tile:not([data-correct])");
+          if (!pick) return "stuck";
+          pick.click();
+          return "tile";
+        }
+        const nb = root.querySelector(".sy-flash-next button"), flash = root.querySelector(".sy-flash"), b = root.querySelector(".sy-button");
+        if (nb) nb.click(); else if (flash) flash.click(); else if (b && !b.disabled) b.click(); else return "stuck";
+        return "other";
+      })()`);
+      if (did === "end") atEnd = true;
+      else if (did === "stuck") break;
+      else {
+        if (did === "tile") answered++;
+        await sleep(1500);
+      }
+    }
+    if (!atEnd) problems.push("TASK-43b3 play 390x844: did not reach the end card");
+    else {
+      await sleep(400);
+      await cdp.eval(SETTLE);
+      const marks = JSON.parse(await cdp.eval<string>(`(() => {
+        const slots = Array.from(document.querySelectorAll("#player-root [data-testid='end-marks'] > .sy-end-slot"));
+        const card = document.querySelector("#player-root .sy-card").getBoundingClientRect();
+        return JSON.stringify({
+          results: slots.map((s) => s.getAttribute("data-result")),
+          // offsetTop/offsetWidth: layout boxes, so the rotated ✓ stamps do not look like a new row.
+          rows: new Set(slots.map((s) => s.offsetTop)).size,
+          size: slots.length ? slots[0].offsetWidth : 0,
+          row: (() => { const r = document.querySelector("#player-root [data-testid='end-marks']"); return r ? r.offsetWidth + " of " + r.parentElement.clientWidth + " px" : ""; })(),
+          inside: slots.every((s) => { const r = s.getBoundingClientRect(); return r.left >= card.left - 0.5 && r.right <= card.right + 0.5; }),
+          fits: document.documentElement.scrollWidth <= window.innerWidth,
+        });
+      })()`)) as { results: string[]; rows: number; size: number; row: string; inside: boolean; fits: boolean };
+      const want = Array.from({ length: answered }, (_, i) => (pattern.charAt(i) === "R" ? "right" : "wrong"));
+      if (marks.results.join(",") !== want.join(",")) problems.push(`TASK-43b1 play 390x844: the end-card marks are ${marks.results.join(",")}, expected ${want.join(",")}`);
+      if (!marks.fits) problems.push("TASK-43b3 play 390x844: the end card scrolls sideways");
+      if (!marks.inside) problems.push("TASK-43b3 play 390x844: a mark sits outside the card");
+      if (marks.results.length <= 6 && marks.rows !== 1) problems.push(`TASK-43b3 play 390x844: ${marks.results.length} marks take ${marks.rows} rows (want one)`);
+      console.log(`check-living-mobile: TASK-43b3 end card 390x844 — ${marks.results.length} marks (${marks.results.join(",")}) in ${marks.rows} row(s), ${marks.size} CSS px each, row ${marks.row}.`);
+    }
+
+    // ---- TASK-43a5: the Class Results panel at 390 x 844, codes entered ----
+    await openTeacher(cdp, url, 390, 844);
+    const vk = lessonKey(vikingsStack());
+    const codes = [
+      encodeCode({ fingerprint: vk.fingerprint, results: Array.from({ length: vk.n }, (_, i) => (i % 2 === 0 ? "right" : "wrong")), tag: 21, initials: "AB" }),
+      encodeCode({ fingerprint: vk.fingerprint, results: Array(vk.n).fill("wrong"), tag: 22 }),
+      encodeCode({ fingerprint: vk.fingerprint, results: Array.from({ length: vk.n }, (_, i) => (i < 2 ? "right" : "none")), tag: 23, initials: "CD" }),
+    ].join("\n");
+    await cdp.eval(`(() => {
+      document.querySelector("[data-testid='class-results-toggle']").click();
+      document.querySelector("[data-testid='results-codes-input']").value = ${JSON.stringify(codes)};
+      document.querySelector("[data-testid='results-add']").click();
+      return 1;
+    })()`);
+    if (!(await cdp.until(`document.querySelector("[data-testid='results-questions']")`))) problems.push("TASK-43a5 panel 390x844: the Class Results panel never showed its table");
+    else {
+      await sleep(300);
+      const panel = JSON.parse(await cdp.eval<string>(`(() => {
+        const heads = Array.from(document.querySelectorAll("h3")).filter((h) => h.textContent === "Questions to revisit");
+        const table = document.querySelector("[data-testid='results-questions']");
+        const tr = table.querySelector("tbody tr"), td = table.querySelector("tbody td");
+        return JSON.stringify({
+          scrollWidth: document.documentElement.scrollWidth, vw: window.innerWidth,
+          revisitTop: heads.length ? heads[0].getBoundingClientRect().top : null,
+          tableTop: table.getBoundingClientRect().top,
+          rowDisplay: tr ? getComputedStyle(tr).display : "",
+          label: td ? getComputedStyle(td, "::before").content : "",
+          tableRight: table.getBoundingClientRect().right,
+        });
+      })()`)) as { scrollWidth: number; vw: number; revisitTop: number | null; tableTop: number; rowDisplay: string; label: string; tableRight: number };
+      if (panel.scrollWidth > panel.vw) problems.push(`TASK-43a5 panel 390x844: the page scrolls sideways (${panel.scrollWidth} > ${panel.vw})`);
+      if (panel.tableRight > panel.vw + 0.5) problems.push(`TASK-43a5 panel 390x844: the question table runs past the screen (${Math.round(panel.tableRight)} > ${panel.vw})`);
+      if (panel.revisitTop === null) problems.push("TASK-43a5 panel 390x844: no \"Questions to revisit\" heading");
+      else if (panel.revisitTop >= panel.tableTop) problems.push("TASK-43a5 panel 390x844: \"Questions to revisit\" is not above the question table");
+      if (panel.rowDisplay !== "block") problems.push(`TASK-43a2 panel 390x844: the question rows do not stack (display ${panel.rowDisplay})`);
+      if (!/Right/.test(panel.label)) problems.push(`TASK-43a2 panel 390x844: a stacked number has no visible label (${panel.label})`);
+    }
+
     const deskPlay = await openPlay(cdp, url, 1366, 768);
     if (deskPlay.rootTransform === "none" || !/matrix/.test(deskPlay.rootTransform)) problems.push("TASK-36c5 play 1366x768: the desktop card is no longer the scaled 800 x 600 card");
     if (deskPlay.width < 700) problems.push(`TASK-36c5 play 1366x768: the desktop card is ${deskPlay.width} px wide`);
@@ -267,7 +361,7 @@ async function main(): Promise<void> {
     for (const p of problems) console.error("check-living-mobile: FAIL — TASK-31b: " + p);
     process.exit(1);
   }
-  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged. TASK-36c5: the play view is a portrait card (docs/media/play-390.png).");
+  console.log("check-living-mobile: OK — TASK-31b: at 390x844 the card fits, the list folds behind Cards and the inspector sits below (docs/media/teacher-390.png); desktop is unchanged. TASK-36c5: the play view is a portrait card (docs/media/play-390.png). TASK-43a5/43b3: at 390x844 the Class Results panel puts revisit first and stacks without sideways scroll, and the end-card marks fit.");
 }
 
 main().catch((err) => {
